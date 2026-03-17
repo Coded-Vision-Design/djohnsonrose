@@ -1,0 +1,206 @@
+{
+    "projects": [
+        {
+            "id": 1,
+            "title": "English Open BJJ",
+            "description": "The premier Brazilian Jiu-Jitsu tournament in the UK, attracting top athletes from across Europe. Features custom weight calculators and dynamic registration systems.",
+            "tags": ["PHP", "Laravel", "Tailwind", "Alpine.js"],
+            "url": "https://englishopenbjjchampionships.co.uk/",
+            "thumbnail": "portfolio/englishopenbjj.webp",
+            "location": "UK",
+            "country_code": "gb"
+        },
+        {
+            "id": 2,
+            "title": "Bay Motors",
+            "description": "A comprehensive automotive service platform for MOT, repairs, and servicing in Harwich. Includes real-time booking and advanced engine diagnostic showcases.",
+            "tags": ["PHP", "Tailwind", "HTMX", "MySQL"],
+            "url": "https://www.baymotors.co.uk/",
+            "thumbnail": "portfolio/baymotors.webp",
+            "location": "UK",
+            "country_code": "gb"
+        },
+        {
+            "id": 3,
+            "title": "CPT Tours",
+            "description": "Immersive private tour booking site for Cape Town, featuring 360° interactive experiences, virtual tours, and WhatsApp-integrated booking flows.",
+            "tags": ["JavaScript", "360 View", "Tailwind", "Alpine.js"],
+            "url": "https://cpttours.co.za/",
+            "thumbnail": "portfolio/cpttours.webp",
+            "location": "South Africa",
+            "country_code": "za"
+        },
+        {
+            "id": 4,
+            "title": "EKBJJ",
+            "description": "Official academy site for Professor Eddie Kone. Features complex weekly timetables, membership management, and direct Gracie Jiu-Jitsu lineage tracking.",
+            "tags": ["PHP", "Laravel", "Alpine.js", "Tailwind"],
+            "url": "https://ekbjj.com/",
+            "thumbnail": "portfolio/ekbjjdesktop.webp",
+            "location": "UK",
+            "country_code": "gb"
+        },
+        {
+            "id": 10,
+            "title": "Boulevard Logistics",
+            "description": "Streamlined delivery and pallet courier platform for Northern Ireland. Built custom software to replace complex spreadsheets, handling multi-variable pricing (fuel, weight, distance) and automated customer payments.",
+            "tags": ["Custom Software", "Pricing Engine", "FinTech", "Logistics"],
+            "url": "https://boulevardlogistics.co.uk/",
+            "thumbnail": "portfolio/boulevardlogistics.webp",
+            "location": "Northern Ireland",
+            "country_code": "gb-nir"
+        },
+        {
+            "id": 8,
+            "title": "Euro-Goat",
+            "description": "Premium mobile mechanic platform specialising in luxury German automotive brands (BMW, Audi, Mercedes) with a focus on specialist technical diagnostics.",
+            "tags": ["React", "Node.js", "PostgreSQL", "Tailwind"],
+            "url": "https://euro-goat.com/",
+            "thumbnail": "portfolio/eurogoatdesktop.webp",
+            "location": "USA",
+            "country_code": "us"
+        },
+        {
+            "id": 6,
+            "title": "BHR Recovery",
+            "description": "High-performance 24/7 breakdown recovery and vehicle transport service site. Features instant quote tools and GPS-tracked fleet showcases.",
+            "tags": ["PHP", "Tailwind", "JavaScript", "Google Maps"],
+            "url": "https://bhrrecovery.co.uk/",
+            "thumbnail": "https://picsum.photos/seed/recovery/400/250",
+            "location": "UK",
+            "country_code": "gb"
+        },
+        {
+            "id": 7,
+            "title": "Youngs Construction",
+            "description": "Professional construction and renovation portal. Features specialised quote tools for new builds, extensions, and fire door inspections across the UK.",
+            "tags": ["PHP", "HTMX", "Tailwind", "Alpine.js"],
+            "url": "https://youngsconstructionltd.co.uk/",
+            "thumbnail": "portfolio/youngsconstructiondesktop.webp",
+            "location": "UK",
+            "country_code": "gb"
+        },
+        {
+            "id": 5,
+            "title": "BJJ Havering",
+            "description": "Modern martial arts academy platform specialising in No-Gi grappling. Features enrollment systems, world-class coach profiles, and community blogs.",
+            "tags": ["Tailwind", "Alpine.js", "HTMX", "PHP"],
+            "url": "https://bjjhavering.co.uk/",
+            "thumbnail": "portfolio/wolvesbjj.webp",
+            "location": "UK",
+            "country_code": "gb"
+        },
+        {
+            "id": 9,
+            "title": "Hameedahs Delights",
+            "description": "Gourmet artisanal catering platform for 100% Halaal frozen savouries and platters. Features handcrafted order-to-table culinary workflows.",
+            "tags": ["PHP", "E-Commerce", "Tailwind", "Alpine.js"],
+            "url": "https://hameedahsdelights.com/",
+            "thumbnail": "portfolio/sweetdelights.webp",
+            "location": "South Africa",
+            "country_code": "za"
+        }
+    ],
+    "experience": [
+        {
+            "id": 11,
+            "role": "2nd Line Engineer",
+            "company": "Killik and Co",
+            "period": "April 2025 - Present",
+            "logo": "assets/img/killikandco.webp",
+            "highlights": "Managing SQL databases, Docker environments, and Postman API testing. Running stored procedures, database updates, complex troubleshooting, creating technical guides, and providing staff training."
+        },
+        {
+            "id": 10,
+            "role": "Desktop Developer/3rd Line Engineer",
+            "company": "UEA",
+            "period": "Nov 2021 - April 2025",
+            "logo": "assets/img/uea.webp",
+            "highlights": "Transformed UEA's desktop infrastructure across 8,000+ devices, achieving 60% faster deployments through SCCM and JAMF automation. Developed PowerShell automation eliminating 20+ weekly manual hours while maintaining 99.9% system availability. Led Windows 11 migration for 2,000+ users and currently spearheading remote learning infrastructure modernisation supporting 15,000+ students."
+        },
+        {
+            "id": 9,
+            "role": "System Engineer 2",
+            "company": "Skyscanner",
+            "period": "March 2020 - Nov 2021",
+            "logo": "assets/img/skyscanner.webp",
+            "highlights": "Led global deployment of AI-powered heat-sensing CCTV across 10+ international offices during COVID-19 while managing £500K infrastructure budget. Optimised JAMF/SCCM workflows reducing new employee setup time by 65% and MacBook provisioning from 4 hours to 45 minutes. Authored comprehensive return-to-work technical documentation achieving full compliance across all locations. Provided in house support by way of the techbar."
+        },
+        {
+            "id": 8,
+            "role": "Desk Side Engineer",
+            "company": "Shawbrook Bank",
+            "period": "Mar 2017 - Mar 2020",
+            "highlights": "Initially hired as a Service Desk Engineer, promoted to Desk Side Engineer within three months for consistently exceeding SLAs. Developed and implemented PowerShell automation framework for AD management and user provisioning. Designed and deployed enhanced GPO structure improving security compliance by 65%. Led successful bank-wide RSA token rollout with zero service disruption."
+        },
+        {
+            "id": 7,
+            "role": "2nd Line Engineer",
+            "company": "FRP Advisory",
+            "period": "Aug 2016 - Feb 2017",
+            "logo": "assets/img/FRP.webp",
+            "highlights": "Provided remote and desk side support across the UK for companies in liquidation. Involved in P2V-ing machines and migrating entire infrastructure on site. Assisted in the extraction and sorting of 200TB of data from BHS. Specialised in Digital Forensics, Physical to Virtual migrations, and Ethical hacking."
+        },
+        {
+            "id": 6,
+            "role": "Senior Network Engineer",
+            "company": "Alexander Knight Business Solutions",
+            "period": "Jul 2015 - Aug 2016",
+            "logo": "assets/img/alexanderknight.webp",
+            "highlights": "Quickly promoted and responsible for running various IT departments for an MSP. Reporting directly to the CEO. Responsible for effectively balancing the business's needs with its IT capability."
+        },
+        {
+            "id": 5,
+            "role": "IT Support Engineer",
+            "company": "Ontraq IT",
+            "period": "Nov 2014 - Jul 2015",
+            "logo": "assets/img/ontraq.webp",
+            "highlights": "Providing onsite/telephone assistance to companies such as British Transport Police, Gepp & Son’s, private legal & financial firms and sole traders."
+        }
+    ],
+    "skills": {
+        "infrastructure": ["Active Directory/ Group Policy", "DNS/DHCP", "Windows/Mac OS Integration", "RAID/Storage Solutions", "Backup and DR Solutions"],
+        "deployment": ["SCCM/JAMF Deployment", "MDM/Security Compliance", "Microsoft Office 365", "PowerShell Automation"],
+        "development": ["HTML", "CSS", "JavaScript", "PHP", "Laravel", "Tailwind", "HTMX", "React"],
+        "cloud_ai": ["AWS", "AI and Machine Learning", "Docker", "Postman"],
+        "management": ["Project Management", "JIRA", "Trello", "Microsoft Project"]
+    },
+    "interests": ["Technology", "Fitness", "MMA", "IOT", "Automation", "Virtualisation", "Photography", "AI", "Media", "Athletics", "Rugby", "Muay Thai", "Brazilian Jiu-Jitsu"],
+    "certifications": [
+        { "id": 1, "name": "MCSA: Windows 7", "issuer": "Microsoft" },
+        { "id": 2, "name": "MCITP: Enterprise Desktop Support", "issuer": "Microsoft" },
+        { "id": 3, "name": "ACSP: OS X Support Essentials", "issuer": "Apple" },
+        { "id": 4, "name": "CompTIA A+ / Network+ / Server+", "issuer": "CompTIA" },
+        { "id": 5, "name": "ITIL Foundation", "issuer": "AXELOS" }
+    ],
+    "achievements": [
+        {
+            "id": 1,
+            "title": "IBJJF World Championship",
+            "result": "Bronze Medalist",
+            "category": "GBR Representative",
+            "date": "2022"
+        },
+        {
+            "id": 2,
+            "title": "IBJJF European Championship",
+            "result": "Gold Medalist",
+            "category": "Brown Belt",
+            "date": "2022"
+        },
+        {
+            "id": 3,
+            "title": "NAGA World Champion",
+            "result": "4-Time Champion",
+            "category": "Expert Division",
+            "date": "2023"
+        },
+        {
+            "id": 4,
+            "title": "High Sheriff of Essex Award",
+            "result": "Recipient",
+            "category": "Volunteer Mentoring",
+            "date": "2023"
+        }
+    ]
+}

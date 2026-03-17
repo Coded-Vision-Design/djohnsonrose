@@ -1,0 +1,19 @@
+RewriteEngine On
+
+# Force HTTPS
+# RewriteCond %{HTTPS} off
+# RewriteCond %{HTTP_HOST} !^localhost$ [NC]
+# RewriteCond %{HTTP_HOST} !^127\.0\.0\.1$
+# RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+# Redirect www to non-www
+RewriteCond %{HTTP_HOST} ^www\.(.*)$ [NC]
+RewriteRule ^(.*)$ https://%1/$1 [R=301,L]
+
+# Handle routing to index.php if file/dir doesn't exist
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^(.*)$ index.php [QSA,L]
+
+# Custom 301 Redirects
+# If any old project URLs existed, they would go here

@@ -1,0 +1,46 @@
+﻿# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+ehthumbs.db
+
+# IDE / Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.project
+.settings/
+*.sublime-project
+*.sublime-workspace
+
+# Environment files
+.env
+.env.local
+.env.*.local
+.env.production
+.env.development
+
+# Logs
+*.log
+
+# Build outputs
+dist/
+build/
+.cache/
+.tmp/
+
+# Vercel
+.vercel/
+
+# PHP / Composer
+vendor/
+composer.phar
+*.cache
+*.bak
+
+# WordPress
+wp-content/uploads/
+wp-content/upgrade/
+wp-config-local.php

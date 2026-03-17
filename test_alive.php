@@ -1,0 +1,1 @@
+<?php echo "I am alive at " . date('Y-m-d H:i:s'); ?>

@@ -1,0 +1,5 @@
+﻿DeVantÃ© Johnson-Rose | Senior Systems Engineer & Automation Expert
+Interactive Windows 11-themed portfolio.
+Experience: Senior Desktop Developer at UEA (8,000+ devices), System Engineer 2 at Skyscanner (Global AI CCTV deployment), Shawbrook Bank.
+Skills: PowerShell Automation, SCCM/JAMF, Active Directory, PHP, Laravel, Tailwind, Alpine.js.
+Website: https://djohnsonrose.com/

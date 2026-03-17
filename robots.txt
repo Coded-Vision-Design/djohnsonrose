@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /data/
+Disallow: /partials/
+Disallow: /portfolio/
+
+Sitemap: https://djohnsonrose.com/sitemap.xml

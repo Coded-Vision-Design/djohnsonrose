@@ -1,0 +1,16 @@
+{
+  "name": "DeVante Johnson-Rose | Portfolio OS",
+  "short_name": "Portfolio OS",
+  "icons": [
+    {
+      "src": "assets/img/favicon.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ],
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#0078d4",
+  "theme_color": "#0078d4"
+}
