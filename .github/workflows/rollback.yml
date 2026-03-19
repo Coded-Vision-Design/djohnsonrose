@@ -1,0 +1,130 @@
+###############################################################################
+# CodedVisionDesign — Rollback Workflow
+# ──────────────────────────────────────
+# Restores a previous release snapshot from the server.
+# Works with both Hostinger and VPS — reads "server" from deploy-config.json.
+###############################################################################
+
+name: Rollback Deployment
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "Rollback mode"
+        required: true
+        type: choice
+        options:
+          - server-snapshot
+          - git-commit
+        default: server-snapshot
+      snapshot_name:
+        description: "Server snapshot name (leave blank to list available snapshots)"
+        required: false
+        default: ""
+      commit_sha:
+        description: "Git commit SHA to redeploy (git-commit mode only)"
+        required: false
+        default: ""
+
+jobs:
+  # ── List or restore snapshot ─────────────────────────────────────────────
+  rollback-snapshot:
+    name: Rollback (Server Snapshot)
+    runs-on: ubuntu-latest
+    if: github.event.inputs.mode == 'server-snapshot'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Read config
+        id: config
+        run: |
+          DEPLOY_PATH=$(jq -r '.deploy_path' deploy-config.json)
+          SUBDOMAIN=$(jq -r '.subdomain' deploy-config.json)
+          SERVER=$(jq -r '.server // "hostinger"' deploy-config.json)
+          echo "deploy_path=${DEPLOY_PATH}" >> $GITHUB_OUTPUT
+          echo "subdomain=${SUBDOMAIN}" >> $GITHUB_OUTPUT
+          echo "server=${SERVER}" >> $GITHUB_OUTPUT
+
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          SERVER="${{ steps.config.outputs.server }}"
+          if [ "$SERVER" = "vps" ]; then
+            echo "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/deploy_key
+            SSH_HOST="${{ secrets.VPS_SSH_HOST }}"
+            SSH_USER="${{ secrets.VPS_SSH_USER }}"
+            SSH_PORT="${{ secrets.VPS_SSH_PORT }}"
+            SSH_PORT="${SSH_PORT:-22}"
+          else
+            echo "${{ secrets.HOSTINGER_SSH_KEY }}" > ~/.ssh/deploy_key
+            SSH_HOST="${{ secrets.HOSTINGER_SSH_HOST }}"
+            SSH_USER="${{ secrets.HOSTINGER_SSH_USER }}"
+            SSH_PORT="${{ secrets.HOSTINGER_SSH_PORT }}"
+            SSH_PORT="${SSH_PORT:-65002}"
+          fi
+          chmod 600 ~/.ssh/deploy_key
+          cat >> ~/.ssh/config << EOF
+          Host deployserver
+            HostName ${SSH_HOST}
+            User ${SSH_USER}
+            Port ${SSH_PORT}
+            IdentityFile ~/.ssh/deploy_key
+            StrictHostKeyChecking no
+          EOF
+
+      - name: List snapshots (if no name given)
+        if: github.event.inputs.snapshot_name == ''
+        run: |
+          echo "### Available Snapshots" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          ssh deployserver "ls -lt ${{ steps.config.outputs.deploy_path }}/.releases/ 2>/dev/null" >> $GITHUB_STEP_SUMMARY || echo "No snapshots found" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Copy a snapshot name and re-run with it filled in." >> $GITHUB_STEP_SUMMARY
+
+      - name: Restore snapshot
+        if: github.event.inputs.snapshot_name != ''
+        run: |
+          DEPLOY_PATH="${{ steps.config.outputs.deploy_path }}"
+          SNAPSHOT="${{ github.event.inputs.snapshot_name }}"
+          RELEASES_DIR="${DEPLOY_PATH}/.releases"
+
+          ssh deployserver << SCRIPT
+            SNAP_DIR="${RELEASES_DIR}/${SNAPSHOT}"
+            if [ ! -d "\${SNAP_DIR}" ]; then
+              echo "ERROR: Snapshot '${SNAPSHOT}' not found"
+              ls -lt "${RELEASES_DIR}/" 2>/dev/null
+              exit 1
+            fi
+            TIMESTAMP=\$(date +%Y%m%d_%H%M%S)
+            mkdir -p "${RELEASES_DIR}/\${TIMESTAMP}_pre_rollback"
+            rsync -a --exclude='.releases' "${DEPLOY_PATH}/" "${RELEASES_DIR}/\${TIMESTAMP}_pre_rollback/"
+            rsync -a --delete --exclude='.releases' "\${SNAP_DIR}/" "${DEPLOY_PATH}/"
+            echo "Restored snapshot: ${SNAPSHOT}"
+          SCRIPT
+
+      - name: Cleanup
+        if: always()
+        run: rm -rf ~/.ssh/deploy_key
+
+  # ── Rollback by redeploying a Git commit ─────────────────────────────────
+  rollback-commit:
+    name: Redeploy Git Commit
+    runs-on: ubuntu-latest
+    if: github.event.inputs.mode == 'git-commit' && github.event.inputs.commit_sha != ''
+    steps:
+      - name: Trigger deploy workflow
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.actions.createWorkflowDispatch({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              workflow_id: 'deploy.yml',
+              ref: 'main',
+              inputs: {
+                rollback_commit: '${{ github.event.inputs.commit_sha }}'
+              }
+            });
