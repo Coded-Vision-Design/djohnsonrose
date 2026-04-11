@@ -3,7 +3,7 @@
     "build_output":  ".",
     "server":  "hostinger",
     "deploy_path":  "/home/u372385223/domains/johnson-rose.co.uk/public_html",
-    "keep_releases":  5,
+    "keep_releases": 1,
     "exclude_patterns":  [
                              ".git",
                              ".github",
