@@ -234,7 +234,7 @@ jobs:
             if [ -d "${DEPLOY_PATH}" ] && [ "\$(ls -A ${DEPLOY_PATH} 2>/dev/null | grep -v .releases | head -1)" ]; then
               SNAPSHOT="${RELEASES_DIR}/${TIMESTAMP}_${COMMIT_SHORT}_pre"
               mkdir -p "\${SNAPSHOT}"
-              rsync -a --exclude='.releases' "${DEPLOY_PATH}/" "\${SNAPSHOT}/"
+              rsync -a --exclude='.releases' --exclude='.git' --exclude='vendor' --exclude='node_modules' "${DEPLOY_PATH}/" "\${SNAPSHOT}/"
               echo "Snapshot saved: \${SNAPSHOT}"
             fi
             cd "${RELEASES_DIR}" 2>/dev/null && \
