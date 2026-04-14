@@ -5,6 +5,7 @@
     "deploy_path":  "/home/u372385223/domains/johnson-rose.co.uk/public_html",
     "keep_releases": 1,
     "exclude_patterns":  [
+        "vendor",
                              ".git",
                              ".github",
                              "node_modules",
