@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
+import { track } from '../lib/telemetry'
 
 export interface WinWindow {
   id: number
@@ -186,7 +187,10 @@ export const useOsStore = create<OsState>()(
       news: [],
 
       finishBoot: () => set({ isBooting: false }),
-      login: () => set({ loggedIn: true, isBooting: false }),
+      login: () => {
+        set({ loggedIn: true, isBooting: false })
+        track('Login', { version: 'react' })
+      },
       logout: () =>
         set({
           loggedIn: false,
@@ -247,6 +251,7 @@ export const useOsStore = create<OsState>()(
           nextWindowZ: state.nextWindowZ + 1,
         })
         get().logEvent('System', 'Information', `Starting application: ${w.title}`)
+        track('Open App', { app })
       },
 
       closeWindow: (id) => {

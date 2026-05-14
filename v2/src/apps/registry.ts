@@ -1,6 +1,5 @@
 import { lazy, type LazyExoticComponent, type FC } from 'react'
 
-const Placeholder = lazy(() => import('./placeholder/Placeholder'))
 const Calculator = lazy(() => import('./calculator/Calculator'))
 const Notepad = lazy(() => import('./notepad/Notepad'))
 const Photos = lazy(() => import('./photos/Photos'))
@@ -17,6 +16,13 @@ const VSCode = lazy(() => import('./vscode/VSCode'))
 const Database = lazy(() => import('./database/Database'))
 const Docker = lazy(() => import('./docker/Docker'))
 const FLStudio = lazy(() => import('./flstudio/FLStudio'))
+const PdfReader = lazy(() => import('./pdfreader/PdfReader'))
+const Video = lazy(() => import('./video/Video'))
+const Excel = lazy(() => import('./excel/Excel'))
+const PowerPoint = lazy(() => import('./powerpoint/PowerPoint'))
+const Putty = lazy(() => import('./putty/Putty'))
+const FileZilla = lazy(() => import('./filezilla/FileZilla'))
+const Photoshop = lazy(() => import('./photoshop/Photoshop'))
 
 export interface AppDef {
   id: string
@@ -39,14 +45,14 @@ export const apps: Record<string, AppDef> = {
   terminal: { id: 'terminal', title: 'Terminal', icon: `${IMG}terminal.webp`, defaultSize: { w: 720, h: 480 }, Component: Terminal },
   notepad: { id: 'notepad', title: 'Notepad', icon: `${IMG}notepad++.webp`, defaultSize: { w: 700, h: 500 }, Component: Notepad },
   word: { id: 'word', title: 'Word', icon: `${IMG}word.webp`, defaultSize: { w: 980, h: 720 }, Component: Word },
-  excel: { id: 'excel', title: 'Excel', icon: `${IMG}excel.webp`, defaultSize: { w: 980, h: 720 }, Component: Placeholder },
-  powerpoint: { id: 'powerpoint', title: 'PowerPoint', icon: `${IMG}powerpoint.webp`, defaultSize: { w: 980, h: 720 }, Component: Placeholder },
+  excel: { id: 'excel', title: 'Excel', icon: `${IMG}excel.webp`, defaultSize: { w: 980, h: 720 }, Component: Excel },
+  powerpoint: { id: 'powerpoint', title: 'PowerPoint', icon: `${IMG}powerpoint.webp`, defaultSize: { w: 980, h: 720 }, Component: PowerPoint },
   outlook: { id: 'outlook', title: 'Outlook', icon: `${IMG}outlook.webp`, defaultSize: { w: 720, h: 600 }, Component: Outlook },
-  photoshop: { id: 'photoshop', title: 'Photoshop', icon: `${IMG}photoshop.webp`, defaultSize: { w: 1100, h: 720 }, Component: Placeholder },
+  photoshop: { id: 'photoshop', title: 'Photoshop', icon: `${IMG}photoshop.webp`, defaultSize: { w: 1100, h: 720 }, Component: Photoshop },
   flstudio: { id: 'flstudio', title: 'FL Studio 24', icon: `${IMG}fl studio.webp`, defaultSize: { w: 1200, h: 720 }, Component: FLStudio },
   docker: { id: 'docker', title: 'Docker', icon: `${IMG}docker.webp`, defaultSize: { w: 1000, h: 700 }, Component: Docker },
-  putty: { id: 'putty', title: 'PuTTY', icon: `${IMG}putty.webp`, defaultSize: { w: 720, h: 480 }, Component: Placeholder },
-  filezilla: { id: 'filezilla', title: 'FileZilla', icon: `${IMG}filezilla.webp`, defaultSize: { w: 980, h: 640 }, Component: Placeholder },
+  putty: { id: 'putty', title: 'PuTTY', icon: `${IMG}putty.webp`, defaultSize: { w: 720, h: 480 }, Component: Putty },
+  filezilla: { id: 'filezilla', title: 'FileZilla', icon: `${IMG}filezilla.webp`, defaultSize: { w: 980, h: 640 }, Component: FileZilla },
   database: { id: 'database', title: 'SQL Server Management Studio', icon: `${IMG}mssql.webp`, defaultSize: { w: 1100, h: 720 }, Component: Database },
   settings: { id: 'settings', title: 'Settings', icon: `${IMG}settings.webp`, defaultSize: { w: 900, h: 640 }, Component: Settings },
   taskmanager: { id: 'taskmanager', title: 'Task Manager', icon: `${IMG}taskmanager.webp`, defaultSize: { w: 900, h: 640 }, Component: TaskManager },
@@ -54,8 +60,8 @@ export const apps: Record<string, AppDef> = {
   calculator: { id: 'calculator', title: 'Calculator', icon: `${IMG}calculator.webp`, defaultSize: { w: 320, h: 480 }, Component: Calculator },
   paint: { id: 'paint', title: 'Paint', icon: `${IMG}win11/paint.png`, defaultSize: { w: 900, h: 650 }, Component: Paint },
   photos: { id: 'photos', title: 'Photos', icon: `${IMG}win11/photos.png`, defaultSize: { w: 900, h: 640 }, Component: Photos },
-  video: { id: 'video', title: 'Movies & TV', icon: `${IMG}win11/video.png`, defaultSize: { w: 900, h: 600 }, Component: Placeholder },
-  pdfreader: { id: 'pdfreader', title: 'PDF Reader', icon: `${IMG}pdf.webp`, defaultSize: { w: 900, h: 720 }, Component: Placeholder },
+  video: { id: 'video', title: 'Movies & TV', icon: `${IMG}win11/video.png`, defaultSize: { w: 900, h: 600 }, Component: Video },
+  pdfreader: { id: 'pdfreader', title: 'PDF Reader', icon: `${IMG}pdf.webp`, defaultSize: { w: 900, h: 720 }, Component: PdfReader },
 }
 
 export function getApp(id: string): AppDef | undefined {

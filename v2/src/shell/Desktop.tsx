@@ -7,6 +7,7 @@ import { Taskbar } from './Taskbar'
 import { StartMenu } from './StartMenu'
 import { QuickSettings } from './QuickSettings'
 import { Widgets } from './Widgets'
+import { CookieBanner } from './CookieBanner'
 import { getApp } from '../apps/registry'
 import { useClock } from '../lib/useClock'
 import { useWeather } from '../lib/useWeather'
@@ -62,6 +63,7 @@ export function Desktop() {
       <StartMenu />
       <QuickSettings />
       <Taskbar />
+      <CookieBanner />
     </div>
   )
 }

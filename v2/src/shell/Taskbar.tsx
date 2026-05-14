@@ -146,6 +146,15 @@ export function Taskbar() {
           />
           <VolumeIcon className="w-4 h-4" />
         </button>
+        {/* Cross-version flip back to the PHP build */}
+        <a
+          href="/"
+          title="Switch to the original PHP (v1) build"
+          className="hidden md:flex items-center px-2 py-1 mr-1 rounded text-[10px] font-medium border border-win-blue/30 bg-win-blue/10 text-win-blue hover:bg-win-blue hover:text-white transition-colors"
+        >
+          🐘 PHP v1
+        </a>
+
         <button
           type="button"
           onClick={toggleWidgets}

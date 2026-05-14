@@ -10,7 +10,15 @@ RewriteEngine On
 RewriteCond %{HTTP_HOST} ^www\.(.*)$ [NC]
 RewriteRule ^(.*)$ https://%1/$1 [R=301,L]
 
-# Handle routing to index.php if file/dir doesn't exist
+# React v2: serve the SPA from /v2/. Real built files under v2/dist/
+# (assets/, index.html, favicon, etc.) are served directly. Anything else
+# under /v2/ falls back to v2/dist/index.html so React Router can handle it.
+RewriteCond %{DOCUMENT_ROOT}/v2/dist/$1 -f [OR]
+RewriteCond %{DOCUMENT_ROOT}/v2/dist/$1 -d
+RewriteRule ^v2/(.+)$ v2/dist/$1 [L]
+RewriteRule ^v2(/.*)?$ v2/dist/index.html [L]
+
+# v1 (PHP): handle routing to index.php if file/dir doesn't exist
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
 RewriteRule ^(.*)$ index.php [QSA,L]

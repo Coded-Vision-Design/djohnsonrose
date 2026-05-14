@@ -201,6 +201,13 @@
             </div>
         </button>
 
+        <!-- Switch to React v2 -->
+        <a href="/v2/"
+           title="Switch to the React (v2) build"
+           class="hidden md:flex items-center px-2 py-1 mr-1 rounded text-[10px] font-medium border border-win-blue/30 bg-win-blue/10 text-win-blue hover:bg-win-blue hover:text-white transition-colors">
+            ⚛ React v2
+        </a>
+
         <!-- Clock/Date -->
         <button class="px-2 py-1 rounded hover:bg-white/10 text-xs text-right leading-tight transition-colors" @click="startMenuOpen = false; quickSettingsOpen = false">
             <div x-text="clock.time"></div>

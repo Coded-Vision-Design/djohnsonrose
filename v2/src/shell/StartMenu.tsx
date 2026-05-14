@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useOsStore, TASKBAR_HEIGHT } from '../store/osStore'
-import { listApps, getApp, groupAppsByLetter, searchApps } from '../apps/registry'
+import { getApp, groupAppsByLetter, searchApps } from '../apps/registry'
 
 type View = 'pinned' | 'allApps'
 
@@ -273,4 +273,3 @@ export function StartMenu() {
   )
 }
 
-void listApps // re-export safeguard for tree-shake checks
