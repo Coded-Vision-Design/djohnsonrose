@@ -20,9 +20,11 @@ export function LockScreen() {
     >
       <div className="absolute inset-0 bg-black/40" />
       <div className="relative z-10 flex flex-col items-center gap-4">
-        <div className="w-24 h-24 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center text-3xl">
-          DJ
-        </div>
+        <img
+          src="/assets/img/profile.png"
+          alt="DeVanté Johnson-Rose"
+          className="w-24 h-24 rounded-full object-cover border-2 border-white/30 shadow-lg"
+        />
         <div className="text-xl font-medium">DeVanté Johnson-Rose</div>
         {signingIn ? (
           <>

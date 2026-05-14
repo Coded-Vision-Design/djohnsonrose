@@ -41,9 +41,11 @@ export function Widgets() {
             {clock.date}
           </span>
         </div>
-        <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-[10px] font-semibold">
-          DJ
-        </div>
+        <img
+          src="/assets/img/profile.png"
+          alt=""
+          className="w-8 h-8 rounded-full object-cover border border-white/20"
+        />
       </div>
 
       <div className="flex-grow overflow-y-auto px-6 pb-6 space-y-4">

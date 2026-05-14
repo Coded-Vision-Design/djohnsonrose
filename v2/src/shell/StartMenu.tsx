@@ -237,9 +237,11 @@ export function StartMenu() {
       {/* Profile / sign out */}
       <div className="h-16 bg-black/5 dark:bg-black/20 flex items-center justify-between px-8 border-t border-white/10 shrink-0">
         <div className="flex items-center space-x-3">
-          <div className="w-8 h-8 rounded-full bg-white/20 border border-white/20 flex items-center justify-center text-xs font-semibold">
-            DJ
-          </div>
+          <img
+            src="/assets/img/profile.png"
+            alt=""
+            className="w-8 h-8 rounded-full object-cover border border-white/20"
+          />
           <span className="text-xs font-medium dark:text-white">DeVanté Johnson-Rose</span>
         </div>
         <button
