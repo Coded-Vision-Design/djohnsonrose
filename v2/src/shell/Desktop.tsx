@@ -8,6 +8,7 @@ import { StartMenu } from './StartMenu'
 import { QuickSettings } from './QuickSettings'
 import { Widgets } from './Widgets'
 import { CookieBanner } from './CookieBanner'
+import { DesktopIcons } from './DesktopIcons'
 import { getApp } from '../apps/registry'
 import { useClock } from '../lib/useClock'
 import { useWeather } from '../lib/useWeather'
@@ -40,6 +41,7 @@ export function Desktop() {
       className="relative h-screen w-screen overflow-hidden bg-cover bg-center"
       style={{ backgroundImage: `url(${wallpaper})` }}
     >
+      <DesktopIcons />
       {windows.map((win) => {
         const def = getApp(win.app)
         const Component = def?.Component

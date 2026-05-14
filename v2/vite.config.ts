@@ -32,6 +32,15 @@ export default defineConfig({
         target: 'http://localhost:8765',
         changeOrigin: true,
       },
+      // Favicon + PWA manifest are shared at root with v1.
+      '/favicon.ico': {
+        target: 'http://localhost:8765',
+        changeOrigin: true,
+      },
+      '/manifest.json': {
+        target: 'http://localhost:8765',
+        changeOrigin: true,
+      },
     },
   },
 })

@@ -69,6 +69,20 @@ export interface NewsItem {
   pubDate?: string
 }
 
+export interface RecycledItem {
+  /** Original Desktop entry name — used as the unique key. */
+  name: string
+  /** Where it lived before being recycled — for restore-in-place. */
+  fromPath: string
+  /** Serialised representation of the entry (icon, type, etc.). */
+  payload: Record<string, unknown>
+}
+
+export interface IconPosition {
+  x: number
+  y: number
+}
+
 const TASKBAR_H = 48
 const MIN_W = 300
 const MIN_H = 200
@@ -107,6 +121,11 @@ interface OsState {
   weather: Weather
   news: NewsItem[]
 
+  // Recycle bin + desktop icon layout (both persisted)
+  recycleBin: RecycledItem[]
+  hiddenDesktop: string[]
+  iconPositions: Record<string, IconPosition>
+
   // Actions
   finishBoot: () => void
   login: () => void
@@ -141,13 +160,23 @@ interface OsState {
   setClock: (clock: Clock) => void
   setWeather: (weather: Partial<Weather>) => void
   setNews: (news: NewsItem[]) => void
+
+  // Recycle bin / icon positions
+  recycleItem: (name: string, fromPath: string, payload: Record<string, unknown>) => void
+  restoreFromRecycle: (name: string) => void
+  emptyRecycleBin: () => void
+  setIconPosition: (name: string, pos: IconPosition) => void
+  resetIconPositions: () => void
 }
 
-// Only `settings` and a couple of flags are persisted to localStorage.
+// Only `settings`, the auth flag, and filesystem-shaped state are persisted.
 // Window state intentionally lives only in memory — matches the PHP version.
 interface PersistedSlice {
   loggedIn: boolean
   settings: Settings
+  recycleBin: RecycledItem[]
+  hiddenDesktop: string[]
+  iconPositions: Record<string, IconPosition>
 }
 
 export const useOsStore = create<OsState>()(
@@ -186,12 +215,18 @@ export const useOsStore = create<OsState>()(
       weather: { temp: '--', condition: 'Loading...', icon: '☁️', city: 'London' },
       news: [],
 
+      recycleBin: [],
+      hiddenDesktop: [],
+      iconPositions: {},
+
       finishBoot: () => set({ isBooting: false }),
       login: () => {
         set({ loggedIn: true, isBooting: false })
+        get().logEvent('Security', 'Information', 'User DeVante logged in successfully')
         track('Login', { version: 'react' })
       },
-      logout: () =>
+      logout: () => {
+        get().logEvent('Security', 'Information', 'User DeVante logged out')
         set({
           loggedIn: false,
           windows: [],
@@ -199,7 +234,8 @@ export const useOsStore = create<OsState>()(
           startMenuOpen: false,
           quickSettingsOpen: false,
           widgetsOpen: false,
-        }),
+        })
+      },
 
       openApp: (app, title, options) => {
         const state = get()
@@ -371,6 +407,37 @@ export const useOsStore = create<OsState>()(
       setClock: (clock) => set({ clock }),
       setWeather: (partial) => set({ weather: { ...get().weather, ...partial } }),
       setNews: (news) => set({ news }),
+
+      recycleItem: (name, fromPath, payload) => {
+        const state = get()
+        if (state.recycleBin.some((r) => r.name === name)) return
+        set({
+          recycleBin: [...state.recycleBin, { name, fromPath, payload }],
+          hiddenDesktop: state.hiddenDesktop.includes(name)
+            ? state.hiddenDesktop
+            : [...state.hiddenDesktop, name],
+        })
+        state.logEvent('FileSystem', 'Information', `Recycled: ${name}`)
+      },
+
+      restoreFromRecycle: (name) => {
+        const state = get()
+        set({
+          recycleBin: state.recycleBin.filter((r) => r.name !== name),
+          hiddenDesktop: state.hiddenDesktop.filter((n) => n !== name),
+        })
+        state.logEvent('FileSystem', 'Information', `Restored from recycle bin: ${name}`)
+      },
+
+      emptyRecycleBin: () => {
+        get().logEvent('FileSystem', 'Warning', `Recycle bin emptied (${get().recycleBin.length} items)`)
+        set({ recycleBin: [] })
+      },
+
+      setIconPosition: (name, pos) =>
+        set({ iconPositions: { ...get().iconPositions, [name]: pos } }),
+
+      resetIconPositions: () => set({ iconPositions: {} }),
     }),
     {
       name: 'react.os',
@@ -378,6 +445,9 @@ export const useOsStore = create<OsState>()(
       partialize: (state): PersistedSlice => ({
         loggedIn: state.loggedIn,
         settings: state.settings,
+        recycleBin: state.recycleBin,
+        hiddenDesktop: state.hiddenDesktop,
+        iconPositions: state.iconPositions,
       }),
     },
   ),

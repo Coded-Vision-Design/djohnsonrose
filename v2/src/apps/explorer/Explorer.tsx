@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import { useOsStore } from '../../store/osStore'
+import { useWindowExtras } from '../../windowing/WindowContext'
 import {
   filesystem,
   listAt,
@@ -11,9 +12,11 @@ import {
 } from '../../data/filesystem'
 
 const HOME = 'C:\\Users\\DeVante'
+const RECYCLE_BIN_PATH = 'C:\\Recycle Bin'
 
 export default function Explorer() {
-  const [history, setHistory] = useState<string[]>([HOME])
+  const { initialPath } = useWindowExtras<{ initialPath?: string }>()
+  const [history, setHistory] = useState<string[]>([initialPath ?? HOME])
   const [step, setStep] = useState(0)
   const [selected, setSelected] = useState<string | null>(null)
   const [query, setQuery] = useState('')
@@ -21,9 +24,28 @@ export default function Explorer() {
   const [addressInput, setAddressInput] = useState('')
 
   const openApp = useOsStore((s) => s.openApp)
+  const recycleBin = useOsStore((s) => s.recycleBin)
+  const hiddenDesktop = useOsStore((s) => s.hiddenDesktop)
+  const restoreFromRecycle = useOsStore((s) => s.restoreFromRecycle)
+  const emptyRecycleBin = useOsStore((s) => s.emptyRecycleBin)
 
   const cwd = history[step]
-  const entries = listAt(cwd)
+  const isRecycleBin = cwd === RECYCLE_BIN_PATH
+
+  // Recycled items are stored separately — surface them when navigating to
+  // C:\Recycle Bin. Otherwise list from the static catalogue, filtering out
+  // anything that has been recycled.
+  const entries = useMemo(() => {
+    if (isRecycleBin) {
+      return recycleBin.map((r) => r.payload as unknown as FsEntry)
+    }
+    const raw = listAt(cwd)
+    if (cwd === 'C:\\Users\\DeVante\\Desktop') {
+      return raw.filter((e) => !hiddenDesktop.includes(e.name))
+    }
+    return raw
+  }, [cwd, isRecycleBin, recycleBin, hiddenDesktop])
+
   const visible = useMemo(() => {
     if (!query) return entries
     return entries.filter((e) => e.name.toLowerCase().includes(query.toLowerCase()))
@@ -35,7 +57,9 @@ export default function Explorer() {
   )
 
   const navigateTo = (path: string) => {
-    if (!filesystem[path]) return // don't navigate to non-existent folders
+    // The recycle bin is a virtual path — let it through even though it isn't
+    // in the static filesystem map.
+    if (path !== RECYCLE_BIN_PATH && !filesystem[path]) return
     setHistory((h) => [...h.slice(0, step + 1), path])
     setStep((s) => s + 1)
     setSelected(null)
@@ -180,6 +204,17 @@ export default function Explorer() {
           placeholder="Search"
           className="w-48 bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded px-3 py-1 h-8 text-xs outline-none focus:border-win-blue"
         />
+
+        {isRecycleBin && (
+          <button
+            type="button"
+            onClick={emptyRecycleBin}
+            disabled={recycleBin.length === 0}
+            className="ml-2 px-3 py-1 h-8 rounded text-xs bg-red-500 text-white hover:bg-red-600 disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            🗑 Empty
+          </button>
+        )}
       </div>
 
       <div className="flex-grow flex min-h-0">
@@ -215,7 +250,9 @@ export default function Explorer() {
             <div className="h-full flex items-center justify-center opacity-40 text-xs">
               {query
                 ? `No matches in this folder. Try elsewhere or clear the search.`
-                : 'This folder is empty.'}
+                : isRecycleBin
+                  ? 'Recycle bin is empty.'
+                  : 'This folder is empty.'}
             </div>
           ) : (
             <div className="p-3 grid grid-cols-[repeat(auto-fill,minmax(140px,1fr))] gap-2">
@@ -225,7 +262,10 @@ export default function Explorer() {
                   entry={entry}
                   selected={selected === entry.name}
                   onSelect={() => setSelected(entry.name)}
-                  onActivate={() => openEntry(entry)}
+                  onActivate={() =>
+                    isRecycleBin ? restoreFromRecycle(entry.name) : openEntry(entry)
+                  }
+                  isRecycleBin={isRecycleBin}
                 />
               ))}
             </div>
@@ -247,11 +287,13 @@ function FileTile({
   selected,
   onSelect,
   onActivate,
+  isRecycleBin,
 }: {
   entry: FsEntry
   selected: boolean
   onSelect: () => void
   onActivate: () => void
+  isRecycleBin?: boolean
 }) {
   const renderIcon = () =>
     entry.icon.includes('.') || entry.icon.startsWith('/') ? (
@@ -270,9 +312,16 @@ function FileTile({
           ? 'bg-win-blue/15 ring-1 ring-win-blue/40'
           : 'hover:bg-black/5 dark:hover:bg-white/5'
       }`}
-      title={entry.name}
+      title={isRecycleBin ? `Double-click to restore: ${entry.name}` : entry.name}
     >
-      <div className="w-10 h-10 flex items-center justify-center mb-1">{renderIcon()}</div>
+      <div className="w-10 h-10 flex items-center justify-center mb-1 relative">
+        {renderIcon()}
+        {isRecycleBin && (
+          <span className="absolute -bottom-1 -right-1 text-[10px]" title="Recycled">
+            🗑
+          </span>
+        )}
+      </div>
       <span className="text-[11px] truncate w-full">{entry.name}</span>
     </button>
   )
