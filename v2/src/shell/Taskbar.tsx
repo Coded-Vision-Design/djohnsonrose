@@ -1,3 +1,4 @@
+import { useMemo } from 'react'
 import { useOsStore, TASKBAR_HEIGHT } from '../store/osStore'
 import { getApp } from '../apps/registry'
 import { playSound } from '../lib/sounds'
@@ -54,10 +55,17 @@ function AppButton({ appId }: { appId: string }) {
 }
 
 export function Taskbar() {
+  // Select only stable primitives/references from the store; deriving the
+  // open-app list inline in the selector breaks React's getSnapshot caching
+  // and triggers an infinite re-render loop.
   const pinned = useOsStore((s) => s.pinnedApps)
-  const openAppIds = useOsStore((s) =>
-    Array.from(new Set([...s.pinnedApps, ...s.windows.map((w) => w.app)])),
-  )
+  const windows = useOsStore((s) => s.windows)
+  const openAppIds = useMemo(() => {
+    const ids = new Set<string>(pinned)
+    for (const w of windows) ids.add(w.app)
+    return Array.from(ids)
+  }, [pinned, windows])
+
   const startMenuOpen = useOsStore((s) => s.startMenuOpen)
   const quickSettingsOpen = useOsStore((s) => s.quickSettingsOpen)
   const toggleStartMenu = useOsStore((s) => s.toggleStartMenu)
@@ -67,7 +75,6 @@ export function Taskbar() {
   const weather = useOsStore((s) => s.weather)
   const clock = useOsStore((s) => s.clock)
   const settingsWifi = useOsStore((s) => s.settings.wifi)
-  void pinned // referenced via openAppIds
 
   return (
     <div
