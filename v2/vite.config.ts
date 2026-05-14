@@ -15,6 +15,12 @@ export default defineConfig({
         target: 'http://localhost:8765',
         changeOrigin: true,
       },
+      // Share sounds/images/wallpapers with the PHP version in dev.
+      // In production Apache serves these from /assets/ directly.
+      '/assets': {
+        target: 'http://localhost:8765',
+        changeOrigin: true,
+      },
     },
   },
 })
