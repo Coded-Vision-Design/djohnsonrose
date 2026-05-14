@@ -1,11 +1,13 @@
 import { useMemo, useRef, useState } from 'react'
 import { useOsStore } from '../../store/osStore'
+import { useWindowExtras } from '../../windowing/WindowContext'
 
-// Phase 2 notepad: a focused textarea + menu bar + status line. The v1
-// File > Open/Save dialog is deferred until the mock filesystem lands with
-// Explorer in Phase 4 — at which point New/Open/Save here will wire through.
+// Notepad: a focused textarea + menu bar + status line. When opened from
+// Explorer via a text file the file's `content` is passed through window
+// extras so we seed the editor with it.
 export default function Notepad() {
-  const [content, setContent] = useState('')
+  const extras = useWindowExtras<{ content?: string }>()
+  const [content, setContent] = useState(extras.content ?? '')
   const [showFileMenu, setShowFileMenu] = useState(false)
   const closeWindow = useOsStore((s) => s.closeWindow)
   const focusedId = useOsStore((s) => s.focusedWindowId)

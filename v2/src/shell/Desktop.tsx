@@ -1,6 +1,7 @@
 import { Suspense } from 'react'
 import { useOsStore } from '../store/osStore'
 import { Window } from '../windowing/Window'
+import { WindowContextProvider } from '../windowing/WindowContext'
 import { SnapPreview } from './SnapPreview'
 import { Taskbar } from './Taskbar'
 import { StartMenu } from './StartMenu'
@@ -44,9 +45,11 @@ export function Desktop() {
         return (
           <Window key={win.id} win={win}>
             {Component ? (
-              <Suspense fallback={<WindowLoader />}>
-                <Component />
-              </Suspense>
+              <WindowContextProvider value={win}>
+                <Suspense fallback={<WindowLoader />}>
+                  <Component />
+                </Suspense>
+              </WindowContextProvider>
             ) : (
               <div className="p-6 text-sm opacity-60">App not found: {win.app}</div>
             )}

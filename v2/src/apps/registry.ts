@@ -12,6 +12,11 @@ const Word = lazy(() => import('./word/Word'))
 const Edge = lazy(() => import('./edge/Edge'))
 const Outlook = lazy(() => import('./outlook/Outlook'))
 const Paint = lazy(() => import('./paint/Paint'))
+const Explorer = lazy(() => import('./explorer/Explorer'))
+const VSCode = lazy(() => import('./vscode/VSCode'))
+const Database = lazy(() => import('./database/Database'))
+const Docker = lazy(() => import('./docker/Docker'))
+const FLStudio = lazy(() => import('./flstudio/FLStudio'))
 
 export interface AppDef {
   id: string
@@ -29,8 +34,8 @@ const IMG = '/assets/img/'
 
 export const apps: Record<string, AppDef> = {
   edge: { id: 'edge', title: 'Chrome', icon: `${IMG}chrome.webp`, defaultSize: { w: 1024, h: 720 }, Component: Edge },
-  vscode: { id: 'vscode', title: 'VS Code', icon: `${IMG}vscode.webp`, defaultSize: { w: 1100, h: 720 }, Component: Placeholder },
-  explorer: { id: 'explorer', title: 'File Explorer', icon: `${IMG}explorer.webp`, defaultSize: { w: 900, h: 600 }, Component: Placeholder },
+  vscode: { id: 'vscode', title: 'VS Code', icon: `${IMG}vscode.webp`, defaultSize: { w: 1100, h: 720 }, Component: VSCode },
+  explorer: { id: 'explorer', title: 'File Explorer', icon: `${IMG}explorer.webp`, defaultSize: { w: 900, h: 600 }, Component: Explorer },
   terminal: { id: 'terminal', title: 'Terminal', icon: `${IMG}terminal.webp`, defaultSize: { w: 720, h: 480 }, Component: Terminal },
   notepad: { id: 'notepad', title: 'Notepad', icon: `${IMG}notepad++.webp`, defaultSize: { w: 700, h: 500 }, Component: Notepad },
   word: { id: 'word', title: 'Word', icon: `${IMG}word.webp`, defaultSize: { w: 980, h: 720 }, Component: Word },
@@ -38,11 +43,11 @@ export const apps: Record<string, AppDef> = {
   powerpoint: { id: 'powerpoint', title: 'PowerPoint', icon: `${IMG}powerpoint.webp`, defaultSize: { w: 980, h: 720 }, Component: Placeholder },
   outlook: { id: 'outlook', title: 'Outlook', icon: `${IMG}outlook.webp`, defaultSize: { w: 720, h: 600 }, Component: Outlook },
   photoshop: { id: 'photoshop', title: 'Photoshop', icon: `${IMG}photoshop.webp`, defaultSize: { w: 1100, h: 720 }, Component: Placeholder },
-  flstudio: { id: 'flstudio', title: 'FL Studio 24', icon: `${IMG}fl studio.webp`, defaultSize: { w: 1200, h: 720 }, Component: Placeholder },
-  docker: { id: 'docker', title: 'Docker', icon: `${IMG}docker.webp`, defaultSize: { w: 1000, h: 700 }, Component: Placeholder },
+  flstudio: { id: 'flstudio', title: 'FL Studio 24', icon: `${IMG}fl studio.webp`, defaultSize: { w: 1200, h: 720 }, Component: FLStudio },
+  docker: { id: 'docker', title: 'Docker', icon: `${IMG}docker.webp`, defaultSize: { w: 1000, h: 700 }, Component: Docker },
   putty: { id: 'putty', title: 'PuTTY', icon: `${IMG}putty.webp`, defaultSize: { w: 720, h: 480 }, Component: Placeholder },
   filezilla: { id: 'filezilla', title: 'FileZilla', icon: `${IMG}filezilla.webp`, defaultSize: { w: 980, h: 640 }, Component: Placeholder },
-  database: { id: 'database', title: 'SQL Server Management Studio', icon: `${IMG}mssql.webp`, defaultSize: { w: 1100, h: 720 }, Component: Placeholder },
+  database: { id: 'database', title: 'SQL Server Management Studio', icon: `${IMG}mssql.webp`, defaultSize: { w: 1100, h: 720 }, Component: Database },
   settings: { id: 'settings', title: 'Settings', icon: `${IMG}settings.webp`, defaultSize: { w: 900, h: 640 }, Component: Settings },
   taskmanager: { id: 'taskmanager', title: 'Task Manager', icon: `${IMG}taskmanager.webp`, defaultSize: { w: 900, h: 640 }, Component: TaskManager },
   eventviewer: { id: 'eventviewer', title: 'Event Viewer', icon: `${IMG}eventviewer.webp`, defaultSize: { w: 980, h: 640 }, Component: EventViewer },

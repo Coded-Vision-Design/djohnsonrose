@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useWindowExtras } from '../../windowing/WindowContext'
 
 interface PortfolioItem {
   id: number
@@ -29,7 +30,10 @@ const newTab = (url = HOME_URL): Tab => ({
 })
 
 export default function Edge() {
-  const [tabs, setTabs] = useState<Tab[]>(() => [newTab()])
+  const extras = useWindowExtras<{ initialUrl?: string }>()
+  const [tabs, setTabs] = useState<Tab[]>(() => [
+    newTab(extras.initialUrl ?? HOME_URL),
+  ])
   const [activeId, setActiveId] = useState<number>(tabs[0].id)
   const [projects, setProjects] = useState<PortfolioItem[]>([])
 

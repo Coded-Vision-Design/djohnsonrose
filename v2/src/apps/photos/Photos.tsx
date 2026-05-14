@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useOsStore } from '../../store/osStore'
+import { useWindowExtras } from '../../windowing/WindowContext'
 
 interface PortfolioItem {
   id: number
@@ -20,6 +21,7 @@ interface PortfolioJson {
 // v1). Filmstrip + arrow-key navigation + zoom + rotate. The v1 dependency
 // on the mock filesystem is dropped — Phase 4 can wire that back in.
 export default function Photos() {
+  const extras = useWindowExtras<{ imageUrl?: string }>()
   const [items, setItems] = useState<PortfolioItem[]>([])
   const [index, setIndex] = useState(0)
   const [zoom, setZoom] = useState(1)
@@ -31,6 +33,21 @@ export default function Photos() {
   const isFocused = focusedApp === 'photos'
 
   useEffect(() => {
+    // When Explorer launches us with a single image URL, skip the gallery
+    // load and render that image solo.
+    if (extras.imageUrl) {
+      setItems([
+        {
+          id: 0,
+          title: 'Image',
+          description: '',
+          tags: [],
+          url: '',
+          thumbnail: extras.imageUrl.replace(/^\//, ''),
+        },
+      ])
+      return
+    }
     let cancelled = false
     fetch('/data/portfolio.json')
       .then((r) => r.json() as Promise<PortfolioJson>)
@@ -43,7 +60,7 @@ export default function Photos() {
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [extras.imageUrl])
 
   const current = items[index]
 
