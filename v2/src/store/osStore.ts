@@ -48,6 +48,26 @@ export interface EventLog {
   description: string
 }
 
+export interface Clock {
+  time: string
+  date: string
+}
+
+export interface Weather {
+  temp: number | '--'
+  city: string
+  condition: string
+  icon: string
+}
+
+export interface NewsItem {
+  id?: string | number
+  title: string
+  link: string
+  description: string
+  pubDate?: string
+}
+
 const TASKBAR_H = 48
 const MIN_W = 300
 const MIN_H = 200
@@ -75,6 +95,17 @@ interface OsState {
   // Logs (in-memory, capped)
   eventLogs: EventLog[]
 
+  // Chrome state (taskbar / start menu / quick settings / widgets panel)
+  startMenuOpen: boolean
+  quickSettingsOpen: boolean
+  widgetsOpen: boolean
+  pinnedApps: string[]
+
+  // Live ambient state
+  clock: Clock
+  weather: Weather
+  news: NewsItem[]
+
   // Actions
   finishBoot: () => void
   login: () => void
@@ -93,6 +124,18 @@ interface OsState {
   updateSetting: <K extends keyof Settings>(key: K, value: Settings[K]) => void
 
   logEvent: (source: string, level: EventLog['level'], description: string) => void
+
+  // Chrome toggles
+  toggleStartMenu: () => void
+  toggleQuickSettings: () => void
+  toggleWidgets: () => void
+  closeAllPopups: () => void
+  minimizeAll: () => void
+
+  // Ambient setters
+  setClock: (clock: Clock) => void
+  setWeather: (weather: Partial<Weather>) => void
+  setNews: (news: NewsItem[]) => void
 }
 
 // Only `settings` and a couple of flags are persisted to localStorage.
@@ -129,12 +172,33 @@ export const useOsStore = create<OsState>()(
 
       eventLogs: [],
 
+      startMenuOpen: false,
+      quickSettingsOpen: false,
+      widgetsOpen: false,
+      pinnedApps: ['edge', 'explorer', 'outlook', 'vscode', 'flstudio'],
+
+      clock: { time: '', date: '' },
+      weather: { temp: '--', condition: 'Loading...', icon: '☁️', city: 'London' },
+      news: [],
+
       finishBoot: () => set({ isBooting: false }),
       login: () => set({ loggedIn: true, isBooting: false }),
-      logout: () => set({ loggedIn: false, windows: [], focusedWindowId: null }),
+      logout: () =>
+        set({
+          loggedIn: false,
+          windows: [],
+          focusedWindowId: null,
+          startMenuOpen: false,
+          quickSettingsOpen: false,
+          widgetsOpen: false,
+        }),
 
       openApp: (app, title, extra) => {
         const state = get()
+        // Launching an app always closes start/quick-settings/widgets popups.
+        if (state.startMenuOpen || state.quickSettingsOpen || state.widgetsOpen) {
+          set({ startMenuOpen: false, quickSettingsOpen: false, widgetsOpen: false })
+        }
         // If already open, focus + restore.
         const existing = state.windows.find((w) => w.app === app)
         if (existing) {
@@ -271,6 +335,32 @@ export const useOsStore = create<OsState>()(
         if (next.length > 100) next.pop()
         set({ eventLogs: next })
       },
+
+      // Chrome toggles: only one of start/quickSettings/widgets is ever open.
+      toggleStartMenu: () => {
+        const open = !get().startMenuOpen
+        set({ startMenuOpen: open, quickSettingsOpen: false, widgetsOpen: false })
+      },
+      toggleQuickSettings: () => {
+        const open = !get().quickSettingsOpen
+        set({ quickSettingsOpen: open, startMenuOpen: false, widgetsOpen: false })
+      },
+      toggleWidgets: () => {
+        const open = !get().widgetsOpen
+        set({ widgetsOpen: open, startMenuOpen: false, quickSettingsOpen: false })
+      },
+      closeAllPopups: () =>
+        set({ startMenuOpen: false, quickSettingsOpen: false, widgetsOpen: false }),
+
+      minimizeAll: () => {
+        set({
+          windows: get().windows.map((w) => ({ ...w, minimized: true })),
+        })
+      },
+
+      setClock: (clock) => set({ clock }),
+      setWeather: (partial) => set({ weather: { ...get().weather, ...partial } }),
+      setNews: (news) => set({ news }),
     }),
     {
       name: 'react.os',

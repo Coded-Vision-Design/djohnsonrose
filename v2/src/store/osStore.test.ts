@@ -13,6 +13,12 @@ const reset = () => {
     nextWindowZ: 100,
     snapPreview: { show: false, x: 0, y: 0, w: 0, h: 0 },
     eventLogs: [],
+    startMenuOpen: false,
+    quickSettingsOpen: false,
+    widgetsOpen: false,
+    clock: { time: '', date: '' },
+    weather: { temp: '--', condition: 'Loading...', icon: '☁️', city: 'London' },
+    news: [],
   })
 }
 
@@ -219,6 +225,114 @@ describe('osStore', () => {
     it('setSnapPreview swaps state shape wholesale', () => {
       useOsStore.getState().setSnapPreview({ show: true, x: 1, y: 2, w: 3, h: 4 })
       expect(useOsStore.getState().snapPreview).toEqual({ show: true, x: 1, y: 2, w: 3, h: 4 })
+    })
+  })
+
+  describe('chrome popups', () => {
+    it('toggleStartMenu opens it and closes the other two', () => {
+      useOsStore.setState({
+        quickSettingsOpen: true,
+        widgetsOpen: true,
+      })
+      useOsStore.getState().toggleStartMenu()
+      const s = useOsStore.getState()
+      expect(s.startMenuOpen).toBe(true)
+      expect(s.quickSettingsOpen).toBe(false)
+      expect(s.widgetsOpen).toBe(false)
+    })
+
+    it('toggleQuickSettings opens it and closes the other two', () => {
+      useOsStore.setState({ startMenuOpen: true })
+      useOsStore.getState().toggleQuickSettings()
+      const s = useOsStore.getState()
+      expect(s.quickSettingsOpen).toBe(true)
+      expect(s.startMenuOpen).toBe(false)
+    })
+
+    it('toggleWidgets opens it and closes the other two', () => {
+      useOsStore.setState({ startMenuOpen: true, quickSettingsOpen: true })
+      useOsStore.getState().toggleWidgets()
+      const s = useOsStore.getState()
+      expect(s.widgetsOpen).toBe(true)
+      expect(s.startMenuOpen).toBe(false)
+      expect(s.quickSettingsOpen).toBe(false)
+    })
+
+    it('toggleStartMenu a second time closes it', () => {
+      const { toggleStartMenu } = useOsStore.getState()
+      toggleStartMenu()
+      expect(useOsStore.getState().startMenuOpen).toBe(true)
+      toggleStartMenu()
+      expect(useOsStore.getState().startMenuOpen).toBe(false)
+    })
+
+    it('closeAllPopups closes all three', () => {
+      useOsStore.setState({
+        startMenuOpen: true,
+        quickSettingsOpen: true,
+        widgetsOpen: true,
+      })
+      useOsStore.getState().closeAllPopups()
+      const s = useOsStore.getState()
+      expect(s.startMenuOpen).toBe(false)
+      expect(s.quickSettingsOpen).toBe(false)
+      expect(s.widgetsOpen).toBe(false)
+    })
+
+    it('openApp closes any open popup', () => {
+      useOsStore.setState({ startMenuOpen: true })
+      useOsStore.getState().openApp('paint')
+      expect(useOsStore.getState().startMenuOpen).toBe(false)
+    })
+
+    it('logout closes all popups', () => {
+      useOsStore.setState({
+        loggedIn: true,
+        startMenuOpen: true,
+        widgetsOpen: true,
+      })
+      useOsStore.getState().logout()
+      const s = useOsStore.getState()
+      expect(s.startMenuOpen).toBe(false)
+      expect(s.widgetsOpen).toBe(false)
+      expect(s.loggedIn).toBe(false)
+    })
+  })
+
+  describe('minimizeAll', () => {
+    it('marks every window minimized', () => {
+      const { openApp, minimizeAll } = useOsStore.getState()
+      openApp('paint')
+      openApp('calculator')
+      openApp('notepad')
+      minimizeAll()
+      const allMin = useOsStore.getState().windows.every((w) => w.minimized)
+      expect(allMin).toBe(true)
+    })
+  })
+
+  describe('ambient setters', () => {
+    it('setClock replaces clock state', () => {
+      useOsStore.getState().setClock({ time: '12:34', date: '14/05/2026' })
+      expect(useOsStore.getState().clock).toEqual({ time: '12:34', date: '14/05/2026' })
+    })
+
+    it('setWeather merges partial fields', () => {
+      useOsStore.getState().setWeather({ temp: 18, condition: 'Sunny', icon: '☀️' })
+      const w = useOsStore.getState().weather
+      expect(w.temp).toBe(18)
+      expect(w.city).toBe('London') // preserved
+      expect(w.icon).toBe('☀️')
+    })
+
+    it('setNews replaces the array', () => {
+      useOsStore
+        .getState()
+        .setNews([
+          { title: 'A', link: 'http://a', description: '' },
+          { title: 'B', link: 'http://b', description: '' },
+        ])
+      expect(useOsStore.getState().news).toHaveLength(2)
     })
   })
 })
