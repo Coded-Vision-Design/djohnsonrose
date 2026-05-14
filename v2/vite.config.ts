@@ -21,6 +21,17 @@ export default defineConfig({
         target: 'http://localhost:8765',
         changeOrigin: true,
       },
+      // Static data files (projects.json, portfolio.json, cv.pdf, etc.)
+      // shared with the PHP version.
+      '/data': {
+        target: 'http://localhost:8765',
+        changeOrigin: true,
+      },
+      // Portfolio thumbnails live at /portfolio/*.webp on the PHP side.
+      '/portfolio': {
+        target: 'http://localhost:8765',
+        changeOrigin: true,
+      },
     },
   },
 })

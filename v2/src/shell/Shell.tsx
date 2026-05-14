@@ -3,6 +3,7 @@ import { useOsStore } from '../store/osStore'
 import { BootScreen } from './BootScreen'
 import { LockScreen } from './LockScreen'
 import { Desktop } from './Desktop'
+import { getApp } from '../apps/registry'
 
 interface ShellProps {
   // If passed, opens this app once boot+login complete (for /app/:name routes).
@@ -23,7 +24,16 @@ export function Shell({ initialApp }: ShellProps) {
   // Deep link: open the requested app once we land on the desktop.
   useEffect(() => {
     if (loggedIn && initialApp) {
-      const t = window.setTimeout(() => openApp(initialApp), 100)
+      const def = getApp(initialApp)
+      const t = window.setTimeout(
+        () =>
+          openApp(
+            initialApp,
+            def?.title,
+            def ? { size: { w: def.defaultSize.w, h: def.defaultSize.h } } : undefined,
+          ),
+        100,
+      )
       return () => window.clearTimeout(t)
     }
   }, [loggedIn, initialApp, openApp])

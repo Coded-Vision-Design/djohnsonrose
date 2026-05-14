@@ -71,7 +71,11 @@ export function StartMenu() {
 
   const launch = (id: string) => {
     const def = getApp(id)
-    openApp(id, def?.title)
+    openApp(
+      id,
+      def?.title,
+      def ? { size: { w: def.defaultSize.w, h: def.defaultSize.h } } : undefined,
+    )
   }
 
   return (

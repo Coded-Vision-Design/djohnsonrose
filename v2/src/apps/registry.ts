@@ -1,6 +1,11 @@
 import { lazy, type LazyExoticComponent, type FC } from 'react'
 
 const Placeholder = lazy(() => import('./placeholder/Placeholder'))
+const Calculator = lazy(() => import('./calculator/Calculator'))
+const Notepad = lazy(() => import('./notepad/Notepad'))
+const Photos = lazy(() => import('./photos/Photos'))
+const EventViewer = lazy(() => import('./eventviewer/EventViewer'))
+const TaskManager = lazy(() => import('./taskmanager/TaskManager'))
 
 export interface AppDef {
   id: string
@@ -21,7 +26,7 @@ export const apps: Record<string, AppDef> = {
   vscode: { id: 'vscode', title: 'VS Code', icon: `${IMG}vscode.webp`, defaultSize: { w: 1100, h: 720 }, Component: Placeholder },
   explorer: { id: 'explorer', title: 'File Explorer', icon: `${IMG}explorer.webp`, defaultSize: { w: 900, h: 600 }, Component: Placeholder },
   terminal: { id: 'terminal', title: 'Terminal', icon: `${IMG}terminal.webp`, defaultSize: { w: 720, h: 480 }, Component: Placeholder },
-  notepad: { id: 'notepad', title: 'Notepad', icon: `${IMG}notepad++.webp`, defaultSize: { w: 700, h: 500 }, Component: Placeholder },
+  notepad: { id: 'notepad', title: 'Notepad', icon: `${IMG}notepad++.webp`, defaultSize: { w: 700, h: 500 }, Component: Notepad },
   word: { id: 'word', title: 'Word', icon: `${IMG}word.webp`, defaultSize: { w: 980, h: 720 }, Component: Placeholder },
   excel: { id: 'excel', title: 'Excel', icon: `${IMG}excel.webp`, defaultSize: { w: 980, h: 720 }, Component: Placeholder },
   powerpoint: { id: 'powerpoint', title: 'PowerPoint', icon: `${IMG}powerpoint.webp`, defaultSize: { w: 980, h: 720 }, Component: Placeholder },
@@ -33,11 +38,11 @@ export const apps: Record<string, AppDef> = {
   filezilla: { id: 'filezilla', title: 'FileZilla', icon: `${IMG}filezilla.webp`, defaultSize: { w: 980, h: 640 }, Component: Placeholder },
   database: { id: 'database', title: 'SQL Server Management Studio', icon: `${IMG}mssql.webp`, defaultSize: { w: 1100, h: 720 }, Component: Placeholder },
   settings: { id: 'settings', title: 'Settings', icon: `${IMG}settings.webp`, defaultSize: { w: 900, h: 640 }, Component: Placeholder },
-  taskmanager: { id: 'taskmanager', title: 'Task Manager', icon: `${IMG}taskmanager.webp`, defaultSize: { w: 900, h: 640 }, Component: Placeholder },
-  eventviewer: { id: 'eventviewer', title: 'Event Viewer', icon: `${IMG}eventviewer.webp`, defaultSize: { w: 980, h: 640 }, Component: Placeholder },
-  calculator: { id: 'calculator', title: 'Calculator', icon: `${IMG}calculator.webp`, defaultSize: { w: 320, h: 480 }, Component: Placeholder },
+  taskmanager: { id: 'taskmanager', title: 'Task Manager', icon: `${IMG}taskmanager.webp`, defaultSize: { w: 900, h: 640 }, Component: TaskManager },
+  eventviewer: { id: 'eventviewer', title: 'Event Viewer', icon: `${IMG}eventviewer.webp`, defaultSize: { w: 980, h: 640 }, Component: EventViewer },
+  calculator: { id: 'calculator', title: 'Calculator', icon: `${IMG}calculator.webp`, defaultSize: { w: 320, h: 480 }, Component: Calculator },
   paint: { id: 'paint', title: 'Paint', icon: `${IMG}win11/paint.png`, defaultSize: { w: 900, h: 650 }, Component: Placeholder },
-  photos: { id: 'photos', title: 'Photos', icon: `${IMG}win11/photos.png`, defaultSize: { w: 900, h: 640 }, Component: Placeholder },
+  photos: { id: 'photos', title: 'Photos', icon: `${IMG}win11/photos.png`, defaultSize: { w: 900, h: 640 }, Component: Photos },
   video: { id: 'video', title: 'Movies & TV', icon: `${IMG}win11/video.png`, defaultSize: { w: 900, h: 600 }, Component: Placeholder },
   pdfreader: { id: 'pdfreader', title: 'PDF Reader', icon: `${IMG}pdf.webp`, defaultSize: { w: 900, h: 720 }, Component: Placeholder },
 }

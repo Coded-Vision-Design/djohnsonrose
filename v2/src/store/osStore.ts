@@ -111,7 +111,11 @@ interface OsState {
   login: () => void
   logout: () => void
 
-  openApp: (app: string, title?: string, extra?: Record<string, unknown>) => void
+  openApp: (
+    app: string,
+    title?: string,
+    options?: { size?: { w: number; h: number }; extra?: Record<string, unknown> },
+  ) => void
   closeWindow: (id: number) => void
   focusWindow: (id: number) => void
   toggleMinimize: (id: number) => void
@@ -193,7 +197,7 @@ export const useOsStore = create<OsState>()(
           widgetsOpen: false,
         }),
 
-      openApp: (app, title, extra) => {
+      openApp: (app, title, options) => {
         const state = get()
         // Launching an app always closes start/quick-settings/widgets popups.
         if (state.startMenuOpen || state.quickSettingsOpen || state.widgetsOpen) {
@@ -212,8 +216,9 @@ export const useOsStore = create<OsState>()(
 
         const id = nextWindowId()
         const isSmallScreen = window.innerWidth < 1024
-        let width = isSmallScreen ? window.innerWidth : 800
-        let height = isSmallScreen ? window.innerHeight - TASKBAR_H : 600
+        const requested = options?.size
+        let width = isSmallScreen ? window.innerWidth : (requested?.w ?? 800)
+        let height = isSmallScreen ? window.innerHeight - TASKBAR_H : (requested?.h ?? 600)
         width = Math.min(width, window.innerWidth)
         height = Math.min(height, window.innerHeight - TASKBAR_H)
 
@@ -233,7 +238,7 @@ export const useOsStore = create<OsState>()(
           minimized: false,
           maximized: isSmallScreen,
           loading: false,
-          extra,
+          extra: options?.extra,
         }
 
         set({

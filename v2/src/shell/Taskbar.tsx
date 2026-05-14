@@ -28,7 +28,7 @@ function AppButton({ appId }: { appId: string }) {
     if (isOpen && isFocused) {
       toggleMinimize(windowForApp.id)
     } else {
-      openApp(appId, def.title)
+      openApp(appId, def.title, { size: { w: def.defaultSize.w, h: def.defaultSize.h } })
     }
   }
 
