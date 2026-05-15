@@ -114,6 +114,7 @@ export function Taskbar() {
       <div className="flex items-center w-48 overflow-hidden">
         <button
           type="button"
+          data-popup-toggle="widgets"
           onClick={toggleWidgets}
           className="px-2 py-1.5 rounded hover:bg-white/10 cursor-pointer flex items-center space-x-2 transition-colors group"
           title="Widgets"
@@ -136,6 +137,7 @@ export function Taskbar() {
       <div className="flex items-center space-x-1">
         <button
           type="button"
+          data-popup-toggle="start"
           onClick={() => {
             playSound('click')
             toggleStartMenu()
@@ -293,6 +295,7 @@ export function Taskbar() {
         {/* System status group → opens quick settings */}
         <button
           type="button"
+          data-popup-toggle="quick-settings"
           onClick={() => {
             playSound('click')
             toggleQuickSettings()

@@ -46,11 +46,15 @@ export function StartMenu() {
   useEffect(() => {
     if (!open) return
     const onDown = (e: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-        close()
-        setView('pinned')
-        setQuery('')
-      }
+      if (!containerRef.current || containerRef.current.contains(e.target as Node)) return
+      // Ignore clicks on the taskbar's start/search/quick-settings buttons -
+      // they own their own toggle logic and racing against this mousedown
+      // would close the menu before their onClick can flip it.
+      const t = e.target as Element | null
+      if (t?.closest?.('[data-popup-toggle]')) return
+      close()
+      setView('pinned')
+      setQuery('')
     }
     const id = window.setTimeout(() => document.addEventListener('mousedown', onDown), 0)
     return () => {

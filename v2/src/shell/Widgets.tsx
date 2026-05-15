@@ -17,7 +17,11 @@ export function Widgets() {
   useEffect(() => {
     if (!open) return
     const onDown = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) close()
+      if (!ref.current || ref.current.contains(e.target as Node)) return
+      // The weather widget button toggles this popup itself; let its onClick run.
+      const t = e.target as Element | null
+      if (t?.closest?.('[data-popup-toggle]')) return
+      close()
     }
     const id = window.setTimeout(() => document.addEventListener('mousedown', onDown), 0)
     return () => {

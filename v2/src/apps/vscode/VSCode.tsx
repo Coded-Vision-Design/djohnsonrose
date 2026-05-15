@@ -264,11 +264,11 @@ export default function VSCode() {
                         </div>
                       </div>
 
-                      <div className="flex-grow relative group overflow-hidden rounded-xl border border-white/10 bg-black/20">
+                      <div className="flex-grow relative group overflow-hidden rounded-xl border border-white/10 bg-black/40 flex items-center justify-center min-h-0">
                         <img
                           src={`/${active.thumbnail}`}
                           alt={active.title}
-                          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                          className="max-w-full max-h-full w-auto h-auto object-contain transition-transform duration-700 group-hover:scale-105"
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex flex-col justify-end p-8 opacity-0 group-hover:opacity-100 transition-opacity">
                           <div className="flex flex-wrap gap-2">

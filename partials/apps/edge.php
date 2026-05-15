@@ -69,8 +69,13 @@
             <div class="max-w-5xl mx-auto p-4 sm:p-8">
                 <h1 class="font-bold mb-4 sm:mb-8 text-2xl sm:text-3xl">Featured Projects</h1>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-8">
-                    <?php 
+                    <?php
                     $projects = include __DIR__ . '/../../data/projects.php';
+                    // Match VS Code's "★ Featured" set — both apps now show
+                    // the same filtered list. Falls back to all projects if
+                    // none are flagged so the page never blanks.
+                    $featured = array_values(array_filter($projects, fn($p) => !empty($p['featured'])));
+                    if (!empty($featured)) $projects = $featured;
                     foreach ($projects as $p): ?>
                         <div class="bg-white dark:bg-white/5 rounded-xl overflow-hidden shadow-lg border border-gray-100 dark:border-white/5 group">
                             <div class="h-48 bg-gray-200 dark:bg-gray-800 relative">

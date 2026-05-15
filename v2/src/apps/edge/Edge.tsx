@@ -10,6 +10,7 @@ interface PortfolioItem {
   thumbnail: string
   location?: string
   country_code?: string
+  featured?: boolean
 }
 
 interface Tab {
@@ -158,7 +159,13 @@ export default function Edge() {
           <div className="max-w-5xl mx-auto p-8">
             <h1 className="font-bold mb-8 text-3xl">Featured Projects</h1>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {projects.map((p) => (
+              {(() => {
+                // Mirror VS Code's "★ Featured" set so the two apps stay in
+                // sync. If no projects are flagged (e.g. local dataset),
+                // fall through to the full list so the page never blanks.
+                const featured = projects.filter((p) => p.featured)
+                return featured.length > 0 ? featured : projects
+              })().map((p) => (
                 <div
                   key={p.id}
                   className="bg-white dark:bg-white/5 rounded-xl overflow-hidden shadow-lg border border-gray-100 dark:border-white/5 group"
