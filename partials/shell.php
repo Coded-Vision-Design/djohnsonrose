@@ -183,7 +183,7 @@
             <template x-if="contextMenu.actions && contextMenu.actions.length > 0">
                 <div class="context-menu-action-bar">
                     <template x-for="(action, idx) in contextMenu.actions" :key="idx">
-                        <div @click="if(!action.disabled) { action.action(); contextMenu.open = false }"
+                        <div @click="if(!action.disabled) { contextMenu.open = false; action.action() }"
                              class="context-menu-action-btn group"
                              :class="{ 'disabled': action.disabled }"
                              :title="action.label">
@@ -199,7 +199,7 @@
                         <div class="context-menu-separator"></div>
                     </template>
                     <template x-if="!item.separator">
-                        <div @click="if(!item.disabled) { item.action(); contextMenu.open = false }"
+                        <div @click="if(!item.disabled) { contextMenu.open = false; item.action() }"
                              @mouseenter="clearTimeout(hoverTimer); hoverTimer = setTimeout(() => hoverItem = index, 60)"
                              @mouseleave="clearTimeout(hoverTimer); hoverItem = null"
                              :class="{ 'active': hoverItem === index, 'disabled': item.disabled }"

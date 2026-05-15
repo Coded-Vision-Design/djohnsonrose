@@ -76,8 +76,11 @@ export function ContextMenu() {
             disabled={item.disabled}
             onClick={() => {
               if (item.disabled) return
-              item.action?.()
+              // Close *before* invoking the action so an action that opens
+              // a follow-up menu (e.g. "Show more options" → the classic
+              // Win10 menu) isn't clobbered by our own close right after.
               close()
+              item.action?.()
             }}
             className={`${itemClass} ${item.disabled ? 'opacity-40 pointer-events-none' : ''}`}
           >
