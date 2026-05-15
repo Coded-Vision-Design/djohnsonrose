@@ -12,8 +12,8 @@ $requested = $_GET['name'] ?? 'explorer';
 $allowed = [
     'calculator', 'database', 'docker', 'edge', 'eventviewer', 'excel',
     'explorer', 'filezilla', 'flstudio', 'notepad', 'outlook', 'paint',
-    'pdfreader', 'photos', 'photoshop', 'powerpoint', 'putty', 'settings',
-    'taskmanager', 'terminal', 'video', 'vscode', 'word',
+    'pdfreader', 'photos', 'photoshop', 'powerpoint', 'putty', 'references',
+    'settings', 'taskmanager', 'terminal', 'video', 'vscode', 'word',
 ];
 
 $safe = htmlspecialchars($requested, ENT_QUOTES, 'UTF-8');

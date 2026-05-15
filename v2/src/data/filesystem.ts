@@ -211,35 +211,79 @@ export const filesystem: FileSystem = {
       type: 'file',
       icon: `${IMG}notepad++.webp`,
       content:
-        '2nd Line Engineer at Killik and Co.\n\nSQL databases, Docker, Postman, running stored procedures, db updates and troubleshooting, technical guides, and staff training.',
+        'Killik & Co — Applications Support Engineer\nIpswich · Apr 2025 – Present\n\n' +
+        '- Maintain and enhance business-critical applications with a strong focus on automation and knowledge sharing.\n' +
+        '- Build AI-assisted internal tooling and PowerShell automation scripts that streamline repeat processes and generate reports.\n' +
+        '- Query and update SQL databases via MSSMS for production data work and reporting.',
+    },
+    {
+      name: 'Coded Vision Design.txt',
+      type: 'file',
+      icon: `${IMG}notepad++.webp`,
+      content:
+        'Coded Vision Design — Freelance Full-Stack Developer\nRemote · 2013 – Present\n\n' +
+        '- 100+ freelance projects delivered, with consistent 5-star feedback across SMEs and startups.\n' +
+        '- Engagements span CMS platforms, e-commerce, AI-powered chatbots, deployment and auth consulting.\n' +
+        '- Self-hosts containerised stacks on VPS with Docker, Traefik reverse-proxy, Grafana, Ofelia and OpenClaw.\n' +
+        '- Adjacent creative services: CAA A2 CofC drone videography, drone-photogrammetry 3D modelling, indoor 360° virtual tours, social-media ad editing, content writing.\n' +
+        '- Mainly UK-based clients; engagements across the US, UAE, Saudi Arabia, Australia, and South Africa.',
     },
     {
       name: 'UEA.txt',
       type: 'file',
       icon: `${IMG}notepad++.webp`,
       content:
-        '3rd Line Engineer / Desktop Developer at UEA.\n\nResponsible for >8000 devices via SCCM and JAMF. Provisioning servers, patching vulnerabilities. Service ended April 2025.',
+        'UEA (University of East Anglia) — Desktop Developer / 3rd Line Engineer\nNorwich · Nov 2021 – Apr 2025\n\n' +
+        "- Transformed UEA's desktop infrastructure across 8,000+ devices, achieving 60% faster deployments through SCCM and JAMF automation.\n" +
+        '- PowerShell automation eliminated 20+ weekly manual hours while maintaining 99.9% system availability.\n' +
+        '- Led Windows 11 migration for 2,000+ users and spearheaded remote-learning infrastructure for 15,000+ students.',
     },
     {
       name: 'Skyscanner.txt',
       type: 'file',
       icon: `${IMG}notepad++.webp`,
       content:
-        'System Engineer 2 at Skyscanner.\n\nGlobal heat-sensing CCTV system rollout during lockdown. JAMF for MacBook fleet, SCCM for HP fleet, firewall upgrades.',
+        'Skyscanner — Systems Engineer II\nGlobal · Mar 2020 – Nov 2021\n\n' +
+        '- Led global deployment of AI heat-sensing CCTV across 10+ international offices during COVID-19.\n' +
+        '- Managed £500K infrastructure budget; optimised JAMF/SCCM workflows reducing onboarding setup by 65%.\n' +
+        '- MacBook provisioning compressed from 4 hours to 45 minutes. Provided in-house support via the techbar.',
     },
     {
       name: 'Shawbrook Bank.txt',
       type: 'file',
       icon: `${IMG}notepad++.webp`,
       content:
-        'Desk Side Engineer at Shawbrook.\n\nFull cycle imaging and deployment via SCCM. PowerShell scripting, Active Directory administration, GPO management.',
+        'Shawbrook Bank — Desk Side Engineer\nEssex · Mar 2017 – Mar 2020\n\n' +
+        '- End-to-end IT support for 900+ users across multiple sites; SCCM imaging, patching, RSA deployment.\n' +
+        '- PowerShell scripting and process improvements; trained incoming desk-side engineers, reducing onboarding time.',
     },
     {
-      name: 'FRP Advisory.txt',
+      name: 'Earlier roles (2011-2017).txt',
       type: 'file',
       icon: `${IMG}notepad++.webp`,
       content:
-        '2nd Line Engineer at FRP Advisory.\n\nRemote/desk side support. Extracted 200 TB of data from BHS. Digital forensics and P2V migrations.',
+        'Earlier roles · 2011 – 2017\n\n' +
+        'FRP Advisory — 2nd Line Engineer (Aug 2016 – Feb 2017)\n' +
+        '  Remote/desk side support across the UK for companies in liquidation. P2V migrations,\n' +
+        '  digital forensics, extracted 200 TB of data from BHS.\n\n' +
+        'Alexander Knight Business Solutions — Senior Network Engineer (Jul 2015 – Aug 2016)\n' +
+        '  Quickly promoted; ran multiple IT departments for an MSP, reporting directly to the CEO.\n\n' +
+        'Ontraq IT — IT Support / 2nd Line Field (Nov 2014 – Jul 2015)\n' +
+        '  On-site and telephone assistance for British Transport Police, Gepp & Sons, private legal &\n' +
+        '  financial firms, and sole traders.\n\n' +
+        'Pensar IT — Service Desk / 2nd Line (Jun 2014 – Nov 2014)\n' +
+        '  Service-desk and 2nd-line support across an MSP client base.\n\n' +
+        'Databarracks — IT Support, 1st Line (Jun 2013 – Jun 2014)\n' +
+        '  1st-line support for a UK disaster-recovery and backup specialist.\n\n' +
+        'Blueprint Collections — IT Systems Administrator (Sep 2011 – Jun 2013)\n' +
+        '  Systems administration across the business — first professional role.',
+    },
+    {
+      name: 'References (locked).txt',
+      type: 'app',
+      app: 'references',
+      icon: `${IMG}notepad++.webp`,
+      extraData: { locked: true },
     },
   ],
   'C:\\Users\\DeVante\\Pictures': [
@@ -286,6 +330,7 @@ export const filesystem: FileSystem = {
   'C:\\Users\\DeVante\\Projects': [
     { name: 'Freelance', type: 'folder', icon: FOLDER },
     { name: 'Killik and Co', type: 'folder', icon: FOLDER },
+    { name: 'Coded Vision Design', type: 'folder', icon: FOLDER },
     { name: 'UEA', type: 'folder', icon: FOLDER },
     { name: 'Skyscanner', type: 'folder', icon: FOLDER },
     { name: 'Shawbrook Bank', type: 'folder', icon: FOLDER },
@@ -306,11 +351,51 @@ export const filesystem: FileSystem = {
 // Add a small `Role_Description.txt` per Projects/{role} folder so the
 // explorer has meaningful content to click into.
 const ROLES = [
-  ['Killik and Co', 'Phase 4: building the React port of this portfolio while running 2nd line engineering at Killik and Co.'],
-  ['UEA', 'Built the desktop experience for 8,000+ staff/student devices. SCCM, JAMF, server provisioning. April 2025 wrap.'],
-  ['Skyscanner', 'Global heat-sensing CCTV during lockdown. JAMF/SCCM dual stack.'],
-  ['Shawbrook Bank', 'Desk side engineer — SCCM imaging, PowerShell, AD/GPO admin.'],
-  ['FRP Advisory', '2nd line — desk side support, digital forensics, 200 TB BHS extraction, P2V migrations.'],
+  [
+    'Killik and Co',
+    'Killik & Co — Applications Support Engineer (Apr 2025 – Present)\n\n' +
+      '- Maintain and enhance business-critical applications with a strong focus on automation and knowledge sharing.\n' +
+      '- Build AI-assisted internal tooling and PowerShell automation scripts that streamline repeat processes and generate reports.\n' +
+      '- Query and update SQL databases via MSSMS for production data work and reporting.',
+  ],
+  [
+    'Coded Vision Design',
+    'Coded Vision Design — Freelance Full-Stack Developer (2013 – Present, Remote)\n\n' +
+      '- 100+ freelance projects delivered, consistent 5-star feedback across SMEs and startups.\n' +
+      '- Engagements span CMS platforms, e-commerce, AI-powered chatbots, deployment and auth consulting.\n' +
+      '- Self-hosts containerised stacks on VPS with Docker, Traefik, Grafana, Ofelia and OpenClaw.\n' +
+      '- Adjacent creative services: CAA A2 CofC drone videography, drone-photogrammetry 3D modelling,\n' +
+      '  indoor 360° virtual tours, social-media ad editing, content writing.\n' +
+      '- UK-based clients with engagements across the US, UAE, Saudi Arabia, Australia, and South Africa.',
+  ],
+  [
+    'UEA',
+    'UEA — Desktop Developer / 3rd Line Engineer (Nov 2021 – Apr 2025, Norwich)\n\n' +
+      "- Transformed UEA's desktop infrastructure across 8,000+ devices; 60% faster deployments via SCCM/JAMF.\n" +
+      '- PowerShell automation eliminated 20+ weekly manual hours while maintaining 99.9% availability.\n' +
+      '- Led Windows 11 migration for 2,000+ users; spearheaded remote-learning infra for 15,000+ students.',
+  ],
+  [
+    'Skyscanner',
+    'Skyscanner — Systems Engineer II (Mar 2020 – Nov 2021, Global)\n\n' +
+      '- Led global AI heat-sensing CCTV deployment across 10+ international offices during COVID-19.\n' +
+      '- Managed £500K infrastructure budget; optimised JAMF/SCCM workflows, 65% faster onboarding.\n' +
+      '- MacBook provisioning compressed from 4 hours to 45 minutes; in-house techbar support.',
+  ],
+  [
+    'Shawbrook Bank',
+    'Shawbrook Bank — Desk Side Engineer (Mar 2017 – Mar 2020, Essex)\n\n' +
+      '- End-to-end IT support for 900+ users across multiple sites; SCCM imaging, patching, RSA.\n' +
+      '- PowerShell scripting + process improvements; trained incoming desk-side engineers.',
+  ],
+  [
+    'FRP Advisory',
+    'FRP Advisory — 2nd Line Engineer (Aug 2016 – Feb 2017)\n\n' +
+      '- Remote/desk side support across the UK for companies in liquidation.\n' +
+      '- P2V migrations and on-site infrastructure moves.\n' +
+      '- Assisted in extracting and sorting 200 TB of data from BHS.\n' +
+      '- Specialised in digital forensics and ethical hacking.',
+  ],
 ] as const
 
 for (const [role, content] of ROLES) {
@@ -320,6 +405,13 @@ for (const [role, content] of ROLES) {
       type: 'file',
       icon: `${IMG}notepad++.webp`,
       content,
+    },
+    {
+      name: 'References (locked).txt',
+      type: 'app',
+      app: 'references',
+      icon: `${IMG}notepad++.webp`,
+      extraData: { locked: true, role },
     },
   ]
 }

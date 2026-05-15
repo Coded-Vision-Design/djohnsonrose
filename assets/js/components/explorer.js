@@ -141,10 +141,10 @@ document.addEventListener('alpine:init', () => {
 
         openItem(item) {
             const osStore = Alpine.store('os');
+            // Locked entries (References vault) launch the references app
+            // which prompts for the shared password and decrypts client-side.
             if (item.extraData && item.extraData.locked) {
-                osStore.playSound('error');
-                const fullPath = item.fullPath || (this.currentPath.endsWith('\\') ? `${this.currentPath}${item.name}` : `${this.currentPath}\\${item.name}`);
-                osStore.showError('File Access Denied', 'This document is currently locked. References are available upon request.', fullPath);
+                osStore.openApp('references', item.name, item.extraData || {});
                 return;
             }
             if (this.currentPath === 'C:\\Recycle Bin') {

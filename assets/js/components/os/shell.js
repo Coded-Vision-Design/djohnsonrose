@@ -577,7 +577,8 @@ document.addEventListener('alpine:init', () => {
                 { id: 'settings', name: 'Settings', icon: window.portfolioConfig.imgPath + 'settings.webp' },
                 { id: 'taskmanager', name: 'Task Manager', icon: window.portfolioConfig.imgPath + 'taskmanager.webp' },
                 { id: 'eventviewer', name: 'Event Viewer', icon: window.portfolioConfig.imgPath + 'eventviewer.webp' },
-                { id: 'calculator', name: 'Calculator', icon: window.portfolioConfig.imgPath + 'calculator.webp' }
+                { id: 'calculator', name: 'Calculator', icon: window.portfolioConfig.imgPath + 'calculator.webp' },
+                { id: 'references', name: 'References', icon: window.portfolioConfig.imgPath + 'notepad++.webp' }
             ];
 
             // Group by letter

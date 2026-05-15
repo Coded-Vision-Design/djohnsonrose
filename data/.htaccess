@@ -9,6 +9,6 @@
 <RequireAll>
     Require all denied
 </RequireAll>
-<FilesMatch "^(cv\.pdf|cv\.php|portfolio\.json|client_wins\.json)$">
+<FilesMatch "^(cv\.pdf|cv\.php|portfolio\.json|client_wins\.json|references\.enc\.json)$">
     Require all granted
 </FilesMatch>

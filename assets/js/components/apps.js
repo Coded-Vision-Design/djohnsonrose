@@ -381,6 +381,7 @@ document.addEventListener('alpine:init', () => {
                 else if (win.app === 'database') icon = `<img src="${osStore.settings.imgPath || window.portfolioConfig.imgPath}mssql.webp" class="w-4 h-4 object-contain">`;
                 else if (win.app === 'putty') icon = `<img src="${osStore.settings.imgPath || window.portfolioConfig.imgPath}putty.webp" class="w-4 h-4 object-contain">`;
                 else if (win.app === 'flstudio') icon = `<img src="${osStore.settings.imgPath || window.portfolioConfig.imgPath}fl studio.webp" class="w-4 h-4 object-contain">`;
+                else if (win.app === 'references') icon = `<img src="${osStore.settings.imgPath || window.portfolioConfig.imgPath}notepad++.webp" class="w-4 h-4 object-contain">`;
 
                 return {
                     id: win.id,
@@ -726,4 +727,74 @@ document.addEventListener('alpine:init', () => {
             },
         };
     });
+
+    // Password-protected references vault — fetches /data/references.enc.json
+    // and decrypts it client-side with Web Crypto. Same blob the v2 React
+    // component uses.
+    Alpine.data('referencesVault', () => ({
+        envelope: null,
+        loadError: null,
+        password: '',
+        busy: false,
+        error: null,
+        refs: null,
+        selected: 0,
+
+        async init() {
+            try {
+                const r = await fetch(window.portfolioConfig.basePath + 'data/references.enc.json', { credentials: 'same-origin' });
+                if (!r.ok) throw new Error(`No vault file (${r.status})`);
+                this.envelope = await r.json();
+            } catch (e) {
+                this.loadError = e.message;
+            }
+            try {
+                const cached = sessionStorage.getItem('references.session');
+                if (cached) this.refs = JSON.parse(cached);
+            } catch (_) { /* ignore */ }
+        },
+
+        _b64ToBytes(b64) {
+            const raw = atob(b64);
+            const out = new Uint8Array(raw.length);
+            for (let i = 0; i < raw.length; i++) out[i] = raw.charCodeAt(i);
+            return out;
+        },
+
+        async unlock() {
+            if (!this.envelope || !this.password) return;
+            this.busy = true;
+            this.error = null;
+            try {
+                const salt = this._b64ToBytes(this.envelope.salt);
+                const iv = this._b64ToBytes(this.envelope.iv);
+                const ciphertext = this._b64ToBytes(this.envelope.ciphertext);
+                const keyMaterial = await crypto.subtle.importKey(
+                    'raw', new TextEncoder().encode(this.password),
+                    { name: 'PBKDF2' }, false, ['deriveKey']
+                );
+                const key = await crypto.subtle.deriveKey(
+                    { name: 'PBKDF2', salt, iterations: this.envelope.iterations, hash: 'SHA-256' },
+                    keyMaterial,
+                    { name: 'AES-GCM', length: 256 }, false, ['decrypt']
+                );
+                const plaintext = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, ciphertext);
+                const decoded = new TextDecoder().decode(plaintext);
+                this.refs = JSON.parse(decoded);
+                this.selected = 0;
+                sessionStorage.setItem('references.session', decoded);
+                this.password = '';
+            } catch (_) {
+                this.error = 'Incorrect password.';
+            } finally {
+                this.busy = false;
+            }
+        },
+
+        lock() {
+            sessionStorage.removeItem('references.session');
+            this.refs = null;
+            this.selected = 0;
+        },
+    }));
 });

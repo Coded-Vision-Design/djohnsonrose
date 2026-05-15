@@ -40,10 +40,21 @@ v2/test-results/
 v2/playwright-report/
 coverage/
 
-# Private files (CV + generated caches stay on the server only)
+# Private files (CV PDF stays on the server only — the binary printable).
+# cv.php (HTML rendering for the Word app) lives in git because the
+# Word app's content is already public on the live site; treating it as
+# private just makes maintenance impossible.
 data/cv.pdf
-data/cv.php
 data/weather_cache.json
+
+# References plaintext only — only the encrypted envelope is committed.
+data/references.json
+data/references.sample.json
+
+# DNS zone exports (kept locally for reference, not for the public repo).
+*.co.uk.txt
+*.com.txt
+*.zone
 
 # Vercel
 .vercel/

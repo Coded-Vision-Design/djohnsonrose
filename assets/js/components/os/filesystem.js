@@ -158,32 +158,19 @@ PROFILES:
         { name: 'CV - DeVanté Johnson-Rose.pdf', type: 'app', app: 'pdfreader', icon: window.portfolioConfig.imgPath + 'pdf.webp', pdfUrl: window.portfolioConfig.basePath + 'data/cv.pdf' }
     ],
     'C:\\Users\\DeVante\\Documents\\Career': [
-        { name: 'Killik and Co', type: 'folder', icon: window.portfolioConfig.imgPath + 'win11/folder.png' },
-        { name: 'UEA', type: 'folder', icon: window.portfolioConfig.imgPath + 'win11/folder.png' },
-        { name: 'Skyscanner', type: 'folder', icon: window.portfolioConfig.imgPath + 'win11/folder.png' },
-        { name: 'Shawbrook Bank', type: 'folder', icon: window.portfolioConfig.imgPath + 'win11/folder.png' },
-        { name: 'FRP Advisory', type: 'folder', icon: window.portfolioConfig.imgPath + 'win11/folder.png' },
-        { name: 'Certificates', type: 'folder', icon: window.portfolioConfig.imgPath + 'win11/folder.png' }
-    ],
-    'C:\\Users\\DeVante\\Documents\\Career\\Killik and Co': [
-        { name: 'Role_Description.txt', type: 'file', icon: window.portfolioConfig.imgPath + 'notepad++.webp', content: '2nd Line Engineer for Killik and Co. Work with SQL databases, Docker, Postman, running stored procedures, updating the db where needed troubleshooting, creating technical guides and providing training.' }
-    ],
-    'C:\\Users\\DeVante\\Documents\\Career\\UEA': [
-        { name: 'Role_Description.txt', type: 'file', icon: window.portfolioConfig.imgPath + 'notepad++.webp', content: 'Hired to provide 3rd line support and create the desktop experience for staff and students. Responsible for >8000 devices via SCCM and JAMF. Provisioning servers and patching vulnerabilities. Service ended April 2025.' }
-    ],
-    'C:\\Users\\DeVante\\Documents\\Career\\Skyscanner': [
-        { name: 'Role_Description.txt', type: 'file', icon: window.portfolioConfig.imgPath + 'notepad++.webp', content: 'Joined during lockdown. Implemented global heat-sensing CCTV system. Managed MacBook deployments via JAMF and HPs via SCCM. Upgraded firewalls.' }
-    ],
-    'C:\\Users\\DeVante\\Documents\\Career\\Shawbrook Bank': [
-        { name: 'Role_Description.txt', type: 'file', icon: window.portfolioConfig.imgPath + 'notepad++.webp', content: 'Promoted to Desk Side Engineer. Imaging and deploying machines using SCCM. PowerShell scripting and Active Directory administration. Managed GPOs.' }
-    ],
-    'C:\\Users\\DeVante\\Documents\\Career\\FRP Advisory': [
-        { name: 'Role_Description.txt', type: 'file', icon: window.portfolioConfig.imgPath + 'notepad++.webp', content: '2nd Line Engineer providing remote/desk side support. Extracted 200TB of data from BHS. Involved in digital forensics and P2V migrations.' }
-    ],
-    'C:\\Users\\DeVante\\Documents\\Career\\Certificates': [
-        { name: 'MCSA_Windows_7.pdf', type: 'app', app: 'pdfreader', icon: window.portfolioConfig.imgPath + 'pdf.webp' },
-        { name: 'CompTIA_Network_Plus.pdf', type: 'app', app: 'pdfreader', icon: window.portfolioConfig.imgPath + 'pdf.webp' },
-        { name: 'ITIL_Foundation.pdf', type: 'app', app: 'pdfreader', icon: window.portfolioConfig.imgPath + 'pdf.webp' }
+        { name: 'Killik and Co.txt', type: 'file', icon: window.portfolioConfig.imgPath + 'notepad++.webp',
+          content: 'Killik & Co — Applications Support Engineer\nIpswich · Apr 2025 – Present\n\n- Maintain and enhance business-critical applications with a strong focus on automation and knowledge sharing.\n- Build AI-assisted internal tooling and PowerShell automation scripts that streamline repeat processes and generate reports.\n- Query and update SQL databases via MSSMS for production data work and reporting.' },
+        { name: 'Coded Vision Design.txt', type: 'file', icon: window.portfolioConfig.imgPath + 'notepad++.webp',
+          content: 'Coded Vision Design — Freelance Full-Stack Developer\nRemote · 2013 – Present\n\n- 100+ freelance projects delivered, with consistent 5-star feedback across SMEs and startups.\n- Engagements span CMS platforms, e-commerce, AI-powered chatbots, deployment and auth consulting.\n- Self-hosts containerised stacks on VPS with Docker, Traefik reverse-proxy, Grafana, Ofelia and OpenClaw.\n- Adjacent creative services: CAA A2 CofC drone videography, drone-photogrammetry 3D modelling, indoor 360° virtual tours, social-media ad editing, content writing.\n- Mainly UK-based clients; engagements across the US, UAE, Saudi Arabia, Australia, and South Africa.' },
+        { name: 'UEA.txt', type: 'file', icon: window.portfolioConfig.imgPath + 'notepad++.webp',
+          content: 'UEA (University of East Anglia) — Desktop Developer / 3rd Line Engineer\nNorwich · Nov 2021 – Apr 2025\n\n- Transformed UEA’s desktop infrastructure across 8,000+ devices, achieving 60% faster deployments through SCCM and JAMF automation.\n- PowerShell automation eliminated 20+ weekly manual hours while maintaining 99.9% system availability.\n- Led Windows 11 migration for 2,000+ users and spearheaded remote-learning infrastructure for 15,000+ students.' },
+        { name: 'Skyscanner.txt', type: 'file', icon: window.portfolioConfig.imgPath + 'notepad++.webp',
+          content: 'Skyscanner — Systems Engineer II\nGlobal · Mar 2020 – Nov 2021\n\n- Led global deployment of AI heat-sensing CCTV across 10+ international offices during COVID-19.\n- Managed £500K infrastructure budget; optimised JAMF/SCCM workflows reducing onboarding setup by 65%.\n- MacBook provisioning compressed from 4 hours to 45 minutes. Provided in-house support via the techbar.' },
+        { name: 'Shawbrook Bank.txt', type: 'file', icon: window.portfolioConfig.imgPath + 'notepad++.webp',
+          content: 'Shawbrook Bank — Desk Side Engineer\nEssex · Mar 2017 – Mar 2020\n\n- End-to-end IT support for 900+ users across multiple sites; SCCM imaging, patching, RSA deployment.\n- PowerShell scripting and process improvements; trained incoming desk-side engineers, reducing onboarding time.' },
+        { name: 'Earlier roles (2011-2017).txt', type: 'file', icon: window.portfolioConfig.imgPath + 'notepad++.webp',
+          content: 'Earlier roles · 2011 – 2017\n\nFRP Advisory — 2nd Line Engineer (Aug 2016 – Feb 2017)\n  Remote/desk side support, P2V migrations, 200TB data extraction from BHS, digital forensics.\n\nAlexander Knight Business Solutions — Senior Network Engineer (Jul 2015 – Aug 2016)\n  Ran multiple IT departments for an MSP, reporting directly to the CEO.\n\nOntraq IT — IT Support / 2nd Line Field (Nov 2014 – Jul 2015)\n  On-site and telephone assistance for British Transport Police, Gepp & Sons, private legal & financial firms.\n\nPensar IT — Service Desk / 2nd Line (Jun 2014 – Nov 2014)\n  Service-desk and 2nd-line support across an MSP client base.\n\nDatabarracks — IT Support, 1st Line (Jun 2013 – Jun 2014)\n  1st-line support for a UK disaster-recovery and backup specialist.\n\nBlueprint Collections — IT Systems Administrator (Sep 2011 – Jun 2013)\n  Systems administration across the business — first professional role.' },
+        { name: 'References (locked).txt', type: 'app', app: 'references', icon: window.portfolioConfig.imgPath + 'notepad++.webp', extraData: { locked: true } }
     ],
     'C:\\Users\\DeVante\\Pictures': [
         { name: 'AJP Grand Slam 2024.webp', type: 'image', icon: '🖼️', url: window.portfolioConfig.imgPath + 'AJP Grand Slam 2024.webp' },
@@ -199,11 +186,11 @@ PROFILES:
     'C:\\Users\\DeVante\\Projects': [
         { name: 'Freelance', type: 'folder', icon: window.portfolioConfig.imgPath + 'win11/folder.png' },
         { name: 'Killik and Co', type: 'folder', icon: window.portfolioConfig.imgPath + 'win11/folder.png' },
+        { name: 'Coded Vision Design', type: 'folder', icon: window.portfolioConfig.imgPath + 'win11/folder.png' },
         { name: 'UEA', type: 'folder', icon: window.portfolioConfig.imgPath + 'win11/folder.png' },
         { name: 'Skyscanner', type: 'folder', icon: window.portfolioConfig.imgPath + 'win11/folder.png' },
         { name: 'Shawbrook Bank', type: 'folder', icon: window.portfolioConfig.imgPath + 'win11/folder.png' },
-        { name: 'FRP Advisory', type: 'folder', icon: window.portfolioConfig.imgPath + 'win11/folder.png' },
-        { name: 'Ontraq IT', type: 'folder', icon: window.portfolioConfig.imgPath + 'win11/folder.png' }
+        { name: 'FRP Advisory', type: 'folder', icon: window.portfolioConfig.imgPath + 'win11/folder.png' }
     ],
     'C:\\Users\\DeVante\\Projects\\Freelance': [
         { name: 'English Open BJJ', type: 'folder', status: '✅', techStack: 'PHP, Tailwind, Alpine, HTMX, OpenAI', icon: window.portfolioConfig.imgPath + 'win11/folder.png' },
@@ -218,28 +205,28 @@ PROFILES:
         { name: 'Boulevard Logistics', type: 'folder', status: '✅', techStack: 'Custom Software, PHP, Logistics, FinTech', icon: window.portfolioConfig.imgPath + 'win11/folder.png' }
     ],
     'C:\\Users\\DeVante\\Projects\\Killik and Co': [
-        { name: 'Role_Description.txt', type: 'file', icon: window.portfolioConfig.imgPath + 'notepad++.webp', content: '2nd Line Engineer for Killik and Co.\n\nKey Responsibilities:\n- Managing SQL databases and Docker environments.\n- Postman API testing and running stored procedures.\n- DB updates and complex technical troubleshooting.\n- Creating technical guides and providing staff training.' },
-        { name: 'references.txt', type: 'file', icon: window.portfolioConfig.imgPath + 'notepad++.webp', extraData: { locked: true } }
+        { name: 'Role_Description.txt', type: 'file', icon: window.portfolioConfig.imgPath + 'notepad++.webp', content: 'Killik & Co — Applications Support Engineer (Apr 2025 – Present)\n\n- Maintain and enhance business-critical applications with a strong focus on automation and knowledge sharing.\n- Build AI-assisted internal tooling and PowerShell automation scripts that streamline repeat processes and generate reports.\n- Query and update SQL databases via MSSMS for production data work and reporting.' },
+        { name: 'References (locked).txt', type: 'app', app: 'references', icon: window.portfolioConfig.imgPath + 'notepad++.webp', extraData: { locked: true } }
+    ],
+    'C:\\Users\\DeVante\\Projects\\Coded Vision Design': [
+        { name: 'Role_Description.txt', type: 'file', icon: window.portfolioConfig.imgPath + 'notepad++.webp', content: 'Coded Vision Design — Freelance Full-Stack Developer (2013 – Present, Remote)\n\n- 100+ freelance projects delivered, consistent 5-star feedback across SMEs and startups.\n- Engagements span CMS platforms, e-commerce, AI-powered chatbots, deployment and auth consulting.\n- Self-hosts containerised stacks on VPS with Docker, Traefik, Grafana, Ofelia and OpenClaw.\n- Adjacent creative services: CAA A2 CofC drone videography, drone-photogrammetry 3D modelling, indoor 360° virtual tours, social-media ad editing, content writing.\n- UK-based clients with engagements across the US, UAE, Saudi Arabia, Australia, and South Africa.' },
+        { name: 'References (locked).txt', type: 'app', app: 'references', icon: window.portfolioConfig.imgPath + 'notepad++.webp', extraData: { locked: true } }
     ],
     'C:\\Users\\DeVante\\Projects\\UEA': [
-        { name: 'Role_Description.txt', type: 'file', icon: window.portfolioConfig.imgPath + 'notepad++.webp', content: 'Desktop Developer / 3rd Line Engineer.\n\nKey Achievements:\n- Created the desktop experience for staff and students.\n- Responsible for >8000 devices via SCCM and JAMF.\n- provisioning servers and patching vulnerabilities.\n- Project end: April 2025.' },
-        { name: 'references.txt', type: 'file', icon: window.portfolioConfig.imgPath + 'notepad++.webp', extraData: { locked: true } }
+        { name: 'Role_Description.txt', type: 'file', icon: window.portfolioConfig.imgPath + 'notepad++.webp', content: 'UEA — Desktop Developer / 3rd Line Engineer (Nov 2021 – Apr 2025, Norwich)\n\n- Transformed UEA’s desktop infrastructure across 8,000+ devices; 60% faster deployments via SCCM/JAMF.\n- PowerShell automation eliminated 20+ weekly manual hours while maintaining 99.9% availability.\n- Led Windows 11 migration for 2,000+ users; spearheaded remote-learning infra for 15,000+ students.' },
+        { name: 'References (locked).txt', type: 'app', app: 'references', icon: window.portfolioConfig.imgPath + 'notepad++.webp', extraData: { locked: true } }
     ],
     'C:\\Users\\DeVante\\Projects\\Skyscanner': [
-        { name: 'Role_Description.txt', type: 'file', icon: window.portfolioConfig.imgPath + 'notepad++.webp', content: 'System Engineer 2.\n\nKey Projects:\n- Implemented global heat-sensing CCTV system during lockdown.\n- Managed MacBook deployments via JAMF.\n- Managed HP fleet via SCCM.\n- Upgraded corporate firewalls.' },
-        { name: 'references.txt', type: 'file', icon: window.portfolioConfig.imgPath + 'notepad++.webp', extraData: { locked: true } }
+        { name: 'Role_Description.txt', type: 'file', icon: window.portfolioConfig.imgPath + 'notepad++.webp', content: 'Skyscanner — Systems Engineer II (Mar 2020 – Nov 2021, Global)\n\n- Led global AI heat-sensing CCTV deployment across 10+ international offices during COVID-19.\n- Managed £500K infrastructure budget; optimised JAMF/SCCM workflows, 65% faster onboarding.\n- MacBook provisioning compressed from 4 hours to 45 minutes; in-house techbar support.' },
+        { name: 'References (locked).txt', type: 'app', app: 'references', icon: window.portfolioConfig.imgPath + 'notepad++.webp', extraData: { locked: true } }
     ],
     'C:\\Users\\DeVante\\Projects\\Shawbrook Bank': [
-        { name: 'Role_Description.txt', type: 'file', icon: window.portfolioConfig.imgPath + 'notepad++.webp', content: 'Desk Side Engineer.\n\nHighlights:\n- Promoted from Service Desk.\n- Full cycle imaging and deployment using SCCM.\n- Extensive PowerShell scripting for automation.\n- Active Directory & GPO administration.' },
-        { name: 'references.txt', type: 'file', icon: window.portfolioConfig.imgPath + 'notepad++.webp', extraData: { locked: true } }
+        { name: 'Role_Description.txt', type: 'file', icon: window.portfolioConfig.imgPath + 'notepad++.webp', content: 'Shawbrook Bank — Desk Side Engineer (Mar 2017 – Mar 2020, Essex)\n\n- End-to-end IT support for 900+ users across multiple sites; SCCM imaging, patching, RSA.\n- PowerShell scripting + process improvements; trained incoming desk-side engineers.' },
+        { name: 'References (locked).txt', type: 'app', app: 'references', icon: window.portfolioConfig.imgPath + 'notepad++.webp', extraData: { locked: true } }
     ],
     'C:\\Users\\DeVante\\Projects\\FRP Advisory': [
-        { name: 'Role_Description.txt', type: 'file', icon: window.portfolioConfig.imgPath + 'notepad++.webp', content: '2nd Line Engineer.\n\nCore Tasks:\n- Remote and desk side support.\n- Digital Forensics: Extracted 200TB data from BHS.\n- Handled complex P2V migrations.' },
-        { name: 'references.txt', type: 'file', icon: window.portfolioConfig.imgPath + 'notepad++.webp', extraData: { locked: true } }
-    ],
-    'C:\\Users\\DeVante\\Projects\\Ontraq IT': [
-        { name: 'Role_Description.txt', type: 'file', icon: window.portfolioConfig.imgPath + 'notepad++.webp', content: 'IT Support Engineer.\n\nScope:\n- Field engineering for high-profile clients.\n- Supported British Transport Police and various legal firms.' },
-        { name: 'references.txt', type: 'file', icon: window.portfolioConfig.imgPath + 'notepad++.webp', extraData: { locked: true } }
+        { name: 'Role_Description.txt', type: 'file', icon: window.portfolioConfig.imgPath + 'notepad++.webp', content: 'FRP Advisory — 2nd Line Engineer (Aug 2016 – Feb 2017)\n\n- Remote/desk side support across the UK for companies in liquidation.\n- P2V migrations and on-site infrastructure moves.\n- Assisted in extracting and sorting 200TB of data from BHS.\n- Specialised in digital forensics and ethical hacking.' },
+        { name: 'References (locked).txt', type: 'app', app: 'references', icon: window.portfolioConfig.imgPath + 'notepad++.webp', extraData: { locked: true } }
     ],
     'C:\\Users\\DeVante\\Projects\\Freelance\\English Open BJJ': [
         { name: 'Visit Site.url', type: 'app', app: 'edge', extraData: { initialUrl: 'https://englishopenbjjchampionships.co.uk/' }, icon: window.portfolioConfig.imgPath + 'chrome.webp' },

@@ -36,6 +36,7 @@ document.addEventListener('alpine:init', () => {
                 else if (win.app === 'database') icon = `<img src="${imgPath}mssql.webp" class="w-4 h-4 object-contain">`;
                 else if (win.app === 'putty') icon = `<img src="${imgPath}putty.webp" class="w-4 h-4 object-contain">`;
                 else if (win.app === 'flstudio') icon = `<img src="${imgPath}fl studio.webp" class="w-4 h-4 object-contain">`;
+                else if (win.app === 'references') icon = `<img src="${imgPath}notepad++.webp" class="w-4 h-4 object-contain">`;
 
                 return {
                     id: win.id,
