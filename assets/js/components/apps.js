@@ -584,10 +584,11 @@ document.addEventListener('alpine:init', () => {
             { id: 'qualifications', label: 'Qualifications', icon: '🎓' },
             { id: 'about', label: 'About', icon: 'ℹ️' }
         ],
-        summary: "An ambitious, self-motivated IT Systems Administrator with a proven track record in supporting Microsoft and Apple systems. Expert in root cause analysis, ITIL processes, and high-pressure problem solving. Senior Desktop Developer specialising in SCCM, JAMF, and enterprise-scale deployments.",
-        philosophy: "Technique over brute force. Whether managing >8000 devices at UEA or competing at the highest levels of Brazilian Jiu-Jitsu, I prioritize precision, efficient troubleshooting, and clear communication of complex technical concepts.",
+        summary: "Applications Support Engineer and Full-Stack Developer with enterprise infrastructure experience across finance, education, and global technology. Specialises in automation, deployment workflows, integrations, and scalable software delivery, pairing hands-on systems engineering with full-stack development and AI-assisted tooling.",
+        philosophy: "Technique over brute force. Whether managing 8,000+ devices at UEA or competing internationally in Brazilian Jiu-Jitsu, I prioritise precision, efficient troubleshooting, and clear communication of complex technical concepts.",
         experience: [],
         certs: [],
+        education: [],
         skills: { frameworks: [], tools: [], operations: [], apis: [] },
         wallpapers: [
             { id: 'Bloom', url: 'https://images.unsplash.com/photo-1620641788421-7a1c342ea42e?q=80&w=1974&auto=format&fit=crop' },
@@ -606,9 +607,12 @@ document.addEventListener('alpine:init', () => {
             try {
                 const response = await fetch(window.portfolioConfig.basePath + 'data/portfolio.json');
                 const data = await response.json();
-                this.experience = data.experience;
-                this.certs = data.certifications;
-                this.skills = data.skills;
+                this.experience = data.experience || [];
+                this.certs = data.certifications || [];
+                this.skills = data.skills || { frameworks: [], tools: [], operations: [], apis: [] };
+                this.education = data.education || [];
+                if (data.summary) this.summary = data.summary;
+                if (data.philosophy) this.philosophy = data.philosophy;
             } catch (e) {
                 console.error('Failed to load portfolio data for settings:', e);
             }

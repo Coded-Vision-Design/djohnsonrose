@@ -144,26 +144,18 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div class="p-6 glass rounded-lg border border-gray-200 dark:border-white/10 col-span-full">
                     <h3 class="text-lg font-bold mb-4 flex items-center">
-                        <span class="mr-3">🏫</span> Academic Specialist
+                        <span class="mr-3">🏫</span> Education
                     </h3>
-                    <div class="space-y-4">
-                        <div class="flex items-start space-x-4 p-4 bg-win-blue/5 rounded-lg border border-win-blue/10">
-                            <div class="text-2xl">🎓</div>
-                            <div>
-                                <div class="font-bold text-sm">Bsc (Hons) Business Computing 2:1</div>
-                                <div class="text-xs text-gray-500">University of East Anglia</div>
+                    <div class="space-y-3">
+                        <template x-for="(edu, idx) in education" :key="edu.id">
+                            <div :class="idx === 0 ? 'flex items-start space-x-4 p-4 bg-win-blue/5 rounded-lg border border-win-blue/10' : 'p-4 bg-black/5 dark:bg-white/5 rounded-lg border border-black/10 dark:border-white/10'">
+                                <div class="text-2xl" x-show="idx === 0">🎓</div>
+                                <div>
+                                    <div class="font-bold text-sm" x-text="edu.title"></div>
+                                    <div class="text-xs text-gray-500" x-text="edu.issuer"></div>
+                                </div>
                             </div>
-                        </div>
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div class="p-4 bg-black/5 dark:bg-white/5 rounded-lg border border-black/10 dark:border-white/10">
-                                <div class="font-bold text-xs">Level 3 Extended Diploma</div>
-                                <div class="text-[10px] text-gray-500">ICT Systems and Principles</div>
-                            </div>
-                            <div class="p-4 bg-black/5 dark:bg-white/5 rounded-lg border border-black/10 dark:border-white/10">
-                                <div class="font-bold text-xs">Level 3 Diploma</div>
-                                <div class="text-[10px] text-gray-500">Professional Competence for IT/Telecoms</div>
-                            </div>
-                        </div>
+                        </template>
                     </div>
                 </div>
 
@@ -190,7 +182,7 @@
                     <img :src="user.avatar" class="w-20 h-20 rounded-full border-4 border-win-blue/20">
                     <div>
                         <h2 class="text-2xl font-bold" x-text="user.name"></h2>
-                        <p class="text-sm text-win-blue font-medium">Senior Desktop Developer & 3rd Line Engineer</p>
+                        <p class="text-sm text-win-blue font-medium">Applications Support Engineer · Full-Stack Developer</p>
                     </div>
                 </div>
                 
