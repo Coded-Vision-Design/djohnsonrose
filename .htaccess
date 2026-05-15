@@ -24,6 +24,12 @@ RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
 RewriteCond %{HTTP_HOST} ^www\.(.*)$ [NC]
 RewriteRule ^(.*)$ https://%1/$1 [R=301,L]
 
+# Friendly admin URLs — both /admin and /adminconsole resolve to the v2
+# React app's deep-link route, which auto-launches the Admin Console.
+# Putting these BEFORE the v2 SPA rewrite so they hit the redirect first.
+RewriteRule ^admin/?$        /v2/app/admin [R=302,L]
+RewriteRule ^adminconsole/?$ /v2/app/admin [R=302,L]
+
 # React v2: serve the SPA from /v2/. Real built files under v2/dist/
 # (assets/, index.html, favicon, etc.) are served directly. Anything else
 # under /v2/ falls back to v2/dist/index.html so React Router can handle it.
