@@ -288,13 +288,21 @@ body {
     }
 
     .start-menu-mobile {
-        width: 100vw !important;
-        height: calc(100% - 3rem) !important;
+        width: 100dvw !important;
+        height: calc(100dvh - 3rem) !important;
+        max-height: calc(100dvh - 3rem) !important;
         bottom: 3rem !important;
         left: 0 !important;
         transform: none !important;
         border-radius: 0 !important;
     }
+
+    /* Inner padding tightens on narrow screens so the 6-col Pinned grid +
+       search bar don't get cramped. v1 does the same via its own mobile CSS. */
+    .start-menu-mobile .p-8 { padding: 1rem !important; }
+    .start-menu-mobile .px-8 { padding-left: 1rem !important; padding-right: 1rem !important; }
+    .start-menu-mobile .pb-4 { padding-bottom: 0.5rem !important; }
+    .start-menu-mobile .h-16 { height: 3.25rem !important; }
 
     .taskbar-mobile {
         padding-left: 0.5rem !important;

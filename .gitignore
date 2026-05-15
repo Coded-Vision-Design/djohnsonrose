@@ -26,7 +26,6 @@ ehthumbs.db
 CLAUDE.md
 .claude/
 .githooks/
-.gitattributes
 
 # Logs
 *.log

@@ -1,0 +1,13 @@
+# GitHub Linguist overrides.
+#
+# v1's partials start with raw HTML (e.g. `<!-- partials/foo.php -->`) rather
+# than `<?php`, which is one of the heuristics Linguist uses to tell PHP
+# apart from Facebook Hack. Without this override GitHub flags ~17% of the
+# repo as "Hack" on the language bar. Force every .php file to count as PHP.
+*.php linguist-language=PHP
+*.php linguist-detectable=true
+
+# Treat data dumps and generated fixtures as non-code so they don't skew
+# the language stats.
+data/*.json linguist-generated=true
+v2/src/data/filesystem.test.ts linguist-detectable=true

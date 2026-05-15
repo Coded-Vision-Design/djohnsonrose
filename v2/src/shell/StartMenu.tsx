@@ -86,16 +86,21 @@ export function StartMenu() {
     )
   }
 
+  // 540x600 panel on desktop; the .start-menu-mobile rule in globals.css
+  // overrides this with width:100vw / height:calc(100% - 3rem) below 1024px
+  // so the menu always fits the visible viewport (matches v1's behaviour).
   return (
     <div
       ref={containerRef}
-      className="absolute glass rounded-xl flex flex-col overflow-hidden win-shadow animate-start-menu z-[10000]"
+      className="absolute glass rounded-xl flex flex-col overflow-hidden win-shadow animate-start-menu z-[10000] start-menu-mobile"
       style={{
         bottom: TASKBAR_HEIGHT + 8,
         left: '50%',
         transform: 'translateX(-50%)',
         width: 540,
+        maxWidth: '100vw',
         height: 600,
+        maxHeight: `calc(100dvh - ${TASKBAR_HEIGHT + 8}px)`,
       }}
     >
       {/* Search */}
