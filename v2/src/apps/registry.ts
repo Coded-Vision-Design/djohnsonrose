@@ -62,7 +62,7 @@ export const apps: Record<string, AppDef> = {
   calculator: { id: 'calculator', title: 'Calculator', icon: `${IMG}calculator.webp`, defaultSize: { w: 320, h: 480 }, Component: Calculator },
   paint: { id: 'paint', title: 'Paint', icon: `${IMG}win11/paint.png`, defaultSize: { w: 900, h: 650 }, Component: Paint },
   photos: { id: 'photos', title: 'Photos', icon: `${IMG}win11/photos.png`, defaultSize: { w: 900, h: 640 }, Component: Photos },
-  video: { id: 'video', title: 'Movies & TV', icon: `${IMG}win11/video.png`, defaultSize: { w: 900, h: 600 }, Component: Video },
+  video: { id: 'video', title: 'Movies & TV', icon: `${IMG}win11/videos.png`, defaultSize: { w: 900, h: 600 }, Component: Video },
   pdfreader: { id: 'pdfreader', title: 'PDF Reader', icon: `${IMG}pdf.webp`, defaultSize: { w: 900, h: 720 }, Component: PdfReader },
   admin: { id: 'admin', title: 'Admin Console', icon: `${IMG}mssql.webp`, defaultSize: { w: 1180, h: 760 }, Component: AdminConsole },
   references: { id: 'references', title: 'References', icon: `${IMG}notepad++.webp`, defaultSize: { w: 820, h: 560 }, Component: ReferencesVault },

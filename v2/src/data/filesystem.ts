@@ -343,7 +343,7 @@ VERIFY:
   ],
   'C:\\Recycle Bin': [
     {
-      name: 'South Africa 25 Video.mp4',
+      name: 'Easter Egg - South Africa 25 Video.mp4',
       type: 'video',
       icon: '🎬',
       url: '/data/south-africa-25.mp4',

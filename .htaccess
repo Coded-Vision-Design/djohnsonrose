@@ -1,5 +1,17 @@
 RewriteEngine On
 
+# Explicit MIME + access rules for the easter-egg video files in /data/.
+# Hostinger's default Apache config returns 403 for unrecognised binary
+# extensions in non-root dirs; without these the recycle-bin clip 403s.
+<FilesMatch "\.(mp4|m4v|webm|ogv)$">
+    Require all granted
+    Header set Cache-Control "public, max-age=86400"
+</FilesMatch>
+AddType video/mp4 .mp4
+AddType video/mp4 .m4v
+AddType video/webm .webm
+AddType video/ogg .ogv
+
 # ---- Sensitive files: deny all direct access ----
 # .env, dotfiles, config/bootstrap, and any PHP file that isn't an entry point.
 # Apache 2.4 "Require all denied" + a few explicit allowlist exceptions for

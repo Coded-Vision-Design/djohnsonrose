@@ -8,11 +8,11 @@ import { track } from '../lib/telemetry'
 function lookupRecycleBinSeed(
   name: string,
 ): { fromPath: string; item: Record<string, unknown> } | null {
-  if (name === 'South Africa 25 Video.mp4') {
+  if (name === 'Easter Egg - South Africa 25 Video.mp4') {
     return {
       fromPath: 'C:\\Users\\DeVante\\Desktop',
       item: {
-        name: 'South Africa 25 Video.mp4',
+        name: 'Easter Egg - South Africa 25 Video.mp4',
         type: 'video',
         icon: '🎬',
         url: '/data/south-africa-25.mp4',
@@ -561,7 +561,7 @@ export const useOsStore = create<OsState>()(
         // user can recover seeds via a fresh `localStorage.clear()` if needed.
         // Importing data/filesystem lazily would create a circular dep, so we
         // hard-code the known seed list here.
-        const seedNames = ['South Africa 25 Video.mp4']
+        const seedNames = ['Easter Egg - South Africa 25 Video.mp4']
         set({
           recycleBin: [],
           restoredSeeds: Array.from(new Set([...state.restoredSeeds, ...seedNames])),

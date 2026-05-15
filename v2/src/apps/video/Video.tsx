@@ -1,7 +1,8 @@
 import { useWindowExtras } from '../../windowing/WindowContext'
 
 // Native <video> element. URL comes through window extras; we default to
-// the bundled drone clip so the app still feels alive when launched standalone.
+// the bundled easter-egg drone clip so the app still feels alive when
+// launched standalone.
 const DEFAULT_URL = '/data/south-africa-25.mp4'
 
 export default function Video() {
