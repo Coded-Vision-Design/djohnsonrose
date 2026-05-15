@@ -142,6 +142,8 @@ export function DesktopIcons() {
     return placed
   }, [iconPositions, recycleCount, hiddenDesktop, recoveredItems])
 
+  const logEvent = useOsStore((s) => s.logEvent)
+
   const open = (i: PlacedIcon) => {
     if (i.type === 'pc') {
       openApp('explorer', 'This PC', { extra: { initialPath: 'C:\\' } })
@@ -160,6 +162,11 @@ export function DesktopIcons() {
       openApp('video', e.name, { extra: { videoUrl: e.url } })
     } else if (e.type === 'file') {
       openApp('notepad', e.name, { extra: { content: e.content ?? '' } })
+    } else if (e.type === 'link') {
+      // Cross-build hop (e.g. PHP/React Desktop shortcuts). Logged via the
+      // same Security/System event mechanism v1 uses so emails read alike.
+      logEvent('System', 'Information', `Version switch: opening ${e.name} (${e.url})`)
+      window.location.href = e.url
     }
   }
 

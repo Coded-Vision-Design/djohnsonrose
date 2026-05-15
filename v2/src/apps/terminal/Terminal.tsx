@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useOsStore } from '../../store/osStore'
 import { runCommand } from './commands'
+import { track } from '../../lib/telemetry'
 
 // 1:1 port of partials/apps/terminal.php — PowerShell-styled header,
 // green prompt + cmd, blue-tinted output, click-anywhere-to-focus input.
@@ -51,6 +52,9 @@ export default function Terminal() {
       return
     }
     setHistory((h) => [...h.slice(-49), trimmed])
+    // Parity with v1's Terminal.executeCommand → sendTelemetry('Terminal
+    // Command', …). Lets admin emails show what visitors are typing.
+    track('Terminal Command', { command: trimmed, path: cwd })
     const result = runCommand(trimmed, { cwd, store: useOsStore.getState() })
     if (result.clear) {
       setEntries([])

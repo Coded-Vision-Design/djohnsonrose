@@ -44,7 +44,21 @@ export interface FsVideoEntry {
   originalPath?: string
 }
 
-export type FsEntry = FsAppEntry | FsFolderEntry | FsFileEntry | FsImageEntry | FsVideoEntry
+export interface FsLinkEntry {
+  name: string
+  type: 'link'
+  icon: string
+  /** Absolute path or full URL navigated to on activation. */
+  url: string
+}
+
+export type FsEntry =
+  | FsAppEntry
+  | FsFolderEntry
+  | FsFileEntry
+  | FsImageEntry
+  | FsVideoEntry
+  | FsLinkEntry
 
 export type FileSystem = Record<string, FsEntry[]>
 
@@ -192,6 +206,10 @@ VERIFY:
       app: 'flstudio',
       icon: `${IMG}fl%20studio.webp`,
     },
+    // Cross-build switch — taskbar React/PHP toggle is hidden on mobile, so
+    // the PHP shortcut lives on the Desktop. Handled by DesktopIcons' 'link'
+    // branch.
+    { name: 'PHP Build', type: 'link', url: '/', icon: `${IMG}php.png` },
     // Recycle Bin lives on the Desktop in v1 — kept here so the auto-layout
     // treats it like any other tile and never collides with a sibling.
     {

@@ -1,10 +1,19 @@
+import { useEffect } from 'react'
 import { useWindowExtras } from '../../windowing/WindowContext'
+import { track } from '../../lib/telemetry'
 
 // Phase 5 light port: native browser PDF viewer in an iframe. The PDF URL
 // is passed through window extras, defaulting to the CV.
 export default function PdfReader() {
   const { pdfUrl } = useWindowExtras<{ pdfUrl?: string }>()
   const src = pdfUrl ?? '/data/cv.pdf'
+
+  // Parity with v1's openItem → sendTelemetry('Document Viewed', …): admin
+  // emails surface PDF opens explicitly, not just the generic "Open App".
+  useEffect(() => {
+    const name = src.split('/').pop() ?? 'Document.pdf'
+    track('Document Viewed', { name, url: src })
+  }, [src])
 
   return (
     <div className="h-full flex flex-col bg-[#2b2b2b] text-white">

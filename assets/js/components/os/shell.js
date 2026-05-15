@@ -535,6 +535,12 @@ document.addEventListener('alpine:init', () => {
                 this.sendTelemetry('Document Viewed', { name: item.name, url: pdfUrl });
             } else if (item.type === 'app') {
                 this.openApp(item.app, item.name, item.extraData);
+            } else if (item.type === 'link' && item.url) {
+                // Cross-build hop (e.g. React/PHP Desktop shortcuts). Mirrored
+                // by v2's DesktopIcons → fires the same Security/System event
+                // shape so the email logs read identically across builds.
+                Alpine.store('os').logEvent('System', 'Information', `Version switch: opening ${item.name} (${item.url})`);
+                window.location.href = item.url;
             } else if (item.type === 'image') {
                 this.openApp('photos', item.name, { imageName: item.name, folderPath: path || 'C:\\Users\\DeVante\\Desktop' });
             } else if (item.type === 'video') {

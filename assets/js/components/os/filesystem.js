@@ -152,6 +152,10 @@ PROFILES:
         { name: 'Outlook', type: 'app', app: 'outlook', icon: window.portfolioConfig.imgPath + 'outlook.webp' },
         { name: 'Terminal', type: 'app', app: 'terminal', icon: window.portfolioConfig.imgPath + 'terminal.webp' },
         { name: 'FL Studio 24', type: 'app', app: 'flstudio', icon: window.portfolioConfig.imgPath + 'fl studio.webp' },
+        // Cross-build switch — taskbar React/PHP toggle is hidden on mobile,
+        // so the same shortcut lives on the Desktop. Handled by openItem's
+        // 'link' branch below.
+        { name: 'React Build', type: 'link', url: '/v2/', icon: window.portfolioConfig.imgPath + 'react.png' },
         { name: 'Recycle Bin', type: 'folder', path: 'C:\\Recycle Bin', icon: window.portfolioConfig.imgPath + 'recyclebinempty.webp' }
     ],
     'C:\\Users\\DeVante\\Documents': [

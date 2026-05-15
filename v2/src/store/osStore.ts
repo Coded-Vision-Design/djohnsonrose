@@ -304,8 +304,10 @@ export const useOsStore = create<OsState>()(
       finishBoot: () => set({ isBooting: false }),
       login: () => {
         set({ loggedIn: true, isBooting: false })
+        // v1 fires a single Security logEvent on login and lets the
+        // Security/System/Explorer router send the email. Mirror that —
+        // a separate track('Login') here would duplicate every email.
         get().logEvent('Security', 'Information', 'User DeVante logged in successfully')
-        track('Login', { version: 'react' })
       },
       logout: () => {
         get().logEvent('Security', 'Information', 'User DeVante logged out')
@@ -368,8 +370,10 @@ export const useOsStore = create<OsState>()(
           focusedWindowId: id,
           nextWindowZ: state.nextWindowZ + 1,
         })
+        // Single System logEvent matches v1's openApp — the logEvent router
+        // already emails on System source, so an explicit track('Open App')
+        // here would double-fire every email.
         get().logEvent('System', 'Information', `Starting application: ${w.title}`)
-        track('Open App', { app })
       },
 
       closeWindow: (id) => {
