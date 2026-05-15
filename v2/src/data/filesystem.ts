@@ -175,7 +175,20 @@ export const filesystem: FileSystem = {
     { name: 'Chrome', type: 'app', app: 'edge', icon: `${IMG}chrome.webp` },
     { name: 'Outlook', type: 'app', app: 'outlook', icon: `${IMG}outlook.webp` },
     { name: 'Terminal', type: 'app', app: 'terminal', icon: `${IMG}terminal.webp` },
-    { name: 'FL Studio 24', type: 'app', app: 'flstudio', icon: `${IMG}fl studio.webp` },
+    {
+      name: 'FL Studio 24',
+      type: 'app',
+      app: 'flstudio',
+      icon: `${IMG}fl%20studio.webp`,
+    },
+    // Recycle Bin lives on the Desktop in v1 — kept here so the auto-layout
+    // treats it like any other tile and never collides with a sibling.
+    {
+      name: 'Recycle Bin',
+      type: 'folder',
+      path: 'C:\\Recycle Bin',
+      icon: `${IMG}recyclebinempty.webp`,
+    },
   ],
   'C:\\Users\\DeVante\\Documents': [
     { name: 'Career', type: 'folder', icon: FOLDER },
@@ -253,6 +266,15 @@ export const filesystem: FileSystem = {
       type: 'image',
       icon: '🖼️',
       url: '/portfolio/youngsconstructiondesktop.webp',
+    },
+  ],
+  'C:\\Recycle Bin': [
+    {
+      name: 'Easter Egg - Drone Footage.mp4',
+      type: 'video',
+      icon: '🎬',
+      url: 'https://assets.mixkit.co/videos/preview/mixkit-drone-view-of-a-serene-lake-and-mountains-4318-large.mp4',
+      originalPath: 'C:\\Users\\DeVante\\Desktop',
     },
   ],
   'C:\\Users\\DeVante\\Projects': [

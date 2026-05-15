@@ -1,61 +1,68 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { useOsStore, TASKBAR_HEIGHT } from '../store/osStore'
 import { listAt, type FsEntry } from '../data/filesystem'
 import { playSound } from '../lib/sounds'
 
 const DESKTOP_PATH = 'C:\\Users\\DeVante\\Desktop'
-
+const PC_NAME = "DeVanté's PC"
 const ICON_W = 110
 const ICON_H = 110
 const MARGIN = 16
-// "DeVanté's PC" lives at the (0,0) slot — synthetic, not in the filesystem.
-const PC_NAME = "DeVanté's PC"
 
 interface PlacedIcon {
   name: string
   icon: string
-  type: 'pc' | 'recycleBin' | FsEntry['type']
+  type: 'pc' | FsEntry['type']
   entry?: FsEntry
   x: number
   y: number
+  isRecycleBin: boolean
 }
 
-function autoLayout(entries: { name: string }[], stored: Record<string, { x: number; y: number }>) {
+/**
+ * Lay out icons in column-first order. Stored positions are honoured and
+ * pre-marked as occupied so unpositioned icons get the next free slot
+ * deterministically. v1's shell.js does the same — the bug in my previous
+ * pass was treating Recycle Bin synthetically, so its slot wasn't tracked.
+ */
+function computeLayout(
+  names: string[],
+  stored: Record<string, { x: number; y: number }>,
+  maxPerCol: number,
+) {
   const occupied = new Set<string>()
-  // PC always at slot 0,0.
-  occupied.add('0,0')
-  for (const e of entries) {
-    const pos = stored[e.name]
-    if (pos) {
-      const col = Math.round((pos.x - MARGIN) / ICON_W)
-      const row = Math.round((pos.y - MARGIN) / ICON_H)
-      occupied.add(`${col},${row}`)
-    }
+  occupied.add('0,0') // PC tile is always at (0,0)
+
+  const positions: Record<string, { x: number; y: number }> = {}
+
+  // First pass: place icons with stored positions, marking their slots.
+  for (const name of names) {
+    const pos = stored[name]
+    if (!pos) continue
+    positions[name] = pos
+    const col = Math.max(0, Math.round((pos.x - MARGIN) / ICON_W))
+    const row = Math.max(0, Math.round((pos.y - MARGIN) / ICON_H))
+    occupied.add(`${col},${row}`)
   }
-  const availH = window.innerHeight - TASKBAR_HEIGHT - MARGIN * 2
-  const maxPerCol = Math.max(1, Math.floor(availH / ICON_H))
-  let idx = 0
-  const nextSlot = () => {
+
+  // Second pass: assign the next empty slot to unpositioned icons.
+  let cursor = 0
+  for (const name of names) {
+    if (positions[name]) continue
     while (true) {
-      const col = Math.floor(idx / maxPerCol)
-      const row = idx % maxPerCol
+      const col = Math.floor(cursor / maxPerCol)
+      const row = cursor % maxPerCol
       const key = `${col},${row}`
-      idx++
+      cursor++
       if (!occupied.has(key)) {
         occupied.add(key)
-        return { col, row }
+        positions[name] = { x: MARGIN + col * ICON_W, y: MARGIN + row * ICON_H }
+        break
       }
     }
   }
-  return (name: string) => {
-    const stored2 = stored[name]
-    if (stored2) return stored2
-    const slot = nextSlot()
-    return {
-      x: MARGIN + slot.col * ICON_W,
-      y: MARGIN + slot.row * ICON_H,
-    }
-  }
+
+  return positions
 }
 
 export function DesktopIcons() {
@@ -65,47 +72,49 @@ export function DesktopIcons() {
   const recycleItem = useOsStore((s) => s.recycleItem)
   const recycleCount = useOsStore((s) => s.recycleBin.length)
   const hiddenDesktop = useOsStore((s) => s.hiddenDesktop)
-  // Drag state — refs because we don't want to re-render on every mousemove.
+  const emptyRecycleBin = useOsStore((s) => s.emptyRecycleBin)
+  const openContextMenu = useOsStore((s) => s.openContextMenu)
+
+  const [hoverRecycle, setHoverRecycle] = useState(false)
+  const [draggingName, setDraggingName] = useState<string | null>(null)
   const dragRef = useRef<{ name: string; offsetX: number; offsetY: number; moved: boolean } | null>(
     null,
   )
-  const [hoverRecycle, setHoverRecycle] = useState(false)
 
-  // Build the icon list: synthetic PC + recycle bin + Desktop filesystem
-  // entries minus anything hidden.
   const icons = useMemo<PlacedIcon[]>(() => {
     const entries = listAt(DESKTOP_PATH).filter((e) => !hiddenDesktop.includes(e.name))
-    const layout = autoLayout(entries, iconPositions)
-    const pcPos = iconPositions[PC_NAME] ?? { x: MARGIN, y: MARGIN }
-    const recyclePos = iconPositions['Recycle Bin'] ?? layout('Recycle Bin')
+
+    const availH = window.innerHeight - TASKBAR_HEIGHT - MARGIN * 2
+    const maxPerCol = Math.max(1, Math.floor(availH / ICON_H))
+
+    const names = [PC_NAME, ...entries.map((e) => e.name)]
+    const positions = computeLayout(names, iconPositions, maxPerCol)
 
     const placed: PlacedIcon[] = [
       {
         name: PC_NAME,
         icon: '/assets/img/thispc.webp',
         type: 'pc',
-        x: pcPos.x,
-        y: pcPos.y,
-      },
-      {
-        name: 'Recycle Bin',
-        icon:
-          recycleCount > 0
-            ? '/assets/img/recyclebinfull.webp'
-            : '/assets/img/recyclebinempty.webp',
-        type: 'recycleBin',
-        x: recyclePos.x,
-        y: recyclePos.y,
+        x: positions[PC_NAME].x,
+        y: positions[PC_NAME].y,
+        isRecycleBin: false,
       },
       ...entries.map((entry): PlacedIcon => {
-        const pos = layout(entry.name)
+        const isRecycleBin = entry.name === 'Recycle Bin'
+        const icon = isRecycleBin
+          ? recycleCount > 0
+            ? '/assets/img/recyclebinfull.webp'
+            : '/assets/img/recyclebinempty.webp'
+          : entry.icon
+        const pos = positions[entry.name]
         return {
           name: entry.name,
-          icon: entry.icon,
+          icon,
           type: entry.type,
           entry,
           x: pos.x,
           y: pos.y,
+          isRecycleBin,
         }
       }),
     ]
@@ -115,10 +124,6 @@ export function DesktopIcons() {
   const open = (i: PlacedIcon) => {
     if (i.type === 'pc') {
       openApp('explorer', 'This PC', { extra: { initialPath: 'C:\\' } })
-      return
-    }
-    if (i.type === 'recycleBin') {
-      openApp('explorer', 'Recycle Bin', { extra: { initialPath: 'C:\\Recycle Bin' } })
       return
     }
     const e = i.entry
@@ -136,9 +141,6 @@ export function DesktopIcons() {
       openApp('notepad', e.name, { extra: { content: e.content ?? '' } })
     }
   }
-
-  // Track which icon is mid-drag in state so we can render a `cursor: grabbing`.
-  const [draggingName, setDraggingName] = useState<string | null>(null)
 
   const onMouseDown = (icon: PlacedIcon, e: React.MouseEvent) => {
     if (e.button !== 0) return
@@ -159,37 +161,25 @@ export function DesktopIcons() {
       const nx = ev.clientX - d.offsetX
       const ny = ev.clientY - d.offsetY
       const dx = nx - rect.left
-      if (!d.moved && Math.hypot(dx, ev.clientY - rect.top - d.offsetY) > 4) {
-        d.moved = true
-      }
+      const dy = ny - rect.top
+      if (!d.moved && Math.hypot(dx, dy) > 4) d.moved = true
       setIconPosition(d.name, { x: Math.max(0, nx), y: Math.max(0, ny) })
-      // hover detection for recycle bin
       const elsAt = document.elementsFromPoint(ev.clientX, ev.clientY)
       const overBin = elsAt.some((el) => el.getAttribute('data-recycle-target') === 'true')
       setHoverRecycle(overBin && d.name !== 'Recycle Bin' && d.name !== PC_NAME)
     }
-
     const onUp = (ev: MouseEvent) => {
       const d = dragRef.current
       if (d) {
         const elsAt = document.elementsFromPoint(ev.clientX, ev.clientY)
-        const droppedOnBin = elsAt.some(
-          (el) => el.getAttribute('data-recycle-target') === 'true',
-        )
-        if (
-          d.moved &&
-          droppedOnBin &&
-          d.name !== 'Recycle Bin' &&
-          d.name !== PC_NAME
-        ) {
-          // Persist the entry into the recycle bin and mark hidden.
+        const droppedOnBin = elsAt.some((el) => el.getAttribute('data-recycle-target') === 'true')
+        if (d.moved && droppedOnBin && d.name !== 'Recycle Bin' && d.name !== PC_NAME) {
           const entry = icons.find((i) => i.name === d.name)?.entry
           if (entry) {
             recycleItem(d.name, DESKTOP_PATH, { ...entry })
             playSound('recycle')
           }
         } else if (!d.moved) {
-          // Treat as a click — open the icon.
           const i = icons.find((x) => x.name === d.name)
           if (i) open(i)
         }
@@ -200,39 +190,70 @@ export function DesktopIcons() {
       window.removeEventListener('mousemove', onMove)
       window.removeEventListener('mouseup', onUp)
     }
-
     window.addEventListener('mousemove', onMove)
     window.addEventListener('mouseup', onUp)
   }
 
-  useEffect(() => {
-    // Re-flow on resize so auto-laid-out icons stay on screen.
-    const onResize = () => {
-      // The layout function reads window.innerHeight at memo time, so a
-      // resize triggers re-layout naturally on the next render. We just need
-      // to nudge React via a state update.
-      setHoverRecycle((v) => v)
-    }
-    window.addEventListener('resize', onResize)
-    return () => window.removeEventListener('resize', onResize)
-  }, [])
-
   return (
     <div className="absolute inset-0 pointer-events-none p-2" aria-label="Desktop icons">
       {icons.map((icon) => {
-        const isRecycle = icon.type === 'recycleBin'
         const isDragging = draggingName === icon.name
-        const recycleHover = isRecycle && hoverRecycle
+        const recycleHover = icon.isRecycleBin && hoverRecycle
         return (
           <button
             key={icon.name}
             type="button"
-            data-recycle-target={isRecycle ? 'true' : undefined}
+            data-recycle-target={icon.isRecycleBin ? 'true' : undefined}
             onMouseDown={(e) => onMouseDown(icon, e)}
             onDoubleClick={() => open(icon)}
-            onContextMenu={(e) => e.preventDefault()}
+            onContextMenu={(e) => {
+              e.preventDefault()
+              e.stopPropagation()
+              const items = icon.isRecycleBin
+                ? [
+                    {
+                      label: 'Open',
+                      icon: '📂',
+                      action: () => open(icon),
+                    },
+                    {
+                      label: 'Empty Recycle Bin',
+                      icon: '🗑',
+                      disabled: recycleCount === 0,
+                      action: () => emptyRecycleBin(),
+                    },
+                  ]
+                : icon.type === 'pc'
+                  ? [
+                      {
+                        label: 'Open',
+                        icon: '📂',
+                        action: () => open(icon),
+                      },
+                      {
+                        label: 'Properties',
+                        icon: 'ℹ️',
+                        action: () => openApp('settings'),
+                      },
+                    ]
+                  : [
+                      { label: 'Open', icon: '📂', action: () => open(icon) },
+                      { separator: true },
+                      {
+                        label: 'Delete',
+                        icon: '🗑',
+                        action: () => {
+                          if (icon.entry) {
+                            recycleItem(icon.name, DESKTOP_PATH, { ...icon.entry })
+                            playSound('recycle')
+                          }
+                        },
+                      },
+                    ]
+              openContextMenu(e.clientX, e.clientY, items)
+            }}
             title={icon.name}
-            className={`pointer-events-auto absolute flex flex-col items-center justify-start p-2 w-[110px] rounded-md text-center group ${
+            className={`pointer-events-auto absolute flex flex-col items-center justify-start p-2 w-[110px] rounded-md text-center group desktop-icon-container ${
               recycleHover
                 ? 'bg-white/30 ring-2 ring-win-blue scale-110'
                 : 'hover:bg-white/10'
@@ -251,15 +272,7 @@ export function DesktopIcons() {
                 <span className="text-4xl">{icon.icon}</span>
               )}
             </div>
-            <span
-              className="text-white text-[11px] drop-shadow-lg w-full px-1 leading-tight overflow-hidden"
-              style={{
-                display: '-webkit-box',
-                WebkitLineClamp: 2,
-                WebkitBoxOrient: 'vertical',
-                wordBreak: 'break-word',
-              }}
-            >
+            <span className="text-white text-[11px] drop-shadow-lg w-full px-1 leading-tight">
               {icon.name}
             </span>
           </button>

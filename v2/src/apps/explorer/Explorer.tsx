@@ -104,12 +104,23 @@ export default function Explorer() {
   const sidebar = useMemo(() => buildSidebar(recycleBin.length), [recycleBin.length])
 
   // Files at the current path: real entries, or recycled items if in the bin.
+  // The bin merges its static seed (Easter Egg video) with whatever's been
+  // recycled at runtime, mirroring v1's behaviour.
   const allFiles = useMemo<(FsEntry & { __originPath?: string })[]>(() => {
     if (isRecycle) {
-      return recycleBin.map((r) => ({
-        ...(r.payload as unknown as FsEntry),
-        __originPath: r.fromPath,
-      }))
+      const seeded = listAt(RECYCLE) as FsEntry[]
+      const dynamic = recycleBin.map(
+        (r) => ({ ...(r.payload as unknown as FsEntry), __originPath: r.fromPath }),
+      )
+      // De-dup by name in case a seeded entry's name later gets recycled.
+      const merged: (FsEntry & { __originPath?: string })[] = []
+      const seen = new Set<string>()
+      for (const e of [...seeded, ...dynamic]) {
+        if (seen.has(e.name)) continue
+        seen.add(e.name)
+        merged.push(e)
+      }
+      return merged
     }
     const raw = listAt(currentPath)
     if (currentPath === 'C:\\Users\\DeVante\\Desktop') {

@@ -175,7 +175,7 @@ test.describe('desktop icons + recycle bin', () => {
     await expect(page.getByRole('dialog', { name: 'This PC' })).toBeVisible()
   })
 
-  test('Recycle Bin icon exists; opening Explorer at the bin shows an empty state', async ({
+  test('Recycle Bin icon exists; opening Explorer at the bin shows the Easter Egg', async ({
     page,
   }) => {
     await signIn(page)
@@ -184,6 +184,7 @@ test.describe('desktop icons + recycle bin', () => {
     await bin.dblclick()
     const win = page.getByRole('dialog', { name: 'Recycle Bin' })
     await expect(win).toBeVisible()
-    await expect(win.getByText('Recycle bin is empty.')).toBeVisible()
+    // v1 seeds the bin with an Easter Egg video — verify it's visible.
+    await expect(win.getByText('Easter Egg - Drone Footage.mp4')).toBeVisible()
   })
 })

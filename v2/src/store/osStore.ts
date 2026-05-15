@@ -83,6 +83,24 @@ export interface IconPosition {
   y: number
 }
 
+export interface ContextMenuItem {
+  label?: string
+  icon?: string
+  /** Click handler — receives no args, called once. */
+  action?: () => void
+  /** Render as a horizontal divider between groups. */
+  separator?: boolean
+  /** Show but dim/un-clickable. */
+  disabled?: boolean
+}
+
+export interface ContextMenuState {
+  open: boolean
+  x: number
+  y: number
+  items: ContextMenuItem[]
+}
+
 const TASKBAR_H = 48
 const MIN_W = 300
 const MIN_H = 200
@@ -126,6 +144,14 @@ interface OsState {
   hiddenDesktop: string[]
   iconPositions: Record<string, IconPosition>
 
+  // Viewport flags — kept in-memory only, updated by a global listener.
+  isMobile: boolean
+  isTablet: boolean
+  isWideDesktop: boolean
+
+  // Right-click context menu — single instance, mounted at root.
+  contextMenu: ContextMenuState
+
   // Actions
   finishBoot: () => void
   login: () => void
@@ -167,6 +193,11 @@ interface OsState {
   emptyRecycleBin: () => void
   setIconPosition: (name: string, pos: IconPosition) => void
   resetIconPositions: () => void
+
+  // Responsive flags + context menu
+  setBreakpoint: (width: number) => void
+  openContextMenu: (x: number, y: number, items: ContextMenuItem[]) => void
+  closeContextMenu: () => void
 }
 
 // Only `settings`, the auth flag, and filesystem-shaped state are persisted.
@@ -218,6 +249,15 @@ export const useOsStore = create<OsState>()(
       recycleBin: [],
       hiddenDesktop: [],
       iconPositions: {},
+
+      // Initialised from window.innerWidth — useBreakpoint() keeps these
+      // updated. SSR-safe via the typeof check.
+      isMobile: typeof window !== 'undefined' ? window.innerWidth < 640 : false,
+      isTablet:
+        typeof window !== 'undefined' ? window.innerWidth >= 640 && window.innerWidth < 1024 : false,
+      isWideDesktop: typeof window !== 'undefined' ? window.innerWidth >= 1024 : true,
+
+      contextMenu: { open: false, x: 0, y: 0, items: [] },
 
       finishBoot: () => set({ isBooting: false }),
       login: () => {
@@ -380,6 +420,12 @@ export const useOsStore = create<OsState>()(
         const next = [ev, ...get().eventLogs]
         if (next.length > 100) next.pop()
         set({ eventLogs: next })
+        // v1's store.js routes Security/System/Explorer events to /api/log.php
+        // which emails the admin. Mirror that behaviour here so the event
+        // viewer in v2 has the same observability surface.
+        if (source === 'Security' || source === 'System' || source === 'Explorer') {
+          track(`${source}: ${level}`, { description })
+        }
       },
 
       // Chrome toggles: only one of start/quickSettings/widgets is ever open.
@@ -438,6 +484,32 @@ export const useOsStore = create<OsState>()(
         set({ iconPositions: { ...get().iconPositions, [name]: pos } }),
 
       resetIconPositions: () => set({ iconPositions: {} }),
+
+      setBreakpoint: (width) => {
+        const isMobile = width < 640
+        const isTablet = width >= 640 && width < 1024
+        const isWideDesktop = width >= 1024
+        const s = get()
+        if (
+          s.isMobile === isMobile &&
+          s.isTablet === isTablet &&
+          s.isWideDesktop === isWideDesktop
+        ) {
+          return
+        }
+        set({ isMobile, isTablet, isWideDesktop })
+        // On mobile, force every window into the maximised state so it always
+        // takes the full available area (matches v1's resize handler).
+        if (!isWideDesktop) {
+          set({
+            windows: s.windows.map((w) => ({ ...w, maximized: true })),
+          })
+        }
+      },
+
+      openContextMenu: (x, y, items) => set({ contextMenu: { open: true, x, y, items } }),
+      closeContextMenu: () =>
+        set({ contextMenu: { open: false, x: 0, y: 0, items: [] } }),
     }),
     {
       name: 'react.os',
