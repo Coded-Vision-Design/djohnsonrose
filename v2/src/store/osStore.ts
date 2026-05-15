@@ -142,6 +142,8 @@ interface OsState {
   // Recycle bin + desktop icon layout (both persisted)
   recycleBin: RecycledItem[]
   hiddenDesktop: string[]
+  /** Static C:\Recycle Bin items the user has "Restored" (i.e. removed). */
+  restoredSeeds: string[]
   iconPositions: Record<string, IconPosition>
 
   // Viewport flags — kept in-memory only, updated by a global listener.
@@ -207,6 +209,7 @@ interface PersistedSlice {
   settings: Settings
   recycleBin: RecycledItem[]
   hiddenDesktop: string[]
+  restoredSeeds: string[]
   iconPositions: Record<string, IconPosition>
 }
 
@@ -248,6 +251,7 @@ export const useOsStore = create<OsState>()(
 
       recycleBin: [],
       hiddenDesktop: [],
+      restoredSeeds: [],
       iconPositions: {},
 
       // Initialised from window.innerWidth — useBreakpoint() keeps these
@@ -471,13 +475,31 @@ export const useOsStore = create<OsState>()(
         set({
           recycleBin: state.recycleBin.filter((r) => r.name !== name),
           hiddenDesktop: state.hiddenDesktop.filter((n) => n !== name),
+          // Seeded items live in the static filesystem, so we can't remove
+          // them — we track restored names and let the UI filter them out.
+          restoredSeeds: state.restoredSeeds.includes(name)
+            ? state.restoredSeeds
+            : [...state.restoredSeeds, name],
         })
         state.logEvent('FileSystem', 'Information', `Restored from recycle bin: ${name}`)
       },
 
       emptyRecycleBin: () => {
-        get().logEvent('FileSystem', 'Warning', `Recycle bin emptied (${get().recycleBin.length} items)`)
-        set({ recycleBin: [] })
+        const state = get()
+        state.logEvent(
+          'FileSystem',
+          'Warning',
+          `Recycle bin emptied (${state.recycleBin.length} items)`,
+        )
+        // Empty wipes both the dynamic bin and any remaining seeded items —
+        // user can recover seeds via a fresh `localStorage.clear()` if needed.
+        // Importing data/filesystem lazily would create a circular dep, so we
+        // hard-code the known seed list here (currently just the Easter Egg).
+        const seedNames = ['Easter Egg - Drone Footage.mp4']
+        set({
+          recycleBin: [],
+          restoredSeeds: Array.from(new Set([...state.restoredSeeds, ...seedNames])),
+        })
       },
 
       setIconPosition: (name, pos) =>
@@ -519,6 +541,7 @@ export const useOsStore = create<OsState>()(
         settings: state.settings,
         recycleBin: state.recycleBin,
         hiddenDesktop: state.hiddenDesktop,
+        restoredSeeds: state.restoredSeeds,
         iconPositions: state.iconPositions,
       }),
     },

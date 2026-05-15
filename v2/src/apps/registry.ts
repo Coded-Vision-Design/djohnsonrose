@@ -49,7 +49,7 @@ export const apps: Record<string, AppDef> = {
   powerpoint: { id: 'powerpoint', title: 'PowerPoint', icon: `${IMG}powerpoint.webp`, defaultSize: { w: 980, h: 720 }, Component: PowerPoint },
   outlook: { id: 'outlook', title: 'Outlook', icon: `${IMG}outlook.webp`, defaultSize: { w: 720, h: 600 }, Component: Outlook },
   photoshop: { id: 'photoshop', title: 'Photoshop', icon: `${IMG}photoshop.webp`, defaultSize: { w: 1100, h: 720 }, Component: Photoshop },
-  flstudio: { id: 'flstudio', title: 'FL Studio 24', icon: `${IMG}fl studio.webp`, defaultSize: { w: 1200, h: 720 }, Component: FLStudio },
+  flstudio: { id: 'flstudio', title: 'FL Studio 24', icon: `${IMG}fl%20studio.webp`, defaultSize: { w: 1200, h: 720 }, Component: FLStudio },
   docker: { id: 'docker', title: 'Docker', icon: `${IMG}docker.webp`, defaultSize: { w: 1000, h: 700 }, Component: Docker },
   putty: { id: 'putty', title: 'PuTTY', icon: `${IMG}putty.webp`, defaultSize: { w: 720, h: 480 }, Component: Putty },
   filezilla: { id: 'filezilla', title: 'FileZilla', icon: `${IMG}filezilla.webp`, defaultSize: { w: 980, h: 640 }, Component: FileZilla },

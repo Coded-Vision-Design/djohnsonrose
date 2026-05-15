@@ -105,7 +105,7 @@ export const filesystem: FileSystem = {
     { name: 'PuTTY', type: 'folder', icon: FOLDER },
   ],
   'C:\\Program Files (x86)\\Image-Line\\FL Studio 24': [
-    { name: 'FL.exe', type: 'app', app: 'flstudio', icon: `${IMG}fl studio.webp` },
+    { name: 'FL.exe', type: 'app', app: 'flstudio', icon: `${IMG}fl%20studio.webp` },
   ],
   'C:\\Program Files (x86)\\Image-Line': [
     { name: 'FL Studio 24', type: 'folder', icon: FOLDER },

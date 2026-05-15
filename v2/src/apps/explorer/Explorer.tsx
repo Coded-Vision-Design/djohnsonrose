@@ -96,19 +96,22 @@ export default function Explorer() {
   const openApp = useOsStore((s) => s.openApp)
   const recycleBin = useOsStore((s) => s.recycleBin)
   const hiddenDesktop = useOsStore((s) => s.hiddenDesktop)
+  const restoredSeeds = useOsStore((s) => s.restoredSeeds)
   const restoreFromRecycle = useOsStore((s) => s.restoreFromRecycle)
   const recycleItem = useOsStore((s) => s.recycleItem)
+  const emptyRecycleBin = useOsStore((s) => s.emptyRecycleBin)
 
   const currentPath = history[step]
   const isRecycle = currentPath === RECYCLE
-  const sidebar = useMemo(() => buildSidebar(recycleBin.length), [recycleBin.length])
 
   // Files at the current path: real entries, or recycled items if in the bin.
   // The bin merges its static seed (Easter Egg video) with whatever's been
-  // recycled at runtime, mirroring v1's behaviour.
+  // recycled at runtime, minus any items the user has already restored.
   const allFiles = useMemo<(FsEntry & { __originPath?: string })[]>(() => {
     if (isRecycle) {
-      const seeded = listAt(RECYCLE) as FsEntry[]
+      const seeded = (listAt(RECYCLE) as FsEntry[]).filter(
+        (e) => !restoredSeeds.includes(e.name),
+      )
       const dynamic = recycleBin.map(
         (r) => ({ ...(r.payload as unknown as FsEntry), __originPath: r.fromPath }),
       )
@@ -127,7 +130,16 @@ export default function Explorer() {
       return raw.filter((e) => !hiddenDesktop.includes(e.name))
     }
     return raw
-  }, [currentPath, isRecycle, recycleBin, hiddenDesktop])
+  }, [currentPath, isRecycle, recycleBin, hiddenDesktop, restoredSeeds])
+
+  // Sidebar icon swaps between full/empty based on total bin contents.
+  const binCount = useMemo(() => {
+    const seeded = (listAt(RECYCLE) as FsEntry[]).filter(
+      (e) => !restoredSeeds.includes(e.name),
+    ).length
+    return seeded + recycleBin.length
+  }, [recycleBin.length, restoredSeeds])
+  const sidebar = useMemo(() => buildSidebar(binCount), [binCount])
 
   const currentFiles = useMemo(() => {
     if (!searchQuery) return allFiles
@@ -352,6 +364,19 @@ export default function Explorer() {
             </button>
           )}
         </div>
+
+        {/* Empty Recycle Bin — only visible when looking at the bin */}
+        {isRecycle && (
+          <button
+            type="button"
+            onClick={emptyRecycleBin}
+            disabled={currentFiles.length === 0}
+            className="px-3 py-1.5 rounded text-xs font-medium bg-red-500 text-white hover:bg-red-600 disabled:opacity-40 disabled:cursor-not-allowed"
+            title="Empty Recycle Bin"
+          >
+            🗑 Empty
+          </button>
+        )}
       </div>
 
       {/* Main */}
@@ -483,9 +508,10 @@ export default function Explorer() {
                           e.stopPropagation()
                           restoreFromRecycle(file.name)
                         }}
-                        className="mt-2 px-2 py-0.5 bg-win-blue text-white text-[9px] rounded hover:bg-blue-600"
+                        className="mt-2 px-3 py-1 bg-win-blue text-white text-[10px] font-semibold rounded shadow hover:bg-blue-600 transition-colors"
+                        title={`Restore ${file.name}`}
                       >
-                        Restore
+                        ↺ Restore
                       </button>
                     )}
                   </div>
