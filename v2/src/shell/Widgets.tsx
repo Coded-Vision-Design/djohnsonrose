@@ -51,7 +51,7 @@ export function Widgets() {
           type="button"
           className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition-colors overflow-hidden"
         >
-          <img src="/assets/img/profile.png" alt="" className="w-6 h-6 rounded-full object-cover" />
+          <img src="/assets/img/profile.webp" alt="" className="w-6 h-6 rounded-full object-cover" />
         </button>
       </div>
 

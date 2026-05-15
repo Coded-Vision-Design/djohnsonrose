@@ -39,7 +39,7 @@ export function LockScreen() {
       <div className="relative z-10 flex flex-col items-center space-y-6">
         <div className="w-32 h-32 rounded-full border-4 border-white/20 overflow-hidden shadow-2xl">
           <img
-            src="/assets/img/profile.png"
+            src="/assets/img/profile.webp"
             alt="DeVanté Johnson-Rose"
             className="w-full h-full object-cover"
           />

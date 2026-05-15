@@ -283,7 +283,7 @@ export default function AdminConsole() {
   if (!me.authenticated) {
     return (
       <div className="h-full flex flex-col items-center justify-center gap-5 bg-gradient-to-br from-[#003a8c] via-[#0050b3] to-[#1890ff] text-white p-6 text-center">
-        <img src="/assets/img/profile.png" alt="" className="w-20 h-20 rounded-full ring-4 ring-white/20" />
+        <img src="/assets/img/profile.webp" alt="" className="w-20 h-20 rounded-full ring-4 ring-white/20" />
         <div>
           <h1 className="text-2xl font-semibold">Admin Console</h1>
           <p className="opacity-80 text-sm mt-1">Sign in with an authorised Google account.</p>

@@ -3,7 +3,7 @@
 // this; Phase 4+ may push writes via a store, but for now it's read-only.
 
 const IMG = '/assets/img/'
-const FOLDER = `${IMG}win11/folder.png`
+const FOLDER = `${IMG}win11/folder.webp`
 
 export interface FsAppEntry {
   name: string
@@ -159,10 +159,10 @@ export const filesystem: FileSystem = {
     { name: 'Public', type: 'folder', icon: FOLDER },
   ],
   'C:\\Users\\DeVante': [
-    { name: 'Desktop', type: 'folder', icon: `${IMG}win11/desktop.png` },
-    { name: 'Documents', type: 'folder', icon: `${IMG}win11/documents.png` },
-    { name: 'Downloads', type: 'folder', icon: `${IMG}win11/downloads.png` },
-    { name: 'Pictures', type: 'folder', icon: `${IMG}win11/pictures.png` },
+    { name: 'Desktop', type: 'folder', icon: `${IMG}win11/desktop.webp` },
+    { name: 'Documents', type: 'folder', icon: `${IMG}win11/documents.webp` },
+    { name: 'Downloads', type: 'folder', icon: `${IMG}win11/downloads.webp` },
+    { name: 'Pictures', type: 'folder', icon: `${IMG}win11/pictures.webp` },
     { name: 'Projects', type: 'folder', icon: FOLDER },
   ],
   'C:\\Users\\DeVante\\Desktop': [
@@ -209,7 +209,8 @@ VERIFY:
     // Cross-build switch — taskbar React/PHP toggle is hidden on mobile, so
     // the PHP shortcut lives on the Desktop. Handled by DesktopIcons' 'link'
     // branch.
-    { name: 'PHP Build', type: 'link', url: '/', icon: `${IMG}php.png` },
+    { name: 'PHP Build', type: 'link', url: '/', icon: `${IMG}php.webp` },
+    { name: 'GitHub', type: 'app', app: 'github', icon: `${IMG}github.webp` },
     // Recycle Bin lives on the Desktop in v1 — kept here so the auto-layout
     // treats it like any other tile and never collides with a sibling.
     {

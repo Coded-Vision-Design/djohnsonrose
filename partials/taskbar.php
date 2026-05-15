@@ -158,7 +158,7 @@
             
             <!-- Constant Tray Icons -->
             <div class="p-2 hover:bg-black/5 dark:hover:bg-white/10 rounded cursor-pointer transition-colors flex items-center justify-center" title="Windows Security">
-                <img :src="window.portfolioConfig.imgPath + 'win11/view.png'" class="w-5 h-5 dark:invert opacity-70">
+                <img :src="window.portfolioConfig.imgPath + 'win11/view.webp'" class="w-5 h-5 dark:invert opacity-70">
             </div>
             <div class="p-2 hover:bg-black/5 dark:hover:bg-white/10 rounded cursor-pointer transition-colors flex items-center justify-center" @click="openApp('settings'); hiddenIconsOpen = false" title="Settings">
                 <img :src="window.portfolioConfig.imgPath + 'settings.webp'" class="w-5 h-5 opacity-70">

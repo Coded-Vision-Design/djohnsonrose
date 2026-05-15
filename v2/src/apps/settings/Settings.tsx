@@ -158,7 +158,7 @@ export default function Settings() {
         {!isMobile && (
           <div className="flex items-center space-x-3 p-3 mb-6">
             <img
-              src="/assets/img/profile.png"
+              src="/assets/img/profile.webp"
               alt=""
               className="w-12 h-12 rounded-full object-cover border border-white/20"
             />
@@ -438,7 +438,7 @@ export default function Settings() {
             <div className="p-6 glass rounded-lg border border-gray-200 dark:border-white/10">
               <div className="flex items-center space-x-4 mb-6">
                 <img
-                  src="/assets/img/profile.png"
+                  src="/assets/img/profile.webp"
                   alt=""
                   className="w-20 h-20 rounded-full border-4 border-win-blue/20 object-cover"
                 />

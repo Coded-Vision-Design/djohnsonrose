@@ -32,11 +32,11 @@ interface SidebarItem {
 const buildSidebar = (recycleCount: number): SidebarItem[] => [
   { type: 'header', label: 'Pinned' },
   { id: 'home', label: 'Home', icon: '/assets/img/thispc.webp', path: HOME, type: 'item' },
-  { id: 'desktop', label: 'Desktop', icon: '/assets/img/win11/desktop.png', path: 'C:\\Users\\DeVante\\Desktop', type: 'item' },
-  { id: 'documents', label: 'Documents', icon: '/assets/img/win11/documents.png', path: 'C:\\Users\\DeVante\\Documents', type: 'item' },
-  { id: 'downloads', label: 'Downloads', icon: '/assets/img/win11/downloads.png', path: 'C:\\Users\\DeVante\\Downloads', type: 'item' },
-  { id: 'pictures', label: 'Pictures', icon: '/assets/img/win11/pictures.png', path: 'C:\\Users\\DeVante\\Pictures', type: 'item' },
-  { id: 'projects', label: 'Projects', icon: '/assets/img/win11/folder.png', path: 'C:\\Users\\DeVante\\Projects', type: 'item' },
+  { id: 'desktop', label: 'Desktop', icon: '/assets/img/win11/desktop.webp', path: 'C:\\Users\\DeVante\\Desktop', type: 'item' },
+  { id: 'documents', label: 'Documents', icon: '/assets/img/win11/documents.webp', path: 'C:\\Users\\DeVante\\Documents', type: 'item' },
+  { id: 'downloads', label: 'Downloads', icon: '/assets/img/win11/downloads.webp', path: 'C:\\Users\\DeVante\\Downloads', type: 'item' },
+  { id: 'pictures', label: 'Pictures', icon: '/assets/img/win11/pictures.webp', path: 'C:\\Users\\DeVante\\Pictures', type: 'item' },
+  { id: 'projects', label: 'Projects', icon: '/assets/img/win11/folder.webp', path: 'C:\\Users\\DeVante\\Projects', type: 'item' },
   {
     id: 'recycle',
     label: 'Recycle Bin',
@@ -46,7 +46,7 @@ const buildSidebar = (recycleCount: number): SidebarItem[] => [
   },
   { type: 'header', label: 'This PC' },
   { id: 'pc', label: "DeVanté's PC", icon: '/assets/img/thispc.webp', path: 'C:\\', type: 'item' },
-  { id: 'cdrive', label: 'C: Drive', icon: '/assets/img/win11/drive_c.png', path: 'C:\\', indent: true, type: 'item' },
+  { id: 'cdrive', label: 'C: Drive', icon: '/assets/img/win11/drive_c.webp', path: 'C:\\', indent: true, type: 'item' },
 ]
 
 // ---- Helpers (pure) ------------------------------------------------------

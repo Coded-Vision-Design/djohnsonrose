@@ -7,7 +7,7 @@ document.addEventListener('alpine:init', () => {
         loggedIn: localStorage.getItem('auth.loggedIn') === 'true',
         user: {
             name: 'DeVante Johnson-Rose',
-            avatar: window.portfolioConfig.imgPath + 'profile.png'
+            avatar: window.portfolioConfig.imgPath + 'profile.webp'
         },
         clock: {
             time: '',
@@ -574,7 +574,7 @@ document.addEventListener('alpine:init', () => {
                 { id: 'photoshop', name: 'Photoshop', icon: window.portfolioConfig.imgPath + 'photoshop.webp' },
                 { id: 'flstudio', name: 'FL Studio 24', icon: window.portfolioConfig.imgPath + 'fl studio.webp' },
                 { id: 'docker', name: 'Docker', icon: window.portfolioConfig.imgPath + 'docker.webp' },
-                { id: 'explorer', name: 'Explorer', icon: window.portfolioConfig.imgPath + 'win11/folder.png' },
+                { id: 'explorer', name: 'Explorer', icon: window.portfolioConfig.imgPath + 'win11/folder.webp' },
                 { id: 'notepad', name: 'Notepad++', icon: window.portfolioConfig.imgPath + 'notepad++.webp' },
                 { id: 'putty', name: 'PuTTY', icon: window.portfolioConfig.imgPath + 'putty.webp' },
                 { id: 'filezilla', name: 'FileZilla', icon: window.portfolioConfig.imgPath + 'filezilla.webp' },
@@ -585,7 +585,8 @@ document.addEventListener('alpine:init', () => {
                 { id: 'eventviewer', name: 'Event Viewer', icon: window.portfolioConfig.imgPath + 'eventviewer.webp' },
                 { id: 'calculator', name: 'Calculator', icon: window.portfolioConfig.imgPath + 'calculator.webp' },
                 { id: 'references', name: 'References', icon: window.portfolioConfig.imgPath + 'notepad++.webp' },
-                { id: 'admin', name: 'Admin Console', icon: window.portfolioConfig.imgPath + 'mssql.webp' }
+                { id: 'admin', name: 'Admin Console', icon: window.portfolioConfig.imgPath + 'mssql.webp' },
+                { id: 'github', name: 'GitHub', icon: window.portfolioConfig.imgPath + 'github.webp' }
             ];
 
             // Group by letter

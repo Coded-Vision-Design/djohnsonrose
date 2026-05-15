@@ -9,7 +9,7 @@
     <!-- ============ Lock screen (unauthenticated) ============ -->
     <template x-if="!me || !me.authenticated">
         <div class="h-full flex flex-col items-center justify-center gap-5 bg-gradient-to-br from-[#003a8c] via-[#0050b3] to-[#1890ff] text-white p-6 text-center">
-            <img src="<?php echo IMG_PATH; ?>profile.png" alt="" class="w-20 h-20 rounded-full ring-4 ring-white/20">
+            <img src="<?php echo IMG_PATH; ?>profile.webp" alt="" class="w-20 h-20 rounded-full ring-4 ring-white/20">
             <div>
                 <h1 class="text-2xl font-semibold">Admin Console</h1>
                 <p class="opacity-80 text-sm mt-1">Sign in with an authorised Google account.</p>

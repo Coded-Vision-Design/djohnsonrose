@@ -157,7 +157,7 @@
                      @dragstart="$event.dataTransfer.setData('application/json', JSON.stringify({item: {name: 'Projects', type: 'folder'}, fromPath: 'C:\\Users\\DeVante\\Desktop'}))"
                      class="flex items-center p-2 rounded hover:bg-white/20 dark:hover:bg-white/10 cursor-pointer">
                     <div class="w-8 h-8 rounded bg-yellow-100 flex items-center justify-center mr-3 overflow-hidden">
-                        <img :src="window.portfolioConfig.imgPath + 'win11/folder.png'" class="w-6 h-6 object-contain">
+                        <img :src="window.portfolioConfig.imgPath + 'win11/folder.webp'" class="w-6 h-6 object-contain">
                     </div>
                     <div>
                         <div class="text-[11px] font-medium dark:text-white">Projects</div>

@@ -253,7 +253,7 @@ export function Taskbar() {
               className="p-2 hover:bg-black/5 dark:hover:bg-white/10 rounded transition-colors flex items-center justify-center"
               title="Windows Security"
             >
-              <img src="/assets/img/win11/view.png" alt="" className="w-5 h-5 dark:invert opacity-70" />
+              <img src="/assets/img/win11/view.webp" alt="" className="w-5 h-5 dark:invert opacity-70" />
             </div>
             <button
               type="button"

@@ -577,7 +577,7 @@ document.addEventListener('alpine:init', () => {
         },
         user: {
             name: 'DeVanté Johnson-Rose',
-            avatar: window.portfolioConfig.imgPath + 'profile.png'
+            avatar: window.portfolioConfig.imgPath + 'profile.webp'
         },
         nav: [
             { id: 'system', label: 'System', icon: '💻' },

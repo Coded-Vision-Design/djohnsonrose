@@ -155,7 +155,7 @@ export function StartMenu() {
       <div className="h-16 bg-black/5 dark:bg-black/20 flex items-center justify-between px-8 border-t border-white/10 shrink-0">
         <div className="flex items-center space-x-3 group cursor-pointer p-1 rounded hover:bg-white/10">
           <img
-            src="/assets/img/profile.png"
+            src="/assets/img/profile.webp"
             alt=""
             className="w-8 h-8 rounded-full border border-white/20 object-cover"
           />
@@ -296,7 +296,7 @@ function PinnedView({
             className="flex items-center p-2 rounded hover:bg-white/20 dark:hover:bg-white/10 text-left transition-colors"
           >
             <div className="w-8 h-8 rounded bg-yellow-100 flex items-center justify-center mr-3 overflow-hidden">
-              <img src="/assets/img/win11/folder.png" alt="" className="w-6 h-6 object-contain" />
+              <img src="/assets/img/win11/folder.webp" alt="" className="w-6 h-6 object-contain" />
             </div>
             <div>
               <div className="text-[11px] font-medium dark:text-white">Projects</div>

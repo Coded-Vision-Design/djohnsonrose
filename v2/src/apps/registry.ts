@@ -25,6 +25,7 @@ const FileZilla = lazy(() => import('./filezilla/FileZilla'))
 const Photoshop = lazy(() => import('./photoshop/Photoshop'))
 const AdminConsole = lazy(() => import('./admin/AdminConsole'))
 const ReferencesVault = lazy(() => import('./references/ReferencesVault'))
+const GitHubApp = lazy(() => import('./github/GitHub'))
 
 export interface AppDef {
   id: string
@@ -60,12 +61,13 @@ export const apps: Record<string, AppDef> = {
   taskmanager: { id: 'taskmanager', title: 'Task Manager', icon: `${IMG}taskmanager.webp`, defaultSize: { w: 900, h: 640 }, Component: TaskManager },
   eventviewer: { id: 'eventviewer', title: 'Event Viewer', icon: `${IMG}eventviewer.webp`, defaultSize: { w: 980, h: 640 }, Component: EventViewer },
   calculator: { id: 'calculator', title: 'Calculator', icon: `${IMG}calculator.webp`, defaultSize: { w: 320, h: 480 }, Component: Calculator },
-  paint: { id: 'paint', title: 'Paint', icon: `${IMG}win11/paint.png`, defaultSize: { w: 900, h: 650 }, Component: Paint },
-  photos: { id: 'photos', title: 'Photos', icon: `${IMG}win11/photos.png`, defaultSize: { w: 900, h: 640 }, Component: Photos },
-  video: { id: 'video', title: 'Movies & TV', icon: `${IMG}win11/videos.png`, defaultSize: { w: 900, h: 600 }, Component: Video },
+  paint: { id: 'paint', title: 'Paint', icon: `${IMG}win11/paint.webp`, defaultSize: { w: 900, h: 650 }, Component: Paint },
+  photos: { id: 'photos', title: 'Photos', icon: `${IMG}win11/photos.webp`, defaultSize: { w: 900, h: 640 }, Component: Photos },
+  video: { id: 'video', title: 'Movies & TV', icon: `${IMG}win11/videos.webp`, defaultSize: { w: 900, h: 600 }, Component: Video },
   pdfreader: { id: 'pdfreader', title: 'PDF Reader', icon: `${IMG}pdf.webp`, defaultSize: { w: 900, h: 720 }, Component: PdfReader },
   admin: { id: 'admin', title: 'Admin Console', icon: `${IMG}mssql.webp`, defaultSize: { w: 1180, h: 760 }, Component: AdminConsole },
   references: { id: 'references', title: 'References', icon: `${IMG}notepad++.webp`, defaultSize: { w: 820, h: 560 }, Component: ReferencesVault },
+  github: { id: 'github', title: 'GitHub', icon: `${IMG}github.webp`, defaultSize: { w: 1180, h: 760 }, Component: GitHubApp },
 }
 
 export function getApp(id: string): AppDef | undefined {

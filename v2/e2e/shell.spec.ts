@@ -31,10 +31,10 @@ test.describe('boot + login', () => {
     await expect(page.getByText('DeVanté Johnson-Rose')).toBeVisible()
     await expect(page.getByText('Welcome back, DeVante.')).toBeVisible()
 
-    // Profile picture is served from /assets/img/profile.png (shared with v1).
+    // Profile picture is served from /assets/img/profile.webp (shared with v1).
     const avatar = page.locator('img[alt="DeVanté Johnson-Rose"]')
     await expect(avatar).toBeVisible()
-    await expect(avatar).toHaveAttribute('src', '/assets/img/profile.png')
+    await expect(avatar).toHaveAttribute('src', '/assets/img/profile.webp')
 
     // Click Sign In → 3-second "Signing in…" state, then desktop.
     await page.getByRole('button', { name: 'Sign In' }).click()

@@ -17,20 +17,20 @@
     <meta property="og:title" content="DeVanté Johnson-Rose | Full Stack Developer & Systems Engineer">
     <meta property="og:description" content="Interactive Windows 11-styled portfolio. Open the apps, browse the projects, drop into the CV — every desktop tile is a real, working surface.">
     <meta property="og:url" content="https://devante.johnson-rose.co.uk/">
-    <meta property="og:image" content="https://devante.johnson-rose.co.uk/assets/img/favicon.png">
+    <meta property="og:image" content="https://devante.johnson-rose.co.uk/assets/img/favicon.webp">
     <meta property="og:locale" content="en_GB">
 
     <!-- Twitter / X card -->
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="DeVanté Johnson-Rose | Portfolio OS">
     <meta name="twitter:description" content="Interactive Windows-style portfolio with working Paint, Terminal, Explorer, Outlook, FL Studio, and more.">
-    <meta name="twitter:image" content="https://devante.johnson-rose.co.uk/assets/img/favicon.png">
+    <meta name="twitter:image" content="https://devante.johnson-rose.co.uk/assets/img/favicon.webp">
 
     <!-- Favicon -->
     <link rel="icon" type="image/x-icon" href="<?php echo BASE_PATH; ?>favicon.ico">
     <link rel="shortcut icon" href="<?php echo BASE_PATH; ?>favicon.ico">
-    <link rel="icon" type="image/png" sizes="32x32" href="<?php echo IMG_PATH; ?>favicon.png">
-    <link rel="apple-touch-icon" sizes="180x180" href="<?php echo IMG_PATH; ?>favicon.png">
+    <link rel="icon" type="image/webp" sizes="32x32" href="<?php echo IMG_PATH; ?>favicon.webp">
+    <link rel="apple-touch-icon" sizes="180x180" href="<?php echo IMG_PATH; ?>favicon.webp">
     <link rel="manifest" href="<?php echo BASE_PATH; ?>manifest.json">
     <link rel="preload" as="image" href="<?php echo IMG_PATH; ?>startmenu.webp">
     <link rel="preload" as="image" href="<?php echo IMG_PATH; ?>settings.webp">
@@ -45,7 +45,7 @@
           "@id": "https://devante.johnson-rose.co.uk/#person",
           "name": "DeVanté Johnson-Rose",
           "url": "https://devante.johnson-rose.co.uk/",
-          "image": "https://devante.johnson-rose.co.uk/assets/img/profile.png",
+          "image": "https://devante.johnson-rose.co.uk/assets/img/profile.webp",
           "jobTitle": "Senior Full Stack Developer & Systems Engineer",
           "email": "mailto:devante@johnson-rose.co.uk",
           "sameAs": [
