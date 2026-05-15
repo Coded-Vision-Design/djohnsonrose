@@ -12,13 +12,14 @@ interface Entry {
   res: string
 }
 
-const CWD = 'C:\\Users\\DeVante'
+const INITIAL_CWD = 'C:\\Users\\DeVante'
 
 export default function Terminal() {
   const [input, setInput] = useState('')
   const [entries, setEntries] = useState<Entry[]>([])
   const [history, setHistory] = useState<string[]>([])
   const [historyIdx, setHistoryIdx] = useState(-1)
+  const [cwd, setCwd] = useState(INITIAL_CWD)
 
   const inputRef = useRef<HTMLInputElement>(null)
   const outputRef = useRef<HTMLDivElement>(null)
@@ -46,11 +47,11 @@ export default function Terminal() {
     setHistoryIdx(-1)
 
     if (!trimmed) {
-      setEntries((e) => [...e, { id: idRef.current++, cmd: raw, path: CWD, res: '' }])
+      setEntries((e) => [...e, { id: idRef.current++, cmd: raw, path: cwd, res: '' }])
       return
     }
     setHistory((h) => [...h.slice(-49), trimmed])
-    const result = runCommand(trimmed, { cwd: CWD, store: useOsStore.getState() })
+    const result = runCommand(trimmed, { cwd, store: useOsStore.getState() })
     if (result.clear) {
       setEntries([])
       return
@@ -59,9 +60,10 @@ export default function Terminal() {
       if (focusedId) closeWindow(focusedId)
       return
     }
+    if (result.cwd) setCwd(result.cwd)
     setEntries((e) => [
       ...e,
-      { id: idRef.current++, cmd: raw, path: CWD, res: result.res ?? '' },
+      { id: idRef.current++, cmd: raw, path: cwd, res: result.res ?? '' },
     ])
   }
 
@@ -148,7 +150,7 @@ export default function Terminal() {
         ))}
 
         <div className="flex items-center group">
-          <span className="text-green-400 mr-2 shrink-0">PS {CWD}&gt;</span>
+          <span className="text-green-400 mr-2 shrink-0">PS {cwd}&gt;</span>
           <input
             ref={inputRef}
             type="text"

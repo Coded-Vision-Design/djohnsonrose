@@ -164,12 +164,17 @@ export const filesystem: FileSystem = {
       type: 'file',
       icon: `${IMG}notepad++.webp`,
       content: `KEY ACHIEVEMENTS:
+- World #1, AJP & IBJJF, Represented GBR internationally (2022-2024)
+- GB Judo Squad, Veteran category
 - 4 x NAGA World Champion
-- 2 x IBJJF No-Gi Medalist
-- AJP 4 x Grand Slam Champion
-- IBJJF European Champion (No-Gi)
-- IBJJF Master European Champion (Gi)
-- British Judo Silver Medalist`,
+- 4 x AJP Grand Slam Champion
+- IBJJF European Champion
+- IBJJF Masters North American Champion
+- High Sheriff of Essex Award, Volunteer child mentor (Lads Need Dads)
+
+VERIFY:
+- Smoothcomp: https://smoothcomp.com/en/profile/73838
+- British Judo Squad: https://www.britishjudo.org.uk/wp-content/uploads/2024/10/British-Masters-Squad-2024-2025.pdf`,
     },
     {
       name: 'SQL Server Management Studio',

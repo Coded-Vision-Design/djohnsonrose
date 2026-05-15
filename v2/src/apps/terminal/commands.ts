@@ -1,6 +1,7 @@
 // Pure terminal command dispatcher — testable without React.
 
 import type { useOsStore } from '../../store/osStore'
+import { filesystem } from '../../data/filesystem'
 
 type Store = ReturnType<typeof useOsStore.getState>
 
@@ -11,6 +12,8 @@ export interface CommandResult {
   clear?: boolean
   /** When true, the caller should close the terminal window. */
   exit?: boolean
+  /** When set, the caller should switch the prompt to this path (cd). */
+  cwd?: string
 }
 
 export interface CommandContext {
@@ -34,6 +37,8 @@ export function runCommand(raw: string, ctx: CommandContext): CommandResult {
           '  whoami          Display current user',
           '  ver             Show OS version',
           '  pwd             Print working directory',
+          '  dir / ls        List the current directory',
+          '  cd <path>       Change directory (use .. to go up)',
           '  date / time     Show date or time',
           '  echo <text>     Print text',
           '  cls / clear     Clear the terminal',
@@ -70,6 +75,35 @@ export function runCommand(raw: string, ctx: CommandContext): CommandResult {
       return { res: 'The current time is: ' + new Date().toLocaleTimeString() }
     case 'echo':
       return { res: args.join(' ') }
+    case 'dir':
+    case 'ls': {
+      const files = filesystem[ctx.cwd] ?? []
+      if (files.length === 0) return { res: 'Directory is empty.' }
+      const lines = [` Directory of ${ctx.cwd}`, '']
+      for (const f of files) {
+        const tag = f.type === 'folder' ? '<DIR>' : '     '
+        lines.push(`01/02/2026  12:00 PM    ${tag}          ${f.name}`)
+      }
+      lines.push(`               ${files.length} File(s)`)
+      return { res: lines.join('\n') }
+    }
+    case 'cd': {
+      const target = args[0]
+      if (!target || target === '.') return {}
+      if (target === '..') {
+        const parts = ctx.cwd.split('\\')
+        if (parts.length === 2 && parts[1] === '') return {} // already at C:\
+        const next = parts.slice(0, -1).join('\\') || 'C:\\'
+        return { cwd: next }
+      }
+      const files = filesystem[ctx.cwd] ?? []
+      const folder = files.find(
+        (f) => f.type === 'folder' && f.name.toLowerCase() === target.toLowerCase(),
+      )
+      if (!folder) return { res: 'The system cannot find the path specified.' }
+      const next = (ctx.cwd.endsWith('\\') ? ctx.cwd : ctx.cwd + '\\') + folder.name
+      return { cwd: next }
+    }
     case 'systeminfo':
       return {
         res: [

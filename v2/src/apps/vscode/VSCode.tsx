@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 interface Project {
   id: number
@@ -41,23 +41,45 @@ export default function VSCode() {
 
   const active = projects.find((p) => p.title === activeFile)
 
+  // Build animation lives on a single interval that we always clean up — the
+  // old impl could leak across re-renders (and across switching projects mid-
+  // build), which is what was causing the "Build" button to white-screen the
+  // window after a second click.
+  const buildTimerRef = useRef<number | null>(null)
+
+  useEffect(() => {
+    return () => {
+      if (buildTimerRef.current != null) {
+        window.clearInterval(buildTimerRef.current)
+        buildTimerRef.current = null
+      }
+    }
+  }, [])
+
   const runBuild = () => {
     if (isBuilding) return
+    if (buildTimerRef.current != null) {
+      window.clearInterval(buildTimerRef.current)
+      buildTimerRef.current = null
+    }
     setIsBuilding(true)
     setActiveTab('terminal')
-    const lines: typeof terminalOutput = [
-      { type: 'command', text: '> npm run build' },
-      { type: 'info', text: 'vite v8.0.13 building for production...' },
-      { type: 'info', text: '✓ 248 modules transformed.' },
-      { type: 'info', text: 'rendering chunks (1/1)...' },
-      { type: 'success', text: '✓ built in 1.84s' },
-      { type: 'success', text: `→ Deployed ${active?.title ?? ''} to staging` },
+    const lines = [
+      { type: 'command' as const, text: '> npm run build' },
+      { type: 'info' as const, text: 'vite v8.0.13 building for production...' },
+      { type: 'info' as const, text: '✓ 248 modules transformed.' },
+      { type: 'info' as const, text: 'rendering chunks (1/1)...' },
+      { type: 'success' as const, text: '✓ built in 1.84s' },
+      { type: 'success' as const, text: `→ Deployed ${active?.title ?? 'project'} to staging` },
     ]
     let i = 0
     setTerminalOutput([])
-    const id = window.setInterval(() => {
+    buildTimerRef.current = window.setInterval(() => {
       if (i >= lines.length) {
-        window.clearInterval(id)
+        if (buildTimerRef.current != null) {
+          window.clearInterval(buildTimerRef.current)
+          buildTimerRef.current = null
+        }
         setIsBuilding(false)
         return
       }

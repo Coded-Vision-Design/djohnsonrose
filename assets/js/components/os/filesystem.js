@@ -140,7 +140,8 @@ window.osFileSystem = {
 - AJP 4 X Grand Slam Champion
 - IBJJF European Champion No-GI
 - IBJJF Master European Champion Gi
-- British Judo Silver Medalist
+- British Judo Squad, Veteran category
+- High Sheriff of Essex Award, Volunteer child mentor (Lads Need Dads)
 
 PROFILES:
 - Smoothcomp: https://smoothcomp.com/en/profile/73838

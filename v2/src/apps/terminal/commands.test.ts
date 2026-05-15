@@ -71,4 +71,31 @@ describe('terminal commands', () => {
     expect(runCommand('WHOAMI', ctx()).res).toBe('johnson-rose\\devante')
     expect(runCommand('Help', ctx()).res).toMatch(/Available commands/)
   })
+
+  it('dir/ls lists the current directory from the mock filesystem', () => {
+    const out = runCommand('dir', ctx())
+    expect(out.res).toMatch(/Directory of C:\\Users\\DeVante/)
+    expect(out.res).toMatch(/File\(s\)/)
+    expect(runCommand('ls', ctx()).res).toBe(out.res)
+  })
+
+  it('cd <folder> returns a new cwd', () => {
+    const out = runCommand('cd Documents', ctx())
+    expect(out.cwd).toBe('C:\\Users\\DeVante\\Documents')
+    expect(out.res).toBeUndefined()
+  })
+
+  it('cd .. walks one level up', () => {
+    const out = runCommand('cd ..', { cwd: 'C:\\Users\\DeVante\\Documents', store: useOsStore.getState() })
+    expect(out.cwd).toBe('C:\\Users\\DeVante')
+  })
+
+  it('cd .. at the drive root is a no-op', () => {
+    const out = runCommand('cd ..', { cwd: 'C:\\', store: useOsStore.getState() })
+    expect(out.cwd).toBeUndefined()
+  })
+
+  it('cd into a missing folder reports the Windows error', () => {
+    expect(runCommand('cd zztop', ctx()).res).toMatch(/cannot find the path/)
+  })
 })
