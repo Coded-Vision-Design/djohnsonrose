@@ -49,10 +49,6 @@ jobs:
     name: Build & Deploy
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    # Uncomment the next line to require manual approval for production deploys:
-    # environment:
-    #   name: production
-    #   url: https://${{ steps.config.outputs.subdomain }}.codedvisiondesign.co.uk
 
     steps:
       # ── 1. Checkout ────────────────────────────────────────────────────────
@@ -143,7 +139,7 @@ jobs:
           fi
           echo "deploy_source=${DEPLOY_SOURCE}" >> $GITHUB_OUTPUT
 
-      # ── 4. Setup Node (for node projects or for the v2 sub-app) ────────────
+      # ── 4. Setup Node (only for node projects or the v2 sub-app) ───────────
       - name: Setup Node.js
         if: startsWith(steps.detect.outputs.type, 'node') || hashFiles('v2/package.json') != ''
         uses: actions/setup-node@v4
@@ -164,15 +160,12 @@ jobs:
           NODE_ENV: production
 
       # ── 5b. Build v2 React sub-app if present ──────────────────────────────
-      # This handles the hybrid PHP + React layout: v2/dist/ is built before
-      # rsync so the static SPA ships alongside the PHP app at /v2/.
       - name: Build v2 React app
         if: hashFiles('v2/package.json') != ''
         run: |
           cd v2
           npm ci --prefer-offline --no-audit
           npm run build
-          echo "v2/dist contents:" && ls -la dist/ | head -20
 
       - name: Verify build output
         if: steps.detect.outputs.type == 'node-build'
@@ -249,7 +242,7 @@ jobs:
             if [ -d "${DEPLOY_PATH}" ] && [ "\$(ls -A ${DEPLOY_PATH} 2>/dev/null | grep -v .releases | head -1)" ]; then
               SNAPSHOT="${RELEASES_DIR}/${TIMESTAMP}_${COMMIT_SHORT}_pre"
               mkdir -p "\${SNAPSHOT}"
-              rsync -a --exclude='.releases' "${DEPLOY_PATH}/" "\${SNAPSHOT}/"
+              rsync -a --exclude='.releases' --exclude='.git' --exclude='vendor' --exclude='node_modules' "${DEPLOY_PATH}/" "\${SNAPSHOT}/"
               echo "Snapshot saved: \${SNAPSHOT}"
             fi
             cd "${RELEASES_DIR}" 2>/dev/null && \
@@ -325,24 +318,7 @@ jobs:
             echo "::warning::Health check returned HTTP ${HTTP_CODE} — site may still be propagating"
           fi
 
-      # ── 11. Deploy notification ────────────────────────────────────────────
-      - name: Post deploy summary
-        if: always()
-        env:
-          SUBDOMAIN: ${{ steps.config.outputs.subdomain }}
-          SERVER: ${{ steps.config.outputs.server }}
-        run: |
-          echo "## Deployment Complete" >> "$GITHUB_STEP_SUMMARY"
-          echo "" >> "$GITHUB_STEP_SUMMARY"
-          echo "- Repository: ${GITHUB_REPOSITORY}" >> "$GITHUB_STEP_SUMMARY"
-          echo "- Commit: ${GITHUB_SHA}" >> "$GITHUB_STEP_SUMMARY"
-          echo "- Branch: ${GITHUB_REF_NAME}" >> "$GITHUB_STEP_SUMMARY"
-          echo "- Server: ${SERVER}" >> "$GITHUB_STEP_SUMMARY"
-          if [ "${SERVER}" != "vps" ]; then
-            echo "- Live URL: https://${SUBDOMAIN}.codedvisiondesign.co.uk" >> "$GITHUB_STEP_SUMMARY"
-          fi
-
-      # ── 13. Cleanup ────────────────────────────────────────────────────────
+      # ── 11. Cleanup ────────────────────────────────────────────────────────
       - name: Cleanup SSH
         if: always()
         run: rm -rf ~/.ssh/deploy_key
