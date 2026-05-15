@@ -361,19 +361,6 @@ jobs:
               }" 2>/dev/null || true
           fi
 
-      # ── 12. Create GitHub Issue on deployment failure ──────────────────────
-      - name: Report failure to GitHub Issues
-        if: failure()
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          SUBDOMAIN: ${{ steps.config.outputs.subdomain }}
-          SERVER: ${{ steps.config.outputs.server }}
-          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-        run: |
-          TITLE="Deployment Failed: ${SUBDOMAIN:-unknown} (${GITHUB_REF_NAME})"
-          BODY="Deployment failed for ${GITHUB_REPOSITORY} on branch ${GITHUB_REF_NAME} (commit ${GITHUB_SHA}). Subdomain: ${SUBDOMAIN}. Server: ${SERVER}. Review the run log at ${RUN_URL}"
-          gh issue create --repo "${GITHUB_REPOSITORY}" --title "${TITLE}" --body "${BODY}" --label "deployment-failure,automated" || true
-
       # ── 13. Cleanup ────────────────────────────────────────────────────────
       - name: Cleanup SSH
         if: always()
