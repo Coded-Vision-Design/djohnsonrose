@@ -371,25 +371,8 @@ jobs:
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
           TITLE="Deployment Failed: ${SUBDOMAIN:-unknown} (${GITHUB_REF_NAME})"
-          BODY=$(cat <<EOF
-          ## Deployment Failure
-
-          - Repository: ${GITHUB_REPOSITORY}
-          - Branch: ${GITHUB_REF_NAME}
-          - Commit: \`${GITHUB_SHA}\`
-          - Subdomain: \`${SUBDOMAIN}\`
-          - Server: \`${SERVER}\`
-          - Time: $(date -u '+%Y-%m-%d %H:%M:%S UTC')
-
-          The automated deployment failed during the build or deploy step.
-          Review the run log: ${RUN_URL}
-          EOF
-          )
-          gh issue create \
-            --repo "${GITHUB_REPOSITORY}" \
-            --title "${TITLE}" \
-            --body "${BODY}" \
-            --label "deployment-failure,automated" || true
+          BODY="Deployment failed for ${GITHUB_REPOSITORY} on branch ${GITHUB_REF_NAME} (commit ${GITHUB_SHA}). Subdomain: ${SUBDOMAIN}. Server: ${SERVER}. Review the run log at ${RUN_URL}"
+          gh issue create --repo "${GITHUB_REPOSITORY}" --title "${TITLE}" --body "${BODY}" --label "deployment-failure,automated" || true
 
       # ── 13. Cleanup ────────────────────────────────────────────────────────
       - name: Cleanup SSH
