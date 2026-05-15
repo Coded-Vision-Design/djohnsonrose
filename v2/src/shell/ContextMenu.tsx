@@ -38,11 +38,23 @@ export function ContextMenu() {
   const left = Math.min(menu.x, window.innerWidth - 240)
   const top = Math.min(menu.y, window.innerHeight - menu.items.length * 36 - 20)
 
+  const isClassic = menu.variant === 'classic'
+  // Classic Win10 style: tighter rows, square corners, grey background; the
+  // shell uses this when the user picks "Show more options".
+  const containerClass = isClassic
+    ? 'fixed z-[20000] bg-[#f0f0f0] dark:bg-[#2b2b2b] border border-[#a0a0a0] dark:border-black shadow-[2px_2px_4px_rgba(0,0,0,0.3)] min-w-[220px] text-black dark:text-white animate-window-open py-1'
+    : 'fixed z-[20000] context-menu bg-white/95 dark:bg-[#252526]/95 backdrop-blur-md border border-black/10 dark:border-white/10 min-w-[200px] text-black dark:text-white animate-window-open'
+
+  const itemClass = isClassic
+    ? 'w-full text-left flex items-center px-3 py-1 text-[11px] hover:bg-[#0078d4] hover:text-white'
+    : 'context-menu-item w-full text-left flex items-center px-3 text-xs hover:bg-black/5 dark:hover:bg-white/5'
+
   return (
     <div
       ref={ref}
       role="menu"
-      className="fixed z-[20000] context-menu bg-white/95 dark:bg-[#252526]/95 backdrop-blur-md border border-black/10 dark:border-white/10 min-w-[200px] text-black dark:text-white animate-window-open"
+      data-variant={menu.variant}
+      className={containerClass}
       style={{ left, top }}
       onContextMenu={(e) => e.preventDefault()}
     >
@@ -50,7 +62,11 @@ export function ContextMenu() {
         item.separator ? (
           <div
             key={`sep-${i}`}
-            className="my-1 border-t border-black/10 dark:border-white/10"
+            className={
+              isClassic
+                ? 'my-1 border-t border-[#a0a0a0]/50 dark:border-white/10'
+                : 'my-1 border-t border-black/10 dark:border-white/10'
+            }
           />
         ) : (
           <button
@@ -63,12 +79,10 @@ export function ContextMenu() {
               item.action?.()
               close()
             }}
-            className={`context-menu-item w-full text-left flex items-center px-3 text-xs ${
-              item.disabled ? 'disabled' : 'hover:bg-black/5 dark:hover:bg-white/5'
-            }`}
+            className={`${itemClass} ${item.disabled ? 'opacity-40 pointer-events-none' : ''}`}
           >
             {item.icon && (
-              <span className="context-menu-icon mr-3 w-4 h-4 flex items-center justify-center">
+              <span className="mr-3 w-4 h-4 flex items-center justify-center">
                 {item.icon.startsWith('/') || item.icon.includes('.') ? (
                   <img src={item.icon} alt="" className="w-4 h-4 object-contain" />
                 ) : (

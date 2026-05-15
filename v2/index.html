@@ -3,8 +3,28 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>DeVanté Johnson-Rose | Full Stack Developer & Systems Engineer</title>
-    <meta name="description" content="Interactive Windows-style portfolio of DeVanté Johnson-Rose, a Full Stack Developer and Systems Engineer with enterprise experience in system administration, networking, SCCM, and automation." />
+    <title>DeVanté Johnson-Rose | Full Stack Developer & Systems Engineer · Portfolio OS (React)</title>
+    <meta name="description" content="React-built interactive Windows-style portfolio of DeVanté Johnson-Rose — Senior Full Stack Developer and Systems Engineer in the UK. Working Paint, Terminal, Explorer, Outlook, FL Studio and more." />
+    <meta name="author" content="DeVanté Johnson-Rose" />
+    <meta name="keywords" content="DeVanté Johnson-Rose, full stack developer UK, systems engineer, React developer, TypeScript, portfolio, Vite, devante.johnson-rose.co.uk" />
+    <meta name="robots" content="index, follow, max-image-preview:large" />
+    <meta name="theme-color" content="#0078d4" />
+    <link rel="canonical" href="https://devante.johnson-rose.co.uk/v2/" />
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="DeVanté Johnson-Rose · Portfolio OS" />
+    <meta property="og:title" content="DeVanté Johnson-Rose | Portfolio OS (React)" />
+    <meta property="og:description" content="React + TypeScript port of the Portfolio OS. Same Windows 11-styled desktop, every app working." />
+    <meta property="og:url" content="https://devante.johnson-rose.co.uk/v2/" />
+    <meta property="og:image" content="https://devante.johnson-rose.co.uk/assets/img/favicon.png" />
+    <meta property="og:locale" content="en_GB" />
+
+    <!-- Twitter / X card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="DeVanté Johnson-Rose | Portfolio OS (React)" />
+    <meta name="twitter:description" content="React + TypeScript port of the interactive Windows-style portfolio." />
+    <meta name="twitter:image" content="https://devante.johnson-rose.co.uk/assets/img/favicon.png" />
 
     <!-- Favicon set matches v1 exactly — both versions share the same files. -->
     <link rel="icon" type="image/x-icon" href="/favicon.ico" />
@@ -13,7 +33,32 @@
     <link rel="apple-touch-icon" sizes="180x180" href="/assets/img/favicon.png" />
     <!-- v2 ships its own manifest scoped to /v2/. v1 keeps its own at /manifest.json. -->
     <link rel="manifest" href="/v2/manifest.json" />
-    <meta name="theme-color" content="#0078d4" />
+
+    <!-- JSON-LD: Person + WebSite -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "Person",
+            "@id": "https://devante.johnson-rose.co.uk/#person",
+            "name": "DeVanté Johnson-Rose",
+            "url": "https://devante.johnson-rose.co.uk/",
+            "image": "https://devante.johnson-rose.co.uk/assets/img/profile.png",
+            "jobTitle": "Senior Full Stack Developer & Systems Engineer",
+            "email": "mailto:devante@johnson-rose.co.uk",
+            "sameAs": ["https://github.com/CodedVisionDesign"]
+          },
+          {
+            "@type": "WebSite",
+            "@id": "https://devante.johnson-rose.co.uk/v2/#website",
+            "url": "https://devante.johnson-rose.co.uk/v2/",
+            "name": "DeVanté Johnson-Rose · Portfolio OS (React)",
+            "publisher": { "@id": "https://devante.johnson-rose.co.uk/#person" }
+          }
+        ]
+      }
+    </script>
   </head>
   <body class="h-full">
     <div id="root"></div>

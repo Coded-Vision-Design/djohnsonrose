@@ -1,8 +1,10 @@
 User-agent: *
 Allow: /
+Allow: /v2/
+Allow: /portfolio/
 Disallow: /api/
 Disallow: /data/
 Disallow: /partials/
-Disallow: /portfolio/
+Disallow: /v2/src/
 
-Sitemap: https://djohnsonrose.com/sitemap.xml
+Sitemap: https://devante.johnson-rose.co.uk/sitemap.xml

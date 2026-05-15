@@ -143,9 +143,9 @@ jobs:
           fi
           echo "deploy_source=${DEPLOY_SOURCE}" >> $GITHUB_OUTPUT
 
-      # ── 4. Setup Node (only for node projects) ─────────────────────────────
+      # ── 4. Setup Node (for node projects or for the v2 sub-app) ────────────
       - name: Setup Node.js
-        if: startsWith(steps.detect.outputs.type, 'node')
+        if: startsWith(steps.detect.outputs.type, 'node') || hashFiles('v2/package.json') != ''
         uses: actions/setup-node@v4
         with:
           node-version: ${{ steps.config.outputs.node_version }}
@@ -162,6 +162,17 @@ jobs:
         env:
           CI: true
           NODE_ENV: production
+
+      # ── 5b. Build v2 React sub-app if present ──────────────────────────────
+      # This handles the hybrid PHP + React layout: v2/dist/ is built before
+      # rsync so the static SPA ships alongside the PHP app at /v2/.
+      - name: Build v2 React app
+        if: hashFiles('v2/package.json') != ''
+        run: |
+          cd v2
+          npm ci --prefer-offline --no-audit
+          npm run build
+          echo "v2/dist contents:" && ls -la dist/ | head -20
 
       - name: Verify build output
         if: steps.detect.outputs.type == 'node-build'

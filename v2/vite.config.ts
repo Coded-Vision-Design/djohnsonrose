@@ -1,5 +1,36 @@
-import { defineConfig } from 'vite'
+import { defineConfig, type Plugin } from 'vite'
 import react from '@vitejs/plugin-react'
+
+// Local-dev helper: any request that lands on Vite outside the /v2/ base
+// gets redirected to the PHP server. This makes the v1↔v2 cross-link
+// buttons in the taskbar "just work" without per-host wiring.
+function redirectRootToPhp(): Plugin {
+  return {
+    name: 'redirect-root-to-php',
+    configureServer(server) {
+      server.middlewares.use((req, res, next) => {
+        const url = req.url ?? '/'
+        if (
+          !url.startsWith('/v2/') &&
+          url !== '/v2' &&
+          !url.startsWith('/@') && // Vite's internal HMR routes
+          !url.startsWith('/node_modules/') &&
+          !url.startsWith('/api/') &&
+          !url.startsWith('/assets/') &&
+          !url.startsWith('/data/') &&
+          !url.startsWith('/portfolio/') &&
+          url !== '/favicon.ico' &&
+          (url === '/' || url.startsWith('/?') || url.startsWith('/app/') || url === '/desktop' || url === '/login')
+        ) {
+          res.writeHead(302, { Location: 'http://localhost:8765' + url })
+          res.end()
+          return
+        }
+        next()
+      })
+    },
+  }
+}
 
 // The React build lives under /v2/ in production (parallel to the PHP version).
 // In dev, Vite serves at http://localhost:5173/v2/.
@@ -7,7 +38,7 @@ import react from '@vitejs/plugin-react'
 // dev, and served directly by Apache in production.
 export default defineConfig({
   base: '/v2/',
-  plugins: [react()],
+  plugins: [react(), redirectRootToPhp()],
   server: {
     port: 5173,
     proxy: {

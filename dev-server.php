@@ -9,6 +9,16 @@
 // Decode before checking the filesystem.
 $path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 $decoded = rawurldecode($path);
+
+// Local-dev convenience: in production /v2/* is served by Apache from
+// v2/dist/, but PHP's built-in server doesn't know that. Hand /v2/* off to
+// the Vite dev server so the v1↔v2 cross-link buttons in the taskbar work
+// during development without any extra steps.
+if ($decoded === '/v2' || strncmp($decoded, '/v2/', 4) === 0) {
+    header('Location: http://localhost:5173' . $_SERVER['REQUEST_URI'], true, 302);
+    exit;
+}
+
 $file = __DIR__ . $decoded;
 if ($decoded !== '/' && file_exists($file) && !is_dir($file)) {
     return false;

@@ -349,11 +349,54 @@ document.addEventListener('alpine:init', () => {
                     { label: 'Display settings', icon: `<img src="${imgPath}display.png" class="w-4 h-4">`, action: () => Alpine.store('os').openApp('settings') },
                     { label: 'Personalise', icon: `<img src="${imgPath}settings.png" class="w-4 h-4">`, action: () => Alpine.store('os').openApp('settings', 'Settings', { currentTab: 'personalisation' }) },
                     { separator: true },
-                    { 
-                        label: 'Open in PowerShell', 
+                    {
+                        label: 'Open in PowerShell',
                         icon: `<img src="${window.portfolioConfig.imgPath}terminal.webp" class="w-4 h-4">`,
-                        action: () => Alpine.store('os').openApp('terminal') 
+                        action: () => Alpine.store('os').openApp('terminal')
+                    },
+                    { separator: true },
+                    {
+                        label: 'Show more options',
+                        icon: '⤓',
+                        action: () => this.showClassicDesktopContextMenu(e)
                     }
+                ]
+            };
+        },
+
+        // Win10-style "classic" context menu — opened from the Win11 modern
+        // menu via the "Show more options" item. v1 was missing this; it's
+        // wired now so the right-click flow matches real Windows 11.
+        showClassicDesktopContextMenu(e) {
+            const menuWidth = 240;
+            const menuHeight = 360;
+            let x = e.clientX;
+            let y = e.clientY;
+            if (x + menuWidth > window.innerWidth) x = window.innerWidth - menuWidth - 8;
+            if (y + menuHeight > window.innerHeight) y = window.innerHeight - menuHeight - 8;
+            if (x < 8) x = 8;
+            if (y < 8) y = 8;
+
+            const imgPath = window.portfolioConfig.imgPath + 'win11/';
+
+            this.contextMenu = {
+                open: true,
+                variant: 'classic',
+                x: x,
+                y: y,
+                items: [
+                    { label: 'View', icon: `<img src="${imgPath}view.svg" class="w-4 h-4">`, disabled: true, action: () => {} },
+                    { label: 'Sort by', icon: `<img src="${imgPath}sort.svg" class="w-4 h-4">`, disabled: true, action: () => {} },
+                    { label: 'Refresh', icon: `<img src="${imgPath}refresh.svg" class="w-4 h-4">`, action: () => location.reload() },
+                    { separator: true },
+                    { label: 'Paste', icon: `<img src="${imgPath}copy.svg" class="w-4 h-4">`, disabled: true, action: () => {} },
+                    { label: 'Paste shortcut', icon: `<img src="${imgPath}open.svg" class="w-4 h-4">`, disabled: true, action: () => {} },
+                    { separator: true },
+                    { label: 'New', icon: '✨', disabled: true, action: () => {} },
+                    { label: 'Display settings', icon: `<img src="${imgPath}display.png" class="w-4 h-4">`, action: () => Alpine.store('os').openApp('settings') },
+                    { label: 'Personalise', icon: `<img src="${imgPath}personalize.png" class="w-4 h-4">`, action: () => Alpine.store('os').openApp('settings', 'Settings', { currentTab: 'personalisation' }) },
+                    { separator: true },
+                    { label: 'Open in PowerShell', icon: `<img src="${window.portfolioConfig.imgPath}terminal.webp" class="w-4 h-4">`, action: () => Alpine.store('os').openApp('terminal') },
                 ]
             };
         },

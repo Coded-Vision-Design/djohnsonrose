@@ -1,8 +1,8 @@
 {
-    "subdomain": "johnson-rose.co.uk",
+    "subdomain": "devante.johnson-rose.co.uk",
     "build_output": ".",
     "server": "hostinger",
-    "deploy_path": "/home/u372385223/domains/johnson-rose.co.uk/public_html",
+    "deploy_path": "/home/u372385223/domains/johnson-rose.co.uk/public_html/devante",
     "keep_releases": 1,
     "exclude_patterns": [
         "vendor",
@@ -31,6 +31,10 @@
         "v2/tailwind.config.js",
         "v2/package.json",
         "v2/package-lock.json",
+        "v2/playwright.config.ts",
+        "v2/playwright-report",
+        "v2/test-results",
+        "v2/e2e",
         "v2/README.md",
         "v2/.gitignore",
         "dev-server.php"

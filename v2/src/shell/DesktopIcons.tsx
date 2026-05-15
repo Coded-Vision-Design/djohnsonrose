@@ -80,6 +80,7 @@ export function DesktopIcons() {
   const recycleItem = useOsStore((s) => s.recycleItem)
   const recycleCount = useOsStore((s) => s.recycleBin.length)
   const hiddenDesktop = useOsStore((s) => s.hiddenDesktop)
+  const recoveredItems = useOsStore((s) => s.recoveredItems)
   const emptyRecycleBin = useOsStore((s) => s.emptyRecycleBin)
   const openContextMenu = useOsStore((s) => s.openContextMenu)
 
@@ -90,7 +91,15 @@ export function DesktopIcons() {
   )
 
   const icons = useMemo<PlacedIcon[]>(() => {
-    const entries = listAt(DESKTOP_PATH).filter((e) => !hiddenDesktop.includes(e.name))
+    const staticEntries = listAt(DESKTOP_PATH).filter(
+      (e) => !hiddenDesktop.includes(e.name),
+    )
+    // Items restored from the recycle bin re-appear on the Desktop.
+    const recoveredDesktop = recoveredItems
+      .filter((r) => r.path === DESKTOP_PATH)
+      .map((r) => r.item as unknown as FsEntry)
+      .filter((e) => !staticEntries.some((s) => s.name === e.name))
+    const entries = [...staticEntries, ...recoveredDesktop]
 
     const availH = window.innerHeight - TASKBAR_HEIGHT - MARGIN * 2
     const maxPerCol = Math.max(1, Math.floor(availH / ICON_H))
@@ -131,7 +140,7 @@ export function DesktopIcons() {
       }),
     ]
     return placed
-  }, [iconPositions, recycleCount, hiddenDesktop])
+  }, [iconPositions, recycleCount, hiddenDesktop, recoveredItems])
 
   const open = (i: PlacedIcon) => {
     if (i.type === 'pc') {

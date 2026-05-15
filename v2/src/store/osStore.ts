@@ -2,6 +2,26 @@ import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
 import { track } from '../lib/telemetry'
 
+// Static C:\Recycle Bin seeds — when restored, we re-materialise them at
+// their originalPath. Keep this list aligned with data/filesystem.ts.
+// (Inlined rather than imported to avoid a circular dependency.)
+function lookupRecycleBinSeed(
+  name: string,
+): { fromPath: string; item: Record<string, unknown> } | null {
+  if (name === 'Easter Egg - Drone Footage.mp4') {
+    return {
+      fromPath: 'C:\\Users\\DeVante\\Desktop',
+      item: {
+        name: 'Easter Egg - Drone Footage.mp4',
+        type: 'video',
+        icon: '🎬',
+        url: 'https://assets.mixkit.co/videos/preview/mixkit-drone-view-of-a-serene-lake-and-mountains-4318-large.mp4',
+      },
+    }
+  }
+  return null
+}
+
 export interface WinWindow {
   id: number
   app: string
@@ -99,6 +119,8 @@ export interface ContextMenuState {
   x: number
   y: number
   items: ContextMenuItem[]
+  /** Win11 modern (rounded) vs Win10 classic (square, dense). */
+  variant: 'modern' | 'classic'
 }
 
 const TASKBAR_H = 48
@@ -144,6 +166,8 @@ interface OsState {
   hiddenDesktop: string[]
   /** Static C:\Recycle Bin items the user has "Restored" (i.e. removed). */
   restoredSeeds: string[]
+  /** Items materialised at a given path by restoring from the recycle bin. */
+  recoveredItems: { path: string; item: Record<string, unknown> }[]
   iconPositions: Record<string, IconPosition>
 
   // Viewport flags — kept in-memory only, updated by a global listener.
@@ -198,7 +222,12 @@ interface OsState {
 
   // Responsive flags + context menu
   setBreakpoint: (width: number) => void
-  openContextMenu: (x: number, y: number, items: ContextMenuItem[]) => void
+  openContextMenu: (
+    x: number,
+    y: number,
+    items: ContextMenuItem[],
+    variant?: 'modern' | 'classic',
+  ) => void
   closeContextMenu: () => void
 }
 
@@ -210,6 +239,7 @@ interface PersistedSlice {
   recycleBin: RecycledItem[]
   hiddenDesktop: string[]
   restoredSeeds: string[]
+  recoveredItems: { path: string; item: Record<string, unknown> }[]
   iconPositions: Record<string, IconPosition>
 }
 
@@ -252,6 +282,7 @@ export const useOsStore = create<OsState>()(
       recycleBin: [],
       hiddenDesktop: [],
       restoredSeeds: [],
+      recoveredItems: [],
       iconPositions: {},
 
       // Initialised from window.innerWidth — useBreakpoint() keeps these
@@ -261,7 +292,7 @@ export const useOsStore = create<OsState>()(
         typeof window !== 'undefined' ? window.innerWidth >= 640 && window.innerWidth < 1024 : false,
       isWideDesktop: typeof window !== 'undefined' ? window.innerWidth >= 1024 : true,
 
-      contextMenu: { open: false, x: 0, y: 0, items: [] },
+      contextMenu: { open: false, x: 0, y: 0, items: [], variant: 'modern' },
 
       finishBoot: () => set({ isBooting: false }),
       login: () => {
@@ -472,14 +503,38 @@ export const useOsStore = create<OsState>()(
 
       restoreFromRecycle: (name) => {
         const state = get()
+        // Materialise the entry back at its original path so it actually
+        // reappears (otherwise Restore would only "uncycle" without putting
+        // anything anywhere visible). v1 mutated its mock filesystem; we
+        // keep a `recoveredItems` overlay instead.
+        let recoveredAdditions: { path: string; item: Record<string, unknown> }[] = []
+        const dynamicMatch = state.recycleBin.find((r) => r.name === name)
+        if (dynamicMatch) {
+          recoveredAdditions = [
+            { path: dynamicMatch.fromPath, item: dynamicMatch.payload },
+          ]
+        } else {
+          // Seeded item — look up its originalPath from the static filesystem.
+          const seededAt = lookupRecycleBinSeed(name)
+          if (seededAt) recoveredAdditions = [{ path: seededAt.fromPath, item: seededAt.item }]
+        }
+        // De-dup by (path, name) so repeated restores don't multiply entries.
+        const existing = state.recoveredItems
+        const additions = recoveredAdditions.filter(
+          (a) =>
+            !existing.some(
+              (e) =>
+                e.path === a.path &&
+                (e.item as { name?: string }).name === (a.item as { name?: string }).name,
+            ),
+        )
         set({
           recycleBin: state.recycleBin.filter((r) => r.name !== name),
           hiddenDesktop: state.hiddenDesktop.filter((n) => n !== name),
-          // Seeded items live in the static filesystem, so we can't remove
-          // them — we track restored names and let the UI filter them out.
           restoredSeeds: state.restoredSeeds.includes(name)
             ? state.restoredSeeds
             : [...state.restoredSeeds, name],
+          recoveredItems: [...existing, ...additions],
         })
         state.logEvent('FileSystem', 'Information', `Restored from recycle bin: ${name}`)
       },
@@ -529,9 +584,10 @@ export const useOsStore = create<OsState>()(
         }
       },
 
-      openContextMenu: (x, y, items) => set({ contextMenu: { open: true, x, y, items } }),
+      openContextMenu: (x, y, items, variant = 'modern') =>
+        set({ contextMenu: { open: true, x, y, items, variant } }),
       closeContextMenu: () =>
-        set({ contextMenu: { open: false, x: 0, y: 0, items: [] } }),
+        set({ contextMenu: { open: false, x: 0, y: 0, items: [], variant: 'modern' } }),
     }),
     {
       name: 'react.os',
@@ -542,6 +598,7 @@ export const useOsStore = create<OsState>()(
         recycleBin: state.recycleBin,
         hiddenDesktop: state.hiddenDesktop,
         restoredSeeds: state.restoredSeeds,
+        recoveredItems: state.recoveredItems,
         iconPositions: state.iconPositions,
       }),
     },

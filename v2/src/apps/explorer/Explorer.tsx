@@ -97,6 +97,7 @@ export default function Explorer() {
   const recycleBin = useOsStore((s) => s.recycleBin)
   const hiddenDesktop = useOsStore((s) => s.hiddenDesktop)
   const restoredSeeds = useOsStore((s) => s.restoredSeeds)
+  const recoveredItems = useOsStore((s) => s.recoveredItems)
   const restoreFromRecycle = useOsStore((s) => s.restoreFromRecycle)
   const recycleItem = useOsStore((s) => s.recycleItem)
   const emptyRecycleBin = useOsStore((s) => s.emptyRecycleBin)
@@ -126,11 +127,16 @@ export default function Explorer() {
       return merged
     }
     const raw = listAt(currentPath)
+    const recoveredHere = recoveredItems
+      .filter((r) => r.path === currentPath)
+      .map((r) => r.item as unknown as FsEntry)
+      .filter((e) => !raw.some((s) => s.name === e.name))
     if (currentPath === 'C:\\Users\\DeVante\\Desktop') {
-      return raw.filter((e) => !hiddenDesktop.includes(e.name))
+      const visible = raw.filter((e) => !hiddenDesktop.includes(e.name))
+      return [...visible, ...recoveredHere]
     }
-    return raw
-  }, [currentPath, isRecycle, recycleBin, hiddenDesktop, restoredSeeds])
+    return [...raw, ...recoveredHere]
+  }, [currentPath, isRecycle, recycleBin, hiddenDesktop, restoredSeeds, recoveredItems])
 
   // Sidebar icon swaps between full/empty based on total bin contents.
   const binCount = useMemo(() => {

@@ -42,11 +42,54 @@ export function Desktop() {
   const minimizeAll = useOsStore((s) => s.minimizeAll)
   const updateSetting = useOsStore((s) => s.updateSetting)
   const resetIconPositions = useOsStore((s) => s.resetIconPositions)
+  const openApp = useOsStore((s) => s.openApp)
   const isDark = useOsStore((s) => s.settings.theme === 'dark')
+
+  const openClassicDesktopMenu = (x: number, y: number) => {
+    openContextMenu(
+      x,
+      y,
+      [
+        { label: 'View', icon: '🖼', disabled: true },
+        { label: 'Sort by', icon: '↕', disabled: true },
+        { label: 'Refresh', icon: '↻', action: () => window.location.reload() },
+        { separator: true },
+        { label: 'Paste', icon: '📋', disabled: true },
+        { label: 'Paste shortcut', icon: '🔗', disabled: true },
+        { separator: true },
+        { label: 'New', icon: '✱', disabled: true },
+        { label: 'Display settings', icon: '🖥', action: () => openApp('settings') },
+        {
+          label: 'Personalise',
+          icon: '🎨',
+          action: () => openApp('settings'),
+        },
+        { separator: true },
+        {
+          label: 'Reset icon layout',
+          icon: '🔁',
+          action: resetIconPositions,
+        },
+        {
+          label: 'Show desktop',
+          icon: '⬇',
+          action: minimizeAll,
+        },
+        {
+          label: isDark ? 'Light mode' : 'Dark mode',
+          icon: isDark ? '☀' : '🌙',
+          action: () => updateSetting('theme', isDark ? 'light' : 'dark'),
+        },
+      ],
+      'classic',
+    )
+  }
 
   const onDesktopContextMenu = (e: React.MouseEvent) => {
     e.preventDefault()
-    openContextMenu(e.clientX, e.clientY, [
+    const x = e.clientX
+    const y = e.clientY
+    openContextMenu(x, y, [
       { label: 'View', icon: '👁', disabled: true },
       { label: 'Sort by', icon: '↕', disabled: true },
       { label: 'Refresh', icon: '↻', action: () => window.location.reload() },
@@ -61,11 +104,16 @@ export function Desktop() {
         icon: '🔁',
         action: resetIconPositions,
       },
-      { separator: true },
       {
         label: isDark ? 'Light mode' : 'Dark mode',
         icon: isDark ? '☀' : '🌙',
         action: () => updateSetting('theme', isDark ? 'light' : 'dark'),
+      },
+      { separator: true },
+      {
+        label: 'Show more options',
+        icon: '⤓',
+        action: () => openClassicDesktopMenu(x, y),
       },
     ])
   }

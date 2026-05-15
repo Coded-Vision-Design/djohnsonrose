@@ -3,8 +3,29 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DeVanté Johnson-Rose | Full Stack Developer & Systems Engineer</title>
-    <meta name="description" content="Interactive Windows-style portfolio of DeVanté Johnson-Rose, a Full Stack Developer and Systems Engineer with enterprise experience in system administration, networking, SCCM, and automation.">
+    <title>DeVanté Johnson-Rose | Full Stack Developer & Systems Engineer · Portfolio OS</title>
+    <meta name="description" content="DeVanté Johnson-Rose is a Senior Full Stack Developer and Systems Engineer in the UK building scalable web platforms, enterprise infrastructure, and developer tooling. Explore the interactive Windows-style portfolio.">
+    <meta name="author" content="DeVanté Johnson-Rose">
+    <meta name="keywords" content="DeVanté Johnson-Rose, full stack developer UK, systems engineer, PHP developer, React developer, portfolio, SCCM, JAMF, automation, devante.johnson-rose.co.uk">
+    <meta name="robots" content="index, follow, max-image-preview:large">
+    <meta name="theme-color" content="#0078d4">
+    <link rel="canonical" href="https://devante.johnson-rose.co.uk/">
+
+    <!-- Open Graph (Facebook, LinkedIn, etc.) -->
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="DeVanté Johnson-Rose · Portfolio OS">
+    <meta property="og:title" content="DeVanté Johnson-Rose | Full Stack Developer & Systems Engineer">
+    <meta property="og:description" content="Interactive Windows 11-styled portfolio. Open the apps, browse the projects, drop into the CV — every desktop tile is a real, working surface.">
+    <meta property="og:url" content="https://devante.johnson-rose.co.uk/">
+    <meta property="og:image" content="https://devante.johnson-rose.co.uk/assets/img/favicon.png">
+    <meta property="og:locale" content="en_GB">
+
+    <!-- Twitter / X card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="DeVanté Johnson-Rose | Portfolio OS">
+    <meta name="twitter:description" content="Interactive Windows-style portfolio with working Paint, Terminal, Explorer, Outlook, FL Studio, and more.">
+    <meta name="twitter:image" content="https://devante.johnson-rose.co.uk/assets/img/favicon.png">
+
     <!-- Favicon -->
     <link rel="icon" type="image/x-icon" href="<?php echo BASE_PATH; ?>favicon.ico">
     <link rel="shortcut icon" href="<?php echo BASE_PATH; ?>favicon.ico">
@@ -13,6 +34,35 @@
     <link rel="manifest" href="<?php echo BASE_PATH; ?>manifest.json">
     <link rel="preload" as="image" href="<?php echo IMG_PATH; ?>startmenu.webp">
     <link rel="preload" as="image" href="<?php echo IMG_PATH; ?>settings.webp">
+
+    <!-- JSON-LD: Person + WebSite for rich Google results -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "Person",
+          "@id": "https://devante.johnson-rose.co.uk/#person",
+          "name": "DeVanté Johnson-Rose",
+          "url": "https://devante.johnson-rose.co.uk/",
+          "image": "https://devante.johnson-rose.co.uk/assets/img/profile.png",
+          "jobTitle": "Senior Full Stack Developer & Systems Engineer",
+          "email": "mailto:devante@johnson-rose.co.uk",
+          "sameAs": [
+            "https://github.com/CodedVisionDesign"
+          ]
+        },
+        {
+          "@type": "WebSite",
+          "@id": "https://devante.johnson-rose.co.uk/#website",
+          "url": "https://devante.johnson-rose.co.uk/",
+          "name": "DeVanté Johnson-Rose · Portfolio OS",
+          "description": "Interactive Windows-style portfolio of DeVanté Johnson-Rose.",
+          "publisher": { "@id": "https://devante.johnson-rose.co.uk/#person" }
+        }
+      ]
+    }
+    </script>
     <!-- Tailwind CSS Play CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -137,11 +187,12 @@
         </div>
 
         <!-- Global Context Menu -->
-        <div x-show="contextMenu.open" 
+        <div x-show="contextMenu.open"
              x-cloak
              @click.away="contextMenu.open = false"
              @keydown.escape.window="contextMenu.open = false"
-             class="fixed z-[15000] bg-white/90 dark:bg-[#1c1c1c]/95 backdrop-blur-xl border border-white/20 dark:border-white/10 rounded-xl shadow-2xl py-1 min-w-[260px] animate-in fade-in zoom-in duration-75 context-menu"
+             :class="contextMenu.variant === 'classic' ? 'bg-[#f0f0f0] dark:bg-[#2b2b2b] border border-[#a0a0a0] dark:border-black shadow-[2px_2px_4px_rgba(0,0,0,0.3)] py-1 min-w-[240px]' : 'bg-white/90 dark:bg-[#1c1c1c]/95 backdrop-blur-xl border border-white/20 dark:border-white/10 rounded-xl shadow-2xl py-1 min-w-[260px] context-menu'"
+             class="fixed z-[15000] animate-in fade-in zoom-in duration-75"
              :style="`left: ${contextMenu.x}px; top: ${contextMenu.y}px;`"
              @contextmenu.prevent
              x-data="{ hoverItem: null, hoverTimer: null }">
@@ -180,21 +231,29 @@
                     </template>
                 </div>
             </template>
-            <!-- Show more options (Standard Win11 trait) -->
-            <div class="context-menu-separator"></div>
-            <div @click="alert('Classic menu not implemented'); contextMenu.open = false"
-                 @mouseenter="clearTimeout(hoverTimer); hoverTimer = setTimeout(() => hoverItem = 'more', 60)"
-                 @mouseleave="clearTimeout(hoverTimer); hoverItem = null"
-                 :class="{ 'active': hoverItem === 'more' }"
-                 class="context-menu-item flex items-center justify-between px-3 py-1.5 cursor-default transition-colors">
-                <div class="flex items-center">
-                    <span class="w-4 h-4 mr-3 flex items-center justify-center context-menu-icon">
-                        <img src="<?php echo IMG_PATH; ?>settings.webp" class="w-4 h-4 opacity-70">
-                    </span>
-                    <span class="context-menu-label">Show more options</span>
+            <!-- Show more options — only on the Win11 modern menu, hides
+                 itself once the classic menu has taken over. The menu builders
+                 (showDesktopContextMenu/showFileContextMenu) explicitly add a
+                 "Show more options" item that maps to the classic builder
+                 (showClassicDesktopContextMenu et al.), so this footer is
+                 redundant for those entry points; it stays here as a fallback
+                 for any context menu without its own entry. -->
+            <template x-if="contextMenu.variant !== 'classic' && !(contextMenu.items || []).some(i => i.label === 'Show more options')">
+                <div>
+                    <div class="context-menu-separator"></div>
+                    <div @click="showClassicDesktopContextMenu({ clientX: contextMenu.x, clientY: contextMenu.y })"
+                         @mouseenter="clearTimeout(hoverTimer); hoverTimer = setTimeout(() => hoverItem = 'more', 60)"
+                         @mouseleave="clearTimeout(hoverTimer); hoverItem = null"
+                         :class="{ 'active': hoverItem === 'more' }"
+                         class="context-menu-item flex items-center justify-between px-3 py-1.5 cursor-default transition-colors">
+                        <div class="flex items-center">
+                            <span class="w-4 h-4 mr-3 flex items-center justify-center context-menu-icon">⤓</span>
+                            <span class="context-menu-label">Show more options</span>
+                        </div>
+                        <span class="text-[10px] opacity-50 ml-4 font-mono">Shift+F10</span>
+                    </div>
                 </div>
-                <span class="text-[10px] opacity-50 ml-4 font-mono">Shift+F10</span>
-            </div>
+            </template>
         </div>
 
         <!-- Snap Preview Overlay -->

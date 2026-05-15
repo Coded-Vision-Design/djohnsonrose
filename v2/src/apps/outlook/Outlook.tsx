@@ -1,12 +1,17 @@
 import { useRef, useState } from 'react'
 
 const RECIPIENT = 'devante@johnson-rose.co.uk'
+// Same starter copy as v1's outlookApp() so visitors see a populated draft
+// instead of an empty form.
+const DEFAULT_SUBJECT = 'Project Inquiry - Portfolio OS'
+const DEFAULT_BODY =
+  'Hi,\n\nI was browsing your portfolio and would like to get in touch regarding...'
 
 type Status = 'idle' | 'sending' | 'sent' | 'error'
 
 export default function Outlook() {
-  const [subject, setSubject] = useState('')
-  const [body, setBody] = useState('')
+  const [subject, setSubject] = useState(DEFAULT_SUBJECT)
+  const [body, setBody] = useState(DEFAULT_BODY)
   const [attachments, setAttachments] = useState<File[]>([])
   const [honeypot, setHoneypot] = useState('')
   const [status, setStatus] = useState<Status>('idle')
@@ -47,8 +52,8 @@ export default function Outlook() {
       if (data.success) {
         setStatus('sent')
         setStatusMsg(data.message || 'Message sent.')
-        setSubject('')
-        setBody('')
+        setSubject(DEFAULT_SUBJECT)
+        setBody(DEFAULT_BODY)
         setAttachments([])
       } else {
         setStatus('error')
@@ -66,8 +71,8 @@ export default function Outlook() {
   }
 
   const discard = () => {
-    setSubject('')
-    setBody('')
+    setSubject(DEFAULT_SUBJECT)
+    setBody(DEFAULT_BODY)
     setAttachments([])
     setStatus('idle')
     setStatusMsg('')

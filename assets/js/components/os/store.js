@@ -3,7 +3,7 @@ document.addEventListener('alpine:init', () => {
     Alpine.store('os', {
         windows: [],
         focusedWindowId: null,
-        contextMenu: { open: false, x: 0, y: 0, items: [] },
+        contextMenu: { open: false, x: 0, y: 0, items: [], variant: 'modern' },
         nextWindowZ: 100,
         eventLogs: [],
         logEvent(source, level, description) {
@@ -47,6 +47,10 @@ document.addEventListener('alpine:init', () => {
                 action: action,
                 details: {
                     ...details,
+                    // Tag every event with which build it came from so the
+                    // email logs (and the admin console stats) can split
+                    // PHP-side vs React-side activity.
+                    source: 'php',
                     sessionID: sessionStorage.getItem('os.sessionID') || 'guest'
                 },
                 deviceInfo: this.getDeviceInfo()
