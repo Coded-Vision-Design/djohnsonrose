@@ -1,9 +1,8 @@
 import { useWindowExtras } from '../../windowing/WindowContext'
 
-// Native <video> element. URL comes through window extras; we default to a
-// short demo clip so the app still feels alive when launched standalone.
-const DEFAULT_URL =
-  'https://assets.mixkit.co/videos/preview/mixkit-drone-view-of-a-serene-lake-and-mountains-4318-large.mp4'
+// Native <video> element. URL comes through window extras; we default to
+// the bundled drone clip so the app still feels alive when launched standalone.
+const DEFAULT_URL = '/data/south-africa-25.mp4'
 
 export default function Video() {
   const { videoUrl } = useWindowExtras<{ videoUrl?: string }>()

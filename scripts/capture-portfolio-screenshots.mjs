@@ -111,7 +111,29 @@ async function dismissPopups(page) {
 async function stabilize(page) {
   await page.evaluate(() => document.fonts.ready).catch(() => {})
   await page.evaluate(() => window.scrollTo(0, 0))
-  await page.waitForTimeout(500) // animation settle
+
+  // Wait until something substantive has actually painted above the fold.
+  // Next.js / hydration-heavy sites (earthecho.co.uk was the obvious one)
+  // settle networkidle while still rendering an empty body, so a fixed
+  // sleep alone caught a white page. Require >120 visible text chars OR
+  // an above-the-fold image with non-zero layout.
+  await page
+    .waitForFunction(
+      () => {
+        const inViewport = (el) => {
+          const r = el.getBoundingClientRect()
+          return r.top < window.innerHeight && r.bottom > 0 && r.width > 0 && r.height > 0
+        }
+        const text = (document.body.innerText || '').trim()
+        if (text.length > 120) return true
+        const imgs = Array.from(document.images || [])
+        return imgs.some((i) => i.complete && i.naturalWidth > 0 && inViewport(i))
+      },
+      { timeout: 8000 },
+    )
+    .catch(() => {})
+
+  await page.waitForTimeout(1500) // animation / hero-fade settle
 }
 
 async function capture(page, site, viewport, suffix = '') {

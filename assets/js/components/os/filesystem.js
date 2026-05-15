@@ -186,7 +186,7 @@ PROFILES:
         { name: 'NAGA World Championships 2023.webp', type: 'image', icon: '🖼️', url: window.portfolioConfig.imgPath + 'NAGA World Championships 2023.webp' }
     ],
     'C:\\Recycle Bin': [
-        { name: 'Easter Egg - Drone Footage.mp4', type: 'video', icon: '🎬', url: 'https://assets.mixkit.co/videos/preview/mixkit-drone-view-of-a-serene-lake-and-mountains-4318-large.mp4', originalPath: 'C:\\Users\\DeVante\\Desktop' }
+        { name: 'South Africa 25 Video.mp4', type: 'video', icon: '🎬', url: '/data/south-africa-25.mp4', originalPath: 'C:\\Users\\DeVante\\Desktop' }
     ],
     'C:\\Users\\DeVante\\Projects': [
         { name: 'Freelance', type: 'folder', icon: window.portfolioConfig.imgPath + 'win11/folder.png' },

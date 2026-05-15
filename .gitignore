@@ -30,6 +30,10 @@ CLAUDE.md
 # Logs
 *.log
 
+# Original camera-roll uploads — committed as transcoded WebM/MP4 instead.
+*.MOV
+*.mov
+
 # Build outputs
 dist/
 build/

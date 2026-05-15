@@ -8,14 +8,14 @@ import { track } from '../lib/telemetry'
 function lookupRecycleBinSeed(
   name: string,
 ): { fromPath: string; item: Record<string, unknown> } | null {
-  if (name === 'Easter Egg - Drone Footage.mp4') {
+  if (name === 'South Africa 25 Video.mp4') {
     return {
       fromPath: 'C:\\Users\\DeVante\\Desktop',
       item: {
-        name: 'Easter Egg - Drone Footage.mp4',
+        name: 'South Africa 25 Video.mp4',
         type: 'video',
         icon: '🎬',
-        url: 'https://assets.mixkit.co/videos/preview/mixkit-drone-view-of-a-serene-lake-and-mountains-4318-large.mp4',
+        url: '/data/south-africa-25.mp4',
       },
     }
   }
@@ -560,8 +560,8 @@ export const useOsStore = create<OsState>()(
         // Empty wipes both the dynamic bin and any remaining seeded items —
         // user can recover seeds via a fresh `localStorage.clear()` if needed.
         // Importing data/filesystem lazily would create a circular dep, so we
-        // hard-code the known seed list here (currently just the Easter Egg).
-        const seedNames = ['Easter Egg - Drone Footage.mp4']
+        // hard-code the known seed list here.
+        const seedNames = ['South Africa 25 Video.mp4']
         set({
           recycleBin: [],
           restoredSeeds: Array.from(new Set([...state.restoredSeeds, ...seedNames])),
