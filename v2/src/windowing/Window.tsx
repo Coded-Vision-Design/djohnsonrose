@@ -9,16 +9,9 @@ interface Props {
   children: React.ReactNode
 }
 
-const RESIZE_HANDLES: { dir: ResizeDir; className: string; cursor: string }[] = [
-  { dir: 'n', className: 'left-0 right-0 -top-1 h-2', cursor: 'ns-resize' },
-  { dir: 's', className: 'left-0 right-0 -bottom-1 h-2', cursor: 'ns-resize' },
-  { dir: 'w', className: 'top-0 bottom-0 -left-1 w-2', cursor: 'ew-resize' },
-  { dir: 'e', className: 'top-0 bottom-0 -right-1 w-2', cursor: 'ew-resize' },
-  { dir: 'nw', className: '-top-1 -left-1 w-3 h-3', cursor: 'nwse-resize' },
-  { dir: 'ne', className: '-top-1 -right-1 w-3 h-3', cursor: 'nesw-resize' },
-  { dir: 'sw', className: '-bottom-1 -left-1 w-3 h-3', cursor: 'nesw-resize' },
-  { dir: 'se', className: '-bottom-1 -right-1 w-3 h-3', cursor: 'nwse-resize' },
-]
+// Matches partials/desktop.php window block. Title bar h-9 (h-[44px] for Edge,
+// which v1 special-cases). Min/maximize/close buttons w-[46px] h-[32px], close
+// gets the Win11 #c42b1c red. Resize handles in an inset[-4px] overlay.
 
 export function Window({ win, children }: Props) {
   const focusedId = useOsStore((s) => s.focusedWindowId)
@@ -41,7 +34,12 @@ export function Window({ win, children }: Props) {
   const isFocused = focusedId === win.id
   const isMaximized = win.maximized
 
-  // Frame style: maximized fills viewport above taskbar; otherwise free-floating.
+  if (win.minimized) return null
+
+  const titleBarHeight = win.app === 'edge' ? 'h-[44px] py-[6px]' : 'h-9'
+
+  // Maximized: fill viewport up to the taskbar (taskbar height reserved at
+  // bottom). Restored: free-floating geometry from the store.
   const style: React.CSSProperties = isMaximized
     ? {
         left: 0,
@@ -58,96 +56,122 @@ export function Window({ win, children }: Props) {
         zIndex: win.z,
       }
 
-  if (win.minimized) return null
-
   return (
     <div
-      className={`absolute glass animate-window-open ${
-        isFocused ? 'win-shadow window-active' : ''
-      } ${isMaximized ? '' : 'rounded-lg'} overflow-hidden flex flex-col`}
+      className={`absolute flex flex-col pointer-events-auto win-shadow glass animate-window-open overflow-hidden ${
+        isFocused ? 'window-active' : ''
+      } ${isMaximized ? '!rounded-none' : 'rounded-lg'}`}
       style={style}
       onMouseDown={() => focusWindow(win.id)}
       role="dialog"
       aria-label={win.title}
     >
-      {/* Title bar */}
+      {/* Title bar — Edge hides its title because it has its own tab strip */}
       <div
-        className="flex-none h-9 flex items-center justify-between pl-3 pr-0 select-none cursor-default bg-white/40 dark:bg-black/30 border-b border-black/5 dark:border-white/10"
+        className={`${titleBarHeight} flex items-center justify-between px-3 select-none bg-white/10 dark:bg-black/10 cursor-default overflow-hidden ${
+          isMaximized ? '' : 'rounded-t-lg'
+        }`}
         onMouseDown={(e) => {
-          // Only drag with primary button, not resize-handle clicks.
+          // Only the title bar surface itself starts the drag — not its children.
+          if (e.target !== e.currentTarget) return
           if (e.button !== 0) return
           onDragStart(win.id, e)
         }}
         onDoubleClick={() => toggleMaximize(win.id)}
       >
-        <span className="text-xs font-medium truncate pr-2">{win.title}</span>
-        <div className="flex h-full">
+        <div className="flex items-center space-x-2 pointer-events-none min-w-0">
+          {win.app !== 'edge' && (
+            <span className="text-sm font-medium dark:text-white truncate">{win.title}</span>
+          )}
+        </div>
+        <div className="flex items-center h-full gap-[2px] shrink-0">
           <button
             type="button"
             aria-label="Minimize"
-            className="w-11 h-full hover:bg-black/5 dark:hover:bg-white/10 flex items-center justify-center"
             onClick={(e) => {
               e.stopPropagation()
               toggleMinimize(win.id)
             }}
+            className="w-[46px] h-[32px] flex items-center justify-center hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
           >
-            <svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true">
-              <line x1="1" y1="5" x2="9" y2="5" stroke="currentColor" strokeWidth="1" />
+            <svg className="w-2.5 h-2.5 fill-black dark:fill-white opacity-70" viewBox="0 0 10 1" aria-hidden="true">
+              <rect width="10" height="1" />
             </svg>
           </button>
           <button
             type="button"
             aria-label={isMaximized ? 'Restore' : 'Maximize'}
-            className="w-11 h-full hover:bg-black/5 dark:hover:bg-white/10 flex items-center justify-center"
             onClick={(e) => {
               e.stopPropagation()
               toggleMaximize(win.id)
             }}
+            className="w-[46px] h-[32px] flex items-center justify-center hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
           >
             {isMaximized ? (
-              <svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true">
-                <rect x="2" y="2" width="5" height="5" fill="none" stroke="currentColor" strokeWidth="1" />
-                <rect x="3.5" y="0.5" width="5" height="5" fill="none" stroke="currentColor" strokeWidth="1" />
+              <svg className="w-2.5 h-2.5 fill-black dark:fill-white opacity-70" viewBox="0 0 10 10" aria-hidden="true">
+                <path d="M2,0v2H0v8h8V8h2V0H2z M7,9H1V3h6V9z M9,7H8V2H3V1h6V7z" />
               </svg>
             ) : (
-              <svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true">
-                <rect x="1" y="1" width="8" height="8" fill="none" stroke="currentColor" strokeWidth="1" />
+              <svg className="w-2.5 h-2.5 fill-black dark:fill-white opacity-70" viewBox="0 0 10 10" aria-hidden="true">
+                <path d="M0,0v10h10V0H0z M9,9H1V1h8V9z" />
               </svg>
             )}
           </button>
           <button
             type="button"
             aria-label="Close"
-            className="w-11 h-full hover:bg-red-500 hover:text-white flex items-center justify-center"
             onClick={(e) => {
               e.stopPropagation()
               closeWindow(win.id)
             }}
+            className="w-[46px] h-[32px] flex items-center justify-center hover:bg-[#c42b1c] hover:text-white text-black dark:text-white transition-colors group"
           >
-            <svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true">
-              <line x1="1" y1="1" x2="9" y2="9" stroke="currentColor" strokeWidth="1" />
-              <line x1="9" y1="1" x2="1" y2="9" stroke="currentColor" strokeWidth="1" />
+            <svg className="w-2.5 h-2.5 opacity-70 group-hover:opacity-100 fill-current" viewBox="0 0 10 10" aria-hidden="true">
+              <path d="M10,1.4L8.6,0L5,3.6L1.4,0L0,1.4L3.6,5L0,8.6L1.4,10L5,6.4l3.6,3.6l1.4-1.4L6.4,5L10,1.4z" />
             </svg>
           </button>
         </div>
       </div>
 
-      {/* Content */}
-      <div className="flex-1 overflow-auto bg-white dark:bg-zinc-900">{children}</div>
+      {/* Window content */}
+      <div
+        className={`flex-grow overflow-auto relative bg-white dark:bg-[#1c1c1c] ${
+          isMaximized ? '' : 'rounded-b-lg'
+        }`}
+      >
+        {children}
+      </div>
 
-      {/* Resize handles — only when not maximized */}
-      {!isMaximized &&
-        RESIZE_HANDLES.map((h) => (
-          <div
-            key={h.dir}
-            className={`absolute ${h.className} z-10`}
-            style={{ cursor: h.cursor }}
-            onMouseDown={(e) => {
-              e.stopPropagation()
-              onResizeStart(win.id, h.dir, e)
-            }}
-          />
-        ))}
+      {/* Resize handles — v1's inset[-4px] overlay with 8 hit zones */}
+      {!isMaximized && (
+        <div className="absolute inset-[-4px] pointer-events-none z-50">
+          {RESIZE_HANDLES.map((h) => (
+            <div
+              key={h.dir}
+              className={`absolute ${h.className} pointer-events-auto`}
+              style={{ cursor: h.cursor }}
+              onMouseDown={(e) => {
+                e.stopPropagation()
+                onResizeStart(win.id, h.dir, e)
+              }}
+            />
+          ))}
+        </div>
+      )}
     </div>
   )
 }
+
+const RESIZE_HANDLES: { dir: ResizeDir; className: string; cursor: string }[] = [
+  // Edges, inset from the corners by 2 px each side so the corners get clean
+  // diagonal cursors (matches v1's top-2 / bottom-2 / left-2 / right-2 spacing).
+  { dir: 'w', className: 'top-2 bottom-2 left-0 w-2', cursor: 'ew-resize' },
+  { dir: 'e', className: 'top-2 bottom-2 right-0 w-2', cursor: 'ew-resize' },
+  { dir: 'n', className: 'top-0 left-2 right-2 h-2', cursor: 'ns-resize' },
+  { dir: 's', className: 'bottom-0 left-2 right-2 h-2', cursor: 'ns-resize' },
+  // Corners
+  { dir: 'nw', className: 'top-0 left-0 w-3 h-3', cursor: 'nwse-resize' },
+  { dir: 'ne', className: 'top-0 right-0 w-3 h-3', cursor: 'nesw-resize' },
+  { dir: 'sw', className: 'bottom-0 left-0 w-3 h-3', cursor: 'nesw-resize' },
+  { dir: 'se', className: 'bottom-0 right-0 w-3 h-3', cursor: 'nwse-resize' },
+]

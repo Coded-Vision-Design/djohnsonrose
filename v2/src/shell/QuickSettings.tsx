@@ -3,19 +3,24 @@ import { useOsStore, TASKBAR_HEIGHT, type Settings } from '../store/osStore'
 import { playSound } from '../lib/sounds'
 import { VolumeIcon } from './VolumeIcon'
 
+// 1:1 port of partials/quick-settings.php — 360px panel above the tray
+// with 6 toggles (3-col grid), Brightness + Volume sliders, and a
+// bottom-info row.
+
 type ToggleKey = 'wifi' | 'bluetooth' | 'airplane' | 'batterySaver' | 'nightLight' | 'accessibility'
 
-interface Toggle {
+interface ToggleDef {
   id: ToggleKey
   label: string
   activeLabel: string
   icon: string
+  activeIcon?: string
   noHighlight?: boolean
 }
 
-const TOGGLES: Toggle[] = [
+const TOGGLES: ToggleDef[] = [
   { id: 'wifi', label: 'Wi-Fi', activeLabel: 'Connected', icon: '/assets/img/wifi.webp', noHighlight: true },
-  { id: 'bluetooth', label: 'Bluetooth', activeLabel: 'Connected', icon: '/assets/img/bluetooth.webp', noHighlight: true },
+  { id: 'bluetooth', label: 'Bluetooth', activeLabel: 'Connected', icon: '/assets/img/bluetooth.webp', activeIcon: '/assets/img/bluetooth.webp', noHighlight: true },
   { id: 'airplane', label: 'Flight mode', activeLabel: 'On', icon: '/assets/img/win11/airplane.svg' },
   { id: 'batterySaver', label: 'Energy saver', activeLabel: 'On', icon: '/assets/img/win11/power.svg' },
   { id: 'nightLight', label: 'Night light', activeLabel: 'On', icon: '/assets/img/win11/nightlight.svg' },
@@ -27,6 +32,7 @@ export function QuickSettings() {
   const close = useOsStore((s) => s.closeAllPopups)
   const settings = useOsStore((s) => s.settings)
   const updateSetting = useOsStore((s) => s.updateSetting)
+  const openApp = useOsStore((s) => s.openApp)
   const ref = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -43,34 +49,39 @@ export function QuickSettings() {
 
   if (!open) return null
 
+  const toggle = (id: ToggleKey) => {
+    updateSetting(id, !settings[id as keyof Settings])
+    playSound('click')
+  }
+
+  const brightnessProgress = ((settings.brightness - 30) / 70) * 100
+
   return (
     <div
       ref={ref}
-      className="fixed right-2 w-[360px] glass rounded-xl flex flex-col overflow-hidden shadow-2xl p-4 space-y-6 z-[10000]"
+      className="fixed right-2 w-[360px] glass rounded-xl flex flex-col overflow-hidden shadow-2xl p-4 space-y-6 z-[10000] animate-window-open"
       style={{ bottom: TASKBAR_HEIGHT + 8 }}
     >
+      {/* Quick Toggles — 3 cols, 6 cells */}
       <div className="grid grid-cols-3 gap-x-2 gap-y-4 px-1">
         {TOGGLES.map((t) => {
           const active = settings[t.id as keyof Settings] as boolean
-          const isActiveHighlight = active && !t.noHighlight
+          const isHighlightActive = active && !t.noHighlight
           return (
             <div key={t.id} className="quick-settings-btn">
               <button
                 type="button"
-                onClick={() => {
-                  updateSetting(t.id, !active)
-                  playSound('click')
-                }}
-                className={`quick-settings-toggle ${isActiveHighlight ? 'active' : ''} ${
+                onClick={() => toggle(t.id)}
+                aria-pressed={active}
+                className={`quick-settings-toggle ${isHighlightActive ? 'active' : ''} ${
                   t.noHighlight ? 'no-highlight' : ''
                 }`}
-                aria-pressed={active}
               >
                 <img
-                  src={t.icon}
+                  src={active && t.activeIcon ? t.activeIcon : t.icon}
                   alt=""
                   className={`w-5 h-5 dark:invert ${
-                    isActiveHighlight ? 'brightness-0 invert' : 'opacity-80'
+                    isHighlightActive ? 'brightness-0 invert' : 'opacity-80'
                   }`}
                 />
               </button>
@@ -82,7 +93,9 @@ export function QuickSettings() {
         })}
       </div>
 
+      {/* Sliders */}
       <div className="space-y-6 px-1">
+        {/* Brightness */}
         <div className="flex flex-col space-y-2">
           <div className="flex items-center space-x-2">
             <img
@@ -103,12 +116,12 @@ export function QuickSettings() {
             className="win-slider w-full"
             style={
               {
-                ['--range-progress' as string]: `${((settings.brightness - 30) / 70) * 100}%`,
+                ['--range-progress' as string]: `${brightnessProgress}%`,
               } as React.CSSProperties
             }
           />
         </div>
-
+        {/* Volume */}
         <div className="flex flex-col space-y-2">
           <div className="flex items-center space-x-2">
             <VolumeIcon className="w-4 h-4 opacity-70" />
@@ -136,26 +149,38 @@ export function QuickSettings() {
         </div>
       </div>
 
+      {/* Bottom info — battery + personalise/all-settings shortcuts */}
       <div className="pt-4 border-t border-black/5 dark:border-white/10 flex items-center justify-between px-1">
         <div className="flex items-center space-x-2 text-[11px] dark:text-white font-medium">
-          <span className="opacity-80">Theme</span>
-          <button
-            type="button"
-            onClick={() =>
-              updateSetting('theme', settings.theme === 'dark' ? 'light' : 'dark')
-            }
-            className="px-2 py-1 rounded bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/20"
-          >
-            {settings.theme === 'dark' ? '🌙 Dark' : '☀ Light'}
-          </button>
+          <img
+            src="/assets/img/win11/battery.svg"
+            alt=""
+            className="w-4 h-4 opacity-70 dark:invert"
+          />
+          <span className="opacity-80">85% {settings.batterySaver ? '(Saver On)' : ''}</span>
         </div>
-        <div className="flex items-center space-x-2 text-[11px]">
+        <div className="flex items-center space-x-1">
           <button
             type="button"
-            onClick={() => updateSetting('sound', !settings.sound)}
-            className="px-2 py-1 rounded bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/20 dark:text-white"
+            onClick={() => {
+              openApp('settings')
+              close()
+            }}
+            title="Personalise"
+            className="p-2 rounded hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
           >
-            {settings.sound ? '🔊 Sound on' : '🔇 Sound off'}
+            <img src="/assets/img/win11/edit.svg" alt="" className="w-4 h-4 opacity-70 dark:invert" />
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              openApp('settings')
+              close()
+            }}
+            title="All settings"
+            className="p-2 rounded hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
+          >
+            <img src="/assets/img/win11/settings.svg" alt="" className="w-4 h-4 opacity-70 dark:invert" />
           </button>
         </div>
       </div>
