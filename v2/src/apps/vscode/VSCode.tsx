@@ -85,8 +85,14 @@ export default function VSCode() {
         setIsBuilding(false)
         return
       }
-      setTerminalOutput((prev) => [...prev, lines[i]])
+      // Capture the line *before* incrementing — the setState updater may
+      // run later (StrictMode replays / concurrent rendering), at which
+      // point a closure-captured lines[i] reads the already-incremented i
+      // and pushes undefined, blowing up the map below with
+      //   "Cannot read properties of undefined (reading 'type')".
+      const line = lines[i]
       i++
+      setTerminalOutput((prev) => [...prev, line])
     }, 350)
   }
 

@@ -110,6 +110,12 @@ async function dismissPopups(page) {
 
 async function stabilize(page) {
   await page.evaluate(() => document.fonts.ready).catch(() => {})
+  // Some sites (bjjhavering, bhrrecovery) auto-scroll during hydration to
+  // restore a saved position or jump to a hash anchor — that's why their
+  // captures used to land mid-page instead of on the hero. We pin the
+  // scroll position both *before* the paint wait and *after*, and freeze
+  // <html>'s scroll-behavior so any later programmatic scroll snaps back.
+  await page.addStyleTag({ content: 'html { scroll-behavior: auto !important; }' }).catch(() => {})
   await page.evaluate(() => window.scrollTo(0, 0))
 
   // Wait until something substantive has actually painted above the fold.
@@ -134,6 +140,11 @@ async function stabilize(page) {
     .catch(() => {})
 
   await page.waitForTimeout(1500) // animation / hero-fade settle
+
+  // Final scroll-to-top after the page has actually painted — catches
+  // sessionStorage scroll-restore + IntersectionObserver-triggered jumps.
+  await page.evaluate(() => window.scrollTo(0, 0))
+  await page.waitForTimeout(300)
 }
 
 async function capture(page, site, viewport, suffix = '') {

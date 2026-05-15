@@ -32,8 +32,9 @@
                     <?php if (!empty($featured)): ?>
                         <div class="px-2 pt-1 pb-0.5 text-[9px] uppercase tracking-wider opacity-50">★ Featured</div>
                         <?php foreach ($featured as $p): ?>
-                            <div @click="selectFile('<?php echo htmlspecialchars($p['title'], ENT_QUOTES); ?>')"
-                                 :class="activeFile === '<?php echo htmlspecialchars($p['title'], ENT_QUOTES); ?>' ? 'bg-[#37373d]' : ''"
+                            <?php $title_js = htmlspecialchars(json_encode($p['title']), ENT_QUOTES); ?>
+                            <div @click="selectFile(<?php echo $title_js; ?>)"
+                                 :class="activeFile === <?php echo $title_js; ?> ? 'bg-[#37373d]' : ''"
                                  class="flex items-center px-2 py-1 text-xs hover:bg-[#37373d] cursor-pointer">
                                 <span class="mr-2 text-yellow-500">📂</span><?php echo htmlspecialchars($p['title']); ?>
                             </div>
@@ -42,8 +43,9 @@
                     <?php if (!empty($other)): ?>
                         <div class="px-2 pt-2 pb-0.5 text-[9px] uppercase tracking-wider opacity-50">Other work</div>
                         <?php foreach ($other as $p): ?>
-                            <div @click="selectFile('<?php echo htmlspecialchars($p['title'], ENT_QUOTES); ?>')"
-                                 :class="activeFile === '<?php echo htmlspecialchars($p['title'], ENT_QUOTES); ?>' ? 'bg-[#37373d]' : ''"
+                            <?php $title_js = htmlspecialchars(json_encode($p['title']), ENT_QUOTES); ?>
+                            <div @click="selectFile(<?php echo $title_js; ?>)"
+                                 :class="activeFile === <?php echo $title_js; ?> ? 'bg-[#37373d]' : ''"
                                  class="flex items-center px-2 py-1 text-xs hover:bg-[#37373d] cursor-pointer">
                                 <span class="mr-2 text-yellow-500">📂</span><?php echo htmlspecialchars($p['title']); ?>
                             </div>
@@ -91,11 +93,11 @@
                         <!-- Project View -->
                         <div class="h-full flex flex-col">
                             <?php foreach ($projects as $p): ?>
-                                <div x-show="activeFile === '<?php echo $p['title']; ?>'" class="flex flex-col h-full animate-window-open">
+                                <div x-show="activeFile === <?php echo htmlspecialchars(json_encode($p['title']), ENT_QUOTES); ?>" class="flex flex-col h-full animate-window-open">
                                     <div class="flex items-center justify-between mb-6">
                                         <div>
-                                            <h2 class="text-2xl font-bold text-white mb-2"><?php echo $p['title']; ?></h2>
-                                            <p class="text-gray-400 text-sm max-w-2xl"><?php echo $p['description']; ?></p>
+                                            <h2 class="text-2xl font-bold text-white mb-2"><?php echo htmlspecialchars($p['title']); ?></h2>
+                                            <p class="text-gray-400 text-sm max-w-2xl"><?php echo htmlspecialchars($p['description']); ?></p>
                                         </div>
                                         <div class="flex space-x-3">
                                             <button @click="runBuild()" 
@@ -114,7 +116,7 @@
                                     <div class="flex-grow relative group overflow-hidden rounded-xl border border-white/10 bg-black/40 flex items-center justify-center min-h-0">
                                         <img src="<?php echo $p['thumbnail']; ?>"
                                              class="max-w-full max-h-full w-auto h-auto object-contain transition-transform duration-700 group-hover:scale-105"
-                                             alt="<?php echo $p['title']; ?>">
+                                             alt="<?php echo htmlspecialchars($p['title'], ENT_QUOTES); ?>">
                                         <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex flex-col justify-end p-8 opacity-0 group-hover:opacity-100 transition-opacity">
                                             <div class="flex flex-wrap gap-2">
                                                 <?php foreach ($p['tags'] as $t): ?>
