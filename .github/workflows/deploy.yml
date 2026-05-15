@@ -146,6 +146,9 @@ jobs:
         with:
           node-version: ${{ steps.config.outputs.node_version }}
           cache: "npm"
+          cache-dependency-path: |
+            package-lock.json
+            v2/package-lock.json
 
       # ── 5. Install & Build (only for node-build projects) ──────────────────
       - name: Install dependencies
