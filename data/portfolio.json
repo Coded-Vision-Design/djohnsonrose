@@ -1,12 +1,91 @@
 {
     "projects": [
         {
+            "id": 101,
+            "title": "Coded Vision Design",
+            "featured": true,
+            "description": "My freelance studio site — a Next.js brochure for the practice covering web development, AI integration, drone media, and 360° virtual tours. Static-first, Vercel-hosted, with a content-driven case-study layout.",
+            "tags": [
+                "Next.js",
+                "React",
+                "TypeScript",
+                "Tailwind",
+                "Vercel"
+            ],
+            "url": "https://codedvisiondesign.co.uk/",
+            "thumbnail": "portfolio/codedvisiondesign.webp",
+            "thumbnail_mobile": "portfolio/codedvisiondesign-mobile.webp",
+            "location": "UK",
+            "country_code": "gb"
+        },
+        {
+            "id": 102,
+            "title": "Earth Echo",
+            "featured": true,
+            "description": "Carbon-footprint tracker that started as a university project and shipped to production. Human-readable metrics, gamified streaks, real-time analytics, passkey (WebAuthn) auth, and a SwiftUI/Capacitor mobile companion. D3 + Globe.gl visualisations.",
+            "tags": [
+                "Next.js 16",
+                "React 19",
+                "Prisma",
+                "NextAuth",
+                "WebAuthn",
+                "Capacitor"
+            ],
+            "url": "https://earthecho.co.uk/",
+            "thumbnail": "portfolio/earthecho.webp",
+            "thumbnail_mobile": "portfolio/earthecho-mobile.webp",
+            "location": "UK",
+            "country_code": "gb"
+        },
+        {
+            "id": 103,
+            "title": "Combat Evolved Sports",
+            "featured": true,
+            "description": "Sports journalism platform built on PHP 8 with no framework — PSR-4 autoloading, PDO, HTMX for live search/modals, Alpine.js for interactivity, Stripe subscriptions, Google + Facebook OAuth, and an editor-facing admin CMS.",
+            "tags": [
+                "PHP 8",
+                "MySQL",
+                "HTMX",
+                "Alpine.js",
+                "Stripe",
+                "OAuth"
+            ],
+            "url": "https://combatevolvedsports.com/",
+            "thumbnail": "portfolio/combatevolvedsports.webp",
+            "thumbnail_mobile": "portfolio/combatevolvedsports-mobile.webp",
+            "location": "UK",
+            "country_code": "gb"
+        },
+        {
+            "id": 104,
+            "title": "Ram's Taxis",
+            "featured": true,
+            "description": "Local taxi firm in Braintree, Essex — Next.js marketing site on Vercel. Airport transfers (Stansted/Heathrow/Gatwick), school runs, courier jobs, wheelchair-accessible vehicles. Static-first, clear CTAs, click-to-call optimised for mobile.",
+            "tags": [
+                "Next.js",
+                "TypeScript",
+                "Tailwind",
+                "Vercel"
+            ],
+            "url": "https://ramstaxis.co.uk/",
+            "thumbnail": "portfolio/ramstaxis.webp",
+            "thumbnail_mobile": "portfolio/ramstaxis-mobile.webp",
+            "location": "UK",
+            "country_code": "gb"
+        },
+        {
             "id": 1,
             "title": "English Open BJJ",
             "description": "The premier Brazilian Jiu-Jitsu tournament in the UK, attracting top athletes from across Europe. Features custom weight calculators and dynamic registration systems.",
-            "tags": ["PHP", "Laravel", "Tailwind", "Alpine.js"],
+            "tags": [
+                "PHP",
+                "Laravel",
+                "Tailwind",
+                "Alpine.js"
+            ],
             "url": "https://englishopenbjjchampionships.co.uk/",
             "thumbnail": "portfolio/englishopenbjj.webp",
+            "thumbnail_mobile": "portfolio/englishopenbjj-mobile.webp",
             "location": "UK",
             "country_code": "gb"
         },
@@ -14,9 +93,15 @@
             "id": 2,
             "title": "Bay Motors",
             "description": "A comprehensive automotive service platform for MOT, repairs, and servicing in Harwich. Includes real-time booking and advanced engine diagnostic showcases.",
-            "tags": ["PHP", "Tailwind", "HTMX", "MySQL"],
+            "tags": [
+                "PHP",
+                "Tailwind",
+                "HTMX",
+                "MySQL"
+            ],
             "url": "https://www.baymotors.co.uk/",
             "thumbnail": "portfolio/baymotors.webp",
+            "thumbnail_mobile": "portfolio/baymotors-mobile.webp",
             "location": "UK",
             "country_code": "gb"
         },
@@ -24,9 +109,15 @@
             "id": 3,
             "title": "CPT Tours",
             "description": "Immersive private tour booking site for Cape Town, featuring 360° interactive experiences, virtual tours, and WhatsApp-integrated booking flows.",
-            "tags": ["JavaScript", "360 View", "Tailwind", "Alpine.js"],
+            "tags": [
+                "JavaScript",
+                "360 View",
+                "Tailwind",
+                "Alpine.js"
+            ],
             "url": "https://cpttours.co.za/",
             "thumbnail": "portfolio/cpttours.webp",
+            "thumbnail_mobile": "portfolio/cpttours-mobile.webp",
             "location": "South Africa",
             "country_code": "za"
         },
@@ -34,9 +125,15 @@
             "id": 4,
             "title": "EKBJJ",
             "description": "Official academy site for Professor Eddie Kone. Features complex weekly timetables, membership management, and direct Gracie Jiu-Jitsu lineage tracking.",
-            "tags": ["PHP", "Laravel", "Alpine.js", "Tailwind"],
+            "tags": [
+                "PHP",
+                "Laravel",
+                "Alpine.js",
+                "Tailwind"
+            ],
             "url": "https://ekbjj.com/",
             "thumbnail": "portfolio/ekbjjdesktop.webp",
+            "thumbnail_mobile": "portfolio/ekbjjdesktop-mobile.webp",
             "location": "UK",
             "country_code": "gb"
         },
@@ -44,9 +141,15 @@
             "id": 10,
             "title": "Boulevard Logistics",
             "description": "Streamlined delivery and pallet courier platform for Northern Ireland. Built custom software to replace complex spreadsheets, handling multi-variable pricing (fuel, weight, distance) and automated customer payments.",
-            "tags": ["Custom Software", "Pricing Engine", "FinTech", "Logistics"],
+            "tags": [
+                "Custom Software",
+                "Pricing Engine",
+                "FinTech",
+                "Logistics"
+            ],
             "url": "https://boulevardlogistics.co.uk/",
             "thumbnail": "portfolio/boulevardlogistics.webp",
+            "thumbnail_mobile": "portfolio/boulevardlogistics-mobile.webp",
             "location": "Northern Ireland",
             "country_code": "gb-nir"
         },
@@ -54,9 +157,15 @@
             "id": 8,
             "title": "Euro-Goat",
             "description": "Premium mobile mechanic platform specialising in luxury German automotive brands (BMW, Audi, Mercedes) with a focus on specialist technical diagnostics.",
-            "tags": ["React", "Node.js", "PostgreSQL", "Tailwind"],
+            "tags": [
+                "React",
+                "Node.js",
+                "PostgreSQL",
+                "Tailwind"
+            ],
             "url": "https://euro-goat.com/",
             "thumbnail": "portfolio/eurogoatdesktop.webp",
+            "thumbnail_mobile": "portfolio/eurogoatdesktop-mobile.webp",
             "location": "USA",
             "country_code": "us"
         },
@@ -64,9 +173,15 @@
             "id": 6,
             "title": "BHR Recovery",
             "description": "High-performance 24/7 breakdown recovery and vehicle transport service site. Features instant quote tools and GPS-tracked fleet showcases.",
-            "tags": ["PHP", "Tailwind", "JavaScript", "Google Maps"],
+            "tags": [
+                "PHP",
+                "Tailwind",
+                "JavaScript",
+                "Google Maps"
+            ],
             "url": "https://bhrrecovery.co.uk/",
-            "thumbnail": "https://picsum.photos/seed/recovery/400/250",
+            "thumbnail": "portfolio/bhrrecovery.webp",
+            "thumbnail_mobile": "portfolio/bhrrecovery-mobile.webp",
             "location": "UK",
             "country_code": "gb"
         },
@@ -74,9 +189,15 @@
             "id": 7,
             "title": "Youngs Construction",
             "description": "Professional construction and renovation portal. Features specialised quote tools for new builds, extensions, and fire door inspections across the UK.",
-            "tags": ["PHP", "HTMX", "Tailwind", "Alpine.js"],
+            "tags": [
+                "PHP",
+                "HTMX",
+                "Tailwind",
+                "Alpine.js"
+            ],
             "url": "https://youngsconstructionltd.co.uk/",
             "thumbnail": "portfolio/youngsconstructiondesktop.webp",
+            "thumbnail_mobile": "portfolio/youngsconstructiondesktop-mobile.webp",
             "location": "UK",
             "country_code": "gb"
         },
@@ -84,9 +205,15 @@
             "id": 5,
             "title": "BJJ Havering",
             "description": "Modern martial arts academy platform specialising in No-Gi grappling. Features enrollment systems, world-class coach profiles, and community blogs.",
-            "tags": ["Tailwind", "Alpine.js", "HTMX", "PHP"],
+            "tags": [
+                "Tailwind",
+                "Alpine.js",
+                "HTMX",
+                "PHP"
+            ],
             "url": "https://bjjhavering.co.uk/",
             "thumbnail": "portfolio/wolvesbjj.webp",
+            "thumbnail_mobile": "portfolio/wolvesbjj-mobile.webp",
             "location": "UK",
             "country_code": "gb"
         },
@@ -94,9 +221,15 @@
             "id": 9,
             "title": "Hameedahs Delights",
             "description": "Gourmet artisanal catering platform for 100% Halaal frozen savouries and platters. Features handcrafted order-to-table culinary workflows.",
-            "tags": ["PHP", "E-Commerce", "Tailwind", "Alpine.js"],
+            "tags": [
+                "PHP",
+                "E-Commerce",
+                "Tailwind",
+                "Alpine.js"
+            ],
             "url": "https://hameedahsdelights.com/",
             "thumbnail": "portfolio/sweetdelights.webp",
+            "thumbnail_mobile": "portfolio/sweetdelights-mobile.webp",
             "location": "South Africa",
             "country_code": "za"
         }
@@ -104,9 +237,18 @@
     "summary": "Applications Support Engineer and Full-Stack Developer with enterprise infrastructure experience across finance, education, and global technology. Specialises in automation, deployment workflows, integrations, and scalable software delivery, pairing hands-on systems engineering with full-stack development and AI-assisted tooling.",
     "philosophy": "Technique over brute force. Whether managing 8,000+ devices at UEA or competing internationally in Brazilian Jiu-Jitsu, I prioritise precision, efficient troubleshooting, and clear communication of complex technical concepts.",
     "stats": [
-        { "value": "100+", "label": "freelance projects" },
-        { "value": "8K+", "label": "devices managed" },
-        { "value": "99.9%", "label": "system availability" }
+        {
+            "value": "100+",
+            "label": "freelance projects"
+        },
+        {
+            "value": "8K+",
+            "label": "devices managed"
+        },
+        {
+            "value": "99.9%",
+            "label": "system availability"
+        }
     ],
     "experience": [
         {
@@ -200,60 +342,262 @@
     ],
     "skills": {
         "frameworks": [
-            "HTML", "CSS", "JavaScript", "React", "Next.js", "React Native", "Vue", "Flutter", "TailwindCSS", "Three.js",
-            "PHP", "Laravel", "Node.js"
+            "HTML",
+            "CSS",
+            "JavaScript",
+            "React",
+            "Next.js",
+            "React Native",
+            "Vue",
+            "Flutter",
+            "TailwindCSS",
+            "Three.js",
+            "PHP",
+            "Laravel",
+            "Node.js"
         ],
         "tools": [
-            "MySQL", "PostgreSQL", "MariaDB", "MS SQL Server", "Active Directory", "GPO", "DNS", "DHCP",
-            "SCCM", "JAMF", "VPS", "Docker", "Traefik", "Grafana", "Ofelia", "OpenClaw"
+            "MySQL",
+            "PostgreSQL",
+            "MariaDB",
+            "MS SQL Server",
+            "Active Directory",
+            "GPO",
+            "DNS",
+            "DHCP",
+            "SCCM",
+            "JAMF",
+            "VPS",
+            "Docker",
+            "Traefik",
+            "Grafana",
+            "Ofelia",
+            "OpenClaw"
         ],
         "operations": [
-            "PowerShell", "Bash", "Git", "Postman", "MSSMS", "Terminal",
-            "Project Management", "JIRA", "Trello", "Microsoft Project"
+            "PowerShell",
+            "Bash",
+            "Git",
+            "Postman",
+            "MSSMS",
+            "Terminal",
+            "Project Management",
+            "JIRA",
+            "Trello",
+            "Microsoft Project"
         ],
         "apis": [
-            "OpenAI", "Anthropic", "Gemini", "Google APIs", "RAG pipelines",
-            "Stripe", "PayPal", "TinyMCE"
+            "OpenAI",
+            "Anthropic",
+            "Gemini",
+            "Google APIs",
+            "RAG pipelines",
+            "Stripe",
+            "PayPal",
+            "TinyMCE"
         ]
     },
     "interests": [
-        "Technology", "AI", "IoT", "Automation", "Virtualisation", "Photography", "Media",
-        "Athletics", "Rugby", "Muay Thai", "Brazilian Jiu-Jitsu"
+        "Technology",
+        "AI",
+        "IoT",
+        "Automation",
+        "Virtualisation",
+        "Photography",
+        "Media",
+        "Athletics",
+        "Rugby",
+        "Muay Thai",
+        "Brazilian Jiu-Jitsu"
     ],
     "education": [
-        { "id": 1, "title": "BSc (Hons) Business Computing, 2:1", "issuer": "University of East Anglia" },
-        { "id": 2, "title": "Level 3 Extended Diploma", "issuer": "ICT Systems & Principles" },
-        { "id": 3, "title": "Level 3 Diploma", "issuer": "Professional Competence for IT & Telecoms" }
+        {
+            "id": 1,
+            "title": "BSc (Hons) Business Computing, 2:1",
+            "issuer": "University of East Anglia"
+        },
+        {
+            "id": 2,
+            "title": "Level 3 Extended Diploma",
+            "issuer": "ICT Systems & Principles"
+        },
+        {
+            "id": 3,
+            "title": "Level 3 Diploma",
+            "issuer": "Professional Competence for IT & Telecoms"
+        }
     ],
     "certifications": [
-        { "id": 1, "name": "AI Fluency Framework & Foundations", "issuer": "Anthropic", "year": "2026" },
-        { "id": 2, "name": "Model Context Protocol", "issuer": "Anthropic", "year": "2026" },
-        { "id": 3, "name": "Claude Code in Action", "issuer": "Anthropic", "year": "2026" },
-        { "id": 4, "name": "Intro to Agent Skills", "issuer": "Anthropic", "year": "2026" },
-        { "id": 5, "name": "Intro to Subagents", "issuer": "Anthropic", "year": "2026" },
-        { "id": 6, "name": "Intro to Claude Cowork", "issuer": "Anthropic", "year": "2026" },
-        { "id": 7, "name": "Claude Code 101", "issuer": "Anthropic", "year": "2026" },
-        { "id": 8, "name": "Claude 101", "issuer": "Anthropic", "year": "2026" },
-        { "id": 9, "name": "Server+ ce", "issuer": "CompTIA", "year": "2025" },
-        { "id": 10, "name": "Server+", "issuer": "CompTIA", "year": "2011-2025" },
-        { "id": 11, "name": "Network+", "issuer": "CompTIA", "year": "2011-2025" },
-        { "id": 12, "name": "A+", "issuer": "CompTIA", "year": "2011-2025" },
-        { "id": 13, "name": "MCSA: Windows 7", "issuer": "Microsoft", "year": "2012-2013" },
-        { "id": 14, "name": "MCITP: Enterprise Desktop Technician", "issuer": "Microsoft", "year": "2012-2013" },
-        { "id": 15, "name": "PRO: Windows 7 Enterprise Desktop", "issuer": "Microsoft", "year": "2012-2013" },
-        { "id": 16, "name": "MCTS: Windows 7 Configuration", "issuer": "Microsoft", "year": "2012-2013" },
-        { "id": 17, "name": "MTA: Networking Fundamentals", "issuer": "Microsoft", "year": "2012-2013" },
-        { "id": 18, "name": "MTA: Windows OS Fundamentals", "issuer": "Microsoft", "year": "2012-2013" },
-        { "id": 19, "name": "OS X Support Essentials 10.8", "issuer": "Apple", "year": "2013" },
-        { "id": 20, "name": "Foundation in IT Service Management", "issuer": "ITIL", "year": "2013" }
+        {
+            "id": 1,
+            "name": "AI Fluency Framework & Foundations",
+            "issuer": "Anthropic",
+            "year": "2026"
+        },
+        {
+            "id": 2,
+            "name": "Model Context Protocol",
+            "issuer": "Anthropic",
+            "year": "2026"
+        },
+        {
+            "id": 3,
+            "name": "Claude Code in Action",
+            "issuer": "Anthropic",
+            "year": "2026"
+        },
+        {
+            "id": 4,
+            "name": "Intro to Agent Skills",
+            "issuer": "Anthropic",
+            "year": "2026"
+        },
+        {
+            "id": 5,
+            "name": "Intro to Subagents",
+            "issuer": "Anthropic",
+            "year": "2026"
+        },
+        {
+            "id": 6,
+            "name": "Intro to Claude Cowork",
+            "issuer": "Anthropic",
+            "year": "2026"
+        },
+        {
+            "id": 7,
+            "name": "Claude Code 101",
+            "issuer": "Anthropic",
+            "year": "2026"
+        },
+        {
+            "id": 8,
+            "name": "Claude 101",
+            "issuer": "Anthropic",
+            "year": "2026"
+        },
+        {
+            "id": 9,
+            "name": "Server+ ce",
+            "issuer": "CompTIA",
+            "year": "2025"
+        },
+        {
+            "id": 10,
+            "name": "Server+",
+            "issuer": "CompTIA",
+            "year": "2011-2025"
+        },
+        {
+            "id": 11,
+            "name": "Network+",
+            "issuer": "CompTIA",
+            "year": "2011-2025"
+        },
+        {
+            "id": 12,
+            "name": "A+",
+            "issuer": "CompTIA",
+            "year": "2011-2025"
+        },
+        {
+            "id": 13,
+            "name": "MCSA: Windows 7",
+            "issuer": "Microsoft",
+            "year": "2012-2013"
+        },
+        {
+            "id": 14,
+            "name": "MCITP: Enterprise Desktop Technician",
+            "issuer": "Microsoft",
+            "year": "2012-2013"
+        },
+        {
+            "id": 15,
+            "name": "PRO: Windows 7 Enterprise Desktop",
+            "issuer": "Microsoft",
+            "year": "2012-2013"
+        },
+        {
+            "id": 16,
+            "name": "MCTS: Windows 7 Configuration",
+            "issuer": "Microsoft",
+            "year": "2012-2013"
+        },
+        {
+            "id": 17,
+            "name": "MTA: Networking Fundamentals",
+            "issuer": "Microsoft",
+            "year": "2012-2013"
+        },
+        {
+            "id": 18,
+            "name": "MTA: Windows OS Fundamentals",
+            "issuer": "Microsoft",
+            "year": "2012-2013"
+        },
+        {
+            "id": 19,
+            "name": "OS X Support Essentials 10.8",
+            "issuer": "Apple",
+            "year": "2013"
+        },
+        {
+            "id": 20,
+            "name": "Foundation in IT Service Management",
+            "issuer": "ITIL",
+            "year": "2013"
+        }
     ],
     "achievements": [
-        { "id": 1, "title": "World #1", "result": "AJP & IBJJF", "category": "GBR international representative", "date": "2022-2024" },
-        { "id": 2, "title": "GB Judo Squad", "result": "Veteran category", "category": "National squad", "date": "" },
-        { "id": 3, "title": "NAGA World Champion", "result": "4× Champion", "category": "Brazilian Jiu-Jitsu", "date": "" },
-        { "id": 4, "title": "AJP Grand Slam Champion", "result": "4× Champion", "category": "Brazilian Jiu-Jitsu", "date": "" },
-        { "id": 5, "title": "IBJJF European Champion", "result": "Champion", "category": "Brazilian Jiu-Jitsu", "date": "" },
-        { "id": 6, "title": "IBJJF Masters North American Champion", "result": "Champion", "category": "Brazilian Jiu-Jitsu", "date": "" },
-        { "id": 7, "title": "High Sheriff of Essex Award", "result": "Recipient", "category": "Volunteer mentoring, Lads Need Dads", "date": "" }
+        {
+            "id": 1,
+            "title": "World #1",
+            "result": "AJP & IBJJF",
+            "category": "GBR international representative",
+            "date": "2022-2024"
+        },
+        {
+            "id": 2,
+            "title": "GB Judo Squad",
+            "result": "Veteran category",
+            "category": "National squad",
+            "date": ""
+        },
+        {
+            "id": 3,
+            "title": "NAGA World Champion",
+            "result": "4× Champion",
+            "category": "Brazilian Jiu-Jitsu",
+            "date": ""
+        },
+        {
+            "id": 4,
+            "title": "AJP Grand Slam Champion",
+            "result": "4× Champion",
+            "category": "Brazilian Jiu-Jitsu",
+            "date": ""
+        },
+        {
+            "id": 5,
+            "title": "IBJJF European Champion",
+            "result": "Champion",
+            "category": "Brazilian Jiu-Jitsu",
+            "date": ""
+        },
+        {
+            "id": 6,
+            "title": "IBJJF Masters North American Champion",
+            "result": "Champion",
+            "category": "Brazilian Jiu-Jitsu",
+            "date": ""
+        },
+        {
+            "id": 7,
+            "title": "High Sheriff of Essex Award",
+            "result": "Recipient",
+            "category": "Volunteer mentoring, Lads Need Dads",
+            "date": ""
+        }
     ]
 }

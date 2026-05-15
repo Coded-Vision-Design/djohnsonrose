@@ -7,7 +7,9 @@ interface Project {
   tags: string[]
   url: string
   thumbnail: string
+  thumbnail_mobile?: string
   location?: string
+  featured?: boolean
 }
 
 // 1:1 port of partials/apps/vscode.php — VS Code chrome with activity bar,
@@ -143,19 +145,46 @@ export default function VSCode() {
             </button>
             {explorerOpen && (
               <div className="ml-4 space-y-0.5">
-                {projects.map((p) => (
-                  <button
-                    key={p.id}
-                    type="button"
-                    onClick={() => setActiveFile(p.title)}
-                    className={`w-full text-left flex items-center px-2 py-1 text-xs hover:bg-[#37373d] ${
-                      activeFile === p.title ? 'bg-[#37373d]' : ''
-                    }`}
-                  >
-                    <span className="mr-2 text-yellow-500">📂</span>
-                    {p.title}
-                  </button>
-                ))}
+                {projects.some((p) => p.featured) && (
+                  <div className="px-2 pt-1 pb-0.5 text-[9px] uppercase tracking-wider opacity-50">
+                    ★ Featured
+                  </div>
+                )}
+                {projects
+                  .filter((p) => p.featured)
+                  .map((p) => (
+                    <button
+                      key={p.id}
+                      type="button"
+                      onClick={() => setActiveFile(p.title)}
+                      className={`w-full text-left flex items-center px-2 py-1 text-xs hover:bg-[#37373d] ${
+                        activeFile === p.title ? 'bg-[#37373d]' : ''
+                      }`}
+                    >
+                      <span className="mr-2 text-yellow-500">📂</span>
+                      {p.title}
+                    </button>
+                  ))}
+                {projects.some((p) => !p.featured) && (
+                  <div className="px-2 pt-2 pb-0.5 text-[9px] uppercase tracking-wider opacity-50">
+                    Other work
+                  </div>
+                )}
+                {projects
+                  .filter((p) => !p.featured)
+                  .map((p) => (
+                    <button
+                      key={p.id}
+                      type="button"
+                      onClick={() => setActiveFile(p.title)}
+                      className={`w-full text-left flex items-center px-2 py-1 text-xs hover:bg-[#37373d] ${
+                        activeFile === p.title ? 'bg-[#37373d]' : ''
+                      }`}
+                    >
+                      <span className="mr-2 text-yellow-500">📂</span>
+                      {p.title}
+                    </button>
+                  ))}
               </div>
             )}
           </div>

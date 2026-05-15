@@ -22,17 +22,33 @@
                     Projects
                 </div>
                 <div class="ml-4 space-y-0.5" x-show="explorerOpen">
-                    <?php 
+                    <?php
                     $projectsJson = file_get_contents(__DIR__ . '/../../data/portfolio.json');
                     $portfolioData = json_decode($projectsJson, true);
                     $projects = $portfolioData['projects'];
-                    foreach ($projects as $p): ?>
-                        <div @click="selectFile('<?php echo $p['title']; ?>')" 
-                             :class="activeFile === '<?php echo $p['title']; ?>' ? 'bg-[#37373d]' : ''"
-                             class="flex items-center px-2 py-1 text-xs hover:bg-[#37373d] cursor-pointer">
-                            <span class="mr-2 text-yellow-500">📂</span> <?php echo $p['title']; ?>
-                        </div>
-                    <?php endforeach; ?>
+                    $featured = array_values(array_filter($projects, fn($p) => !empty($p['featured'])));
+                    $other = array_values(array_filter($projects, fn($p) => empty($p['featured'])));
+                    ?>
+                    <?php if (!empty($featured)): ?>
+                        <div class="px-2 pt-1 pb-0.5 text-[9px] uppercase tracking-wider opacity-50">★ Featured</div>
+                        <?php foreach ($featured as $p): ?>
+                            <div @click="selectFile('<?php echo htmlspecialchars($p['title'], ENT_QUOTES); ?>')"
+                                 :class="activeFile === '<?php echo htmlspecialchars($p['title'], ENT_QUOTES); ?>' ? 'bg-[#37373d]' : ''"
+                                 class="flex items-center px-2 py-1 text-xs hover:bg-[#37373d] cursor-pointer">
+                                <span class="mr-2 text-yellow-500">📂</span><?php echo htmlspecialchars($p['title']); ?>
+                            </div>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                    <?php if (!empty($other)): ?>
+                        <div class="px-2 pt-2 pb-0.5 text-[9px] uppercase tracking-wider opacity-50">Other work</div>
+                        <?php foreach ($other as $p): ?>
+                            <div @click="selectFile('<?php echo htmlspecialchars($p['title'], ENT_QUOTES); ?>')"
+                                 :class="activeFile === '<?php echo htmlspecialchars($p['title'], ENT_QUOTES); ?>' ? 'bg-[#37373d]' : ''"
+                                 class="flex items-center px-2 py-1 text-xs hover:bg-[#37373d] cursor-pointer">
+                                <span class="mr-2 text-yellow-500">📂</span><?php echo htmlspecialchars($p['title']); ?>
+                            </div>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
                 </div>
             </div>
         </div>
