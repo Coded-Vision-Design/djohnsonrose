@@ -27,10 +27,15 @@ RewriteRule ^(.*)$ https://%1/$1 [R=301,L]
 # React v2: serve the SPA from /v2/. Real built files under v2/dist/
 # (assets/, index.html, favicon, etc.) are served directly. Anything else
 # under /v2/ falls back to v2/dist/index.html so React Router can handle it.
+#
+# [END] (Apache 2.3.9+) terminates the rewrite engine entirely. Plain [L]
+# isn't enough here: in .htaccess context Apache restarts mod_rewrite after
+# each match — the second pass would re-match v2/dist/... against the SPA
+# fallback and serve index.html for every JS chunk, breaking MIME types.
 RewriteCond %{DOCUMENT_ROOT}/v2/dist/$1 -f [OR]
 RewriteCond %{DOCUMENT_ROOT}/v2/dist/$1 -d
-RewriteRule ^v2/(.+)$ v2/dist/$1 [L]
-RewriteRule ^v2(/.*)?$ v2/dist/index.html [L]
+RewriteRule ^v2/(.+)$ v2/dist/$1 [END]
+RewriteRule ^v2(/.*)?$ v2/dist/index.html [END]
 
 # v1 (PHP): handle routing to index.php if file/dir doesn't exist
 RewriteCond %{REQUEST_FILENAME} !-f
