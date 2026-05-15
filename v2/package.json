@@ -4,9 +4,9 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "concurrently --kill-others-on-fail --names \"PHP,VITE\" --prefix-colors \"yellow,cyan\" \"npm:dev:php\" \"npm:dev:vite\"",
+    "dev:vite": "vite",
     "dev:php": "php -S localhost:8765 -t .. ../dev-server.php",
-    "dev:all": "concurrently --kill-others-on-fail --names \"PHP,VITE\" --prefix-colors \"yellow,cyan\" \"npm:dev:php\" \"npm:dev\"",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
