@@ -169,6 +169,8 @@ interface OsState {
   /** Items materialised at a given path by restoring from the recycle bin. */
   recoveredItems: { path: string; item: Record<string, unknown> }[]
   iconPositions: Record<string, IconPosition>
+  /** In-session Explorer rename overlay. Key is `${path}::${originalName}`. */
+  renames: Record<string, string>
 
   // Viewport flags — kept in-memory only, updated by a global listener.
   isMobile: boolean
@@ -220,6 +222,9 @@ interface OsState {
   setIconPosition: (name: string, pos: IconPosition) => void
   resetIconPositions: () => void
 
+  // Explorer rename (session-scoped overlay; doesn't mutate the static fs)
+  renameFile: (path: string, originalName: string, newName: string) => void
+
   // Responsive flags + context menu
   setBreakpoint: (width: number) => void
   openContextMenu: (
@@ -241,6 +246,7 @@ interface PersistedSlice {
   restoredSeeds: string[]
   recoveredItems: { path: string; item: Record<string, unknown> }[]
   iconPositions: Record<string, IconPosition>
+  renames: Record<string, string>
 }
 
 export const useOsStore = create<OsState>()(
@@ -283,6 +289,7 @@ export const useOsStore = create<OsState>()(
       hiddenDesktop: [],
       restoredSeeds: [],
       recoveredItems: [],
+      renames: {},
       iconPositions: {},
 
       // Initialised from window.innerWidth — useBreakpoint() keeps these
@@ -562,6 +569,14 @@ export const useOsStore = create<OsState>()(
 
       resetIconPositions: () => set({ iconPositions: {} }),
 
+      renameFile: (path, originalName, newName) => {
+        const trimmed = newName.trim()
+        if (!trimmed || trimmed === originalName) return
+        const key = `${path}::${originalName}`
+        set({ renames: { ...get().renames, [key]: trimmed } })
+        get().logEvent('FileSystem', 'Information', `Renamed ${originalName} → ${trimmed}`)
+      },
+
       setBreakpoint: (width) => {
         const isMobile = width < 640
         const isTablet = width >= 640 && width < 1024
@@ -600,6 +615,7 @@ export const useOsStore = create<OsState>()(
         restoredSeeds: state.restoredSeeds,
         recoveredItems: state.recoveredItems,
         iconPositions: state.iconPositions,
+        renames: state.renames,
       }),
     },
   ),
