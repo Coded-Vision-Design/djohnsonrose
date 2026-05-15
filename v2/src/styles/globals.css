@@ -25,7 +25,7 @@ body {
 }
 
 .glass {
-    background: rgba(255, 255, 255, 0.6);
+    background: rgba(255, 255, 255, 0.78);
     backdrop-filter: blur(25px) saturate(180%);
     -webkit-backdrop-filter: blur(25px) saturate(180%);
     border: 1px solid rgba(255, 255, 255, 0.4);
@@ -33,18 +33,31 @@ body {
 }
 
 .dark .glass {
-    background: rgba(32, 32, 32, 0.6);
+    background: rgba(32, 32, 32, 0.78);
     border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
+/* Fallback for browsers without backdrop-filter (older Android Chrome, some
+   in-app webviews): without the blur the 0.78 alpha alone reads as see-through,
+   so push to near-opaque. Desktop browsers with backdrop-filter ignore this. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    .glass { background: rgba(243, 243, 243, 0.97); }
+    .dark .glass { background: rgba(28, 28, 28, 0.97); }
+}
+
 .taskbar-glass {
-    background: rgba(243, 243, 243, 0.85);
+    background: rgba(243, 243, 243, 0.92);
     backdrop-filter: blur(30px);
     -webkit-backdrop-filter: blur(30px);
 }
 
 .dark .taskbar-glass {
-    background: rgba(32, 32, 32, 0.85);
+    background: rgba(32, 32, 32, 0.92);
+}
+
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    .taskbar-glass { background: rgba(243, 243, 243, 0.98); }
+    .dark .taskbar-glass { background: rgba(32, 32, 32, 0.98); }
 }
 
 .win-btn {
@@ -279,8 +292,12 @@ body {
 
 @media (max-width: 1023px) {
     .glass {
+        background: rgba(243, 243, 243, 0.94);
         backdrop-filter: blur(15px) saturate(160%);
         -webkit-backdrop-filter: blur(15px) saturate(160%);
+    }
+    .dark .glass {
+        background: rgba(28, 28, 28, 0.94);
     }
 
     #windows-layer > div {
@@ -339,8 +356,12 @@ body {
 
 @media (max-width: 640px) {
     .glass {
+        background: rgba(243, 243, 243, 0.96);
         backdrop-filter: blur(10px) saturate(150%);
         -webkit-backdrop-filter: blur(10px) saturate(150%);
+    }
+    .dark .glass {
+        background: rgba(28, 28, 28, 0.96);
     }
 
     .desktop-icon-mobile {
