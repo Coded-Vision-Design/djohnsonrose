@@ -162,6 +162,16 @@ jobs:
           CI: true
           NODE_ENV: production
 
+      # ── 5a. Build v1 Tailwind CSS (assets/css/app.css) ─────────────────────
+      # Replaces the cdn.tailwindcss.com runtime build that Tailwind itself
+      # warns against in production. tailwind.config.js scans the PHP
+      # partials + JS modules and outputs a minified bundle.
+      - name: Build v1 Tailwind CSS
+        if: hashFiles('package.json') != ''
+        run: |
+          npm ci --prefer-offline --no-audit
+          npm run build:css
+
       # ── 5b. Build v2 React sub-app if present ──────────────────────────────
       - name: Build v2 React app
         if: hashFiles('v2/package.json') != ''

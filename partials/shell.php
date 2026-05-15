@@ -63,24 +63,6 @@
       ]
     }
     </script>
-    <!-- Tailwind CSS Play CDN -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    colors: {
-                        win: {
-                            blue: '#0078d4',
-                            bg: '#f3f3f3',
-                            dark: '#202020',
-                        },
-                    },
-                },
-            },
-        }
-    </script>
     <!-- HTMX -->
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
     <!-- Alpine.js -->

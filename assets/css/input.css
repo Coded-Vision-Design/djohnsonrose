@@ -2,4 +2,354 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Add any custom tailwind-aware styles here if needed */
+@import url('https://fonts.googleapis.com/css2?family=Segoe+UI:wght@400;600;700&display=swap');
+
+:root {
+    --win11-blue: #0078d4;
+    --win11-blue-hover: #0067c0;
+    --win11-bg-blur: rgba(255, 255, 255, 0.7);
+    --win11-bg-blur-dark: rgba(32, 32, 32, 0.7);
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    overflow: hidden;
+    user-select: none;
+}
+
+[x-cloak] { display: none !important; }
+
+.glass {
+    background: rgba(255, 255, 255, 0.6);
+    backdrop-filter: blur(25px) saturate(180%);
+    -webkit-backdrop-filter: blur(25px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+}
+
+.dark .glass {
+    background: rgba(32, 32, 32, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.taskbar-glass {
+    background: rgba(243, 243, 243, 0.85);
+    backdrop-filter: blur(30px);
+    -webkit-backdrop-filter: blur(30px);
+}
+
+.dark .taskbar-glass {
+    background: rgba(32, 32, 32, 0.85);
+}
+
+.win-btn {
+    transition: all 0.2s cubic-bezier(0, 0, 0, 1);
+}
+
+.win-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.dark .win-btn:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.win-shadow {
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+}
+
+/* Windows 11 Context Menu Styles */
+.context-menu {
+    border-radius: 12px !important;
+    box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.3);
+    padding: 4px !important;
+}
+
+.context-menu-item {
+    margin: 2px 4px !important;
+    border-radius: 6px !important;
+    transition: background-color 0ms;
+    height: 32px;
+}
+
+.context-menu-item.active {
+    background: rgba(0, 120, 212, 0.12) !important;
+}
+
+.dark .context-menu-item.active {
+    background: rgba(255, 255, 255, 0.08) !important;
+}
+
+.context-menu-item.disabled {
+    opacity: 0.4;
+    pointer-events: none;
+}
+
+.context-menu-icon img {
+    width: 16px;
+    height: 16px;
+    object-fit: contain;
+}
+
+.dark .context-menu-icon img {
+    filter: invert(1) brightness(2);
+}
+
+.context-menu-action-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 12px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    margin-bottom: 4px;
+}
+
+.dark .context-menu-action-bar {
+    border-bottom-color: rgba(255, 255, 255, 0.05);
+}
+
+.context-menu-action-btn {
+    padding: 8px;
+    border-radius: 4px;
+    cursor: default;
+    transition: background-color 60ms;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.context-menu-action-btn:hover {
+    background: rgba(0, 0, 0, 0.05);
+}
+
+.dark .context-menu-action-btn:hover {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.context-menu-action-btn img {
+    width: 18px;
+    height: 18px;
+}
+
+/* Quick Settings & Tray */
+.quick-settings-btn {
+    @apply flex flex-col items-center space-y-1;
+}
+
+.quick-settings-toggle {
+    @apply w-full h-12 rounded-md flex items-center justify-center transition-all bg-white dark:bg-white/10 border border-black/5 dark:border-white/5;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+}
+
+.quick-settings-toggle.active:not(.no-highlight) {
+    @apply bg-win-blue text-white border-transparent;
+    background-color: var(--win11-blue) !important;
+}
+
+.quick-settings-toggle.active:not(.no-highlight):hover {
+    background-color: var(--win11-blue-hover) !important;
+}
+
+.quick-settings-toggle svg, .quick-settings-toggle img {
+    @apply w-5 h-5 transition-transform;
+}
+
+.quick-settings-toggle:active svg, .quick-settings-toggle:active img {
+    transform: scale(0.9);
+}
+
+.quick-settings-toggle.active:not(.no-highlight) svg, .quick-settings-toggle.active:not(.no-highlight) img {
+    filter: brightness(0) invert(1);
+}
+
+.tray-group {
+    @apply flex items-center space-x-2 px-2 py-1 rounded hover:bg-white/10 transition-colors cursor-default;
+}
+
+.tray-icon {
+    @apply w-4 h-4 opacity-80;
+}
+
+.dark .tray-icon {
+    filter: invert(1) brightness(2);
+}
+
+.win-slider {
+    @apply flex-grow h-1 rounded-full appearance-none cursor-pointer accent-win-blue transition-all;
+    background: linear-gradient(to right, var(--win11-blue) var(--range-progress, 0%), rgba(0,0,0,0.1) var(--range-progress, 0%));
+}
+
+.dark .win-slider {
+    background: linear-gradient(to right, var(--win11-blue) var(--range-progress, 0%), rgba(255,255,255,0.1) var(--range-progress, 0%));
+}
+
+.win-slider::-webkit-slider-runnable-track {
+    @apply h-1 rounded-full;
+}
+
+.win-slider::-webkit-slider-thumb {
+    @apply appearance-none w-[18px] h-[18px] rounded-full bg-white border-[4px] border-win-blue shadow-md transition-all -mt-[7px];
+}
+
+.win-slider:hover::-webkit-slider-thumb {
+    @apply scale-110;
+}
+
+.win-slider:active::-webkit-slider-thumb {
+    @apply scale-95 bg-gray-100;
+}
+
+.window-active {
+    z-index: 50;
+}
+
+/* Scrollbar styles */
+::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: rgba(120, 120, 120, 0.5);
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(100, 100, 100, 0.8);
+}
+
+/* Custom animations */
+@keyframes windowOpen {
+    from { opacity: 0; transform: scale(0.95) translateY(20px); }
+    to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.animate-window-open {
+    animation: windowOpen 0.2s ease-out forwards;
+}
+
+@keyframes startMenuOpen {
+    from { opacity: 0; transform: translateY(100px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-start-menu {
+    animation: startMenuOpen 0.3s cubic-bezier(0.1, 0.9, 0.2, 1) forwards;
+}
+
+/* Active App Indicator Styles */
+.app-indicator {
+    height: 3px;
+    background: #0078d4;
+    border-radius: 10px;
+    transition: all 0.3s cubic-bezier(0.1, 0.9, 0.2, 1);
+    box-shadow: 0 0 8px rgba(0, 120, 212, 0.5);
+}
+
+.app-indicator-active { width: 16px; opacity: 1; }
+.app-indicator-inactive { width: 6px; opacity: 0.5; box-shadow: none; }
+.app-indicator-minimized { width: 8px; opacity: 0.4; box-shadow: none; }
+
+@keyframes indicator-glow {
+    0% { box-shadow: 0 0 4px rgba(0, 120, 212, 0.4); }
+    50% { box-shadow: 0 0 10px rgba(0, 120, 212, 0.7); }
+    100% { box-shadow: 0 0 4px rgba(0, 120, 212, 0.4); }
+}
+
+.app-indicator-active.glow {
+    animation: indicator-glow 2s infinite ease-in-out;
+}
+
+/* Tablet and Mobile Optimisations */
+@media (max-width: 1023px) {
+    .glass {
+        backdrop-filter: blur(15px) saturate(160%);
+        -webkit-backdrop-filter: blur(15px) saturate(160%);
+    }
+    #windows-layer > div { border-radius: 0 !important; }
+    .start-menu-mobile {
+        width: 100vw !important;
+        height: calc(100% - 3rem) !important;
+        bottom: 3rem !important;
+        left: 0 !important;
+        transform: none !important;
+        border-radius: 0 !important;
+    }
+    .taskbar-mobile { padding-left: 0.5rem !important; padding-right: 0.5rem !important; }
+    .taskbar-center-mobile { flex: 1 !important; justify-content: center !important; }
+}
+
+/* Windows Style Truncation and Wrapping */
+.line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.desktop-icon-container {
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.desktop-icon-container span {
+    line-height: 1.1 !important;
+    word-break: break-word;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    padding-top: 2px;
+}
+
+@media (max-width: 640px) {
+    .glass {
+        backdrop-filter: blur(10px) saturate(150%);
+        -webkit-backdrop-filter: blur(10px) saturate(150%);
+    }
+    .desktop-icon-mobile { width: 80px !important; height: 80px !important; }
+}
+
+/* Windows 11 Boot Loader */
+.win-loader-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.win-loader {
+    position: relative;
+    width: 48px;
+    height: 48px;
+}
+
+.win-loader .dot {
+    position: absolute;
+    width: 5px;
+    height: 5px;
+    background: white;
+    border-radius: 50%;
+    left: 21.5px;
+    top: 0;
+    transform-origin: 2.5px 24px;
+    opacity: 0;
+    animation: win-loader-move 3.5s infinite cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.win-loader .dot:nth-child(2) { animation-delay: 0.15s; }
+.win-loader .dot:nth-child(3) { animation-delay: 0.3s; }
+.win-loader .dot:nth-child(4) { animation-delay: 0.45s; }
+.win-loader .dot:nth-child(5) { animation-delay: 0.6s; }
+
+@keyframes win-loader-move {
+    0% { transform: rotate(0deg); opacity: 0; }
+    5% { opacity: 1; }
+    70% { transform: rotate(720deg); opacity: 1; }
+    75% { opacity: 0; }
+    100% { transform: rotate(720deg); opacity: 0; }
+}

@@ -1,0 +1,12 @@
+{
+  "name": "djohnsonrose-v1",
+  "private": true,
+  "description": "Tailwind toolchain for the v1 (PHP) build. The v2 React app lives under v2/.",
+  "scripts": {
+    "build:css": "tailwindcss -i assets/css/input.css -o assets/css/app.css --minify",
+    "watch:css": "tailwindcss -i assets/css/input.css -o assets/css/app.css --watch"
+  },
+  "devDependencies": {
+    "tailwindcss": "^3.4.19"
+  }
+}
