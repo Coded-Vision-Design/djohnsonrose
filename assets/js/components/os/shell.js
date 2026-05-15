@@ -346,8 +346,8 @@ document.addEventListener('alpine:init', () => {
                     { separator: true },
                     { label: 'New', icon: '✨', disabled: true, action: () => {} },
                     { separator: true },
-                    { label: 'Display settings', icon: `<img src="${imgPath}display.png" class="w-4 h-4">`, action: () => Alpine.store('os').openApp('settings') },
-                    { label: 'Personalise', icon: `<img src="${imgPath}settings.png" class="w-4 h-4">`, action: () => Alpine.store('os').openApp('settings', 'Settings', { currentTab: 'personalisation' }) },
+                    { label: 'Display settings', icon: `<img src="${imgPath}display.webp" class="w-4 h-4">`, action: () => Alpine.store('os').openApp('settings') },
+                    { label: 'Personalise', icon: `<img src="${imgPath}settings.webp" class="w-4 h-4">`, action: () => Alpine.store('os').openApp('settings', 'Settings', { currentTab: 'personalisation' }) },
                     { separator: true },
                     {
                         label: 'Open in PowerShell',
@@ -393,8 +393,8 @@ document.addEventListener('alpine:init', () => {
                     { label: 'Paste shortcut', icon: `<img src="${imgPath}open.svg" class="w-4 h-4">`, disabled: true, action: () => {} },
                     { separator: true },
                     { label: 'New', icon: '✨', disabled: true, action: () => {} },
-                    { label: 'Display settings', icon: `<img src="${imgPath}display.png" class="w-4 h-4">`, action: () => Alpine.store('os').openApp('settings') },
-                    { label: 'Personalise', icon: `<img src="${imgPath}personalize.png" class="w-4 h-4">`, action: () => Alpine.store('os').openApp('settings', 'Settings', { currentTab: 'personalisation' }) },
+                    { label: 'Display settings', icon: `<img src="${imgPath}display.webp" class="w-4 h-4">`, action: () => Alpine.store('os').openApp('settings') },
+                    { label: 'Personalise', icon: `<img src="${imgPath}personalize.webp" class="w-4 h-4">`, action: () => Alpine.store('os').openApp('settings', 'Settings', { currentTab: 'personalisation' }) },
                     { separator: true },
                     { label: 'Open in PowerShell', icon: `<img src="${window.portfolioConfig.imgPath}terminal.webp" class="w-4 h-4">`, action: () => Alpine.store('os').openApp('terminal') },
                 ]
@@ -417,10 +417,10 @@ document.addEventListener('alpine:init', () => {
                 x: x,
                 y: y,
                 items: [
-                    { label: 'Taskbar settings', icon: `<img src="${imgPath}settings.png" class="w-4 h-4">`, action: () => Alpine.store('os').openApp('settings') },
-                    { label: 'Task Manager', icon: `<img src="${imgPath}taskmgr.png" class="w-4 h-4">`, shortcut: 'Ctrl+Shift+Esc', action: () => Alpine.store('os').openApp('taskmanager') },
+                    { label: 'Taskbar settings', icon: `<img src="${imgPath}settings.webp" class="w-4 h-4">`, action: () => Alpine.store('os').openApp('settings') },
+                    { label: 'Task Manager', icon: `<img src="${imgPath}taskmgr.webp" class="w-4 h-4">`, shortcut: 'Ctrl+Shift+Esc', action: () => Alpine.store('os').openApp('taskmanager') },
                     { separator: true },
-                    { label: 'Desktop', icon: `<img src="${imgPath}display.png" class="w-4 h-4">`, action: () => { Alpine.store('os').windows.forEach(w => w.minimized = true); } }
+                    { label: 'Desktop', icon: `<img src="${imgPath}display.webp" class="w-4 h-4">`, action: () => { Alpine.store('os').windows.forEach(w => w.minimized = true); } }
                 ]
             };
         },
@@ -447,12 +447,12 @@ document.addEventListener('alpine:init', () => {
             }
             
             const imgPath = window.portfolioConfig.imgPath + 'win11/';
-            items.push({ label: 'Task Manager', icon: `<img src="${imgPath}taskmgr.png" class="w-4 h-4">`, action: () => Alpine.store('os').openApp('taskmanager') });
+            items.push({ label: 'Task Manager', icon: `<img src="${imgPath}taskmgr.webp" class="w-4 h-4">`, action: () => Alpine.store('os').openApp('taskmanager') });
             
             const win = this.windows.find(w => w.app === appHandle);
             if (win) {
                 items.push({ separator: true });
-                items.push({ label: 'Close window', icon: `<img src="${imgPath}delete.png" class="w-4 h-4">`, action: () => this.closeWindow(win.id) });
+                items.push({ label: 'Close window', icon: `<img src="${imgPath}delete.webp" class="w-4 h-4">`, action: () => this.closeWindow(win.id) });
             }
 
             this.contextMenu = {
@@ -516,7 +516,7 @@ document.addEventListener('alpine:init', () => {
 
             // Add background option for images
             if (item.type === 'image' || (item.name && (item.name.endsWith('.webp') || item.name.endsWith('.jpg') || item.name.endsWith('.jpeg')))) {
-                this.contextMenu.items.splice(2, 0, { label: 'Set as desktop background', icon: `<img src="${imgPath}image.png" class="w-4 h-4">`, action: () => this.setWallpaper(item.url || (window.portfolioConfig.basePath + item.name)) });
+                this.contextMenu.items.splice(2, 0, { label: 'Set as desktop background', icon: `<img src="${imgPath}image.webp" class="w-4 h-4">`, action: () => this.setWallpaper(item.url || (window.portfolioConfig.basePath + item.name)) });
             }
         },
 
