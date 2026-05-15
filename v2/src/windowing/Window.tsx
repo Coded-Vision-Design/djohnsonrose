@@ -44,8 +44,8 @@ export function Window({ win, children }: Props) {
     ? {
         left: 0,
         top: 0,
-        width: '100vw',
-        height: `calc(100vh - ${TASKBAR_HEIGHT}px)`,
+        width: '100dvw',
+        height: `calc(100dvh - ${TASKBAR_HEIGHT}px)`,
         zIndex: win.z,
       }
     : {

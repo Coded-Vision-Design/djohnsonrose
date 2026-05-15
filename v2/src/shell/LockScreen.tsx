@@ -31,7 +31,7 @@ export function LockScreen() {
 
   return (
     <div
-      className="h-screen w-screen relative flex flex-col items-center justify-center text-white bg-cover bg-center"
+      className="h-dvh w-dvw relative flex flex-col items-center justify-center text-white bg-cover bg-center"
       style={{ backgroundImage: `url(${wallpaper})` }}
     >
       <div className="absolute inset-0 bg-black/40" />

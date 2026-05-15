@@ -121,7 +121,7 @@ export function Desktop() {
   return (
     <div
       id="windows-layer"
-      className="relative h-screen w-screen overflow-hidden bg-cover bg-center"
+      className="relative h-dvh w-dvw overflow-hidden bg-cover bg-center"
       style={{ backgroundImage: `url(${wallpaper})` }}
       onContextMenu={onDesktopContextMenu}
     >

@@ -13,10 +13,15 @@
     --win11-bg-blur-dark: rgba(32, 32, 32, 0.7);
 }
 
+html, body {
+    height: 100dvh;
+}
+
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     overflow: hidden;
     user-select: none;
+    overscroll-behavior: none;
 }
 
 .glass {

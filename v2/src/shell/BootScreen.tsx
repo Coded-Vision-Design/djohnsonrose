@@ -10,7 +10,7 @@ export function BootScreen() {
   }, [finishBoot])
 
   return (
-    <div className="h-screen w-screen bg-black text-white flex items-center justify-center">
+    <div className="h-dvh w-dvw bg-black text-white flex items-center justify-center">
       <div className="win-loader-container">
         <div className="text-3xl mb-8 font-light tracking-wide">Portfolio OS</div>
         <div className="win-loader">
