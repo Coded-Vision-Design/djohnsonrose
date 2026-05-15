@@ -328,37 +328,18 @@ jobs:
       # ── 11. Deploy notification ────────────────────────────────────────────
       - name: Post deploy summary
         if: always()
+        env:
+          SUBDOMAIN: ${{ steps.config.outputs.subdomain }}
+          SERVER: ${{ steps.config.outputs.server }}
         run: |
-          SUBDOMAIN="${{ steps.config.outputs.subdomain }}"
-          SERVER="${{ steps.config.outputs.server }}"
-
-          echo "## ✅ Deployment Complete" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "| Item | Value |" >> $GITHUB_STEP_SUMMARY
-          echo "|------|-------|" >> $GITHUB_STEP_SUMMARY
-          echo "| Repository | ${{ github.repository }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Commit | \`${{ github.sha }}\` |" >> $GITHUB_STEP_SUMMARY
-          echo "| Branch | ${{ github.ref_name }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Server | \`${SERVER}\` |" >> $GITHUB_STEP_SUMMARY
-          if [ "$SERVER" != "vps" ]; then
-            echo "| Live URL | https://${SUBDOMAIN}.codedvisiondesign.co.uk |" >> $GITHUB_STEP_SUMMARY
-          fi
-          echo "| Time | $(date -u '+%Y-%m-%d %H:%M:%S UTC') |" >> $GITHUB_STEP_SUMMARY
-
-          # Optional: Send Slack notification if webhook is configured
-          if [ -n "${{ secrets.SLACK_WEBHOOK_URL }}" ]; then
-            curl -X POST "${{ secrets.SLACK_WEBHOOK_URL }}" \
-              -H 'Content-Type: application/json' \
-              -d "{
-                \"text\": \"Deployment: ${{ github.repository }}\",
-                \"blocks\": [{
-                  \"type\": \"section\",
-                  \"text\": {
-                    \"type\": \"mrkdwn\",
-                    \"text\": \"✅ *${{ github.repository }}* deployed successfully\n*Commit:* \`${{ github.sha }}\`\n*Branch:* ${{ github.ref_name }}\"
-                  }
-                }]
-              }" 2>/dev/null || true
+          echo "## Deployment Complete" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Repository: ${GITHUB_REPOSITORY}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Commit: ${GITHUB_SHA}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Branch: ${GITHUB_REF_NAME}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Server: ${SERVER}" >> "$GITHUB_STEP_SUMMARY"
+          if [ "${SERVER}" != "vps" ]; then
+            echo "- Live URL: https://${SUBDOMAIN}.codedvisiondesign.co.uk" >> "$GITHUB_STEP_SUMMARY"
           fi
 
       # ── 13. Cleanup ────────────────────────────────────────────────────────
