@@ -43,6 +43,9 @@ document.addEventListener('alpine:init', () => {
         },
 
         sendTelemetry(action, details = {}) {
+            // GDPR: no telemetry fires until the visitor accepts the cookie
+            // banner. Mirrors v2/src/lib/telemetry.ts behaviour.
+            if (localStorage.getItem('cookie.consent') !== 'true') return;
             const data = {
                 action: action,
                 details: {

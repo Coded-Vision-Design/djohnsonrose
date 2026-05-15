@@ -63,10 +63,27 @@
                         <div class="text-xs text-gray-500">Switch between light and dark themes</div>
                     </div>
                 </div>
-                <button @click="toggleTheme()" 
+                <button @click="toggleTheme()"
                         :class="Alpine.store('os').settings.theme === 'dark' ? 'bg-win-blue' : 'bg-gray-400'"
                         class="w-12 h-6 rounded-full relative transition-colors">
-                    <div :class="Alpine.store('os').settings.theme === 'dark' ? 'translate-x-7' : 'translate-x-1'" 
+                    <div :class="Alpine.store('os').settings.theme === 'dark' ? 'translate-x-7' : 'translate-x-1'"
+                         class="absolute top-1 w-4 h-4 bg-white rounded-full transition-transform"></div>
+                </button>
+            </div>
+
+            <!-- GDPR: consent must be as easy to withdraw as to give (Art. 7(3)). -->
+            <div class="glass p-6 rounded-lg flex items-center justify-between border border-gray-200 dark:border-white/10">
+                <div class="flex items-center">
+                    <span class="text-2xl mr-4">🍪</span>
+                    <div>
+                        <div class="font-medium">Telemetry &amp; cookies</div>
+                        <div class="text-xs text-gray-500" x-text="Alpine.store('os').cookieConsent ? 'Accepted — anonymous app-usage events are sent to /api/log.php.' : 'Declined — no telemetry is being collected.'"></div>
+                    </div>
+                </div>
+                <button @click="Alpine.store('os').setCookieConsent(!Alpine.store('os').cookieConsent)"
+                        :class="Alpine.store('os').cookieConsent ? 'bg-win-blue' : 'bg-gray-400'"
+                        class="w-12 h-6 rounded-full relative transition-colors">
+                    <div :class="Alpine.store('os').cookieConsent ? 'translate-x-7' : 'translate-x-1'"
                          class="absolute top-1 w-4 h-4 bg-white rounded-full transition-transform"></div>
                 </button>
             </div>
@@ -131,7 +148,9 @@
                                 <div class="font-bold dark:text-white text-base" x-text="job.role"></div>
                                 <time class="font-mono text-[10px] text-win-blue font-bold whitespace-nowrap bg-win-blue/10 px-2 py-0.5 rounded" x-text="job.period"></time>
                             </div>
-                            <div class="text-win-blue text-xs font-semibold mb-3" x-text="job.company"></div>
+                            <div class="text-win-blue text-xs font-semibold mb-3">
+                                <span x-text="job.company"></span><template x-if="job.location"><span class="opacity-70" x-text="' · ' + job.location"></span></template>
+                            </div>
                             <div class="text-xs text-gray-500 leading-relaxed" x-text="job.highlights"></div>
                         </div>
                     </div>

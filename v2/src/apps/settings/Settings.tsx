@@ -100,6 +100,12 @@ function Toggle({ on, onClick }: { on: boolean; onClick: () => void }) {
   )
 }
 
+const CONSENT_KEY = 'react.cookie.consent'
+
+function readConsent(): boolean {
+  return typeof window !== 'undefined' && window.localStorage.getItem(CONSENT_KEY) === 'true'
+}
+
 export default function Settings() {
   const settings = useOsStore((s) => s.settings)
   const updateSetting = useOsStore((s) => s.updateSetting)
@@ -107,6 +113,13 @@ export default function Settings() {
   const [tab, setTab] = useState<Tab>('system')
   const [preview, setPreview] = useState<string | null>(null)
   const [data, setData] = useState<Portfolio | null>(null)
+  const [consent, setConsent] = useState<boolean>(readConsent)
+
+  const toggleConsent = () => {
+    const next = !consent
+    window.localStorage.setItem(CONSENT_KEY, String(next))
+    setConsent(next)
+  }
 
   const currentWallpaper = preview ?? settings.wallpaper
 
@@ -238,6 +251,22 @@ export default function Settings() {
                   updateSetting('theme', settings.theme === 'dark' ? 'light' : 'dark')
                 }
               />
+            </div>
+
+            {/* GDPR Art. 7(3): withdrawing consent must be as easy as giving it. */}
+            <div className="glass p-6 rounded-lg flex items-center justify-between border border-gray-200 dark:border-white/10">
+              <div className="flex items-center">
+                <span className="text-2xl mr-4">🍪</span>
+                <div>
+                  <div className="font-medium">Telemetry &amp; cookies</div>
+                  <div className="text-xs text-gray-500">
+                    {consent
+                      ? 'Accepted — anonymous app-usage events are sent to /api/log.php.'
+                      : 'Declined — no telemetry is being collected.'}
+                  </div>
+                </div>
+              </div>
+              <Toggle on={consent} onClick={toggleConsent} />
             </div>
           </div>
         )}

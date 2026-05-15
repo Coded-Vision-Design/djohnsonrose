@@ -30,11 +30,12 @@ export function CookieBanner() {
       aria-label="Cookie consent"
       className="fixed bottom-16 right-4 z-[20000] w-[360px] glass rounded-xl p-4 win-shadow text-xs animate-window-open"
     >
-      <div className="font-semibold mb-2">Cookies & telemetry</div>
+      <div className="font-semibold mb-2">Cookies &amp; telemetry</div>
       <p className="opacity-80 leading-relaxed mb-3">
-        This portfolio uses a tiny telemetry call to /api/log.php so I can see
+        This portfolio uses a tiny telemetry call to <code className="opacity-90">/api/log.php</code> so I can see
         which apps visitors actually open. No personal data, no third-party
-        scripts. Decline and the call won't fire.
+        scripts. Decline and the call won&apos;t fire &mdash; you can change your mind
+        any time in Settings.
       </p>
       <div className="flex items-center justify-end space-x-2">
         <button

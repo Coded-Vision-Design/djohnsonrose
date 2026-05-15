@@ -326,33 +326,22 @@
              x-transition:leave="transition ease-in duration-200"
              x-transition:leave-start="opacity-100 scale-100"
              x-transition:leave-end="opacity-0 scale-90"
-             class="fixed bottom-16 left-4 right-4 md:left-auto md:right-4 z-[20000] md:w-[360px] glass dark:bg-[#1c1c1c]/90 border border-white/20 dark:border-white/10 rounded-xl shadow-2xl overflow-hidden animate-in fade-in slide-in-from-bottom-4">
+             role="dialog"
+             aria-label="Cookie consent"
+             class="fixed bottom-16 left-4 right-4 md:left-auto md:right-4 z-[20000] md:w-[360px] glass dark:bg-[#1c1c1c]/90 border border-white/20 dark:border-white/10 rounded-xl shadow-2xl overflow-hidden">
             <div class="p-4 flex flex-col space-y-3">
-                <div class="flex items-center justify-between">
-                    <div class="flex items-center space-x-2">
-                        <div class="w-6 h-6 bg-win-blue rounded flex items-center justify-center text-white text-[10px]">
-                            <img src="<?php echo IMG_PATH; ?>settings.webp" class="w-4 h-4">
-                        </div>
-                        <span class="text-xs font-semibold opacity-80">Privacy & Cookies</span>
-                    </div>
-                    <button @click="$store.os.showCookieNotification = false" class="text-gray-400 hover:text-black dark:hover:text-white">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                <div class="font-semibold text-sm">Cookies &amp; telemetry</div>
+                <p class="text-[11px] leading-relaxed opacity-80">
+                    This portfolio uses a tiny telemetry call to <code class="opacity-90">/api/log.php</code> so I can see which apps visitors actually open. No personal data, no third-party scripts. Decline and the call won't fire &mdash; you can change your mind any time in Settings.
+                </p>
+                <div class="flex items-center justify-end space-x-2">
+                    <button @click="$store.os.setCookieConsent(false)"
+                            class="px-3 py-1 rounded text-[11px] hover:bg-black/5 dark:hover:bg-white/10 transition-colors">
+                        Decline
                     </button>
-                </div>
-                <div class="space-y-2">
-                    <h3 class="text-sm font-bold">This PC uses cookies</h3>
-                    <p class="text-[11px] leading-relaxed opacity-70">
-                        We use technical cookies to enhance your desktop experience. By clicking "Accept All", you consent to the use of cookies for analytics via Google Tag Manager.
-                    </p>
-                </div>
-                <div class="flex items-center space-x-2 pt-2">
-                    <button @click="$store.os.setCookieConsent(true)" 
-                            class="flex-1 bg-win-blue text-white py-2 rounded text-xs font-medium hover:bg-blue-600 transition-colors shadow-sm">
-                        Accept All
-                    </button>
-                    <button @click="$store.os.setCookieConsent(false)" 
-                            class="flex-1 bg-black/5 dark:bg-white/5 py-2 rounded text-xs font-medium hover:bg-black/10 dark:hover:bg-white/10 transition-colors border border-black/10 dark:border-white/10">
-                        Required Only
+                    <button @click="$store.os.setCookieConsent(true)"
+                            class="px-4 py-1 rounded bg-win-blue text-white text-[11px] font-medium hover:opacity-90 transition-opacity">
+                        Accept
                     </button>
                 </div>
             </div>
