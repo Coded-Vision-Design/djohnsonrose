@@ -382,6 +382,7 @@ document.addEventListener('alpine:init', () => {
                 else if (win.app === 'putty') icon = `<img src="${osStore.settings.imgPath || window.portfolioConfig.imgPath}putty.webp" class="w-4 h-4 object-contain">`;
                 else if (win.app === 'flstudio') icon = `<img src="${osStore.settings.imgPath || window.portfolioConfig.imgPath}fl studio.webp" class="w-4 h-4 object-contain">`;
                 else if (win.app === 'references') icon = `<img src="${osStore.settings.imgPath || window.portfolioConfig.imgPath}notepad++.webp" class="w-4 h-4 object-contain">`;
+                else if (win.app === 'admin') icon = `<img src="${osStore.settings.imgPath || window.portfolioConfig.imgPath}mssql.webp" class="w-4 h-4 object-contain">`;
 
                 return {
                     id: win.id,

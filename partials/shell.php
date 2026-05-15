@@ -348,6 +348,7 @@
         'apps/media',
         'apps/system',
         'apps/tools',
+        'apps/admin',
         'flstudio'
     ];
     foreach ($components as $component) {
