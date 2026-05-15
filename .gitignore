@@ -22,6 +22,12 @@ ehthumbs.db
 .env.production
 .env.development
 
+# Local Claude / agent config — kept on disk, never pushed.
+CLAUDE.md
+.claude/
+.githooks/
+.gitattributes
+
 # Logs
 *.log
 
