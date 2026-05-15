@@ -153,8 +153,8 @@ export default function Terminal() {
           </div>
         ))}
 
-        <div className="flex items-center group">
-          <span className="text-green-400 mr-2 shrink-0">PS {cwd}&gt;</span>
+        <div className="flex items-center group min-w-0">
+          <span className="text-green-400 mr-2 truncate min-w-0 max-w-[60%]">PS {cwd}&gt;</span>
           <input
             ref={inputRef}
             type="text"

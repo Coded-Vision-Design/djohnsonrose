@@ -129,7 +129,7 @@ export default function Photos() {
       </div>
 
       {/* Viewer */}
-      <div className="flex-grow relative overflow-hidden bg-[#eeeeee] dark:bg-[#0a0a0a] flex items-center justify-center p-8">
+      <div className="flex-grow relative overflow-hidden bg-[#eeeeee] dark:bg-[#0a0a0a] flex items-center justify-center p-2 sm:p-4 md:p-8">
         {!current ? (
           <div className="opacity-50 text-sm">Loading gallery…</div>
         ) : (

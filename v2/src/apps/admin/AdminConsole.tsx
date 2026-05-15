@@ -694,7 +694,7 @@ function Dashboard({
         {tab === 'enquiries' && stats && (
           <section className="bg-white dark:bg-[#2b2b2b] border border-gray-200 dark:border-gray-800 rounded-xl shadow-sm overflow-hidden">
             <div className="flex flex-col md:flex-row min-h-[420px]">
-              <div className="md:w-2/5 border-b md:border-b-0 md:border-r border-gray-200 dark:border-gray-800 overflow-y-auto max-h-[60vh]">
+              <div className="md:w-2/5 border-b md:border-b-0 md:border-r border-gray-200 dark:border-gray-800 overflow-y-auto max-h-[40vh] md:max-h-[60vh]">
                 {stats.enquiries.length === 0 && (
                   <div className="p-6 text-sm opacity-60">No enquiries yet.</div>
                 )}
@@ -721,13 +721,13 @@ function Dashboard({
                 ))}
               </div>
 
-              <div className="md:w-3/5 p-4 md:p-6 overflow-y-auto max-h-[60vh]">
+              <div className="md:w-3/5 p-4 md:p-6 overflow-y-auto md:max-h-[60vh]">
                 {!selectedEnquiry ? (
                   <div className="opacity-60 text-sm">Select an enquiry to read it.</div>
                 ) : (
                   <article className="space-y-3">
                     <h2 className="text-lg font-semibold">{selectedEnquiry.subject}</h2>
-                    <div className="text-[11px] opacity-60 grid grid-cols-2 gap-2">
+                    <div className="text-[11px] opacity-60 grid grid-cols-1 sm:grid-cols-2 gap-2">
                       <div>
                         <span className="opacity-60">From: </span>
                         {selectedEnquiry.sender || 'Web Visitor'}

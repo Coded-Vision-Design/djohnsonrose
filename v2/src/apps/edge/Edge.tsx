@@ -156,7 +156,7 @@ export default function Edge() {
       {/* Content */}
       <div className="flex-grow relative overflow-auto bg-gray-50 dark:bg-[#1c1c1c]">
         {active.url === HOME_URL ? (
-          <div className="max-w-5xl mx-auto p-8">
+          <div className="max-w-5xl mx-auto p-4 sm:p-6 md:p-8">
             <h1 className="font-bold mb-8 text-3xl">Featured Projects</h1>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {(() => {
@@ -224,7 +224,7 @@ export default function Edge() {
             </div>
           </div>
         ) : (
-          <div className="h-full flex flex-col items-center justify-center text-center p-10">
+          <div className="h-full flex flex-col items-center justify-center text-center p-4 sm:p-6 md:p-10">
             <img src="/assets/img/chrome.webp" alt="" className="w-16 h-16 mb-4" />
             <h2 className="text-2xl font-bold mb-2">Chrome Browser</h2>
             <p className="text-gray-500 max-w-md">
