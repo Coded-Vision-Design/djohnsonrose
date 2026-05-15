@@ -92,6 +92,10 @@ try {
         'attachments_count' => count($attachmentNames)
     ]);
 
-} catch (PDOException $e) {
-    echo json_encode(['error' => 'Database error: ' . $e->getMessage()]);
+} catch (Throwable $e) {
+    if (!empty($config['debug'])) {
+        error_log('send_email failed: ' . $e->getMessage());
+    }
+    http_response_code(500);
+    echo json_encode(['error' => 'Unable to send email at this time.']);
 }

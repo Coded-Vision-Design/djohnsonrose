@@ -1,0 +1,3 @@
+# Block direct HTTP access to partials — they're server-side templates,
+# included from index.php / api/app.php.
+Require all denied

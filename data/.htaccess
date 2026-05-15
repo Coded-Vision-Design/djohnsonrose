@@ -1,0 +1,14 @@
+# Default: deny direct HTTP access to everything in /data/.
+# Allow only the public-facing files the apps fetch from the browser:
+#   cv.pdf  — PDF reader
+#   cv.php  — Word app (server-rendered HTML)
+#   portfolio.json — Photos / Edge / VSCode / Database / Excel / PowerPoint
+#   client_wins.json — news widget (read by api/news.php server-side, but
+#                      allowing it doesn't hurt and helps if a future client
+#                      app reads it directly).
+<RequireAll>
+    Require all denied
+</RequireAll>
+<FilesMatch "^(cv\.pdf|cv\.php|portfolio\.json|client_wins\.json)$">
+    Require all granted
+</FilesMatch>

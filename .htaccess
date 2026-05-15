@@ -1,10 +1,24 @@
 RewriteEngine On
 
-# Force HTTPS
-# RewriteCond %{HTTPS} off
-# RewriteCond %{HTTP_HOST} !^localhost$ [NC]
-# RewriteCond %{HTTP_HOST} !^127\.0\.0\.1$
-# RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+# ---- Sensitive files: deny all direct access ----
+# .env, dotfiles, config/bootstrap, and any PHP file that isn't an entry point.
+# Apache 2.4 "Require all denied" + a few explicit allowlist exceptions for
+# the files we DO serve at root.
+<FilesMatch "^\.">
+    Require all denied
+</FilesMatch>
+<FilesMatch "^(config|bootstrap|router|dev-server)\.php$">
+    Require all denied
+</FilesMatch>
+<FilesMatch "(\.env|\.env\..*|composer\.(json|lock)|package(-lock)?\.json|tsconfig.*\.json|vite\.config\..*|vitest\.config\..*|playwright\.config\..*)$">
+    Require all denied
+</FilesMatch>
+
+# Force HTTPS in production (skip on localhost dev hosts).
+RewriteCond %{HTTPS} off
+RewriteCond %{HTTP_HOST} !^localhost(:\d+)?$ [NC]
+RewriteCond %{HTTP_HOST} !^127\.0\.0\.1(:\d+)?$
+RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
 
 # Redirect www to non-www
 RewriteCond %{HTTP_HOST} ^www\.(.*)$ [NC]
@@ -22,6 +36,3 @@ RewriteRule ^v2(/.*)?$ v2/dist/index.html [L]
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
 RewriteRule ^(.*)$ index.php [QSA,L]
-
-# Custom 301 Redirects
-# If any old project URLs existed, they would go here

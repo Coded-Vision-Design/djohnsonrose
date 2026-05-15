@@ -28,6 +28,7 @@ const PINNED_IDS = [
   'settings',
   'taskmanager',
   'eventviewer',
+  'admin',
 ] as const
 
 export function StartMenu() {

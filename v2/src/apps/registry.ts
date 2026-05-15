@@ -23,6 +23,7 @@ const PowerPoint = lazy(() => import('./powerpoint/PowerPoint'))
 const Putty = lazy(() => import('./putty/Putty'))
 const FileZilla = lazy(() => import('./filezilla/FileZilla'))
 const Photoshop = lazy(() => import('./photoshop/Photoshop'))
+const AdminConsole = lazy(() => import('./admin/AdminConsole'))
 
 export interface AppDef {
   id: string
@@ -62,6 +63,7 @@ export const apps: Record<string, AppDef> = {
   photos: { id: 'photos', title: 'Photos', icon: `${IMG}win11/photos.png`, defaultSize: { w: 900, h: 640 }, Component: Photos },
   video: { id: 'video', title: 'Movies & TV', icon: `${IMG}win11/video.png`, defaultSize: { w: 900, h: 600 }, Component: Video },
   pdfreader: { id: 'pdfreader', title: 'PDF Reader', icon: `${IMG}pdf.webp`, defaultSize: { w: 900, h: 720 }, Component: PdfReader },
+  admin: { id: 'admin', title: 'Admin Console', icon: `${IMG}mssql.webp`, defaultSize: { w: 1180, h: 760 }, Component: AdminConsole },
 }
 
 export function getApp(id: string): AppDef | undefined {

@@ -1,9 +1,7 @@
 <?php
-// config.php
+// config.php — environment loader + structured config.
 
 function getEnvVar($key, $default = null) {
-    // In a real app, use a library like vlucas/phpdotenv
-    // For this portable version, we'll check $_ENV and putenv/getenv
     $val = getenv($key);
     if ($val === false) {
         return $default;
@@ -11,15 +9,29 @@ function getEnvVar($key, $default = null) {
     return $val;
 }
 
-// Load .env if it exists (very basic parser for portability)
+// Basic .env loader — supports quoted values, ignores comments / blank lines.
 if (file_exists(__DIR__ . '/.env')) {
     $lines = file(__DIR__ . '/.env', FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
     foreach ($lines as $line) {
-        if (strpos(trim($line), '#') === 0) continue;
-        list($name, $value) = explode('=', $line, 2);
-        putenv(sprintf('%s=%s', trim($name), trim($value)));
+        $trim = trim($line);
+        if ($trim === '' || strpos($trim, '#') === 0) continue;
+        if (strpos($trim, '=') === false) continue;
+        list($name, $value) = explode('=', $trim, 2);
+        $value = trim($value);
+        // Strip surrounding quotes.
+        if (strlen($value) >= 2) {
+            $first = $value[0];
+            $last = substr($value, -1);
+            if (($first === '"' && $last === '"') || ($first === "'" && $last === "'")) {
+                $value = substr($value, 1, -1);
+            }
+        }
+        putenv(sprintf('%s=%s', trim($name), $value));
     }
 }
+
+$adminEmailsRaw = getEnvVar('ADMIN_EMAILS', '');
+$adminEmails = array_values(array_filter(array_map('trim', explode(',', $adminEmailsRaw))));
 
 return [
     'email' => getEnvVar('PORTFOLIO_EMAIL', 'devante@johnson-rose.co.uk'),
@@ -40,5 +52,10 @@ return [
         'name' => getEnvVar('MAIL_FROM_NAME', 'Portfolio OS Notify'),
     ],
     'google_api_key' => getEnvVar('GOOGLE_API_KEY', ''),
-    'admin_email' => getEnvVar('ADMIN_EMAIL', 'devante@johnson-rose.co.uk'),
+    'admin_email'    => getEnvVar('ADMIN_EMAIL', 'devante@johnson-rose.co.uk'),
+    // Admin console (Google OAuth)
+    'oauth_client_id'     => getEnvVar('GOOGLE_OAUTH_CLIENT_ID', ''),
+    'oauth_client_secret' => getEnvVar('GOOGLE_OAUTH_CLIENT_SECRET', ''),
+    'admin_emails'        => $adminEmails,
+    'admin_session_secret' => getEnvVar('ADMIN_SESSION_SECRET', ''),
 ];
