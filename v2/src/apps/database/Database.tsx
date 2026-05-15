@@ -1,219 +1,275 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 
-interface Project {
-  id: number
-  title: string
-  description: string
-  tags: string[]
-  url: string
-  thumbnail: string
-  location?: string
-  country_code?: string
+// 1:1 port of partials/apps/database.php — SSMS chrome with toolbar, object
+// explorer tree, contenteditable SQL editor, Results/Messages tabs, and the
+// win-blue status bar. Calls /api/database_query.php like v1 does.
+
+type Table = 'projects' | 'experience' | 'certifications' | 'email_logs'
+
+type Row = Record<string, string | number | null>
+
+interface QueryResult {
+  columns?: string[]
+  data?: Row[]
+  count?: number
+  error?: string
 }
 
-interface Column {
-  name: string
-  type: string
+const TABLE_LABELS: Record<Table, string> = {
+  projects: 'dbo.Projects',
+  experience: 'dbo.Experience',
+  certifications: 'dbo.Certifications',
+  email_logs: 'dbo.EmailLogs',
 }
-
-const COLUMNS: Column[] = [
-  { name: 'id', type: 'int' },
-  { name: 'title', type: 'nvarchar(120)' },
-  { name: 'description', type: 'nvarchar(MAX)' },
-  { name: 'location', type: 'nvarchar(60)' },
-  { name: 'country_code', type: 'nvarchar(8)' },
-  { name: 'stack', type: 'nvarchar(MAX)' },
-  { name: 'url', type: 'nvarchar(MAX)' },
-]
-
-const DEFAULT_QUERY =
-  'SELECT id, title, location, country_code, stack\nFROM dbo.Projects\nORDER BY id ASC;'
 
 export default function Database() {
-  const [projects, setProjects] = useState<Project[]>([])
-  const [query, setQuery] = useState(DEFAULT_QUERY)
-  const [rows, setRows] = useState<Project[] | null>(null)
-  const [executedAt, setExecutedAt] = useState<string>('')
+  const [activeTable, setActiveTable] = useState<Table>('projects')
+  const [columns, setColumns] = useState<string[]>([])
+  const [tableData, setTableData] = useState<Row[]>([])
+  const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [resultsTab, setResultsTab] = useState<'results' | 'messages'>('results')
 
-  useEffect(() => {
-    let cancelled = false
-    fetch('/data/portfolio.json')
-      .then((r) => r.json() as Promise<{ projects: Project[] }>)
-      .then((d) => {
-        if (cancelled) return
-        setProjects(d.projects)
-        setRows(d.projects)
-        setExecutedAt(new Date().toLocaleTimeString())
-      })
-      .catch(() => {
-        if (!cancelled) setError('Failed to load /data/portfolio.json')
-      })
-    return () => {
-      cancelled = true
-    }
-  }, [])
+  const query = `SELECT * FROM [Portfolio_DB].[dbo].[${activeTable}]`
 
-  const execute = () => {
+  const executeQuery = async () => {
+    setLoading(true)
     setError(null)
-    const q = query.trim().toLowerCase()
-
-    if (!q.startsWith('select')) {
-      setError('Only SELECT statements are supported in this mock.')
-      setRows(null)
-      return
-    }
-
-    // Very small SQL "engine": supports ORDER BY title/location, WHERE
-    // country_code = 'xx', and LIMIT.
-    let result = [...projects]
-
-    const whereMatch = q.match(/where\s+country_code\s*=\s*'([^']+)'/i)
-    if (whereMatch) {
-      const code = whereMatch[1].toLowerCase()
-      result = result.filter((p) => p.country_code?.toLowerCase() === code)
-    }
-
-    const orderMatch = q.match(/order\s+by\s+(\w+)\s*(asc|desc)?/i)
-    if (orderMatch) {
-      const field = orderMatch[1] as keyof Project
-      const dir = (orderMatch[2] ?? 'asc').toLowerCase()
-      result = [...result].sort((a, b) => {
-        const av = `${a[field] ?? ''}`
-        const bv = `${b[field] ?? ''}`
-        return dir === 'desc' ? bv.localeCompare(av) : av.localeCompare(bv)
+    try {
+      const res = await fetch('/api/database_query.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query }),
       })
+      const body = (await res.json()) as QueryResult
+      if (body.error) {
+        setError(body.error)
+        setTableData([])
+        setColumns([])
+      } else {
+        setColumns(body.columns ?? [])
+        setTableData(body.data ?? [])
+      }
+    } catch (e) {
+      setError(`Network error: ${(e as Error).message}`)
+      setTableData([])
+      setColumns([])
+    } finally {
+      setLoading(false)
     }
-
-    const limitMatch = q.match(/limit\s+(\d+)/i)
-    if (limitMatch) {
-      result = result.slice(0, Number(limitMatch[1]))
-    }
-
-    setRows(result)
-    setExecutedAt(new Date().toLocaleTimeString())
   }
 
-  const rowCount = rows?.length ?? 0
-  const stackOf = useMemo(() => (p: Project) => p.tags.join(', '), [])
+  useEffect(() => {
+    executeQuery()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTable])
 
   return (
-    <div className="h-full flex flex-col bg-[#f0f0f0] dark:bg-[#1c1c1c] text-black dark:text-white select-none">
-      {/* Title strip */}
-      <div className="h-8 bg-[#cc2927] text-white flex items-center px-3 shrink-0 text-xs font-semibold">
-        <img src="/assets/img/mssql.webp" alt="" className="w-4 h-4 mr-2" />
-        SQL Server Management Studio — Portfolio.dbo.Projects
-      </div>
-
-      <div className="h-9 border-b border-black/10 dark:border-white/10 flex items-center px-3 shrink-0 space-x-2 text-xs">
+    <div className="h-full flex flex-col bg-[#f0f0f0] dark:bg-[#1c1c1c] text-black dark:text-white select-none overflow-hidden" style={{ fontFamily: 'Segoe UI, sans-serif' }}>
+      {/* SSMS toolbar */}
+      <div className="h-9 bg-white dark:bg-[#2b2b2b] border-b border-gray-300 dark:border-gray-800 flex items-center px-2 space-x-1 shrink-0">
+        <button type="button" className="p-1.5 rounded hover:bg-gray-100 dark:hover:bg-white/5 flex items-center space-x-1">
+          <span className="text-[10px] font-semibold">New Query</span>
+        </button>
+        <div className="w-px h-6 bg-gray-300 dark:bg-gray-700 mx-1" />
         <button
           type="button"
-          onClick={execute}
-          className="px-3 py-1 bg-[#cc2927] text-white rounded font-medium hover:opacity-90"
+          onClick={executeQuery}
+          className="p-1.5 rounded hover:bg-gray-100 dark:hover:bg-white/5 flex items-center space-x-1 text-green-600"
         >
-          ▶ Execute
+          <span className="text-[10px] font-bold">▶ Execute</span>
         </button>
-        <button
-          type="button"
-          onClick={() => setQuery(DEFAULT_QUERY)}
-          className="px-3 py-1 rounded hover:bg-black/5 dark:hover:bg-white/10"
-        >
-          ↺ Reset
-        </button>
-        <span className="opacity-60 ml-auto">F5 to execute · Mock engine: SELECT / WHERE / ORDER BY / LIMIT</span>
+        <div className="w-px h-6 bg-gray-300 dark:bg-gray-700 mx-1" />
+        <div className="flex items-center space-x-2 px-2">
+          <div className="flex items-center space-x-1 bg-gray-100 dark:bg-black/20 border border-gray-300 dark:border-gray-700 rounded px-2 py-0.5">
+            <img src="/assets/img/mssql.webp" alt="" className="w-3 h-3 object-contain" />
+            <span className="text-[10px]">DeVante-Workstation</span>
+          </div>
+        </div>
       </div>
 
+      {/* Workspace */}
       <div className="flex-grow flex min-h-0">
-        {/* Object explorer */}
-        <div className="w-56 border-r border-black/10 dark:border-white/10 bg-white dark:bg-[#252526] overflow-y-auto shrink-0">
-          <div className="p-2 text-[10px] uppercase tracking-wider opacity-60">
-            Object Explorer
+        {/* Object Explorer */}
+        <div className="w-64 border-r border-gray-300 dark:border-gray-800 flex flex-col bg-[#f0f0f0] dark:bg-[#252526] shrink-0 overflow-hidden">
+          <div className="p-2 bg-gray-200 dark:bg-[#333333] text-[11px] font-semibold border-b border-gray-300 dark:border-gray-800 flex items-center justify-between">
+            <span>Object Explorer</span>
+            <button type="button" className="opacity-60">✕</button>
           </div>
-          <div className="px-2 text-xs space-y-1">
-            <div>📂 Databases</div>
-            <div className="pl-4">📁 Portfolio</div>
-            <div className="pl-8">📁 Tables</div>
-            <div className="pl-12 bg-blue-100 dark:bg-blue-900/30 px-1 rounded">
-              📋 dbo.Projects
+          <div className="flex-grow overflow-y-auto p-2 text-[11px]">
+            <div className="flex items-center space-x-1 cursor-default">
+              <span className="text-[10px] transform rotate-90 opacity-60">▶</span>
+              <img src="/assets/img/mssql.webp" alt="" className="w-3.5 h-3.5 object-contain" />
+              <span className="font-semibold">DeVante-DB (SQL Server 16.0)</span>
             </div>
-            <div className="pl-12">📋 dbo.ClientWins</div>
-            <div className="pl-12">📋 dbo.Skills</div>
-            <div className="pl-8 mt-2">📁 Views</div>
-            <div className="pl-8">📁 Stored Procedures</div>
-          </div>
-          <div className="p-2 mt-4 text-[10px] uppercase tracking-wider opacity-60">
-            Columns
-          </div>
-          <div className="px-2 text-[11px] space-y-0.5">
-            {COLUMNS.map((c) => (
-              <div key={c.name} className="flex justify-between">
-                <span>{c.name}</span>
-                <span className="opacity-60">{c.type}</span>
+            <div className="ml-4 mt-1 space-y-1">
+              <div className="flex items-center space-x-1 cursor-pointer hover:text-win-blue">
+                <span className="text-[10px] transform rotate-90 opacity-60">▶</span>
+                <span className="text-yellow-600">📁</span>
+                <span>Databases</span>
               </div>
-            ))}
+              <div className="ml-4 space-y-1">
+                <div className="flex items-center space-x-1 text-win-blue font-semibold">
+                  <span className="text-[10px] transform rotate-90">▼</span>
+                  <span className="text-yellow-600">🗄️</span>
+                  <span>Portfolio_DB</span>
+                </div>
+                <div className="ml-4 space-y-1">
+                  {(Object.keys(TABLE_LABELS) as Table[]).map((t) => (
+                    <button
+                      key={t}
+                      type="button"
+                      onClick={() => setActiveTable(t)}
+                      className="w-full text-left flex items-center space-x-1 cursor-pointer hover:text-win-blue"
+                    >
+                      <span className="text-blue-500">📊</span>
+                      <span className={activeTable === t ? 'font-bold underline' : ''}>
+                        {TABLE_LABELS[t]}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="flex items-center space-x-1 cursor-default opacity-60">
+                <span className="text-[10px] opacity-60">▶</span>
+                <span className="text-yellow-600">📁</span>
+                <span>Security</span>
+              </div>
+              <div className="flex items-center space-x-1 cursor-default opacity-60">
+                <span className="text-[10px] opacity-60">▶</span>
+                <span className="text-yellow-600">📁</span>
+                <span>Server Objects</span>
+              </div>
+            </div>
           </div>
         </div>
 
         {/* Query + results */}
-        <div className="flex-grow flex flex-col min-w-0">
-          <textarea
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'F5' || ((e.ctrlKey || e.metaKey) && e.key === 'Enter')) {
-                e.preventDefault()
-                execute()
-              }
-            }}
-            spellCheck={false}
-            className="h-1/3 font-mono text-xs p-3 bg-white dark:bg-[#1e1e1e] border-b border-black/10 dark:border-white/10 outline-none resize-none"
-          />
-
-          <div className="flex-grow flex flex-col min-h-0">
-            <div className="h-7 bg-black/5 dark:bg-white/5 flex items-center px-3 text-[11px] shrink-0 justify-between">
-              <span>Results</span>
-              <span className="opacity-60">
-                {error ? '' : `${rowCount} row${rowCount === 1 ? '' : 's'} · ${executedAt}`}
+        <div className="flex-grow flex flex-col min-w-0 bg-white dark:bg-[#1e1e1e]">
+          {/* SQL editor (read-only display matching v1's syntax highlight) */}
+          <div className="h-1/3 border-b border-gray-300 dark:border-gray-800 flex flex-col shrink-0">
+            <div className="h-6 bg-gray-100 dark:bg-[#2d2d2d] border-b border-gray-300 dark:border-gray-800 px-2 flex items-center text-[10px] space-x-2">
+              <span className="font-bold border-b-2 border-win-blue pb-0.5">SQLQuery1.sql</span>
+            </div>
+            <div className="flex-grow p-4 font-mono text-[13px] overflow-auto">
+              <span className="text-blue-600 dark:text-blue-400 font-bold">SELECT</span> *{' '}
+              <span className="text-blue-600 dark:text-blue-400 font-bold">FROM</span>{' '}
+              <span className="text-green-600 dark:text-green-400">
+                [Portfolio_DB].[dbo].[{activeTable}]
               </span>
             </div>
-            {error ? (
-              <div className="p-4 text-red-500 text-xs">⚠ {error}</div>
-            ) : rows && rows.length > 0 ? (
-              <div className="flex-grow overflow-auto">
-                <table className="w-full text-[11px]">
-                  <thead className="bg-black/5 dark:bg-white/5 sticky top-0">
+          </div>
+
+          {/* Results */}
+          <div className="flex-grow flex flex-col min-h-0">
+            <div className="h-6 bg-gray-100 dark:bg-[#2d2d2d] border-b border-gray-300 dark:border-gray-800 px-2 flex items-center text-[10px] space-x-4">
+              <button
+                type="button"
+                onClick={() => setResultsTab('results')}
+                className={resultsTab === 'results' ? 'font-bold border-b-2 border-win-blue pb-0.5' : 'opacity-60'}
+              >
+                Results
+              </button>
+              <button
+                type="button"
+                onClick={() => setResultsTab('messages')}
+                className={resultsTab === 'messages' ? 'font-bold border-b-2 border-win-blue pb-0.5' : 'opacity-60'}
+              >
+                Messages
+              </button>
+            </div>
+
+            <div className="flex-grow overflow-auto relative">
+              {loading && (
+                <div className="absolute inset-0 flex items-center justify-center bg-white/50 dark:bg-black/50 z-20">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-win-blue" />
+                </div>
+              )}
+
+              {error && resultsTab === 'results' && (
+                <div className="p-4 text-red-500 font-mono text-xs">
+                  <div className="font-bold mb-1">Msg 50000, Level 16, State 1</div>
+                  <span>{error}</span>
+                </div>
+              )}
+
+              {resultsTab === 'messages' && (
+                <div className="p-4 font-mono text-xs">
+                  {error ? (
+                    <span className="text-red-500">{error}</span>
+                  ) : (
+                    <>
+                      ({tableData.length} row{tableData.length === 1 ? '' : 's'} affected)
+                    </>
+                  )}
+                </div>
+              )}
+
+              {!error && resultsTab === 'results' && (
+                <table className="w-full text-left text-[11px] border-collapse min-w-max">
+                  <thead className="bg-gray-100 dark:bg-[#252526] sticky top-0 z-10">
                     <tr>
-                      {['id', 'title', 'location', 'country_code', 'stack'].map((h) => (
-                        <th key={h} className="text-left p-2 border-b border-black/10 dark:border-white/10 font-medium">
-                          {h}
+                      <th className="p-1 w-8 border border-gray-300 dark:border-gray-700 bg-gray-200 dark:bg-[#333]" />
+                      {columns.map((col) => (
+                        <th
+                          key={col}
+                          className="p-1 px-3 border border-gray-300 dark:border-gray-700 font-normal"
+                        >
+                          {col}
                         </th>
                       ))}
                     </tr>
                   </thead>
-                  <tbody>
-                    {rows.map((p) => (
-                      <tr
-                        key={p.id}
-                        className="border-b border-black/5 dark:border-white/5 hover:bg-blue-50 dark:hover:bg-blue-900/20"
-                      >
-                        <td className="p-2">{p.id}</td>
-                        <td className="p-2">{p.title}</td>
-                        <td className="p-2">{p.location ?? '—'}</td>
-                        <td className="p-2">{p.country_code ?? '—'}</td>
-                        <td className="p-2 max-w-[300px] truncate" title={stackOf(p)}>
-                          {stackOf(p)}
+                  <tbody className="divide-y divide-gray-200 dark:divide-gray-800">
+                    {tableData.map((row, idx) => (
+                      <tr key={idx} className="hover:bg-win-blue/10">
+                        <td className="p-1 text-center bg-gray-50 dark:bg-white/5 border border-gray-300 dark:border-gray-700 opacity-60">
+                          {idx + 1}
                         </td>
+                        {columns.map((col) => (
+                          <td
+                            key={col}
+                            className={`p-1 px-3 border border-gray-300 dark:border-gray-700 truncate max-w-[250px] ${
+                              row[col] === null ? 'italic text-gray-400' : ''
+                            }`}
+                          >
+                            {row[col] === null ? 'NULL' : String(row[col])}
+                          </td>
+                        ))}
                       </tr>
                     ))}
                   </tbody>
                 </table>
-              </div>
-            ) : (
-              <div className="flex-grow flex items-center justify-center opacity-50 text-xs">
-                No rows. Press Execute or hit Ctrl+Enter.
-              </div>
-            )}
+              )}
+            </div>
           </div>
+        </div>
+      </div>
+
+      {/* Status bar */}
+      <div className="h-6 bg-[#0078d4] flex items-center px-2 shrink-0 text-white text-[10px] justify-between">
+        <div className="flex items-center space-x-4">
+          <span className="flex items-center space-x-1">
+            <span
+              className={`w-2 h-2 rounded-full border border-white ${
+                error ? 'bg-red-400' : 'bg-green-400'
+              }`}
+            />
+            <span>
+              {error
+                ? `Query failed.`
+                : loading
+                  ? 'Executing query...'
+                  : 'Query executed successfully.'}
+            </span>
+          </span>
+        </div>
+        <div className="flex items-center space-x-4 divide-x divide-white/20">
+          <span className="pl-4">DEVANTE-PC (16.0 RTM)</span>
+          <span className="pl-4">sa (54)</span>
+          <span className="pl-4">Portfolio_DB</span>
+          <span className="pl-4">{tableData.length} rows</span>
+          <span className="pl-4">00:00:00</span>
         </div>
       </div>
     </div>

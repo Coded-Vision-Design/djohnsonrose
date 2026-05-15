@@ -2,6 +2,9 @@ import { useEffect, useRef, useState } from 'react'
 import { useOsStore } from '../../store/osStore'
 import { runCommand } from './commands'
 
+// 1:1 port of partials/apps/terminal.php — PowerShell-styled header,
+// green prompt + cmd, blue-tinted output, click-anywhere-to-focus input.
+
 interface Entry {
   id: number
   cmd: string
@@ -13,17 +16,7 @@ const CWD = 'C:\\Users\\DeVante'
 
 export default function Terminal() {
   const [input, setInput] = useState('')
-  const [entries, setEntries] = useState<Entry[]>([
-    {
-      id: 0,
-      cmd: '',
-      path: '',
-      res:
-        'Microsoft Windows [Version 10.0.22631.3007]\n' +
-        '(c) Microsoft Corporation. All rights reserved.\n\n' +
-        'Type "help" for available commands.',
-    },
-  ])
+  const [entries, setEntries] = useState<Entry[]>([])
   const [history, setHistory] = useState<string[]>([])
   const [historyIdx, setHistoryIdx] = useState(-1)
 
@@ -31,13 +24,12 @@ export default function Terminal() {
   const outputRef = useRef<HTMLDivElement>(null)
   const idRef = useRef(1)
 
-  const focusedId = useOsStore((s) => s.focusedWindowId)
   const focusedApp = useOsStore((s) =>
     s.windows.find((w) => w.id === s.focusedWindowId)?.app,
   )
-  const isFocused = focusedApp === 'terminal'
-
+  const focusedId = useOsStore((s) => s.focusedWindowId)
   const closeWindow = useOsStore((s) => s.closeWindow)
+  const isFocused = focusedApp === 'terminal'
 
   useEffect(() => {
     if (isFocused) inputRef.current?.focus()
@@ -57,11 +49,8 @@ export default function Terminal() {
       setEntries((e) => [...e, { id: idRef.current++, cmd: raw, path: CWD, res: '' }])
       return
     }
-
     setHistory((h) => [...h.slice(-49), trimmed])
-
     const result = runCommand(trimmed, { cwd: CWD, store: useOsStore.getState() })
-
     if (result.clear) {
       setEntries([])
       return
@@ -101,24 +90,65 @@ export default function Terminal() {
   }
 
   return (
-    <div
-      className="h-full flex flex-col bg-[#0c0c0c] text-[#cccccc] font-mono text-xs cursor-text"
-      onClick={() => inputRef.current?.focus()}
-    >
-      <div ref={outputRef} className="flex-grow overflow-y-auto p-3 whitespace-pre-wrap leading-relaxed">
+    <div className="h-full flex flex-col bg-[#0c0c0c] text-[#cccccc] font-mono text-xs overflow-hidden">
+      {/* Header — Windows Terminal style */}
+      <div className="h-9 bg-[#2b2b2b] flex items-center px-3 space-x-4 border-b border-white/5">
+        <div className="flex items-center space-x-2 border-b-2 border-win-blue h-full px-2">
+          <span className="text-lg">🪟</span>
+          <span className="text-[11px] font-medium">PowerShell</span>
+          <button
+            type="button"
+            onClick={() => focusedId && closeWindow(focusedId)}
+            className="hover:bg-white/10 rounded p-0.5"
+            aria-label="Close tab"
+          >
+            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+        <button
+          type="button"
+          className="hover:bg-white/10 rounded p-1 text-gray-400"
+          aria-label="New tab"
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+          </svg>
+        </button>
+      </div>
+
+      {/* Output */}
+      <div
+        ref={outputRef}
+        onClick={() => inputRef.current?.focus()}
+        className="flex-grow overflow-y-auto p-4 cursor-text"
+      >
+        <div className="mb-4 text-gray-400">
+          Windows PowerShell
+          <br />
+          Copyright (C) Microsoft Corporation. All rights reserved.
+          <br />
+          <br />
+          Install the latest PowerShell for new features and improvements! https://aka.ms/PSWindows
+        </div>
+
         {entries.map((e) => (
-          <div key={e.id}>
-            {e.cmd !== '' && (
-              <div>
-                <span className="text-[#cccccc]">{e.path}&gt; </span>
-                <span>{e.cmd}</span>
+          <div key={e.id} className="mb-3">
+            <div className="flex items-center">
+              <span className="text-green-400 mr-2">PS {e.path}&gt;</span>
+              <span>{e.cmd}</span>
+            </div>
+            {e.res && (
+              <div className="mt-1 whitespace-pre-wrap text-blue-100/80 leading-relaxed">
+                {e.res}
               </div>
             )}
-            {e.res && <div className="text-[#cccccc] whitespace-pre-wrap">{e.res}</div>}
           </div>
         ))}
-        <div className="flex">
-          <span className="text-[#cccccc]">{CWD}&gt;&nbsp;</span>
+
+        <div className="flex items-center group">
+          <span className="text-green-400 mr-2 shrink-0">PS {CWD}&gt;</span>
           <input
             ref={inputRef}
             type="text"
@@ -128,7 +158,7 @@ export default function Terminal() {
             spellCheck={false}
             autoCapitalize="off"
             autoCorrect="off"
-            className="flex-grow bg-transparent outline-none caret-[#cccccc]"
+            className="bg-transparent border-none outline-none flex-grow text-[#cccccc] font-mono"
             aria-label="Terminal input"
           />
         </div>
