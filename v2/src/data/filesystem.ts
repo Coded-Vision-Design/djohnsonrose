@@ -171,6 +171,12 @@ export const filesystem: FileSystem = {
 - IBJJF Master European Champion (Gi)
 - British Judo Silver Medalist`,
     },
+    {
+      name: 'SQL Server Management Studio',
+      type: 'app',
+      app: 'database',
+      icon: `${IMG}mssql.webp`,
+    },
     { name: 'VS Code', type: 'app', app: 'vscode', icon: `${IMG}vscode.webp` },
     { name: 'Chrome', type: 'app', app: 'edge', icon: `${IMG}chrome.webp` },
     { name: 'Outlook', type: 'app', app: 'outlook', icon: `${IMG}outlook.webp` },

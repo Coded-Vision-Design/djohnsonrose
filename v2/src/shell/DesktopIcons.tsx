@@ -20,29 +20,37 @@ interface PlacedIcon {
 }
 
 /**
- * Lay out icons in column-first order. Stored positions are honoured and
- * pre-marked as occupied so unpositioned icons get the next free slot
- * deterministically. v1's shell.js does the same — the bug in my previous
- * pass was treating Recycle Bin synthetically, so its slot wasn't tracked.
+ * Lay out icons in column-first order. Stored positions are honoured first
+ * and pre-marked as occupied so unpositioned icons get the next free slot
+ * deterministically.
+ *
+ * The PC tile is pinned to slot (0,0) unless the user has explicitly dragged
+ * it elsewhere — earlier versions auto-laid PC like any other icon and ended
+ * up putting it at slot (0,1), leaving the top-left empty.
  */
 function computeLayout(
+  pcName: string,
   names: string[],
   stored: Record<string, { x: number; y: number }>,
   maxPerCol: number,
 ) {
   const occupied = new Set<string>()
-  occupied.add('0,0') // PC tile is always at (0,0)
-
   const positions: Record<string, { x: number; y: number }> = {}
 
   // First pass: place icons with stored positions, marking their slots.
-  for (const name of names) {
+  for (const name of [pcName, ...names]) {
     const pos = stored[name]
     if (!pos) continue
     positions[name] = pos
     const col = Math.max(0, Math.round((pos.x - MARGIN) / ICON_W))
     const row = Math.max(0, Math.round((pos.y - MARGIN) / ICON_H))
     occupied.add(`${col},${row}`)
+  }
+
+  // Pin PC to (0,0) if it has no stored position.
+  if (!positions[pcName]) {
+    positions[pcName] = { x: MARGIN, y: MARGIN }
+    occupied.add('0,0')
   }
 
   // Second pass: assign the next empty slot to unpositioned icons.
@@ -87,8 +95,12 @@ export function DesktopIcons() {
     const availH = window.innerHeight - TASKBAR_HEIGHT - MARGIN * 2
     const maxPerCol = Math.max(1, Math.floor(availH / ICON_H))
 
-    const names = [PC_NAME, ...entries.map((e) => e.name)]
-    const positions = computeLayout(names, iconPositions, maxPerCol)
+    const positions = computeLayout(
+      PC_NAME,
+      entries.map((e) => e.name),
+      iconPositions,
+      maxPerCol,
+    )
 
     const placed: PlacedIcon[] = [
       {
