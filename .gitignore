@@ -31,6 +31,20 @@ build/
 .cache/
 .tmp/
 
+# Dependencies
+node_modules/
+v2/node_modules/
+
+# Test artefacts
+v2/test-results/
+v2/playwright-report/
+coverage/
+
+# Private files (CV + generated caches stay on the server only)
+data/cv.pdf
+data/cv.php
+data/weather_cache.json
+
 # Vercel
 .vercel/
 
