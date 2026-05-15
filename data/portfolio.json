@@ -22,14 +22,17 @@
             "id": 102,
             "title": "Earth Echo",
             "featured": true,
-            "description": "Carbon-footprint tracker that started as a university project and shipped to production. Human-readable metrics, gamified streaks, real-time analytics, passkey (WebAuthn) auth, and a SwiftUI/Capacitor mobile companion. D3 + Globe.gl visualisations.",
+            "description": "Carbon-footprint tracker that shipped to production from a university brief. Human-readable metrics, gamified streaks, real-time analytics, and passkey (WebAuthn) auth on the Next.js web client. Ships as native apps across the board: iPhone, Apple Watch (SwiftUI), and Android — all driven from the same Capacitor codebase. D3 + Globe.gl visualisations.",
             "tags": [
                 "Next.js 16",
                 "React 19",
                 "Prisma",
                 "NextAuth",
                 "WebAuthn",
-                "Capacitor"
+                "Capacitor",
+                "iOS",
+                "Apple Watch",
+                "Android"
             ],
             "url": "https://earthecho.co.uk/",
             "thumbnail": "portfolio/earthecho.webp",

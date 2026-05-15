@@ -93,14 +93,19 @@ describe('filesystem helpers', () => {
         }
       }
     })
-    it('Freelance projects each have an app shortcut and a README', () => {
+    it('Freelance projects each have a Visit Site link, requirements/plan/outcome, and a Pictures folder', () => {
       const projects = listAt('C:\\Users\\DeVante\\Projects\\Freelance')
       for (const p of projects) {
         if (p.type !== 'folder') continue
         const sub = listAt(`C:\\Users\\DeVante\\Projects\\Freelance\\${p.name}`)
         const names = sub.map((s) => s.name)
-        expect(names, `missing for ${p.name}`).toContain('Visit Site.url')
-        expect(names, `missing for ${p.name}`).toContain('README.txt')
+        for (const required of ['Visit Site.url', 'requirements.txt', 'plan.txt', 'outcome.txt', 'Pictures']) {
+          expect(names, `missing '${required}' for ${p.name}`).toContain(required)
+        }
+        const pics = listAt(`C:\\Users\\DeVante\\Projects\\Freelance\\${p.name}\\Pictures`)
+        const picNames = pics.map((s) => s.name)
+        expect(picNames, `missing Desktop UI for ${p.name}`).toContain('Desktop UI.webp')
+        expect(picNames, `missing Mobile UI for ${p.name}`).toContain('Mobile UI.webp')
       }
     })
   })

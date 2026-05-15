@@ -342,16 +342,45 @@ VERIFY:
     { name: 'FRP Advisory', type: 'folder', icon: FOLDER },
   ],
   'C:\\Users\\DeVante\\Projects\\Freelance': [
+    // Featured (newest, currently active)
+    { name: 'Earth Echo', type: 'folder', icon: FOLDER },
+    { name: 'Combat Evolved Sports', type: 'folder', icon: FOLDER },
+    { name: "Ram's Taxis", type: 'folder', icon: FOLDER },
+    // Archive
     { name: 'English Open BJJ', type: 'folder', icon: FOLDER },
     { name: 'Bay Motors', type: 'folder', icon: FOLDER },
     { name: 'CPT Tours', type: 'folder', icon: FOLDER },
     { name: 'EKBJJ', type: 'folder', icon: FOLDER },
     { name: 'BJJ Havering', type: 'folder', icon: FOLDER },
+    { name: 'BHR Recovery', type: 'folder', icon: FOLDER },
     { name: 'Euro-Goat', type: 'folder', icon: FOLDER },
     { name: 'Youngs Construction', type: 'folder', icon: FOLDER },
     { name: 'Boulevard Logistics', type: 'folder', icon: FOLDER },
+    { name: 'Hameedahs Delights', type: 'folder', icon: FOLDER },
   ],
+
+  // System folders — listed so they show as real folders if a visitor types
+  // into the address bar / Terminal cd. Empty for safety, mirroring v1.
+  'C:\\Program Files\\Docker\\Docker': [],
+  'C:\\Windows\\Resources': [
+    { name: 'Themes', type: 'folder', icon: FOLDER },
+  ],
+  'C:\\Windows\\Resources\\Themes': [],
+  'C:\\Windows\\Web': [],
 }
+
+// Patch top-level C:\Windows to expose Resources + Web.
+filesystem['C:\\Windows'] = [
+  ...filesystem['C:\\Windows'],
+  { name: 'Resources', type: 'folder', icon: FOLDER },
+  { name: 'Web', type: 'folder', icon: FOLDER },
+]
+
+// Patch C:\Program Files\Docker to expose the inner Docker folder.
+filesystem['C:\\Program Files\\Docker'] = [
+  ...filesystem['C:\\Program Files\\Docker'],
+  { name: 'Docker', type: 'folder', icon: FOLDER },
+]
 
 // Add a small `Role_Description.txt` per Projects/{role} folder so the
 // explorer has meaningful content to click into.
@@ -421,19 +450,178 @@ for (const [role, content] of ROLES) {
   ]
 }
 
-const FREELANCE: { name: string; url: string; summary: string; thumb: string }[] = [
-  { name: 'English Open BJJ', url: 'https://englishopenbjjchampionships.co.uk/', summary: 'The premier BJJ tournament in the UK. Custom weight calculators, registration flows, AI FAQ.', thumb: '/portfolio/englishopenbjj.webp' },
-  { name: 'Bay Motors', url: 'https://www.baymotors.co.uk/', summary: 'Automotive booking + diagnostic platform. #1 local Google rank within 3 weeks.', thumb: '/portfolio/baymotors.webp' },
-  { name: 'CPT Tours', url: 'https://cpttours.co.za/', summary: 'Cape Town tour booking — 360° interactive, WhatsApp-integrated booking flows.', thumb: '/portfolio/cpttours.webp' },
-  { name: 'EKBJJ', url: 'https://ekbjj.com/', summary: 'Academy site for Prof. Eddie Kone — timetables, memberships, lineage tracking.', thumb: '/portfolio/ekbjjdesktop.webp' },
-  { name: 'BJJ Havering', url: 'https://bjjhavering.co.uk/', summary: 'Modernised non-responsive site; 50% increase in enrolments.', thumb: '/portfolio/wolvesbjj.webp' },
-  { name: 'Euro-Goat', url: 'https://euro-goat.com/', summary: 'Premium mobile mechanic for German cars. Interactive 3D vehicle models.', thumb: '/portfolio/eurogoatdesktop.webp' },
-  { name: 'Youngs Construction', url: 'https://youngsconstructionltd.co.uk/', summary: 'Construction portal with 4K drone footage and Three.js wireframes.', thumb: '/portfolio/youngsconstructiondesktop.webp' },
-  { name: 'Boulevard Logistics', url: 'https://boulevardlogistics.co.uk/', summary: 'Multi-variable pricing engine replacing complex spreadsheets.', thumb: '/portfolio/boulevardlogistics.webp' },
+interface FreelanceProject {
+  name: string
+  url: string
+  thumb: string
+  thumbMobile: string
+  requirements: string
+  plan: string
+  outcome: string
+}
+
+const FREELANCE: FreelanceProject[] = [
+  {
+    name: 'Earth Echo',
+    url: 'https://earthecho.co.uk/',
+    thumb: '/portfolio/earthecho.webp',
+    thumbMobile: '/portfolio/earthecho-mobile.webp',
+    requirements:
+      'REQUIREMENTS:\n- Carbon-footprint tracker that scales from a uni study project to production.\n- Human-readable metrics across travel, energy, food, water, plastic.\n- Gamified streaks + community feed to drive habit-forming behaviour.\n- Companion iOS app (incl. an Apple Watch app) and Android app delivered\n  from the same codebase.',
+    plan:
+      'PLAN:\n- Next.js 16 + React 19 web client on Vercel, Prisma + Postgres data layer.\n- NextAuth + WebAuthn passkeys for password-less login.\n- D3 + Globe.gl visualisations of per-user impact vs cohort.\n- TinyMCE-driven editor CMS for admin posts; Stripe-style billing scaffolding.\n- Capacitor packaging for iOS (with a SwiftUI Apple Watch companion) and Android.\n- Push notifications via Expo + APNs for streak reminders.',
+    outcome:
+      'OUTCOME:\n- Shipped to production with multi-platform reach: web, iPhone, Apple Watch, Android.\n- Passkey-first auth in place day one; zero stored passwords.\n- Real-time analytics dashboard for admin moderation and content curation.',
+  },
+  {
+    name: 'Combat Evolved Sports',
+    url: 'https://combatevolvedsports.com/',
+    thumb: '/portfolio/combatevolvedsports.webp',
+    thumbMobile: '/portfolio/combatevolvedsports-mobile.webp',
+    requirements:
+      'REQUIREMENTS:\n- Sports journalism platform that feels modern without leaning on a framework.\n- Editor-first CMS with live-search, modals and inline reactions via HTMX.\n- Subscription tier gated by Stripe with social-login fallback.',
+    plan:
+      'PLAN:\n- PHP 8.5 from scratch — PSR-4 autoload, PDO, no framework.\n- HTMX for partial swaps + Alpine.js for state, Tailwind for styling.\n- Stripe checkout + customer portal; Google + Facebook OAuth via league/oauth2.\n- Lcobucci JWT for API tokens; PHPMailer for transactional email.\n- Image pipeline via Intervention/Image with PSR-7 streams.',
+    outcome:
+      'OUTCOME:\n- Live in production; PHP 8.5 build with full PHPUnit + CS-Fixer.\n- Stripe + multi-provider OAuth all running through the same Auth boundary.\n- Editor admin lets the small journalism team ship articles without devs.',
+  },
+  {
+    name: "Ram's Taxis",
+    url: 'https://ramstaxis.co.uk/',
+    thumb: '/portfolio/ramstaxis.webp',
+    thumbMobile: '/portfolio/ramstaxis-mobile.webp',
+    requirements:
+      'REQUIREMENTS:\n- Local taxi firm in Braintree, Essex — needed a modern shopfront.\n- Airport transfers (Stansted, Heathrow, Gatwick), school runs, courier jobs,\n  wheelchair-accessible vehicles — all surfaced clearly.\n- Click-to-call dominant on mobile; static-first for instant first paint.',
+    plan:
+      'PLAN:\n- Next.js + TypeScript + Tailwind on Vercel.\n- Static generation for every service page; route metadata per page.\n- Dedicated landing pages per airport for SEO long-tail.\n- Mobile-first CTAs with prominent tel: links and a sticky call bar.',
+    outcome:
+      'OUTCOME:\n- Site live on Vercel with sub-second mobile load.\n- Verified locally relevant pages ranking for "taxi Braintree" search terms.\n- Booking volume primarily driven by direct mobile call from the site.',
+  },
+  {
+    name: 'English Open BJJ',
+    url: 'https://englishopenbjjchampionships.co.uk/',
+    thumb: '/portfolio/englishopenbjj.webp',
+    thumbMobile: '/portfolio/englishopenbjj-mobile.webp',
+    requirements:
+      'REQUIREMENTS:\n- Showcase the prestige of the English Open BJJ Championships.\n- Highlight previous champions and event highlights.\n- Seamless integration with Smoothcomp for registrations.\n- User-friendly, intuitive interface.',
+    plan:
+      'PLAN:\n- Build lightweight site with high Lighthouse/SEO scores.\n- Optimise assets (WebP/WebM) for mobile-first performance.\n- Implement JS Weight Class Finder (Imperial/Metric).\n- Train AI Chatbot on FAQs and IBJJF ruleset.\n- Create clear CTA pathways to Smoothcomp.',
+    outcome:
+      'OUTCOME:\n- Largest competitor turnout in event history.\n- Significant reduction in manual admin tasks.\n- Massive growth in web traffic via SEO optimization.',
+  },
+  {
+    name: 'Bay Motors',
+    url: 'https://www.baymotors.co.uk/',
+    thumb: '/portfolio/baymotors.webp',
+    thumbMobile: '/portfolio/baymotors-mobile.webp',
+    requirements:
+      'REQUIREMENTS:\n- Establish first digital presence for trusted local garage.\n- Automate booking process to reduce phone dependency.\n- Prevent lost revenue from missed calls during peak hours.',
+    plan:
+      'PLAN:\n- Build SEO-focussed site with dedicated service pages.\n- Integrate car registration API for automated data retrieval.\n- Create formatted email notification system for bookings.\n- Showcase high-end project gallery to build trust.',
+    outcome:
+      'OUTCOME:\n- Reached #1 on Google for local searches within 3 weeks.\n- Maintained top position and significantly increased traffic.\n- Drastic increase in new customer bookings.',
+  },
+  {
+    name: 'CPT Tours',
+    url: 'https://cpttours.co.za/',
+    thumb: '/portfolio/cpttours.webp',
+    thumbMobile: '/portfolio/cpttours-mobile.webp',
+    requirements:
+      'REQUIREMENTS:\n- Bypass high GetYourGuide commission fees.\n- Enable direct, easy booking for international travellers.\n- Build independent brand credibility.',
+    plan:
+      'PLAN:\n- Integrate Google Places API for verified reviews.\n- Link system to WhatsApp for real-time booking alerts.\n- Integrate Calendar API for visual booking management.\n- Build custom Headless CMS for blogs and tour management.\n- Implement secure Google OAuth authentication.',
+    outcome:
+      'OUTCOME:\n- First direct booking within 9 days of launch.\n- Drastically reduced reliance on 3rd party platforms.\n- Streamlined operations via integrated calendar.',
+  },
+  {
+    name: 'EKBJJ',
+    url: 'https://ekbjj.com/',
+    thumb: '/portfolio/ekbjjdesktop.webp',
+    thumbMobile: '/portfolio/ekbjjdesktop-mobile.webp',
+    requirements:
+      'REQUIREMENTS:\n- Rescue site from a bad state after the previous developer went AWOL.\n- Modernise outdated UI and optimise for mobile.\n- Consolidate 12 dormant domains into one platform.',
+    plan:
+      'PLAN:\n- Build modern, lightweight Headless CMS with RBAC.\n- Integrate SumUp API for secure class bookings.\n- Automate podcast/video updates via Spotify & YouTube.\n- Implement 301 redirects for all dormant domains.\n- Deploy AI Chatbot for 24/7 lead capture and triaging.',
+    outcome:
+      'OUTCOME:\n- Huge increase in trial classes and Gi hire bookings.\n- Improved local SEO rankings.\n- Significant reduction in administrative overhead.',
+  },
+  {
+    name: 'BJJ Havering',
+    url: 'https://bjjhavering.co.uk/',
+    thumb: '/portfolio/wolvesbjj.webp',
+    thumbMobile: '/portfolio/wolvesbjj-mobile.webp',
+    requirements:
+      'REQUIREMENTS:\n- Modernise non-responsive site after developer disappeared.\n- Create fresh digital presence for competitive market.\n- Increase online lead generation for the academy.',
+    plan:
+      'PLAN:\n- Mobile-first redesign with high-performance metrics.\n- Build automated enrolment workflows.\n- Implement local SEO strategy for martial arts keywords.\n- Deploy AI FAQ system for student triaging.',
+    outcome:
+      'OUTCOME:\n- Achieved #1 local Google ranking.\n- 50% increase in monthly student enrolments.\n- Operational efficiency improved via automated bookings.',
+  },
+  {
+    name: 'BHR Recovery',
+    url: 'https://bhrrecovery.co.uk/',
+    thumb: '/portfolio/bhrrecovery.webp',
+    thumbMobile: '/portfolio/bhrrecovery-mobile.webp',
+    requirements:
+      'REQUIREMENTS:\n- Establish first digital presence for local recovery service.\n- Appeal to specific geographic areas in the community.',
+    plan:
+      'PLAN:\n- Create full company branding, logo, and guidelines.\n- Build high-converting site with dedicated area landing pages.\n- Optimise for hyper-local SEO.\n- Design and print integrated business cards.',
+    outcome:
+      'OUTCOME:\n- Rapid deployment: Site live within 4 hours of contact.\n- Full project (Branding + Site) turned around in 72 hours.\n- Immediate increase in local service calls.',
+  },
+  {
+    name: 'Euro-Goat',
+    url: 'https://euro-goat.com/',
+    thumb: '/portfolio/eurogoatdesktop.webp',
+    thumbMobile: '/portfolio/eurogoatdesktop-mobile.webp',
+    requirements:
+      'REQUIREMENTS:\n- Launch first digital presence for niche mobile mechanic.\n- Transition from word-of-mouth to high-volume lead gen.',
+    plan:
+      'PLAN:\n- Build high-converting expertise-led website.\n- Use interactive 3D car models for specialist vehicle types.\n- Optimise high-poly OBJ files for mobile performance.\n- Local New Jersey SEO strategy deployment.',
+    outcome:
+      'OUTCOME:\n- Ranked #1 in New Jersey for mobile European mechanics.\n- Consistent volume of high-quality bookings.',
+  },
+  {
+    name: 'Youngs Construction',
+    url: 'https://youngsconstructionltd.co.uk/',
+    thumb: '/portfolio/youngsconstructiondesktop.webp',
+    thumbMobile: '/portfolio/youngsconstructiondesktop-mobile.webp',
+    requirements:
+      'REQUIREMENTS:\n- Modernise outdated site that was failing to generate leads.\n- Replace stock imagery with authentic project showcases.\n- Build a high-trust professional digital portal.',
+    plan:
+      'PLAN:\n- Capture 4K drone photography of major flats project.\n- Create and embed 360-degree virtual project tours.\n- Build interactive 3D house wireframes using Three.js.\n- Optimise site structure for construction-specific SEO.',
+    outcome:
+      'OUTCOME:\n- Drastic increase in average time-on-site.\n- Measurable growth in high-value project inquiries.',
+  },
+  {
+    name: 'Boulevard Logistics',
+    url: 'https://boulevardlogistics.co.uk/',
+    thumb: '/portfolio/boulevardlogistics.webp',
+    thumbMobile: '/portfolio/boulevardlogistics-mobile.webp',
+    requirements:
+      'REQUIREMENTS:\n- Custom pricing engine to replace complex spreadsheets.\n- Multi-variable calculation (fuel surcharge, pallet count, weight, distance).\n- Automated customer payment integration.\n- Streamlined operational workflow.',
+    plan:
+      'PLAN:\n1. Audit existing spreadsheet variables and logic.\n2. Design database schema for logistics tracking.\n3. Build calculation engine using PHP.\n4. Integrate payment gateway (Stripe/GoCardless).\n5. Beta testing with internal ops team.',
+    outcome:
+      'OUTCOME:\n- Eliminated manual spreadsheet updates.\n- 75% reduction in administrative booking time.\n- Streamlined financial reconciliation workflow.',
+  },
+  {
+    name: 'Hameedahs Delights',
+    url: 'https://hameedahsdelights.com/',
+    thumb: '/portfolio/sweetdelights.webp',
+    thumbMobile: '/portfolio/sweetdelights-mobile.webp',
+    requirements:
+      'REQUIREMENTS:\n- Scale from social media to a professional corporate portal.\n- Appeal to large business orders and event catering.\n- Automated booking and inquiry management.',
+    plan:
+      'PLAN:\n- Build custom specification form with photo upload capability.\n- Implement full interactive menu with auto-pricing engine.\n- Link instant booking notifications to WhatsApp.\n- Synchronise GMB profile and social media lead flows.',
+    outcome:
+      'OUTCOME:\n- First major booking within 24 hours of launch.\n- Significant increase in professional visibility.\n- Scalable digital presence for business growth.',
+  },
 ]
 
 for (const project of FREELANCE) {
-  filesystem[`C:\\Users\\DeVante\\Projects\\Freelance\\${project.name}`] = [
+  const base = `C:\\Users\\DeVante\\Projects\\Freelance\\${project.name}`
+  filesystem[base] = [
     {
       name: 'Visit Site.url',
       type: 'app',
@@ -442,16 +630,37 @@ for (const project of FREELANCE) {
       extraData: { initialUrl: project.url },
     },
     {
-      name: 'README.txt',
+      name: 'requirements.txt',
       type: 'file',
       icon: `${IMG}notepad++.webp`,
-      content: project.summary,
+      content: project.requirements,
     },
     {
-      name: 'preview.webp',
+      name: 'plan.txt',
+      type: 'file',
+      icon: `${IMG}notepad++.webp`,
+      content: project.plan,
+    },
+    {
+      name: 'outcome.txt',
+      type: 'file',
+      icon: `${IMG}notepad++.webp`,
+      content: project.outcome,
+    },
+    { name: 'Pictures', type: 'folder', icon: FOLDER },
+  ]
+  filesystem[`${base}\\Pictures`] = [
+    {
+      name: 'Desktop UI.webp',
       type: 'image',
       icon: '🖼️',
       url: project.thumb,
+    },
+    {
+      name: 'Mobile UI.webp',
+      type: 'image',
+      icon: '🖼️',
+      url: project.thumbMobile,
     },
   ]
 }
