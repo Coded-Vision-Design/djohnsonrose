@@ -1,71 +1,142 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { EXAMPLES, execute, parse, ParseError, type Row } from './sql'
 
-// 1:1 port of partials/apps/database.php — SSMS chrome with toolbar, object
-// explorer tree, contenteditable SQL editor, Results/Messages tabs, and the
-// win-blue status bar. Calls /api/database_query.php like v1 does.
+// SSMS-styled SQL viewer over the CV. The server-side endpoint
+// (api/cv_data.php) only ever returns whole tables — every WHERE / ORDER BY /
+// LIMIT is parsed and applied in the browser via ./sql.ts, so no user-typed
+// SQL ever reaches MySQL. This keeps the UX interactive while leaving zero
+// injection surface.
 
-type Table = 'projects' | 'experience' | 'certifications' | 'email_logs'
+type Table = 'experience' | 'projects' | 'certifications' | 'education' | 'skills' | 'achievements' | 'interests'
 
-type Row = Record<string, string | number | null>
+const TABLES: { id: Table; label: string }[] = [
+  { id: 'experience',     label: 'dbo.Experience' },
+  { id: 'projects',       label: 'dbo.Projects' },
+  { id: 'certifications', label: 'dbo.Certifications' },
+  { id: 'education',      label: 'dbo.Education' },
+  { id: 'skills',         label: 'dbo.Skills' },
+  { id: 'achievements',   label: 'dbo.Achievements' },
+  { id: 'interests',      label: 'dbo.Interests' },
+]
 
-interface QueryResult {
-  columns?: string[]
-  data?: Row[]
-  count?: number
-  error?: string
+const COLUMNS_BY_TABLE: Record<Table, string[]> = {
+  experience:     ['id', 'role', 'company', 'period', 'location', 'highlights'],
+  projects:       ['id', 'title', 'description', 'tags', 'url', 'location', 'country'],
+  certifications: ['id', 'name', 'issuer', 'year'],
+  education:      ['id', 'title', 'issuer'],
+  skills:         ['id', 'category', 'name'],
+  achievements:   ['id', 'title', 'result', 'category', 'date'],
+  interests:      ['id', 'name'],
 }
 
-const TABLE_LABELS: Record<Table, string> = {
-  projects: 'dbo.Projects',
-  experience: 'dbo.Experience',
-  certifications: 'dbo.Certifications',
-  email_logs: 'dbo.EmailLogs',
+interface Cache {
+  loadedAt: number
+  rows: Row[]
 }
 
 export default function Database() {
-  const [activeTable, setActiveTable] = useState<Table>('projects')
-  const [columns, setColumns] = useState<string[]>([])
-  const [tableData, setTableData] = useState<Row[]>([])
+  const [activeTable, setActiveTable] = useState<Table>('experience')
+  const [query, setQuery] = useState<string>('SELECT * FROM [Portfolio_DB].[dbo].[experience]')
+  const [executed, setExecuted] = useState<{ rows: Row[]; columns: string[]; elapsed: number } | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [resultsTab, setResultsTab] = useState<'results' | 'messages'>('results')
+  const [helpOpen, setHelpOpen] = useState(false)
+  const cacheRef = useRef<Partial<Record<Table, Cache>>>({})
 
-  const query = `SELECT * FROM [Portfolio_DB].[dbo].[${activeTable}]`
+  const loadTable = useCallback(async (table: Table): Promise<Row[]> => {
+    const hit = cacheRef.current[table]
+    if (hit && Date.now() - hit.loadedAt < 60_000) return hit.rows
+    const r = await fetch(`/api/cv_data.php?table=${table}`)
+    if (!r.ok) throw new Error(`Failed to fetch table '${table}' (${r.status})`)
+    const body = (await r.json()) as { data?: Row[]; error?: string }
+    if (body.error) throw new Error(body.error)
+    cacheRef.current[table] = { loadedAt: Date.now(), rows: body.data ?? [] }
+    return body.data ?? []
+  }, [])
 
-  const executeQuery = async () => {
+  const runQuery = useCallback(async () => {
     setLoading(true)
     setError(null)
+    const started = performance.now()
     try {
-      const res = await fetch('/api/database_query.php', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query }),
-      })
-      const body = (await res.json()) as QueryResult
-      if (body.error) {
-        setError(body.error)
-        setTableData([])
-        setColumns([])
-      } else {
-        setColumns(body.columns ?? [])
-        setTableData(body.data ?? [])
+      const ast = parse(query)
+      if (!TABLES.some((t) => t.id === ast.table)) {
+        throw new ParseError(
+          `Unknown table '${ast.table}'. Known tables: ${TABLES.map((t) => t.id).join(', ')}.`,
+        )
       }
+      const rows = await loadTable(ast.table as Table)
+      const out = execute(ast, rows)
+      const columns = ast.columns.includes('*')
+        ? COLUMNS_BY_TABLE[ast.table as Table]
+        : ast.columns
+      setExecuted({ rows: out, columns, elapsed: performance.now() - started })
+      setActiveTable(ast.table as Table)
     } catch (e) {
-      setError(`Network error: ${(e as Error).message}`)
-      setTableData([])
-      setColumns([])
+      setExecuted(null)
+      setError((e as Error).message)
     } finally {
       setLoading(false)
     }
+  }, [query, loadTable])
+
+  // Run the default query on mount + whenever the user picks a table from the
+  // tree (this also overwrites the editor so the visible SQL matches state).
+  useEffect(() => {
+    runQuery()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  const pickTable = (t: Table) => {
+    const next = `SELECT * FROM [Portfolio_DB].[dbo].[${t}]`
+    setQuery(next)
+    // Defer to next tick so query state has updated before runQuery reads it.
+    setTimeout(() => {
+      setActiveTable(t)
+      runQueryWith(next)
+    }, 0)
   }
 
-  useEffect(() => {
-    executeQuery()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeTable])
+  const runQueryWith = useCallback(
+    async (sql: string) => {
+      setLoading(true)
+      setError(null)
+      const started = performance.now()
+      try {
+        const ast = parse(sql)
+        if (!TABLES.some((t) => t.id === ast.table)) {
+          throw new ParseError(`Unknown table '${ast.table}'.`)
+        }
+        const rows = await loadTable(ast.table as Table)
+        const out = execute(ast, rows)
+        const columns = ast.columns.includes('*')
+          ? COLUMNS_BY_TABLE[ast.table as Table]
+          : ast.columns
+        setExecuted({ rows: out, columns, elapsed: performance.now() - started })
+      } catch (e) {
+        setExecuted(null)
+        setError((e as Error).message)
+      } finally {
+        setLoading(false)
+      }
+    },
+    [loadTable],
+  )
+
+  const rowCount = executed?.rows.length ?? 0
+  const elapsedLabel = useMemo(() => {
+    if (!executed) return '00:00:00'
+    const ms = executed.elapsed
+    if (ms < 1000) return `00:00:${(ms / 1000).toFixed(3).padStart(6, '0')}`
+    return `00:00:${Math.floor(ms / 1000).toString().padStart(2, '0')}`
+  }, [executed])
 
   return (
-    <div className="h-full flex flex-col bg-[#f0f0f0] dark:bg-[#1c1c1c] text-black dark:text-white select-none overflow-hidden" style={{ fontFamily: 'Segoe UI, sans-serif' }}>
+    <div
+      className="h-full flex flex-col bg-[#f0f0f0] dark:bg-[#1c1c1c] text-black dark:text-white select-none overflow-hidden"
+      style={{ fontFamily: 'Segoe UI, sans-serif' }}
+    >
       {/* SSMS toolbar */}
       <div className="h-9 bg-white dark:bg-[#2b2b2b] border-b border-gray-300 dark:border-gray-800 flex items-center px-2 space-x-1 shrink-0">
         <button type="button" className="p-1.5 rounded hover:bg-gray-100 dark:hover:bg-white/5 flex items-center space-x-1">
@@ -74,19 +145,51 @@ export default function Database() {
         <div className="w-px h-6 bg-gray-300 dark:bg-gray-700 mx-1" />
         <button
           type="button"
-          onClick={executeQuery}
+          onClick={runQuery}
           className="p-1.5 rounded hover:bg-gray-100 dark:hover:bg-white/5 flex items-center space-x-1 text-green-600"
         >
           <span className="text-[10px] font-bold">▶ Execute</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => setHelpOpen((v) => !v)}
+          className="p-1.5 rounded hover:bg-gray-100 dark:hover:bg-white/5 flex items-center space-x-1"
+        >
+          <span className="text-[10px]">💡 Examples</span>
         </button>
         <div className="w-px h-6 bg-gray-300 dark:bg-gray-700 mx-1" />
         <div className="flex items-center space-x-2 px-2">
           <div className="flex items-center space-x-1 bg-gray-100 dark:bg-black/20 border border-gray-300 dark:border-gray-700 rounded px-2 py-0.5">
             <img src="/assets/img/mssql.webp" alt="" className="w-3 h-3 object-contain" />
-            <span className="text-[10px]">DeVante-Workstation</span>
+            <span className="text-[10px]">DeVante-Workstation · Portfolio_DB</span>
           </div>
         </div>
+        <div className="ml-auto text-[10px] opacity-60 pr-2 hidden sm:block">
+          Read-only · client-side SELECT engine
+        </div>
       </div>
+
+      {/* Examples drawer */}
+      {helpOpen && (
+        <div className="bg-gray-50 dark:bg-[#252526] border-b border-gray-300 dark:border-gray-800 px-3 py-2 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-1.5 text-[10px] shrink-0">
+          {EXAMPLES.map((ex) => (
+            <button
+              key={ex.sql}
+              type="button"
+              onClick={() => {
+                setQuery(ex.sql)
+                setHelpOpen(false)
+                setTimeout(() => runQueryWith(ex.sql), 0)
+              }}
+              className="text-left p-2 rounded hover:bg-white dark:hover:bg-white/5 border border-gray-200 dark:border-gray-700"
+              title={ex.sql}
+            >
+              <div className="font-semibold">{ex.label}</div>
+              <div className="opacity-60 truncate font-mono">{ex.sql}</div>
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* Workspace */}
       <div className="flex-grow flex min-h-0">
@@ -115,17 +218,15 @@ export default function Database() {
                   <span>Portfolio_DB</span>
                 </div>
                 <div className="ml-4 space-y-1">
-                  {(Object.keys(TABLE_LABELS) as Table[]).map((t) => (
+                  {TABLES.map((t) => (
                     <button
-                      key={t}
+                      key={t.id}
                       type="button"
-                      onClick={() => setActiveTable(t)}
+                      onClick={() => pickTable(t.id)}
                       className="w-full text-left flex items-center space-x-1 cursor-pointer hover:text-win-blue"
                     >
                       <span className="text-blue-500">📊</span>
-                      <span className={activeTable === t ? 'font-bold underline' : ''}>
-                        {TABLE_LABELS[t]}
-                      </span>
+                      <span className={activeTable === t.id ? 'font-bold underline' : ''}>{t.label}</span>
                     </button>
                   ))}
                 </div>
@@ -146,18 +247,28 @@ export default function Database() {
 
         {/* Query + results */}
         <div className="flex-grow flex flex-col min-w-0 bg-white dark:bg-[#1e1e1e]">
-          {/* SQL editor (read-only display matching v1's syntax highlight) */}
+          {/* SQL editor */}
           <div className="h-1/3 border-b border-gray-300 dark:border-gray-800 flex flex-col shrink-0">
             <div className="h-6 bg-gray-100 dark:bg-[#2d2d2d] border-b border-gray-300 dark:border-gray-800 px-2 flex items-center text-[10px] space-x-2">
               <span className="font-bold border-b-2 border-win-blue pb-0.5">SQLQuery1.sql</span>
             </div>
-            <div className="flex-grow p-4 font-mono text-[13px] overflow-auto">
-              <span className="text-blue-600 dark:text-blue-400 font-bold">SELECT</span> *{' '}
-              <span className="text-blue-600 dark:text-blue-400 font-bold">FROM</span>{' '}
-              <span className="text-green-600 dark:text-green-400">
-                [Portfolio_DB].[dbo].[{activeTable}]
-              </span>
-            </div>
+            <textarea
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              spellCheck={false}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+                  e.preventDefault()
+                  runQuery()
+                }
+                if (e.key === 'F5') {
+                  e.preventDefault()
+                  runQuery()
+                }
+              }}
+              className="flex-grow w-full p-4 font-mono text-[13px] outline-none resize-none bg-white dark:bg-[#1e1e1e] text-black dark:text-white"
+              aria-label="SQL query editor"
+            />
           </div>
 
           {/* Results */}
@@ -197,20 +308,20 @@ export default function Database() {
                 <div className="p-4 font-mono text-xs">
                   {error ? (
                     <span className="text-red-500">{error}</span>
+                  ) : executed ? (
+                    <>({rowCount} row{rowCount === 1 ? '' : 's'} affected) · {executed.elapsed.toFixed(1)} ms</>
                   ) : (
-                    <>
-                      ({tableData.length} row{tableData.length === 1 ? '' : 's'} affected)
-                    </>
+                    'Awaiting query…'
                   )}
                 </div>
               )}
 
-              {!error && resultsTab === 'results' && (
+              {!error && resultsTab === 'results' && executed && (
                 <table className="w-full text-left text-[11px] border-collapse min-w-max">
                   <thead className="bg-gray-100 dark:bg-[#252526] sticky top-0 z-10">
                     <tr>
                       <th className="p-1 w-8 border border-gray-300 dark:border-gray-700 bg-gray-200 dark:bg-[#333]" />
-                      {columns.map((col) => (
+                      {executed.columns.map((col) => (
                         <th
                           key={col}
                           className="p-1 px-3 border border-gray-300 dark:border-gray-700 font-normal"
@@ -221,17 +332,18 @@ export default function Database() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200 dark:divide-gray-800">
-                    {tableData.map((row, idx) => (
+                    {executed.rows.map((row, idx) => (
                       <tr key={idx} className="hover:bg-win-blue/10">
                         <td className="p-1 text-center bg-gray-50 dark:bg-white/5 border border-gray-300 dark:border-gray-700 opacity-60">
                           {idx + 1}
                         </td>
-                        {columns.map((col) => (
+                        {executed.columns.map((col) => (
                           <td
                             key={col}
-                            className={`p-1 px-3 border border-gray-300 dark:border-gray-700 truncate max-w-[250px] ${
+                            className={`p-1 px-3 border border-gray-300 dark:border-gray-700 truncate max-w-[300px] ${
                               row[col] === null ? 'italic text-gray-400' : ''
                             }`}
+                            title={row[col] != null ? String(row[col]) : 'NULL'}
                           >
                             {row[col] === null ? 'NULL' : String(row[col])}
                           </td>
@@ -268,8 +380,8 @@ export default function Database() {
           <span className="pl-4">DEVANTE-PC (16.0 RTM)</span>
           <span className="pl-4">sa (54)</span>
           <span className="pl-4">Portfolio_DB</span>
-          <span className="pl-4">{tableData.length} rows</span>
-          <span className="pl-4">00:00:00</span>
+          <span className="pl-4">{rowCount} rows</span>
+          <span className="pl-4">{elapsedLabel}</span>
         </div>
       </div>
     </div>

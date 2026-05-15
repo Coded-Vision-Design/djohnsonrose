@@ -342,6 +342,7 @@
         'explorer',
         'photos',
         'edge',
+        'apps/database-sql',
         'apps/office',
         'apps/dev',
         'apps/media',

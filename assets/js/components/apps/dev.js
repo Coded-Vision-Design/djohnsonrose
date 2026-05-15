@@ -57,66 +57,97 @@ document.addEventListener('alpine:init', () => {
         }
     }));
 
-    // Database Explorer Logic
+    // SSMS-styled SQL viewer over the CV (1:1 with v2/src/apps/database/).
+    // The server endpoint (/api/cv_data.php) only ever returns whole tables;
+    // every WHERE / ORDER BY / LIMIT is parsed and applied client-side by
+    // window.PortfolioSQL (assets/js/components/apps/database-sql.js).
     Alpine.data('databaseApp', () => ({
-        activeTable: 'projects',
-        data: null,
-        loading: true,
-        results: null,
+        TABLES: [
+            { id: 'experience',     label: 'dbo.Experience' },
+            { id: 'projects',       label: 'dbo.Projects' },
+            { id: 'certifications', label: 'dbo.Certifications' },
+            { id: 'education',      label: 'dbo.Education' },
+            { id: 'skills',         label: 'dbo.Skills' },
+            { id: 'achievements',   label: 'dbo.Achievements' },
+            { id: 'interests',      label: 'dbo.Interests' },
+        ],
+        COLUMNS_BY_TABLE: {
+            experience:     ['id', 'role', 'company', 'period', 'location', 'highlights'],
+            projects:       ['id', 'title', 'description', 'tags', 'url', 'location', 'country'],
+            certifications: ['id', 'name', 'issuer', 'year'],
+            education:      ['id', 'title', 'issuer'],
+            skills:         ['id', 'category', 'name'],
+            achievements:   ['id', 'title', 'result', 'category', 'date'],
+            interests:      ['id', 'name'],
+        },
+        activeTable: 'experience',
+        query: 'SELECT * FROM [Portfolio_DB].[dbo].[experience]',
+        results: null,            // { rows, columns, elapsed }
         error: null,
-        
+        loading: false,
+        helpOpen: false,
+        resultsTab: 'results',
+        EXAMPLES: window.PortfolioSQL ? window.PortfolioSQL.EXAMPLES : [],
+        _cache: {},
+
         async init() {
-            try {
-                const response = await fetch(window.portfolioConfig.basePath + 'data/portfolio.json');
-                this.data = await response.json();
-                this.loading = false;
-            } catch (e) {
-                console.error('Failed to load database:', e);
-            }
+            this.runQuery();
         },
 
-        async executeQuery() {
-            const editor = document.querySelector('[contenteditable="true"]');
-            if (!editor) return;
-            
-            this.loading = true;
-            this.error = null;
-            this.results = null;
+        async _loadTable(table) {
+            const hit = this._cache[table];
+            if (hit && Date.now() - hit.loadedAt < 60000) return hit.rows;
+            const r = await fetch(window.portfolioConfig.basePath + 'api/cv_data.php?table=' + encodeURIComponent(table));
+            if (!r.ok) throw new Error('Failed to fetch table \'' + table + '\' (' + r.status + ')');
+            const body = await r.json();
+            if (body.error) throw new Error(body.error);
+            this._cache[table] = { loadedAt: Date.now(), rows: body.data || [] };
+            return body.data || [];
+        },
 
-            const query = editor.innerText;
-
+        async runQuery(sql) {
+            const text = (sql == null ? this.query : sql);
+            this.loading = true; this.error = null;
+            const started = performance.now();
             try {
-                const response = await fetch(window.portfolioConfig.basePath + 'api/database_query.php', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ query })
-                });
-                
-                const result = await response.json();
-                
-                if (result.error) {
-                    this.error = result.error;
-                } else {
-                    this.results = result;
+                const ast = window.PortfolioSQL.parse(text);
+                if (!this.TABLES.some((t) => t.id === ast.table)) {
+                    throw new Error("Unknown table '" + ast.table + "'.");
                 }
+                const rows = await this._loadTable(ast.table);
+                const out = window.PortfolioSQL.execute(ast, rows);
+                const columns = ast.columns.indexOf('*') !== -1
+                    ? this.COLUMNS_BY_TABLE[ast.table]
+                    : ast.columns;
+                this.results = { rows: out, columns, elapsed: performance.now() - started };
+                this.activeTable = ast.table;
             } catch (e) {
-                this.error = 'Failed to execute query';
+                this.results = null;
+                this.error = e.message;
             } finally {
                 this.loading = false;
             }
         },
 
-        get tableData() {
-            if (this.results) return this.results.data;
-            if (!this.data || !this.activeTable) return [];
-            return this.data[this.activeTable] || [];
+        pickTable(t) {
+            this.query = 'SELECT * FROM [Portfolio_DB].[dbo].[' + t + ']';
+            this.activeTable = t;
+            this.runQuery();
         },
 
-        get columns() {
-            if (this.results) return this.results.columns;
-            if (!this.data || !this.data.schema) return [];
-            return this.data.schema[this.activeTable] || [];
-        }
+        runExample(sql) {
+            this.query = sql;
+            this.helpOpen = false;
+            this.runQuery(sql);
+        },
+
+        get rowCount() { return this.results ? this.results.rows.length : 0; },
+        get elapsedLabel() {
+            if (!this.results) return '00:00:00';
+            const ms = this.results.elapsed;
+            if (ms < 1000) return '00:00:' + (ms / 1000).toFixed(3).padStart(6, '0');
+            return '00:00:' + String(Math.floor(ms / 1000)).padStart(2, '0');
+        },
     }));
 
     // Docker Desktop App – realistic containers (Node.js, Nextcloud, Postgres), start/stop, CLI output
