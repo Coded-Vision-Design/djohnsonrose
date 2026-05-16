@@ -44,7 +44,7 @@
         "data/cv.pdf",
         "data/weather_cache.json"
     ],
-    "build_command": "npm run build",
+    "build_command": "npm run build:css",
     "v2_build_command": "cd v2 && npm install && npm run build",
     "post_deploy_commands": [],
     "node_version": "22",
