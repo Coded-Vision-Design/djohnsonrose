@@ -18,9 +18,11 @@ permissions:
   contents: write
   pull-requests: write
   issues: write
+  id-token: write   # required by anthropics/claude-code-action OIDC handshake
 
 jobs:
   claude:
     uses: Coded-Vision-Design/.github/.github/workflows/reusable-claude-code.yml@main
     secrets:
       ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      DISCORD_ISSUE_TRIAGE_WEBHOOK: ${{ secrets.DISCORD_ISSUE_TRIAGE_WEBHOOK }}
