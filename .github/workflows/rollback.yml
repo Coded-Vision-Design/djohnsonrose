@@ -34,7 +34,7 @@ jobs:
     runs-on: ubuntu-latest
     if: github.event.inputs.mode == 'server-snapshot'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Read config
         id: config
@@ -116,7 +116,7 @@ jobs:
     if: github.event.inputs.mode == 'git-commit' && github.event.inputs.commit_sha != ''
     steps:
       - name: Trigger deploy workflow
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         with:
           script: |
             await github.rest.actions.createWorkflowDispatch({
