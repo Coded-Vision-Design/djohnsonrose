@@ -37,7 +37,7 @@ export default function Notepad() {
             File
           </button>
           {showFileMenu && (
-            <div className="absolute top-full left-0 w-48 bg-white dark:bg-[#2b2b2b] border border-black/10 dark:border-white/10 shadow-xl py-1 z-50 rounded-sm">
+            <div className="absolute top-full left-0 w-48 bg-white dark:bg-[#2b2b2b] border border-black/10 dark:border-white/10 shadow-xl py-1 z-50 rounded-xs">
               <button
                 type="button"
                 onMouseDown={(e) => e.preventDefault()}
@@ -82,7 +82,7 @@ export default function Notepad() {
         {['Edit', 'Format', 'View'].map((m) => (
           <span
             key={m}
-            className="px-3 py-1 rounded opacity-50 cursor-default"
+            className="px-3 py-1 rounded-sm opacity-50 cursor-default"
             title="Phase 2 stub"
           >
             {m}
@@ -97,7 +97,7 @@ export default function Notepad() {
         onChange={(e) => setContent(e.target.value)}
         spellCheck={false}
         placeholder="Type to start..."
-        className="flex-grow p-4 bg-transparent outline-none resize-none font-mono text-sm leading-relaxed"
+        className="grow p-4 bg-transparent outline-hidden resize-none font-mono text-sm leading-relaxed"
       />
 
       {/* Status bar */}

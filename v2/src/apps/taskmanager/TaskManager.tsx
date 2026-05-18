@@ -55,7 +55,7 @@ export default function TaskManager() {
       {/* Header */}
       <div className="h-10 border-b border-black/10 dark:border-white/10 flex items-center px-4 shrink-0">
         <div className="flex items-center space-x-3">
-          <div className="w-5 h-5 bg-win-blue rounded flex items-center justify-center text-white text-xs">
+          <div className="w-5 h-5 bg-win-blue rounded-sm flex items-center justify-center text-white text-xs">
             📊
           </div>
           <h1 className="text-sm font-semibold">Task Manager</h1>
@@ -70,7 +70,7 @@ export default function TaskManager() {
           </div>
           <div className="flex items-end space-x-2">
             <span className="text-2xl font-light">{stats.cpu}%</span>
-            <div className="flex-grow h-1.5 bg-black/5 dark:bg-white/5 rounded-full mb-2 overflow-hidden">
+            <div className="grow h-1.5 bg-black/5 dark:bg-white/5 rounded-full mb-2 overflow-hidden">
               <div
                 className="h-full bg-win-blue transition-all duration-700"
                 style={{ width: `${stats.cpu}%` }}
@@ -84,7 +84,7 @@ export default function TaskManager() {
           </div>
           <div className="flex items-end space-x-2">
             <span className="text-2xl font-light">{ramGb} GB</span>
-            <div className="flex-grow h-1.5 bg-black/5 dark:bg-white/5 rounded-full mb-2 overflow-hidden">
+            <div className="grow h-1.5 bg-black/5 dark:bg-white/5 rounded-full mb-2 overflow-hidden">
               <div
                 className="h-full bg-win-blue transition-all duration-700"
                 style={{ width: `${(stats.ram / 16_384) * 100}%` }}
@@ -98,7 +98,7 @@ export default function TaskManager() {
           </div>
           <div className="flex items-end space-x-2">
             <span className="text-2xl font-light">{stats.network} Mbps</span>
-            <div className="flex-grow h-1.5 bg-black/5 dark:bg-white/5 rounded-full mb-2 overflow-hidden">
+            <div className="grow h-1.5 bg-black/5 dark:bg-white/5 rounded-full mb-2 overflow-hidden">
               <div
                 className="h-full bg-win-blue transition-all duration-500"
                 style={{ width: `${Math.min(100, (stats.network / 10) * 100)}%` }}
@@ -124,7 +124,7 @@ export default function TaskManager() {
       </div>
 
       {/* Processes */}
-      <div className="flex-grow overflow-y-auto">
+      <div className="grow overflow-y-auto">
         {windows.length === 0 ? (
           <div className="px-4 py-6 text-xs opacity-50">
             No user processes. Open an app from the start menu.
@@ -144,7 +144,7 @@ export default function TaskManager() {
                   <button
                     type="button"
                     onClick={() => closeWindow(w.id)}
-                    className="ml-2 hidden group-hover:inline-block text-[10px] text-red-500 hover:text-white hover:bg-red-500 font-bold px-1.5 py-0.5 border border-red-500/20 rounded"
+                    className="ml-2 hidden group-hover:inline-block text-[10px] text-red-500 hover:text-white hover:bg-red-500 font-bold px-1.5 py-0.5 border border-red-500/20 rounded-sm"
                   >
                     End task
                   </button>

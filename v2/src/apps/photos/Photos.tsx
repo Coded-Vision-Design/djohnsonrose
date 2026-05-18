@@ -92,7 +92,7 @@ export default function Photos() {
   }, [isFocused, items.length])
 
   return (
-    <div className="h-full flex flex-col bg-[#f3f3f3] dark:bg-[#1c1c1c] text-black dark:text-white select-none">
+    <div className="h-full flex flex-col bg-win-bg dark:bg-[#1c1c1c] text-black dark:text-white select-none">
       {/* Toolbar */}
       <div className="h-12 border-b border-gray-200 dark:border-gray-800 flex items-center px-4 justify-between bg-white dark:bg-[#2b2b2b] shrink-0">
         <span className="text-sm font-semibold truncate max-w-[60%]">
@@ -102,7 +102,7 @@ export default function Photos() {
           <button
             type="button"
             onClick={() => setZoom((z) => Math.max(z - 0.2, 0.5))}
-            className="p-2 hover:bg-gray-100 dark:hover:bg-white/5 rounded"
+            className="p-2 hover:bg-gray-100 dark:hover:bg-white/5 rounded-sm"
             aria-label="Zoom out"
           >
             −
@@ -111,7 +111,7 @@ export default function Photos() {
           <button
             type="button"
             onClick={() => setZoom((z) => Math.min(z + 0.2, 3))}
-            className="p-2 hover:bg-gray-100 dark:hover:bg-white/5 rounded"
+            className="p-2 hover:bg-gray-100 dark:hover:bg-white/5 rounded-sm"
             aria-label="Zoom in"
           >
             +
@@ -120,7 +120,7 @@ export default function Photos() {
           <button
             type="button"
             onClick={() => setRotation((r) => (r + 90) % 360)}
-            className="p-2 hover:bg-gray-100 dark:hover:bg-white/5 rounded"
+            className="p-2 hover:bg-gray-100 dark:hover:bg-white/5 rounded-sm"
             aria-label="Rotate"
           >
             ↻
@@ -129,7 +129,7 @@ export default function Photos() {
       </div>
 
       {/* Viewer */}
-      <div className="flex-grow relative overflow-hidden bg-[#eeeeee] dark:bg-[#0a0a0a] flex items-center justify-center p-2 sm:p-4 md:p-8">
+      <div className="grow relative overflow-hidden bg-[#eeeeee] dark:bg-[#0a0a0a] flex items-center justify-center p-2 sm:p-4 md:p-8">
         {!current ? (
           <div className="opacity-50 text-sm">Loading gallery…</div>
         ) : (
@@ -162,7 +162,7 @@ export default function Photos() {
               onClick={() => setZoom((z) => (z === 1 ? 2 : 1))}
             />
             {current.description && (
-              <div className="absolute bottom-4 left-4 right-4 mx-auto max-w-2xl text-xs bg-black/50 text-white p-3 rounded pointer-events-none">
+              <div className="absolute bottom-4 left-4 right-4 mx-auto max-w-2xl text-xs bg-black/50 text-white p-3 rounded-sm pointer-events-none">
                 <div className="font-semibold mb-1">{current.title}</div>
                 <div className="opacity-80 line-clamp-2">{current.description}</div>
               </div>
@@ -189,7 +189,7 @@ export default function Photos() {
             }`}
             title={img.title}
           >
-            <img src={`/${img.thumbnail}`} alt="" className="w-full h-full object-cover rounded-sm" />
+            <img src={`/${img.thumbnail}`} alt="" className="w-full h-full object-cover rounded-xs" />
           </button>
         ))}
       </div>

@@ -61,7 +61,7 @@ export default function FileZilla() {
         <button
           type="button"
           onClick={() => setConnected((c) => !c)}
-          className="px-3 py-0.5 bg-[#003366] text-white rounded ml-2"
+          className="px-3 py-0.5 bg-[#003366] text-white rounded-sm ml-2"
         >
           {connected ? 'Disconnect' : 'Quickconnect →'}
         </button>
@@ -84,7 +84,7 @@ export default function FileZilla() {
       </div>
 
       {/* Twin panes */}
-      <div className="flex-grow flex min-h-0">
+      <div className="grow flex min-h-0">
         <Pane label={`Local: /Applications/XAMPP/htdocs/djohnsonrose/`} files={LOCAL} />
         <Pane
           label={connected ? `Remote: /home/${user}/` : 'Remote: not connected'}
@@ -111,7 +111,7 @@ function Pane({ label, files }: { label: string; files: RemoteFile[] }) {
         <div className="col-span-2 text-right">Size</div>
         <div className="col-span-3">Last modified</div>
       </div>
-      <div className="flex-grow overflow-y-auto bg-white">
+      <div className="grow overflow-y-auto bg-white">
         {files.length === 0 ? (
           <div className="p-3 text-[11px] opacity-40">—</div>
         ) : (

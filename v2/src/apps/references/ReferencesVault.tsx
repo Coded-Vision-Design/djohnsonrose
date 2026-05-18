@@ -132,12 +132,12 @@ export default function ReferencesVault() {
           <button
             type="button"
             onClick={lock}
-            className="bg-white/10 hover:bg-white/20 px-2 py-0.5 rounded text-[10px]"
+            className="bg-white/10 hover:bg-white/20 px-2 py-0.5 rounded-sm text-[10px]"
           >
             Lock
           </button>
         </header>
-        <div className="flex-grow flex min-h-0">
+        <div className="grow flex min-h-0">
           <aside className="w-56 border-r border-gray-200 dark:border-gray-800 overflow-y-auto shrink-0">
             {refs.map((r, i) => (
               <button
@@ -155,7 +155,7 @@ export default function ReferencesVault() {
               </button>
             ))}
           </aside>
-          <article className="flex-grow overflow-y-auto p-6">
+          <article className="grow overflow-y-auto p-6">
             <h2 className="text-lg font-semibold mb-1">{current.from}</h2>
             <p className="text-[12px] opacity-70 mb-4">
               {[current.role, current.company].filter(Boolean).join(' · ')}
@@ -168,7 +168,7 @@ export default function ReferencesVault() {
   }
 
   return (
-    <div className="h-full flex flex-col items-center justify-center bg-gradient-to-br from-[#0a3d6b] via-[#1e4d8f] to-[#2b579a] text-white p-6 text-center">
+    <div className="h-full flex flex-col items-center justify-center bg-linear-to-br from-[#0a3d6b] via-[#1e4d8f] to-[#2b579a] text-white p-6 text-center">
       <div className="w-full max-w-sm bg-white/10 backdrop-blur-md rounded-2xl p-8 ring-1 ring-white/15 shadow-2xl">
         <div className="w-14 h-14 rounded-full bg-white/10 mx-auto flex items-center justify-center text-2xl mb-4">
           🔒
@@ -180,7 +180,7 @@ export default function ReferencesVault() {
           ever leaves this tab.
         </p>
         {loadError ? (
-          <div className="text-[11px] text-red-200 bg-red-900/30 rounded p-3">
+          <div className="text-[11px] text-red-200 bg-red-900/30 rounded-sm p-3">
             Vault file unavailable: {loadError}
           </div>
         ) : (
@@ -199,7 +199,7 @@ export default function ReferencesVault() {
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Password"
               aria-label="Password"
-              className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-sm placeholder-white/40 focus:outline-none focus:border-white/60"
+              className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-sm placeholder-white/40 focus:outline-hidden focus:border-white/60"
             />
             <button
               type="submit"

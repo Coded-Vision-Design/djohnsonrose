@@ -144,7 +144,7 @@ export default function Settings() {
   return (
     <div
       className={`h-full flex text-black dark:text-white ${
-        isMobile ? 'flex-col bg-white dark:bg-[#1c1c1c]' : 'bg-[#f3f3f3] dark:bg-[#202020]'
+        isMobile ? 'flex-col bg-white dark:bg-[#1c1c1c]' : 'bg-win-bg dark:bg-win-dark'
       }`}
     >
       {/* Sidebar */}
@@ -178,7 +178,7 @@ export default function Settings() {
                 onClick={() => setTab(item.id)}
                 className={`px-4 py-2 rounded-full whitespace-nowrap text-[10px] font-medium flex items-center transition-all border ${
                   active
-                    ? 'bg-white dark:bg-white/10 shadow-sm border-win-blue text-win-blue'
+                    ? 'bg-white dark:bg-white/10 shadow-xs border-win-blue text-win-blue'
                     : 'border-transparent'
                 }`}
               >
@@ -193,7 +193,7 @@ export default function Settings() {
               type="button"
               onClick={() => setTab(item.id)}
               className={`w-full text-left px-3 py-2 rounded-md text-xs font-medium flex items-center transition-all border border-transparent ${
-                active ? 'bg-white dark:bg-white/10 shadow-sm' : ''
+                active ? 'bg-white dark:bg-white/10 shadow-xs' : ''
               }`}
             >
               <span className="mr-3 text-lg">{item.icon}</span>
@@ -204,7 +204,7 @@ export default function Settings() {
       </div>
 
       {/* Content */}
-      <div className={`flex-grow overflow-y-auto ${isMobile ? 'p-4' : 'p-10'}`}>
+      <div className={`grow overflow-y-auto ${isMobile ? 'p-4' : 'p-10'}`}>
         <h1
           className={`font-semibold mb-8 ${isMobile ? 'text-xl mb-4' : 'text-3xl'}`}
         >
@@ -281,7 +281,7 @@ export default function Settings() {
                 />
                 <div className="absolute bottom-0 inset-x-0 h-2 bg-white/20 backdrop-blur-md" />
               </div>
-              <div className="flex-grow">
+              <div className="grow">
                 <h2 className="text-xl font-semibold mb-1">Background</h2>
                 <p className="text-xs text-gray-500 mb-4">
                   Select a picture to preview, then click Save to apply it.
@@ -296,7 +296,7 @@ export default function Settings() {
                       }
                     }}
                     disabled={!preview || preview === settings.wallpaper}
-                    className="bg-win-blue text-white px-6 py-1.5 rounded text-xs font-medium hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                    className="bg-win-blue text-white px-6 py-1.5 rounded-sm text-xs font-medium hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                   >
                     Save Changes
                   </button>
@@ -338,7 +338,7 @@ export default function Settings() {
 
         {tab === 'experience' && (
           <div className="space-y-6">
-            <div className="relative space-y-4 before:absolute before:inset-0 before:ml-5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-win-blue/20 before:to-transparent">
+            <div className="relative space-y-4 before:absolute before:inset-0 before:ml-5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-linear-to-b before:from-transparent before:via-win-blue/20 before:to-transparent">
               {(data?.experience ?? []).map((job, idx) => (
                 <div
                   key={job.id}
@@ -347,7 +347,7 @@ export default function Settings() {
                   } group`}
                 >
                   <div
-                    className={`flex items-center justify-center w-12 h-12 rounded-full border border-win-blue bg-white dark:bg-[#202020] text-win-blue shadow shrink-0 md:order-1 overflow-hidden ${
+                    className={`flex items-center justify-center w-12 h-12 rounded-full border border-win-blue bg-white dark:bg-win-dark text-win-blue shadow shrink-0 md:order-1 overflow-hidden ${
                       idx % 2 === 1
                         ? 'md:translate-x-1/2'
                         : 'md:-translate-x-1/2'
@@ -359,10 +359,10 @@ export default function Settings() {
                       <span className="text-sm font-bold">{String(job.id)}</span>
                     )}
                   </div>
-                  <div className="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] glass p-6 rounded-lg border border-gray-200 dark:border-white/10 shadow-sm transition-all hover:border-win-blue/50">
+                  <div className="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] glass p-6 rounded-lg border border-gray-200 dark:border-white/10 shadow-xs transition-all hover:border-win-blue/50">
                     <div className="flex items-center justify-between space-x-2 mb-1">
                       <div className="font-bold dark:text-white text-base">{job.role}</div>
-                      <time className="font-mono text-[10px] text-win-blue font-bold whitespace-nowrap bg-win-blue/10 px-2 py-0.5 rounded">
+                      <time className="font-mono text-[10px] text-win-blue font-bold whitespace-nowrap bg-win-blue/10 px-2 py-0.5 rounded-sm">
                         {job.period}
                       </time>
                     </div>
@@ -491,7 +491,7 @@ export default function Settings() {
                   {(data?.interests ?? []).map((interest) => (
                     <span
                       key={interest}
-                      className="px-2 py-1 bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded text-[10px] font-medium"
+                      className="px-2 py-1 bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-sm text-[10px] font-medium"
                     >
                       {interest}
                     </span>
@@ -529,8 +529,8 @@ function SkillCard({
 }) {
   const chip =
     tone === 'blue'
-      ? 'px-2 py-1 bg-win-blue/10 border border-win-blue/20 rounded text-[10px] font-medium'
-      : 'px-2 py-1 bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded text-[10px] font-medium'
+      ? 'px-2 py-1 bg-win-blue/10 border border-win-blue/20 rounded-sm text-[10px] font-medium'
+      : 'px-2 py-1 bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-sm text-[10px] font-medium'
   return (
     <div className="p-6 glass rounded-lg border border-gray-200 dark:border-white/10">
       <div className="font-bold text-xs uppercase text-gray-400 mb-4 tracking-wider">{label}</div>

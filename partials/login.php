@@ -18,7 +18,7 @@
         
         <div class="w-64 space-y-4">
             <button @click="login()" 
-                    class="w-full py-2 bg-white/20 hover:bg-white/30 backdrop-blur-md border border-white/30 rounded text-lg font-medium transition-all win-shadow">
+                    class="w-full py-2 bg-white/20 hover:bg-white/30 backdrop-blur-md border border-white/30 rounded-sm text-lg font-medium transition-all win-shadow">
                 Sign In
             </button>
             <p class="text-center text-sm text-white/70">Welcome back, DeVante.</p>

@@ -63,7 +63,7 @@ export function LockScreen() {
             <button
               type="button"
               onClick={handleSignIn}
-              className="w-full py-2 bg-white/20 hover:bg-white/30 backdrop-blur-md border border-white/30 rounded text-lg font-medium transition-all win-shadow"
+              className="w-full py-2 bg-white/20 hover:bg-white/30 backdrop-blur-md border border-white/30 rounded-sm text-lg font-medium transition-all win-shadow"
             >
               Sign In
             </button>

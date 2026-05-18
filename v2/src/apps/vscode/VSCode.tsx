@@ -132,7 +132,7 @@ export default function VSCode() {
         <div className="h-9 px-4 flex items-center justify-between text-[11px] uppercase tracking-wider font-bold opacity-70">
           <span>Explorer</span>
         </div>
-        <div className="flex-grow overflow-y-auto">
+        <div className="grow overflow-y-auto">
           <div className="px-1 py-1">
             <button
               type="button"
@@ -198,7 +198,7 @@ export default function VSCode() {
       </div>
 
       {/* Main editor */}
-      <div className="flex-grow flex flex-col min-w-0 bg-[#1e1e1e]">
+      <div className="grow flex flex-col min-w-0 bg-[#1e1e1e]">
         {/* Tabs */}
         <div className="h-9 bg-[#252526] flex items-center overflow-x-auto shrink-0">
           <button
@@ -228,9 +228,9 @@ export default function VSCode() {
           Projects <span className="mx-1">&gt;</span> <span>{activeFile}</span>
         </div>
 
-        <div className="flex-grow flex flex-col min-h-0 overflow-hidden">
+        <div className="grow flex flex-col min-h-0 overflow-hidden">
           {activeTab === 'editor' && (
-            <div className="flex-grow overflow-auto bg-[#1e1e1e] p-4">
+            <div className="grow overflow-auto bg-[#1e1e1e] p-4">
               <div className="flex h-full">
                 {/* Line numbers */}
                 <div className="w-10 shrink-0 text-right pr-4 text-[#858585] font-mono text-xs leading-6 select-none border-r border-[#333333]">
@@ -239,7 +239,7 @@ export default function VSCode() {
                   ))}
                 </div>
                 {/* Project hero */}
-                <div className="flex-grow font-mono text-xs leading-6 h-full px-4">
+                <div className="grow font-mono text-xs leading-6 h-full px-4">
                   {active && (
                     <div className="flex flex-col h-full animate-window-open">
                       <div className="flex items-center justify-between mb-6">
@@ -270,13 +270,13 @@ export default function VSCode() {
                         </div>
                       </div>
 
-                      <div className="flex-grow relative group overflow-hidden rounded-xl border border-white/10 bg-black/40 flex items-center justify-center min-h-0">
+                      <div className="grow relative group overflow-hidden rounded-xl border border-white/10 bg-black/40 flex items-center justify-center min-h-0">
                         <img
                           src={`/${active.thumbnail}`}
                           alt={active.title}
                           className="max-w-full max-h-full w-auto h-auto object-contain transition-transform duration-700 group-hover:scale-105"
                         />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex flex-col justify-end p-8 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div className="absolute inset-0 bg-linear-to-t from-black/80 via-transparent to-transparent flex flex-col justify-end p-8 opacity-0 group-hover:opacity-100 transition-opacity">
                           <div className="flex flex-wrap gap-2">
                             {active.tags.map((t) => (
                               <span
@@ -297,7 +297,7 @@ export default function VSCode() {
           )}
 
           {activeTab === 'terminal' && (
-            <div className="flex-grow bg-[#1e1e1e] border-t border-[#333333] flex flex-col">
+            <div className="grow bg-[#1e1e1e] border-t border-[#333333] flex flex-col">
               <div className="h-9 flex items-center px-4 justify-between border-b border-[#333333] shrink-0">
                 <div className="flex space-x-4 text-[11px] uppercase font-bold tracking-wider opacity-70">
                   <span className="text-white border-b border-white">Terminal</span>
@@ -305,7 +305,7 @@ export default function VSCode() {
                   <span>Debug Console</span>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <div className="text-[10px] bg-white/10 px-2 py-0.5 rounded">powershell</div>
+                  <div className="text-[10px] bg-white/10 px-2 py-0.5 rounded-sm">powershell</div>
                   <button
                     type="button"
                     onClick={() => setTerminalOutput([])}
@@ -316,7 +316,7 @@ export default function VSCode() {
                   </button>
                 </div>
               </div>
-              <div className="flex-grow p-4 font-mono text-[12px] overflow-y-auto">
+              <div className="grow p-4 font-mono text-[12px] overflow-y-auto">
                 {terminalOutput.map((line, i) => (
                   <div key={i} className="mb-1">
                     <span

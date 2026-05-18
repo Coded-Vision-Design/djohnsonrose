@@ -204,14 +204,14 @@ export default function Photoshop() {
           <button
             type="button"
             onClick={exportPng}
-            className="px-3 py-1 rounded bg-[#0078d4] hover:bg-[#106ebe] text-white"
+            className="px-3 py-1 rounded-sm bg-win-blue hover:bg-[#106ebe] text-white"
           >
             Export PNG
           </button>
         </div>
       </div>
 
-      <div className="flex-grow flex min-h-0">
+      <div className="grow flex min-h-0">
         {/* Tool rail */}
         <div className="w-12 bg-[#3a3a3a] border-r border-black/40 shrink-0 py-2 flex flex-col items-center space-y-1">
           {TOOLS.map((t) => (
@@ -220,26 +220,26 @@ export default function Photoshop() {
               type="button"
               onClick={() => setTool(t.id)}
               className={`w-10 h-10 rounded flex items-center justify-center text-lg ${
-                tool === t.id ? 'bg-[#0078d4] text-white' : 'hover:bg-white/10'
+                tool === t.id ? 'bg-win-blue text-white' : 'hover:bg-white/10'
               }`}
               title={t.label}
             >
               {t.icon}
             </button>
           ))}
-          <div className="flex-grow" />
+          <div className="grow" />
           {/* Foreground/background colour wells */}
           <div className="relative w-8 h-8 mb-3">
             <div
-              className="absolute top-0 left-0 w-5 h-5 rounded-sm border-2 border-white shadow"
+              className="absolute top-0 left-0 w-5 h-5 rounded-xs border-2 border-white shadow-sm"
               style={{ backgroundColor: color }}
             />
-            <div className="absolute bottom-0 right-0 w-5 h-5 rounded-sm border-2 border-white shadow bg-white" />
+            <div className="absolute bottom-0 right-0 w-5 h-5 rounded-xs border-2 border-white shadow-sm bg-white" />
           </div>
         </div>
 
         {/* Canvas viewport */}
-        <div className="flex-grow bg-[#1f1f1f] flex items-center justify-center overflow-auto">
+        <div className="grow bg-[#1f1f1f] flex items-center justify-center overflow-auto">
           <div
             className="bg-white shadow-2xl"
             style={{
@@ -274,8 +274,8 @@ export default function Photoshop() {
                   type="button"
                   onClick={() => setColor(c)}
                   style={{ backgroundColor: c }}
-                  className={`aspect-square rounded-sm border ${
-                    color === c ? 'border-white ring-1 ring-[#0078d4]' : 'border-black/40'
+                  className={`aspect-square rounded-xs border ${
+                    color === c ? 'border-white ring-1 ring-win-blue' : 'border-black/40'
                   }`}
                   title={c}
                 />
@@ -286,20 +286,20 @@ export default function Photoshop() {
                 type="color"
                 value={color}
                 onChange={(e) => setColor(e.target.value)}
-                className="w-6 h-6 rounded"
+                className="w-6 h-6 rounded-sm"
               />
               <span className="text-[10px] font-mono opacity-70">{color.toUpperCase()}</span>
             </div>
           </div>
 
           {/* Layers */}
-          <div className="flex-grow overflow-y-auto">
+          <div className="grow overflow-y-auto">
             <div className="px-3 py-2 text-[10px] uppercase tracking-wider opacity-70 border-b border-black/40 flex items-center justify-between">
               <span>Layers</span>
               <button
                 type="button"
                 onClick={addLayer}
-                className="text-[11px] px-2 rounded hover:bg-white/10"
+                className="text-[11px] px-2 rounded-sm hover:bg-white/10"
                 title="New layer"
               >
                 +
@@ -313,7 +313,7 @@ export default function Photoshop() {
                   key={l.id}
                   onClick={() => setActiveLayer(l.id)}
                   className={`px-3 py-2 border-b border-black/30 cursor-default ${
-                    activeLayer === l.id ? 'bg-[#0078d4]/30' : 'hover:bg-white/5'
+                    activeLayer === l.id ? 'bg-win-blue/30' : 'hover:bg-white/5'
                   }`}
                 >
                   <div className="flex items-center space-x-2">
@@ -328,8 +328,8 @@ export default function Photoshop() {
                     >
                       {l.visible ? '👁' : '–'}
                     </button>
-                    <div className="w-7 h-7 bg-gradient-to-br from-[#0078d4] to-[#1e1e1e] rounded-sm border border-black/40" />
-                    <span className="text-[11px] flex-grow truncate">{l.name}</span>
+                    <div className="w-7 h-7 bg-linear-to-br from-win-blue to-[#1e1e1e] rounded-xs border border-black/40" />
+                    <span className="text-[11px] grow truncate">{l.name}</span>
                   </div>
                   <div className="flex items-center space-x-2 mt-1 pl-7">
                     <span className="text-[9px] opacity-60">Opacity</span>
@@ -340,7 +340,7 @@ export default function Photoshop() {
                       value={l.opacity}
                       onChange={(e) => setLayerOpacity(l.id, Number(e.target.value))}
                       onClick={(e) => e.stopPropagation()}
-                      className="flex-grow"
+                      className="grow"
                     />
                     <span className="text-[9px] opacity-70 w-7 text-right">{l.opacity}%</span>
                   </div>

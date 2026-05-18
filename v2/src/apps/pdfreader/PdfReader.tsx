@@ -23,7 +23,7 @@ export default function PdfReader() {
         <a
           href={src}
           download
-          className="ml-auto px-3 py-1 rounded bg-white/10 hover:bg-white/20 text-[11px]"
+          className="ml-auto px-3 py-1 rounded-sm bg-white/10 hover:bg-white/20 text-[11px]"
         >
           Download
         </a>
@@ -31,7 +31,7 @@ export default function PdfReader() {
       <iframe
         src={`${src}#toolbar=1&navpanes=0`}
         title="PDF viewer"
-        className="flex-grow bg-[#525659]"
+        className="grow bg-[#525659]"
       />
     </div>
   )

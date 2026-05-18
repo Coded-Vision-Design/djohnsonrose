@@ -95,7 +95,7 @@ declare global {
           renderButton: (
             parent: HTMLElement,
             opts: {
-              theme?: 'outline' | 'filled_blue' | 'filled_black'
+              theme?: 'outline-solid' | 'filled_blue' | 'filled_black'
               size?: 'large' | 'medium' | 'small'
               shape?: 'rectangular' | 'pill'
               text?: 'signin_with' | 'signup_with' | 'continue_with' | 'signin'
@@ -282,7 +282,7 @@ export default function AdminConsole() {
 
   if (!me.authenticated) {
     return (
-      <div className="h-full flex flex-col items-center justify-center gap-5 bg-gradient-to-br from-[#003a8c] via-[#0050b3] to-[#1890ff] text-white p-6 text-center">
+      <div className="h-full flex flex-col items-center justify-center gap-5 bg-linear-to-br from-[#003a8c] via-[#0050b3] to-[#1890ff] text-white p-6 text-center">
         <img src="/assets/img/profile.webp" alt="" className="w-20 h-20 rounded-full ring-4 ring-white/20" />
         <div>
           <h1 className="text-2xl font-semibold">Admin Console</h1>
@@ -401,7 +401,7 @@ function Dashboard({
       {/* Header */}
       <header className="shrink-0 bg-white dark:bg-[#2b2b2b] border-b border-gray-200 dark:border-gray-800 px-4 py-3 flex flex-wrap items-center gap-3 justify-between">
         <div className="flex items-center gap-3 min-w-0">
-          <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-[#0078d4] to-[#5cb6ff] flex items-center justify-center text-white font-bold text-lg shrink-0">
+          <div className="w-9 h-9 rounded-lg bg-linear-to-br from-win-blue to-[#5cb6ff] flex items-center justify-center text-white font-bold text-lg shrink-0">
             A
           </div>
           <div className="min-w-0">
@@ -422,7 +422,7 @@ function Dashboard({
               onClick={() => onTab('dashboard')}
               className={`px-3 py-1 rounded-full transition ${
                 tab === 'dashboard'
-                  ? 'bg-white dark:bg-[#1c1c1c] shadow text-[#0078d4]'
+                  ? 'bg-white dark:bg-[#1c1c1c] shadow-sm text-win-blue'
                   : 'opacity-70 hover:opacity-100'
               }`}
             >
@@ -433,13 +433,13 @@ function Dashboard({
               onClick={() => onTab('enquiries')}
               className={`px-3 py-1 rounded-full transition ${
                 tab === 'enquiries'
-                  ? 'bg-white dark:bg-[#1c1c1c] shadow text-[#0078d4]'
+                  ? 'bg-white dark:bg-[#1c1c1c] shadow-sm text-win-blue'
                   : 'opacity-70 hover:opacity-100'
               }`}
             >
               Enquiries
               {stats && stats.enquiries_count > 0 && (
-                <span className="ml-1 inline-flex min-w-[18px] justify-center bg-[#0078d4] text-white rounded-full text-[10px] px-1.5">
+                <span className="ml-1 inline-flex min-w-[18px] justify-center bg-win-blue text-white rounded-full text-[10px] px-1.5">
                   {stats.enquiries_count}
                 </span>
               )}
@@ -463,7 +463,7 @@ function Dashboard({
         </div>
       </header>
 
-      <div className="flex-grow overflow-auto p-4 md:p-6 space-y-6">
+      <div className="grow overflow-auto p-4 md:p-6 space-y-6">
         {busy && !stats && (
           <div className="flex items-center justify-center py-20">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-win-blue" />
@@ -675,7 +675,7 @@ function Dashboard({
               {stats.screen_time.map((row) => (
                 <div
                   key={row.source}
-                  className="bg-white dark:bg-[#2b2b2b] border border-gray-200 dark:border-gray-800 rounded-xl p-4 shadow-sm"
+                  className="bg-white dark:bg-[#2b2b2b] border border-gray-200 dark:border-gray-800 rounded-xl p-4 shadow-xs"
                 >
                   <div className="text-[11px] uppercase tracking-wide opacity-60">
                     {row.source.toUpperCase()} session depth
@@ -692,7 +692,7 @@ function Dashboard({
         )}
 
         {tab === 'enquiries' && stats && (
-          <section className="bg-white dark:bg-[#2b2b2b] border border-gray-200 dark:border-gray-800 rounded-xl shadow-sm overflow-hidden">
+          <section className="bg-white dark:bg-[#2b2b2b] border border-gray-200 dark:border-gray-800 rounded-xl shadow-xs overflow-hidden">
             <div className="flex flex-col md:flex-row min-h-[420px]">
               <div className="md:w-2/5 border-b md:border-b-0 md:border-r border-gray-200 dark:border-gray-800 overflow-y-auto max-h-[40vh] md:max-h-[60vh]">
                 {stats.enquiries.length === 0 && (
@@ -776,7 +776,7 @@ function KpiCard({
         : 'ring-gray-200/60 dark:ring-white/10'
   return (
     <div
-      className={`bg-white dark:bg-[#2b2b2b] border border-gray-200 dark:border-gray-800 rounded-xl p-4 shadow-sm ring-1 ${ring}`}
+      className={`bg-white dark:bg-[#2b2b2b] border border-gray-200 dark:border-gray-800 rounded-xl p-4 shadow-xs ring-1 ${ring}`}
     >
       <div className="text-[11px] uppercase tracking-wide opacity-60">{label}</div>
       <div className="text-2xl font-semibold mt-1">{value}</div>
@@ -795,12 +795,12 @@ function ChartCard({
 }) {
   return (
     <div
-      className={`bg-white dark:bg-[#2b2b2b] border border-gray-200 dark:border-gray-800 rounded-xl p-4 shadow-sm flex flex-col ${
+      className={`bg-white dark:bg-[#2b2b2b] border border-gray-200 dark:border-gray-800 rounded-xl p-4 shadow-xs flex flex-col ${
         className ?? ''
       }`}
     >
       <h3 className="text-sm font-semibold mb-3">{title}</h3>
-      <div className="relative flex-grow min-h-[240px]">{children}</div>
+      <div className="relative grow min-h-[240px]">{children}</div>
     </div>
   )
 }

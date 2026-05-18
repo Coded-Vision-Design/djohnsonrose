@@ -7,13 +7,13 @@
         <div class="flex items-center space-x-2 border-b-2 border-win-blue h-full px-2">
             <span class="text-lg">🪟</span>
             <span class="text-[11px] font-medium">PowerShell</span>
-            <button class="hover:bg-white/10 rounded p-0.5" @click="closeWindow($data.id)"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
+            <button class="hover:bg-white/10 rounded-sm p-0.5" @click="closeWindow($data.id)"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
         </div>
-        <button class="hover:bg-white/10 rounded p-1 text-gray-400"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg></button>
+        <button class="hover:bg-white/10 rounded-sm p-1 text-gray-400"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg></button>
     </div>
 
     <!-- Terminal Content -->
-    <div class="flex-grow overflow-y-auto p-4 custom-scrollbar" x-ref="terminalOutput" @click="$refs.terminalInput.focus()">
+    <div class="grow overflow-y-auto p-4 custom-scrollbar" x-ref="terminalOutput" @click="$refs.terminalInput.focus()">
         <div class="mb-4 text-gray-400">Windows PowerShell<br>Copyright (C) Microsoft Corporation. All rights reserved.<br><br>Install the latest PowerShell for new features and improvements! https://aka.ms/PSWindows</div>
         
         <template x-for="line in history">
@@ -34,7 +34,7 @@
                    @keydown.enter="execute()" 
                    @keydown="handleKey($event)"
                    @paste="handlePaste($event)"
-                   class="bg-transparent border-none outline-none flex-grow text-[#cccccc] font-mono"
+                   class="bg-transparent border-none outline-hidden grow text-[#cccccc] font-mono"
                    autofocus>
         </div>
     </div>

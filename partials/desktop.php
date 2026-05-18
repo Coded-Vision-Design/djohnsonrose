@@ -29,7 +29,7 @@
             <div class="mb-1 drop-shadow-md w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center">
                 <img src="<?php echo IMG_PATH; ?>thispc.webp" class="w-full h-full object-contain group-hover:scale-110 transition-transform">
             </div>
-            <span class="text-white text-[10px] sm:text-[11px] drop-shadow-lg w-full px-1 line-clamp-2 leading-tight overflow-hidden break-words text-wrap">DeVanté's PC</span>
+            <span class="text-white text-[10px] sm:text-[11px] drop-shadow-lg w-full px-1 line-clamp-2 leading-tight overflow-hidden wrap-break-word text-wrap">DeVanté's PC</span>
         </div>
 
         <!-- Dynamic Desktop Icons -->
@@ -46,7 +46,7 @@
                  class="desktop-icon-container absolute pointer-events-auto flex flex-col items-center justify-start hover:bg-white/10 rounded-md cursor-pointer group p-2 text-center w-[110px] min-w-0 transition-all duration-75"
                  :class="{
                     'recycle-bin-icon': icon.name === 'Recycle Bin',
-                    'bg-white/20 scale-110 shadow-lg !border-win-blue/50': icon.name === 'Recycle Bin' && hoveredOverRecycleBin
+                    'bg-white/20 scale-110 shadow-lg border-win-blue/50!': icon.name === 'Recycle Bin' && hoveredOverRecycleBin
                  }"
                  :style="`left: ${icon.defaultX}px; top: ${icon.defaultY}px;`"
                  @mouseup="draggedIcon && icon.name === 'Recycle Bin' && draggedIcon.name !== 'Recycle Bin' ? deleteItem(draggedIcon, 'C:\\Users\\DeVante\\Desktop') : ''"
@@ -69,20 +69,20 @@
                         </div>
                     </template>
                 </div>
-                <span class="text-white text-[10px] sm:text-[11px] drop-shadow-lg w-full px-1 line-clamp-2 leading-tight overflow-hidden break-words text-wrap" x-text="icon.name"></span>
+                <span class="text-white text-[10px] sm:text-[11px] drop-shadow-lg w-full px-1 line-clamp-2 leading-tight overflow-hidden wrap-break-word text-wrap" x-text="icon.name"></span>
             </div>
         </template>
     </div>
 
     <!-- Windows Layer -->
-    <div id="windows-layer" class="flex-grow relative overflow-hidden pointer-events-none">
+    <div id="windows-layer" class="grow relative overflow-hidden pointer-events-none">
         <template x-for="win in windows" :key="win.id">
             <div :id="'win-' + win.id"
                  class="absolute flex flex-col pointer-events-auto rounded-lg win-shadow glass animate-window-open"
                  :class="{ 
                     'window-active': focusedWindowId === win.id,
                     'hidden': win.minimized,
-                    'inset-0 !w-full !h-full !translate-x-0 !translate-y-0 !rounded-none': win.maximized,
+                    'inset-0 w-full! h-full! translate-x-0! translate-y-0! rounded-none!': win.maximized,
                     'overflow-hidden': win.maximized
                  }"
                  :style="win.maximized ? `z-index: ${win.z}` : `left: ${win.x}px; top: ${win.y}px; width: ${win.width}px; height: ${win.height}px; z-index: ${win.z};`"
@@ -117,7 +117,7 @@
                 </div>
 
                 <!-- Window Content -->
-                <div class="flex-grow overflow-auto relative bg-white dark:bg-[#1c1c1c]"
+                <div class="grow overflow-auto relative bg-white dark:bg-[#1c1c1c]"
                      :class="win.maximized ? '' : 'rounded-b-lg'">
                     <div x-show="win.loading" class="absolute inset-0 flex items-center justify-center">
                         <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-win-blue"></div>

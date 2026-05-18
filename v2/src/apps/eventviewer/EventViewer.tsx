@@ -38,7 +38,7 @@ export default function EventViewer() {
         <select
           value={filter}
           onChange={(e) => setFilter(e.target.value as Filter)}
-          className="bg-transparent border border-gray-300 dark:border-gray-700 rounded text-[10px] px-2 py-0.5 outline-none"
+          className="bg-transparent border border-gray-300 dark:border-gray-700 rounded-sm text-[10px] px-2 py-0.5 outline-hidden"
         >
           <option value="All">All Events</option>
           <option value="Information">Information</option>
@@ -47,13 +47,13 @@ export default function EventViewer() {
         </select>
       </div>
 
-      <div className="flex-grow flex min-h-0">
+      <div className="grow flex min-h-0">
         {/* Sidebar (desktop only) */}
         <div className="w-56 bg-white dark:bg-[#252526] border-r border-gray-300 dark:border-gray-800 flex flex-col shrink-0 hidden lg:flex">
           <div className="p-3 text-[11px] font-bold opacity-60 border-b border-gray-200 dark:border-gray-800">
             Console Tree
           </div>
-          <div className="flex-grow overflow-y-auto py-2">
+          <div className="grow overflow-y-auto py-2">
             <div className="px-4 py-1 text-xs bg-blue-100 dark:bg-blue-900/30 text-win-blue font-medium flex items-center">
               <span className="mr-2">📂</span> Windows Logs
             </div>
@@ -61,7 +61,7 @@ export default function EventViewer() {
               {['Application', 'Security', 'Setup', 'System'].map((label) => (
                 <div
                   key={label}
-                  className="text-xs hover:bg-black/5 dark:hover:bg-white/5 py-1 px-2 rounded cursor-pointer"
+                  className="text-xs hover:bg-black/5 dark:hover:bg-white/5 py-1 px-2 rounded-sm cursor-pointer"
                 >
                   {label}
                 </div>
@@ -71,15 +71,15 @@ export default function EventViewer() {
         </div>
 
         {/* Main */}
-        <div className="flex-grow flex flex-col min-w-0">
-          <div className="flex-grow flex flex-col min-h-0 bg-white dark:bg-[#1e1e1e]">
+        <div className="grow flex flex-col min-w-0">
+          <div className="grow flex flex-col min-h-0 bg-white dark:bg-[#1e1e1e]">
             <div className="grid grid-cols-12 bg-gray-100 dark:bg-[#2d2d2d] py-1.5 px-4 text-[11px] font-bold border-b border-gray-300 dark:border-gray-800 shrink-0">
               <div className="col-span-2">Level</div>
               <div className="col-span-2">Time</div>
               <div className="col-span-2">Source</div>
               <div className="col-span-6">Description</div>
             </div>
-            <div className="flex-grow overflow-y-auto">
+            <div className="grow overflow-y-auto">
               {visible.length === 0 ? (
                 <div className="h-full flex items-center justify-center opacity-50 text-xs">
                   No events to display. Open a few apps and they'll show up here.

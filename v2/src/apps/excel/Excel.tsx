@@ -38,7 +38,7 @@ export default function Excel() {
   const headers = ['ID', 'Title', 'Location', 'Country', 'Stack', 'URL']
 
   return (
-    <div className="h-full flex flex-col bg-[#f3f3f3] dark:bg-[#1c1c1c] text-black dark:text-white">
+    <div className="h-full flex flex-col bg-win-bg dark:bg-[#1c1c1c] text-black dark:text-white">
       <div className="h-8 bg-[#107c41] flex items-center px-3 shrink-0">
         <img src="/assets/img/excel.webp" alt="" className="w-4 h-4 mr-2" />
         <span className="text-white text-xs font-medium">portfolio.xlsx — Excel</span>
@@ -56,27 +56,27 @@ export default function Excel() {
           ))}
         </div>
         <div className="px-3 py-1 flex items-center space-x-2 text-xs">
-          <div className="w-16 px-2 py-1 bg-white dark:bg-black/20 border border-gray-300 dark:border-white/10 rounded">
+          <div className="w-16 px-2 py-1 bg-white dark:bg-black/20 border border-gray-300 dark:border-white/10 rounded-sm">
             {activeCell}
           </div>
           <span className="opacity-50">𝑓𝑥</span>
           <input
             type="text"
             readOnly
-            className="flex-grow bg-transparent border border-gray-300 dark:border-white/10 rounded px-2 py-1"
+            className="grow bg-transparent border border-gray-300 dark:border-white/10 rounded-sm px-2 py-1"
           />
         </div>
       </div>
 
-      <div className="flex-grow overflow-auto">
+      <div className="grow overflow-auto">
         <table className="text-[11px] border-collapse min-w-full">
           <thead>
             <tr>
-              <th className="w-10 sticky left-0 bg-[#f3f3f3] dark:bg-[#1c1c1c] border-r border-b border-gray-300 dark:border-gray-700" />
+              <th className="w-10 sticky left-0 bg-win-bg dark:bg-[#1c1c1c] border-r border-b border-gray-300 dark:border-gray-700" />
               {columns.map((c, i) => (
                 <th
                   key={c}
-                  className="min-w-[140px] px-2 py-1 bg-[#f3f3f3] dark:bg-[#1c1c1c] border border-gray-300 dark:border-gray-700 font-normal text-gray-600 dark:text-gray-400"
+                  className="min-w-[140px] px-2 py-1 bg-win-bg dark:bg-[#1c1c1c] border border-gray-300 dark:border-gray-700 font-normal text-gray-600 dark:text-gray-400"
                 >
                   <div className="flex items-center justify-between">
                     <span>{c}</span>
@@ -94,7 +94,7 @@ export default function Excel() {
               const r = rowIdx + 1
               return (
                 <tr key={r}>
-                  <td className="w-10 sticky left-0 bg-[#f3f3f3] dark:bg-[#1c1c1c] border-r border-b border-gray-300 dark:border-gray-700 text-center text-gray-500">
+                  <td className="w-10 sticky left-0 bg-win-bg dark:bg-[#1c1c1c] border-r border-b border-gray-300 dark:border-gray-700 text-center text-gray-500">
                     {r}
                   </td>
                   {columns.map((c, ci) => {

@@ -139,27 +139,27 @@ export default function Database() {
     >
       {/* SSMS toolbar */}
       <div className="h-9 bg-white dark:bg-[#2b2b2b] border-b border-gray-300 dark:border-gray-800 flex items-center px-2 space-x-1 shrink-0">
-        <button type="button" className="p-1.5 rounded hover:bg-gray-100 dark:hover:bg-white/5 flex items-center space-x-1">
+        <button type="button" className="p-1.5 rounded-sm hover:bg-gray-100 dark:hover:bg-white/5 flex items-center space-x-1">
           <span className="text-[10px] font-semibold">New Query</span>
         </button>
         <div className="w-px h-6 bg-gray-300 dark:bg-gray-700 mx-1" />
         <button
           type="button"
           onClick={runQuery}
-          className="p-1.5 rounded hover:bg-gray-100 dark:hover:bg-white/5 flex items-center space-x-1 text-green-600"
+          className="p-1.5 rounded-sm hover:bg-gray-100 dark:hover:bg-white/5 flex items-center space-x-1 text-green-600"
         >
           <span className="text-[10px] font-bold">▶ Execute</span>
         </button>
         <button
           type="button"
           onClick={() => setHelpOpen((v) => !v)}
-          className="p-1.5 rounded hover:bg-gray-100 dark:hover:bg-white/5 flex items-center space-x-1"
+          className="p-1.5 rounded-sm hover:bg-gray-100 dark:hover:bg-white/5 flex items-center space-x-1"
         >
           <span className="text-[10px]">💡 Examples</span>
         </button>
         <div className="w-px h-6 bg-gray-300 dark:bg-gray-700 mx-1" />
         <div className="flex items-center space-x-2 px-2">
-          <div className="flex items-center space-x-1 bg-gray-100 dark:bg-black/20 border border-gray-300 dark:border-gray-700 rounded px-2 py-0.5">
+          <div className="flex items-center space-x-1 bg-gray-100 dark:bg-black/20 border border-gray-300 dark:border-gray-700 rounded-sm px-2 py-0.5">
             <img src="/assets/img/mssql.webp" alt="" className="w-3 h-3 object-contain" />
             <span className="text-[10px]">DeVante-Workstation · Portfolio_DB</span>
           </div>
@@ -181,7 +181,7 @@ export default function Database() {
                 setHelpOpen(false)
                 setTimeout(() => runQueryWith(ex.sql), 0)
               }}
-              className="text-left p-2 rounded hover:bg-white dark:hover:bg-white/5 border border-gray-200 dark:border-gray-700"
+              className="text-left p-2 rounded-sm hover:bg-white dark:hover:bg-white/5 border border-gray-200 dark:border-gray-700"
               title={ex.sql}
             >
               <div className="font-semibold">{ex.label}</div>
@@ -192,14 +192,14 @@ export default function Database() {
       )}
 
       {/* Workspace */}
-      <div className="flex-grow flex min-h-0">
+      <div className="grow flex min-h-0">
         {/* Object Explorer */}
         <div className="w-64 border-r border-gray-300 dark:border-gray-800 flex flex-col bg-[#f0f0f0] dark:bg-[#252526] shrink-0 overflow-hidden">
           <div className="p-2 bg-gray-200 dark:bg-[#333333] text-[11px] font-semibold border-b border-gray-300 dark:border-gray-800 flex items-center justify-between">
             <span>Object Explorer</span>
             <button type="button" className="opacity-60">✕</button>
           </div>
-          <div className="flex-grow overflow-y-auto p-2 text-[11px]">
+          <div className="grow overflow-y-auto p-2 text-[11px]">
             <div className="flex items-center space-x-1 cursor-default">
               <span className="text-[10px] transform rotate-90 opacity-60">▶</span>
               <img src="/assets/img/mssql.webp" alt="" className="w-3.5 h-3.5 object-contain" />
@@ -246,7 +246,7 @@ export default function Database() {
         </div>
 
         {/* Query + results */}
-        <div className="flex-grow flex flex-col min-w-0 bg-white dark:bg-[#1e1e1e]">
+        <div className="grow flex flex-col min-w-0 bg-white dark:bg-[#1e1e1e]">
           {/* SQL editor */}
           <div className="h-1/3 border-b border-gray-300 dark:border-gray-800 flex flex-col shrink-0">
             <div className="h-6 bg-gray-100 dark:bg-[#2d2d2d] border-b border-gray-300 dark:border-gray-800 px-2 flex items-center text-[10px] space-x-2">
@@ -266,13 +266,13 @@ export default function Database() {
                   runQuery()
                 }
               }}
-              className="flex-grow w-full p-4 font-mono text-[13px] outline-none resize-none bg-white dark:bg-[#1e1e1e] text-black dark:text-white"
+              className="grow w-full p-4 font-mono text-[13px] outline-hidden resize-none bg-white dark:bg-[#1e1e1e] text-black dark:text-white"
               aria-label="SQL query editor"
             />
           </div>
 
           {/* Results */}
-          <div className="flex-grow flex flex-col min-h-0">
+          <div className="grow flex flex-col min-h-0">
             <div className="h-6 bg-gray-100 dark:bg-[#2d2d2d] border-b border-gray-300 dark:border-gray-800 px-2 flex items-center text-[10px] space-x-4">
               <button
                 type="button"
@@ -290,7 +290,7 @@ export default function Database() {
               </button>
             </div>
 
-            <div className="flex-grow overflow-auto relative">
+            <div className="grow overflow-auto relative">
               {loading && (
                 <div className="absolute inset-0 flex items-center justify-center bg-white/50 dark:bg-black/50 z-20">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-win-blue" />
@@ -359,7 +359,7 @@ export default function Database() {
       </div>
 
       {/* Status bar */}
-      <div className="h-6 bg-[#0078d4] flex items-center px-2 shrink-0 text-white text-[10px] justify-between">
+      <div className="h-6 bg-win-blue flex items-center px-2 shrink-0 text-white text-[10px] justify-between">
         <div className="flex items-center space-x-4">
           <span className="flex items-center space-x-1">
             <span

@@ -43,13 +43,13 @@ export default function PowerPoint() {
   const current = slides[active]
 
   return (
-    <div className="h-full flex flex-col bg-[#f3f3f3] dark:bg-[#1c1c1c] text-black dark:text-white">
+    <div className="h-full flex flex-col bg-win-bg dark:bg-[#1c1c1c] text-black dark:text-white">
       <div className="h-8 bg-[#b7472a] flex items-center px-3 shrink-0">
         <img src="/assets/img/powerpoint.webp" alt="" className="w-4 h-4 mr-2" />
         <span className="text-white text-xs font-medium">Portfolio.pptx — PowerPoint</span>
       </div>
 
-      <div className="flex-grow flex min-h-0">
+      <div className="grow flex min-h-0">
         <div className="w-40 bg-white dark:bg-[#2b2b2b] border-r border-gray-300 dark:border-gray-700 overflow-y-auto shrink-0 p-2 space-y-2">
           {slides.map((s, i) => (
             <button
@@ -69,13 +69,13 @@ export default function PowerPoint() {
           ))}
         </div>
 
-        <div className="flex-grow bg-gray-100 dark:bg-[#0f0f0f] flex items-center justify-center p-8">
+        <div className="grow bg-gray-100 dark:bg-[#0f0f0f] flex items-center justify-center p-8">
           {current ? (
             <div
               className="w-full max-w-4xl aspect-video rounded-lg shadow-2xl bg-white relative overflow-hidden"
               style={{ backgroundImage: `url(/${current.thumbnail})`, backgroundSize: 'cover', backgroundPosition: 'center' }}
             >
-              <div className="absolute inset-0 bg-gradient-to-b from-black/0 via-black/30 to-black/80" />
+              <div className="absolute inset-0 bg-linear-to-b from-black/0 via-black/30 to-black/80" />
               <div className="absolute bottom-0 inset-x-0 p-8 text-white">
                 <div className="text-xs uppercase tracking-widest opacity-80 mb-2">
                   Slide {active + 1} / {slides.length}
@@ -86,7 +86,7 @@ export default function PowerPoint() {
                   {current.tags.map((t) => (
                     <span
                       key={t}
-                      className="px-2 py-0.5 bg-white/20 backdrop-blur-sm rounded text-[10px] font-medium"
+                      className="px-2 py-0.5 bg-white/20 backdrop-blur-xs rounded-sm text-[10px] font-medium"
                     >
                       {t}
                     </span>

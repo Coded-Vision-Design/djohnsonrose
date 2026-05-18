@@ -11,7 +11,7 @@
         <div class="flex items-center space-x-4">
             <div class="flex items-center space-x-2 text-gray-400">
                 <span class="hover:text-white cursor-pointer font-bold text-[#ff6600]">FL</span>
-                <span @click="exportProject()" class="hover:text-white cursor-pointer px-1 bg-win-blue/20 rounded border border-win-blue/30 text-win-blue" :class="isRecording ? 'animate-pulse' : ''">EXPORT WAV</span>
+                <span @click="exportProject()" class="hover:text-white cursor-pointer px-1 bg-win-blue/20 rounded-sm border border-win-blue/30 text-win-blue" :class="isRecording ? 'animate-pulse' : ''">EXPORT WAV</span>
                 <span class="hover:text-white cursor-pointer">FILE</span>
                 <span class="hover:text-white cursor-pointer">EDIT</span>
                 <span class="hover:text-white cursor-pointer">ADD</span>
@@ -29,7 +29,7 @@
     <!-- Main Toolbar -->
     <div class="h-16 bg-[#252a2e] border-b border-black/60 flex items-center px-2 space-x-2 shrink-0 shadow-lg relative z-10">
         <!-- Playback Section -->
-        <div class="flex items-center space-x-1 bg-black/30 p-1.5 rounded-sm border border-white/5 shadow-inner h-12">
+        <div class="flex items-center space-x-1 bg-black/30 p-1.5 rounded-xs border border-white/5 shadow-inner h-12">
             <button @click="playing = !playing" 
                     :class="playing ? 'text-[#00ff00] drop-shadow-[0_0_8px_rgba(0,255,0,0.5)]' : 'text-gray-500 hover:text-white'" 
                     class="p-1.5 transition-all">
@@ -44,12 +44,12 @@
             <div class="w-px h-8 bg-white/10 mx-1"></div>
             <div class="flex flex-col items-center justify-center px-2 min-w-[60px]">
                 <div class="text-[9px] text-[#ff6600] font-bold opacity-70 leading-none">BPM</div>
-                <input type="number" x-model.number="bpm" class="bg-transparent text-lg font-mono text-[#ff6600] w-12 text-center focus:outline-none focus:bg-black/20 rounded cursor-ns-resize" step="1" min="40" max="999">
+                <input type="number" x-model.number="bpm" class="bg-transparent text-lg font-mono text-[#ff6600] w-12 text-center focus:outline-hidden focus:bg-black/20 rounded-sm cursor-ns-resize" step="1" min="40" max="999">
             </div>
         </div>
 
         <!-- Pattern / Song Mode -->
-        <div class="flex flex-col space-y-0.5 bg-black/20 p-1 rounded border border-white/5 h-12 justify-center px-3">
+        <div class="flex flex-col space-y-0.5 bg-black/20 p-1 rounded-sm border border-white/5 h-12 justify-center px-3">
             <div class="flex items-center space-x-2 cursor-pointer" @click="mode = 'pattern'; hintText = 'Switched to Pattern mode'">
                 <div class="w-2 h-2 rounded-full transition-colors" :class="mode === 'pattern' ? 'bg-[#ff6600]' : 'bg-gray-600'"></div>
                 <span class="text-[10px] font-bold" :class="mode === 'pattern' ? 'text-gray-300' : 'text-gray-500'">PAT</span>
@@ -61,26 +61,26 @@
         </div>
 
         <!-- Time Display -->
-        <div class="bg-black/50 px-4 h-12 rounded border border-white/10 shadow-inner flex items-center justify-center min-w-[120px]">
+        <div class="bg-black/50 px-4 h-12 rounded-sm border border-white/10 shadow-inner flex items-center justify-center min-w-[120px]">
             <div class="text-2xl font-mono text-[#00ccff] tracking-widest" 
                  x-text="mode === 'pattern' ? (Math.floor(currentStep / 4 + 1) + ':' + (currentStep % 4 + 1) + ':00') : (Math.floor(songStep / 16 + 1) + ':' + (Math.floor((songStep % 16) / 4) + 1) + ':' + ((songStep % 4) + 1))"></div>
         </div>
 
         <!-- Main Tool Switchers -->
-        <div class="flex items-center space-x-1 bg-black/20 p-1 rounded border border-white/5 h-12">
-            <button @click="showPlaylist = !showPlaylist" :class="showPlaylist ? 'bg-white/10' : ''" class="p-2 hover:bg-white/10 rounded transition-colors" title="Playlist">
+        <div class="flex items-center space-x-1 bg-black/20 p-1 rounded-sm border border-white/5 h-12">
+            <button @click="showPlaylist = !showPlaylist" :class="showPlaylist ? 'bg-white/10' : ''" class="p-2 hover:bg-white/10 rounded-sm transition-colors" title="Playlist">
                 <svg class="w-5 h-5" :class="showPlaylist ? 'text-[#00ccff]' : 'text-gray-500'" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>
             </button>
-            <button @click="showChannelRack = !showChannelRack" :class="showChannelRack ? 'bg-white/10' : ''" class="p-2 hover:bg-white/10 rounded transition-colors" title="Channel Rack">
+            <button @click="showChannelRack = !showChannelRack" :class="showChannelRack ? 'bg-white/10' : ''" class="p-2 hover:bg-white/10 rounded-sm transition-colors" title="Channel Rack">
                 <svg class="w-5 h-5" :class="showChannelRack ? 'text-[#ff6600]' : 'text-gray-500'" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1v-2zM4 21a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1v-2z"/></svg>
             </button>
-            <button @click="showMixer = !showMixer" :class="showMixer ? 'bg-white/10' : ''" class="p-2 hover:bg-white/10 rounded transition-colors" title="Mixer">
+            <button @click="showMixer = !showMixer" :class="showMixer ? 'bg-white/10' : ''" class="p-2 hover:bg-white/10 rounded-sm transition-colors" title="Mixer">
                 <svg class="w-5 h-5" :class="showMixer ? 'text-gray-300' : 'text-gray-500'" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/></svg>
             </button>
         </div>
 
         <!-- Visualizer Area (Mock) -->
-        <div class="flex-grow flex items-center justify-end px-4 space-x-4">
+        <div class="grow flex items-center justify-end px-4 space-x-4">
             <div class="flex items-center space-x-1 opacity-40">
                 <template x-for="i in 20">
                     <div class="w-1 bg-[#00ff00]" :style="`height: ${Math.random() * 40 + 5}px; opacity: ${playing ? 1 : 0.2}`"></div>
@@ -90,13 +90,13 @@
     </div>
 
     <!-- Main Workspace -->
-    <div class="flex-grow flex min-h-0 overflow-hidden relative">
+    <div class="grow flex min-h-0 overflow-hidden relative">
         <!-- Browser (Left Sidebar) -->
         <div x-show="showBrowser" class="w-48 bg-[#1a1f22] border-r border-black/40 flex flex-col shrink-0 text-[11px]">
             <div class="h-7 bg-[#252a2e] flex items-center px-2 font-bold border-b border-black/40 text-gray-400">
                 <span>BROWSER</span>
             </div>
-            <div class="flex-grow overflow-y-auto p-1 space-y-0.5 custom-scrollbar text-gray-500">
+            <div class="grow overflow-y-auto p-1 space-y-0.5 custom-scrollbar text-gray-500">
                 <div class="flex items-center space-x-2 p-1 hover:bg-white/5 cursor-pointer text-gray-300"><span>📁</span> <span>Samples</span></div>
                 <div class="pl-4 space-y-0.5">
                     <template x-for="sample in [
@@ -105,7 +105,7 @@
                         { name: 'Closed Hat', url: 'https://cdn.freesound.org/previews/448/448572_9159116-lq.mp3' },
                         { name: 'Deep Bass', url: 'https://cdn.freesound.org/previews/264/264828_4931603-lq.mp3' }
                     ]">
-                        <div class="flex items-center space-x-2 p-1 hover:bg-white/10 hover:text-white cursor-grab active:cursor-grabbing transition-colors rounded"
+                        <div class="flex items-center space-x-2 p-1 hover:bg-white/10 hover:text-white cursor-grab active:cursor-grabbing transition-colors rounded-sm"
                              draggable="true"
                              @dragstart="event.dataTransfer.setData('application/json', JSON.stringify(sample)); hintText = 'Dragging: ' + sample.name">
                             <span>🔊</span> <span x-text="sample.name"></span>
@@ -115,7 +115,7 @@
                 <div class="flex items-center space-x-2 p-1 hover:bg-white/5 cursor-pointer text-gray-300"><span>📁</span> <span>Packs</span></div>
                 <div class="pl-4 space-y-0.5">
                     <template x-for="sample in ['Kick 808', 'Snare 909', 'HiHat Closed', 'HiHat Open', 'Clap Tight', 'Perc Wood', 'Sub Bass A', 'Piano C4', 'Guitar Clean']">
-                        <div class="flex items-center space-x-2 p-1 hover:bg-white/10 hover:text-white cursor-grab active:cursor-grabbing transition-colors rounded"
+                        <div class="flex items-center space-x-2 p-1 hover:bg-white/10 hover:text-white cursor-grab active:cursor-grabbing transition-colors rounded-sm"
                              draggable="true"
                              @dragstart="handleDragStart($event, sample)">
                             <span>🔊</span> <span x-text="sample"></span>
@@ -126,10 +126,10 @@
         </div>
 
         <!-- MDI Area (Middle) -->
-        <div class="flex-grow flex flex-col min-w-0 bg-[#121518] relative">
+        <div class="grow flex flex-col min-w-0 bg-[#121518] relative">
             
             <!-- Channel Rack Window -->
-            <div x-show="showChannelRack" class="absolute top-10 left-10 w-[580px] h-[450px] bg-[#2b3339] rounded border border-white/10 shadow-2xl flex flex-col overflow-hidden z-20">
+            <div x-show="showChannelRack" class="absolute top-10 left-10 w-[580px] h-[450px] bg-[#2b3339] rounded-sm border border-white/10 shadow-2xl flex flex-col overflow-hidden z-20">
                 <div class="h-8 bg-[#32393f] flex items-center px-3 text-[10px] font-bold border-b border-black/40 text-gray-300 justify-between shrink-0 cursor-move">
                     <div class="flex items-center space-x-2">
                         <span class="text-[#ff6600]">■</span>
@@ -141,9 +141,9 @@
                     </div>
                 </div>
                 <!-- Optimized Scrollable Area -->
-                <div class="flex-grow overflow-y-auto p-3 space-y-1 custom-scrollbar bg-[#1e2327]">
+                <div class="grow overflow-y-auto p-3 space-y-1 custom-scrollbar bg-[#1e2327]">
                     <template x-for="(channel, cIndex) in channels" :key="cIndex">
-                        <div class="flex items-center space-x-3 group hover:bg-white/[0.02] p-1 rounded-sm transition-colors"
+                        <div class="flex items-center space-x-3 group hover:bg-white/2 p-1 rounded-xs transition-colors"
                              @dragover.prevent=""
                              @drop="handleDrop($event, cIndex)"
                              @contextmenu.prevent.stop="showFLContextMenu($event, 'channel', channel)">
@@ -164,23 +164,23 @@
                                 </div>
 
                                 <input type="text" x-model="channel.name" 
-                                       class="w-24 bg-[#32393f] h-7 px-2 text-[10px] rounded border border-black/40 text-gray-300 hover:bg-[#3d454c] focus:bg-black/40 focus:outline-none shadow-sm transition-colors font-bold"
+                                       class="w-24 bg-[#32393f] h-7 px-2 text-[10px] rounded-sm border border-black/40 text-gray-300 hover:bg-[#3d454c] focus:bg-black/40 focus:outline-hidden shadow-xs transition-colors font-bold"
                                        :style="`border-left: 4px solid ${channel.color}`">
                                 
-                                <div class="hidden group-hover/chan:flex absolute -left-8 items-center bg-[#2b3339] rounded shadow-lg border border-black/40 z-10">
+                                <div class="hidden group-hover/chan:flex absolute -left-8 items-center bg-[#2b3339] rounded-sm shadow-lg border border-black/40 z-10">
                                     <button @click="removeChannel(cIndex)" class="text-red-500 hover:text-red-400 p-1.5" title="Delete Track">
                                         <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
                                     </button>
                                 </div>
 
                                 <div class="flex flex-col items-center">
-                                    <select x-model="channel.type" class="bg-transparent text-[9px] text-gray-500 focus:outline-none appearance-none cursor-pointer hover:text-gray-300 ml-1 font-bold">
+                                    <select x-model="channel.type" class="bg-transparent text-[9px] text-gray-500 focus:outline-hidden appearance-none cursor-pointer hover:text-gray-300 ml-1 font-bold">
                                         <option value="drum">DRUM</option>
                                         <option value="synth">SYNTH</option>
                                         <option value="bass">BASS</option>
                                     </select>
                                     <template x-if="channel.type !== 'drum'">
-                                        <input type="number" x-model.number="channel.note" class="w-10 bg-black/20 rounded text-[8px] text-win-blue focus:outline-none text-center h-4 mt-0.5" step="10" min="20" max="2000">
+                                        <input type="number" x-model.number="channel.note" class="w-10 bg-black/20 rounded-sm text-[8px] text-win-blue focus:outline-hidden text-center h-4 mt-0.5" step="10" min="20" max="2000">
                                     </template>
                                 </div>
                             </div>
@@ -196,7 +196,7 @@
                                                 (step === 1 ? 'bg-[#ff8533]' : 'bg-[#2b3339]'),
                                             (playing && currentStep === sIndex) ? 'ring-2 ring-white/40 brightness-150 z-10' : 'ring-1 ring-black/20'
                                          ]"
-                                         class="w-7 h-6 rounded-sm cursor-pointer hover:brightness-125 transition-all active:scale-90 shadow-sm">
+                                         class="w-7 h-6 rounded-xs cursor-pointer hover:brightness-125 transition-all active:scale-90 shadow-xs">
                                     </div>
                                 </template>
                             </div>
@@ -205,14 +205,14 @@
                 </div>
                 <div class="h-8 bg-[#1a1f22] border-t border-black/40 flex items-center px-3 justify-between shrink-0">
                     <div class="flex items-center space-x-2">
-                        <button @click="addChannel()" class="h-5 px-3 bg-black/40 border border-white/10 rounded-sm flex items-center justify-center text-[10px] hover:bg-white/10 transition-colors text-gray-400 font-bold">+ ADD CHANNEL</button>
+                        <button @click="addChannel()" class="h-5 px-3 bg-black/40 border border-white/10 rounded-xs flex items-center justify-center text-[10px] hover:bg-white/10 transition-colors text-gray-400 font-bold">+ ADD CHANNEL</button>
                     </div>
                     <div class="text-[9px] text-gray-600 font-bold" x-text="channels.length + ' CHANNELS'"></div>
                 </div>
             </div>
 
             <!-- Piano Roll Window -->
-            <div x-show="showPianoRoll && pianoRollChannel" class="absolute top-20 left-20 w-[600px] h-[400px] bg-[#2b3339] rounded border border-white/10 shadow-2xl flex flex-col overflow-hidden z-30">
+            <div x-show="showPianoRoll && pianoRollChannel" class="absolute top-20 left-20 w-[600px] h-[400px] bg-[#2b3339] rounded-sm border border-white/10 shadow-2xl flex flex-col overflow-hidden z-30">
                 <div class="h-8 bg-[#32393f] flex items-center px-3 text-[10px] font-bold border-b border-black/40 text-gray-300 justify-between shrink-0 cursor-move">
                     <div class="flex items-center space-x-2">
                         <span class="text-[#00ff00]">■</span>
@@ -223,7 +223,7 @@
                         <span class="hover:text-white cursor-pointer" @click="showPianoRoll = false">×</span>
                     </div>
                 </div>
-                <div class="flex-grow flex overflow-hidden">
+                <div class="grow flex overflow-hidden">
                     <!-- Piano Keys -->
                     <div class="w-12 bg-[#1a1f22] border-r border-black flex flex-col-reverse">
                         <template x-for="note in [261.63, 277.18, 293.66, 311.13, 329.63, 349.23, 369.99, 392.00, 415.30, 440.00, 466.16, 493.88]">
@@ -234,7 +234,7 @@
                         </template>
                     </div>
                     <!-- Note Grid -->
-                    <div class="flex-grow overflow-auto bg-[#121518] relative" style="background-image: linear-gradient(#1e2327 1px, transparent 1px), linear-gradient(90deg, #1e2327 1px, transparent 1px); background-size: 24px 24px;">
+                    <div class="grow overflow-auto bg-[#121518] relative" style="background-image: linear-gradient(#1e2327 1px, transparent 1px), linear-gradient(90deg, #1e2327 1px, transparent 1px); background-size: 24px 24px;">
                         <div class="absolute inset-0 flex flex-col-reverse">
                             <template x-for="note in [261.63, 277.18, 293.66, 311.13, 329.63, 349.23, 369.99, 392.00, 415.30, 440.00, 466.16, 493.88]">
                                 <div class="h-6 flex">
@@ -259,7 +259,7 @@
                         <span>PLAYLIST - ARRANGEMENT</span>
                     </div>
                 </div>
-                <div class="flex-grow relative overflow-auto custom-scrollbar playlist-grid-container" 
+                <div class="grow relative overflow-auto custom-scrollbar playlist-grid-container" 
                      style="background-image: linear-gradient(#1e2327 1px, transparent 1px), linear-gradient(90deg, #1e2327 1px, transparent 1px); background-size: 48px 32px; background-attachment: local;">
                     
                     <!-- Track Headers -->
@@ -278,7 +278,7 @@
 
                         <!-- Rendered Clips -->
                         <template x-for="clip in playlistClips" :key="clip.id">
-                            <div class="absolute h-7 flex items-center px-2 text-[9px] text-white font-bold rounded-sm border cursor-grab active:cursor-grabbing shadow-lg overflow-hidden transition-[top,left] duration-75"
+                            <div class="absolute h-7 flex items-center px-2 text-[9px] text-white font-bold rounded-xs border cursor-grab active:cursor-grabbing shadow-lg overflow-hidden transition-[top,left] duration-75"
                                  @mousedown.stop="startClipDrag($event, clip)"
                                  @contextmenu.prevent.stop="showFLContextMenu($event, 'clip', clip)"
                                  :class="activeDraggedClip?.id === clip.id ? 'z-50 ring-1 ring-white/50 opacity-90' : 'z-10'"
@@ -322,13 +322,13 @@
                 <span class="hover:text-white cursor-pointer" @click="showMixer = false">×</span>
             </div>
         </div>
-        <div class="flex-grow flex overflow-x-auto p-1 space-x-0.5 custom-scrollbar bg-[#121518]">
+        <div class="grow flex overflow-x-auto p-1 space-x-0.5 custom-scrollbar bg-[#121518]">
             <template x-for="track in mixerTracks" :key="track.index">
                 <div class="w-[52px] h-full bg-[#202529] flex flex-col items-center border border-black/60 shadow-inner group shrink-0 relative overflow-hidden"
                      @contextmenu.prevent.stop="showFLContextMenu($event, 'mixer', track)">
-                    <div class="absolute right-0 top-1 bottom-10 w-2 flex flex-col-reverse space-y-[1px] px-[1px]">
+                    <div class="absolute right-0 top-1 bottom-10 w-2 flex flex-col-reverse space-y-px px-px">
                         <template x-for="i in 15">
-                            <div class="flex-grow w-full rounded-sm transition-all duration-75"
+                            <div class="grow w-full rounded-xs transition-all duration-75"
                                  :class="[
                                     i > 12 ? 'bg-red-500/20' : (i > 9 ? 'bg-yellow-500/20' : 'bg-green-500/20'),
                                     playing && (Math.random() * 15 > i) ? (i > 12 ? 'bg-red-500' : (i > 9 ? 'bg-yellow-500' : 'bg-green-500')) : ''
@@ -338,17 +338,17 @@
 
                     <div class="text-[8px] font-bold mt-1 tracking-tighter" :class="track.name === 'MASTER' ? 'text-[#ff6600]' : 'text-gray-500'" x-text="track.name"></div>
                     
-                    <div class="flex-grow flex items-center justify-center py-4 w-full px-2">
+                    <div class="grow flex items-center justify-center py-4 w-full px-2">
                         <div class="w-6 h-full flex flex-col items-center relative">
                             <div class="w-1.5 h-full bg-black/60 rounded-full border border-white/5 relative overflow-hidden cursor-pointer"
                                  @mousedown="isDraggingSlider = true; activeSliderTrack = track; updateVolume(track, $event)">
                                 <div class="absolute bottom-0 left-0 right-0 bg-[#00ccff]/20 transition-all duration-200" :style="`height: ${track.volume * 100}%`"></div>
                             </div>
-                            <div class="absolute w-8 h-4 bg-[#3d454c] border border-black/60 rounded-sm shadow-lg pointer-events-none flex flex-col items-center justify-center space-y-0.5 z-10"
+                            <div class="absolute w-8 h-4 bg-[#3d454c] border border-black/60 rounded-xs shadow-lg pointer-events-none flex flex-col items-center justify-center space-y-0.5 z-10"
                                  :style="`bottom: calc(${track.volume * 100}% - 8px)`">
-                                <div class="w-5 h-[1px] bg-white/20"></div>
-                                <div class="w-5 h-[1px] bg-[#00ccff]"></div>
-                                <div class="w-5 h-[1px] bg-white/20"></div>
+                                <div class="w-5 h-px bg-white/20"></div>
+                                <div class="w-5 h-px bg-[#00ccff]"></div>
+                                <div class="w-5 h-px bg-white/20"></div>
                             </div>
                         </div>
                     </div>

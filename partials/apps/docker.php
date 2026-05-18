@@ -43,7 +43,7 @@
                         <h1 class="text-[15px] font-semibold text-[#e6edf3]">Containers</h1>
                         <div class="flex items-center gap-2">
                             <div class="relative">
-                                <input type="text" x-model="searchQuery" placeholder="Search containers..." class="bg-[#21262d] border border-[#30363d] rounded-md pl-8 pr-3 py-1.5 text-[12px] text-[#e6edf3] placeholder-[#8b949e] w-56 focus:outline-none focus:ring-1 focus:ring-[#58a6ff] focus:border-[#58a6ff]">
+                                <input type="text" x-model="searchQuery" placeholder="Search containers..." class="bg-[#21262d] border border-[#30363d] rounded-md pl-8 pr-3 py-1.5 text-[12px] text-[#e6edf3] placeholder-[#8b949e] w-56 focus:outline-hidden focus:ring-1 focus:ring-[#58a6ff] focus:border-[#58a6ff]">
                                 <svg class="w-4 h-4 text-[#8b949e] absolute left-2.5 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
                             </div>
                         </div>
@@ -54,7 +54,7 @@
                         <table class="w-full text-left text-[12px] border-collapse">
                             <thead class="bg-[#161b22] sticky top-0 z-10 border-b border-[#30363d]">
                                 <tr>
-                                    <th class="py-2.5 px-4 font-medium text-[#8b949e] w-8"><input type="checkbox" class="rounded border-[#30363d] bg-[#21262d] text-[#58a6ff] focus:ring-[#58a6ff]"></th>
+                                    <th class="py-2.5 px-4 font-medium text-[#8b949e] w-8"><input type="checkbox" class="rounded-sm border-[#30363d] bg-[#21262d] text-[#58a6ff] focus:ring-[#58a6ff]"></th>
                                     <th class="py-2.5 px-4 font-medium text-[#8b949e]">Name</th>
                                     <th class="py-2.5 px-4 font-medium text-[#8b949e]">Image</th>
                                     <th class="py-2.5 px-4 font-medium text-[#8b949e]">Status</th>
@@ -66,7 +66,7 @@
                             <tbody>
                                 <template x-for="c in filteredContainers" :key="c.id">
                                     <tr class="border-b border-[#21262d] hover:bg-[#161b22]/80 transition-colors" :class="{ 'bg-[#21262d]/50': selectedId === c.id }" @click="selectedId = c.id">
-                                        <td class="py-2 px-4" @click.stop><input type="checkbox" class="rounded border-[#30363d] bg-[#21262d] text-[#58a6ff] focus:ring-[#58a6ff]"></td>
+                                        <td class="py-2 px-4" @click.stop><input type="checkbox" class="rounded-sm border-[#30363d] bg-[#21262d] text-[#58a6ff] focus:ring-[#58a6ff]"></td>
                                         <td class="py-2 px-4">
                                             <div class="flex items-center gap-2">
                                                 <span class="w-2 h-2 rounded-full shrink-0" :class="c.status === 'running' ? 'bg-green-500' : 'bg-[#8b949e]'"></span>
@@ -85,12 +85,12 @@
                                         <td class="py-2 px-4" @click.stop>
                                             <div class="flex items-center gap-1">
                                                 <template x-if="c.status === 'running'">
-                                                    <button @click="stopContainer(c)" class="px-2 py-1 rounded text-[10px] font-medium bg-[#21262d] hover:bg-red-500/20 text-red-400 border border-[#30363d] hover:border-red-500/50 transition-colors">Stop</button>
+                                                    <button @click="stopContainer(c)" class="px-2 py-1 rounded-sm text-[10px] font-medium bg-[#21262d] hover:bg-red-500/20 text-red-400 border border-[#30363d] hover:border-red-500/50 transition-colors">Stop</button>
                                                 </template>
                                                 <template x-if="c.status !== 'running'">
-                                                    <button @click="startContainer(c)" class="px-2 py-1 rounded text-[10px] font-medium bg-[#21262d] hover:bg-green-500/20 text-green-400 border border-[#30363d] hover:border-green-500/50 transition-colors">Start</button>
+                                                    <button @click="startContainer(c)" class="px-2 py-1 rounded-sm text-[10px] font-medium bg-[#21262d] hover:bg-green-500/20 text-green-400 border border-[#30363d] hover:border-green-500/50 transition-colors">Start</button>
                                                 </template>
-                                                <button @click="restartContainer(c)" :disabled="c.status !== 'running'" class="px-2 py-1 rounded text-[10px] font-medium bg-[#21262d] hover:bg-[#58a6ff]/20 text-[#58a6ff] border border-[#30363d] disabled:opacity-50 disabled:cursor-not-allowed transition-colors">Restart</button>
+                                                <button @click="restartContainer(c)" :disabled="c.status !== 'running'" class="px-2 py-1 rounded-sm text-[10px] font-medium bg-[#21262d] hover:bg-[#58a6ff]/20 text-[#58a6ff] border border-[#30363d] disabled:opacity-50 disabled:cursor-not-allowed transition-colors">Restart</button>
                                             </div>
                                         </td>
                                     </tr>

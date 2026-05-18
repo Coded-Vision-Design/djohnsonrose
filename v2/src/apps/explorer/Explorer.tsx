@@ -443,20 +443,20 @@ export default function Explorer() {
       {/* Toolbar */}
       <div className="h-12 border-b border-gray-200 dark:border-gray-800 flex items-center px-2 space-x-3 bg-white dark:bg-[#2b2b2b] shrink-0">
         <div className="flex items-center space-x-1 pr-2 border-r border-gray-200 dark:border-gray-700">
-          <button type="button" onClick={goBack} disabled={step <= 0} className="p-1.5 rounded hover:bg-gray-100 dark:hover:bg-white/5 disabled:opacity-30" aria-label="Back" title="Back (Backspace)">
+          <button type="button" onClick={goBack} disabled={step <= 0} className="p-1.5 rounded-sm hover:bg-gray-100 dark:hover:bg-white/5 disabled:opacity-30" aria-label="Back" title="Back (Backspace)">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
           </button>
-          <button type="button" onClick={goForward} disabled={step >= history.length - 1} className="p-1.5 rounded hover:bg-gray-100 dark:hover:bg-white/5 disabled:opacity-30" aria-label="Forward" title="Forward">
+          <button type="button" onClick={goForward} disabled={step >= history.length - 1} className="p-1.5 rounded-sm hover:bg-gray-100 dark:hover:bg-white/5 disabled:opacity-30" aria-label="Forward" title="Forward">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
           </button>
-          <button type="button" onClick={goUp} className="p-1.5 rounded hover:bg-gray-100 dark:hover:bg-white/5" aria-label="Up" title="Up">
+          <button type="button" onClick={goUp} className="p-1.5 rounded-sm hover:bg-gray-100 dark:hover:bg-white/5" aria-label="Up" title="Up">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 10l7-7m0 0l7 7m-7-7v18" /></svg>
           </button>
         </div>
 
         {/* Address bar */}
         <div
-          className="flex-grow flex items-center bg-gray-100 dark:bg-black/20 rounded-md px-3 py-1.5 text-xs border border-gray-200 dark:border-white/10 shadow-inner overflow-hidden relative cursor-text min-h-[32px]"
+          className="grow flex items-center bg-gray-100 dark:bg-black/20 rounded-md px-3 py-1.5 text-xs border border-gray-200 dark:border-white/10 shadow-inner overflow-hidden relative cursor-text min-h-[32px]"
           onClick={() => { if (!addressActive) setAddressActive(true) }}
         >
           {!addressActive ? (
@@ -482,7 +482,7 @@ export default function Explorer() {
                 if (e.key === 'Escape') { setAddressActive(false); setManualPath(currentPath) }
               }}
               onBlur={() => { setAddressActive(false); setManualPath(currentPath) }}
-              className="bg-transparent border-none outline-none w-full text-xs font-mono"
+              className="bg-transparent border-none outline-hidden w-full text-xs font-mono"
             />
           )}
         </div>
@@ -490,7 +490,7 @@ export default function Explorer() {
         {/* Search */}
         <div className="w-32 sm:w-56 bg-gray-100 dark:bg-black/20 rounded-md px-3 py-1.5 text-xs border border-gray-200 dark:border-white/10 flex items-center relative">
           <svg className="w-3.5 h-3.5 text-gray-400 mr-2 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-          <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search" className="bg-transparent border-none outline-none w-full truncate pr-6" />
+          <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search" className="bg-transparent border-none outline-hidden w-full truncate pr-6" />
           {searchQuery && (
             <button type="button" onClick={() => setSearchQuery('')} className="absolute right-2 p-1 hover:bg-gray-200 dark:hover:bg-white/10 rounded-full" aria-label="Clear search">
               <svg className="w-3 h-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
@@ -500,27 +500,27 @@ export default function Explorer() {
 
         {/* View toggle */}
         <div className="hidden md:flex items-center space-x-0.5 border-l border-gray-200 dark:border-gray-700 pl-3">
-          <button type="button" onClick={() => setViewMode('grid')} aria-pressed={viewMode === 'grid'} title="Grid view" className={`p-1.5 rounded ${viewMode === 'grid' ? 'bg-blue-100 dark:bg-blue-900/40 text-win-blue' : 'hover:bg-gray-100 dark:hover:bg-white/5'}`}>
+          <button type="button" onClick={() => setViewMode('grid')} aria-pressed={viewMode === 'grid'} title="Grid view" className={`p-1.5 rounded-sm ${viewMode === 'grid' ? 'bg-blue-100 dark:bg-blue-900/40 text-win-blue' : 'hover:bg-gray-100 dark:hover:bg-white/5'}`}>
             <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3h7v7H3V3zm0 11h7v7H3v-7zm11-11h7v7h-7V3zm0 11h7v7h-7v-7z" /></svg>
           </button>
-          <button type="button" onClick={() => setViewMode('details')} aria-pressed={viewMode === 'details'} title="Details view" className={`p-1.5 rounded ${viewMode === 'details' ? 'bg-blue-100 dark:bg-blue-900/40 text-win-blue' : 'hover:bg-gray-100 dark:hover:bg-white/5'}`}>
+          <button type="button" onClick={() => setViewMode('details')} aria-pressed={viewMode === 'details'} title="Details view" className={`p-1.5 rounded-sm ${viewMode === 'details' ? 'bg-blue-100 dark:bg-blue-900/40 text-win-blue' : 'hover:bg-gray-100 dark:hover:bg-white/5'}`}>
             <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 5h2v2H3V5zm4 0h14v2H7V5zM3 11h2v2H3v-2zm4 0h14v2H7v-2zM3 17h2v2H3v-2zm4 0h14v2H7v-2z" /></svg>
           </button>
-          <button type="button" onClick={() => setDetailsOpen((v) => !v)} aria-pressed={detailsOpen} title="Details pane" className={`p-1.5 rounded ml-1 ${detailsOpen ? 'bg-blue-100 dark:bg-blue-900/40 text-win-blue' : 'hover:bg-gray-100 dark:hover:bg-white/5'}`}>
+          <button type="button" onClick={() => setDetailsOpen((v) => !v)} aria-pressed={detailsOpen} title="Details pane" className={`p-1.5 rounded-sm ml-1 ${detailsOpen ? 'bg-blue-100 dark:bg-blue-900/40 text-win-blue' : 'hover:bg-gray-100 dark:hover:bg-white/5'}`}>
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
           </button>
         </div>
 
         {/* Empty Recycle Bin */}
         {isRecycle && (
-          <button type="button" onClick={emptyRecycleBin} disabled={sortedFiles.length === 0} className="px-3 py-1.5 rounded text-xs font-medium bg-red-500 text-white hover:bg-red-600 disabled:opacity-40 disabled:cursor-not-allowed" title="Empty Recycle Bin">
+          <button type="button" onClick={emptyRecycleBin} disabled={sortedFiles.length === 0} className="px-3 py-1.5 rounded-sm text-xs font-medium bg-red-500 text-white hover:bg-red-600 disabled:opacity-40 disabled:cursor-not-allowed" title="Empty Recycle Bin">
             🗑 Empty
           </button>
         )}
       </div>
 
       {/* Main */}
-      <div className="flex flex-grow overflow-hidden bg-white dark:bg-[#1c1c1c]">
+      <div className="flex grow overflow-hidden bg-white dark:bg-[#1c1c1c]">
         {/* Sidebar */}
         <div className="w-52 border-r border-gray-200 dark:border-gray-800 p-2 space-y-0.5 text-xs shrink-0 overflow-y-auto hidden lg:block">
           {sidebar.map((item, i) => {
@@ -536,7 +536,7 @@ export default function Explorer() {
                 onDragOver={(e) => { if (!isRecycleEntry) return; e.preventDefault(); e.dataTransfer.dropEffect = 'move'; e.currentTarget.classList.add('bg-blue-100', 'dark:bg-blue-900/40') }}
                 onDragLeave={(e) => { if (!isRecycleEntry) return; e.currentTarget.classList.remove('bg-blue-100', 'dark:bg-blue-900/40') }}
                 onDrop={(e) => { if (!isRecycleEntry) return; e.currentTarget.classList.remove('bg-blue-100', 'dark:bg-blue-900/40'); onRecycleDrop(e) }}
-                className={`w-full text-left py-1.5 rounded hover:bg-gray-100 dark:hover:bg-white/5 flex items-center group transition-colors ${active ? 'bg-blue-100/50 dark:bg-blue-900/20 text-win-blue font-semibold' : ''} ${item.indent ? 'pl-8' : 'px-3'}`}
+                className={`w-full text-left py-1.5 rounded-sm hover:bg-gray-100 dark:hover:bg-white/5 flex items-center group transition-colors ${active ? 'bg-blue-100/50 dark:bg-blue-900/20 text-win-blue font-semibold' : ''} ${item.indent ? 'pl-8' : 'px-3'}`}
               >
                 <span className="mr-3 text-base group-hover:scale-110 transition-transform flex items-center justify-center w-5 h-5 shrink-0">
                   {item.icon ? <img src={item.icon} alt="" className="w-full h-full object-contain" /> : '📁'}
@@ -550,7 +550,7 @@ export default function Explorer() {
         {/* File pane */}
         <div
           ref={fileGridRef}
-          className="flex-grow overflow-y-auto bg-white dark:bg-[#1c1c1c]"
+          className="grow overflow-y-auto bg-white dark:bg-[#1c1c1c]"
           onContextMenu={(e) => {
             if (e.target === e.currentTarget) {
               e.preventDefault()
@@ -637,7 +637,7 @@ export default function Explorer() {
       </div>
 
       {/* Status bar */}
-      <div className="h-6 border-t border-gray-200 dark:border-gray-800 bg-[#f3f3f3] dark:bg-[#2b2b2b] flex items-center px-4 justify-between text-[10px] opacity-60 shrink-0">
+      <div className="h-6 border-t border-gray-200 dark:border-gray-800 bg-win-bg dark:bg-[#2b2b2b] flex items-center px-4 justify-between text-[10px] opacity-60 shrink-0">
         <div>{sortedFiles.length} items</div>
         <div className="flex items-center space-x-4">
           {focusedAppId !== null && isExplorerFocused && (
@@ -698,15 +698,15 @@ function GridView({
             draggable={!isRenaming}
             onDragStart={onDragStart(file)}
             title={effectiveName(file)}
-            className={`flex flex-col items-center p-2 rounded border border-transparent hover:border-blue-200 dark:hover:border-blue-800 hover:bg-blue-50/50 dark:hover:bg-blue-900/10 cursor-pointer group transition-all w-[100px] ${isSelected ? 'bg-blue-100/50 dark:bg-blue-900/30 border-blue-300 dark:border-blue-700 shadow-sm' : ''}`}
+            className={`flex flex-col items-center p-2 rounded-sm border border-transparent hover:border-blue-200 dark:hover:border-blue-800 hover:bg-blue-50/50 dark:hover:bg-blue-900/10 cursor-pointer group transition-all w-[100px] ${isSelected ? 'bg-blue-100/50 dark:bg-blue-900/30 border-blue-300 dark:border-blue-700 shadow-xs' : ''}`}
           >
-            <div className="w-12 h-12 mb-2 flex items-center justify-center relative overflow-hidden rounded shadow-sm group-hover:scale-105 transition-transform shrink-0">
+            <div className="w-12 h-12 mb-2 flex items-center justify-center relative overflow-hidden rounded-sm shadow-xs group-hover:scale-105 transition-transform shrink-0">
               {file.type === 'image' ? (
                 <img src={file.url} alt="" className="w-full h-full object-cover" loading="lazy" />
               ) : file.icon && (file.icon.includes('.') || file.icon.startsWith('/')) ? (
                 <img src={file.icon} alt="" className="w-10 h-10 object-contain" />
               ) : (
-                <div className="text-4xl drop-shadow-sm">{file.icon || '📁'}</div>
+                <div className="text-4xl drop-shadow-xs">{file.icon || '📁'}</div>
               )}
             </div>
             {isRenaming ? (
@@ -716,13 +716,13 @@ function GridView({
                 onKeyDown={(e) => { if (e.key === 'Enter') commitRename(); if (e.key === 'Escape') cancelRename() }}
                 onBlur={commitRename}
                 onClick={(e) => e.stopPropagation()}
-                className="text-[11px] text-center w-full px-1 font-medium leading-tight bg-white dark:bg-[#1c1c1c] border border-win-blue rounded outline-none"
+                className="text-[11px] text-center w-full px-1 font-medium leading-tight bg-white dark:bg-[#1c1c1c] border border-win-blue rounded-sm outline-hidden"
               />
             ) : (
               <div className="text-[11px] text-center w-full px-0.5 font-medium leading-tight overflow-hidden">{effectiveName(file)}</div>
             )}
             {isRecycle && !isRenaming && (
-              <button type="button" onClick={(e) => { e.stopPropagation(); onRestore(file.name) }} className="mt-2 px-3 py-1 bg-win-blue text-white text-[10px] font-semibold rounded shadow hover:bg-blue-600 transition-colors" title={`Restore ${file.name}`}>
+              <button type="button" onClick={(e) => { e.stopPropagation(); onRestore(file.name) }} className="mt-2 px-3 py-1 bg-win-blue text-white text-[10px] font-semibold rounded-sm shadow-sm hover:bg-blue-600 transition-colors" title={`Restore ${file.name}`}>
                 ↺ Restore
               </button>
             )}
@@ -787,7 +787,7 @@ function DetailsView({
               <td className="pl-4 py-1.5 flex items-center space-x-2">
                 <span className="w-5 h-5 flex items-center justify-center shrink-0">
                   {file.type === 'image' ? (
-                    <img src={file.url} alt="" className="w-5 h-5 object-cover rounded" />
+                    <img src={file.url} alt="" className="w-5 h-5 object-cover rounded-sm" />
                   ) : file.icon && (file.icon.includes('.') || file.icon.startsWith('/')) ? (
                     <img src={file.icon} alt="" className="w-5 h-5 object-contain" />
                   ) : (
@@ -801,7 +801,7 @@ function DetailsView({
                     onKeyDown={(e) => { if (e.key === 'Enter') commitRename(); if (e.key === 'Escape') cancelRename() }}
                     onBlur={commitRename}
                     onClick={(e) => e.stopPropagation()}
-                    className="text-[12px] px-1 bg-white dark:bg-[#1c1c1c] border border-win-blue rounded outline-none w-full"
+                    className="text-[12px] px-1 bg-white dark:bg-[#1c1c1c] border border-win-blue rounded-sm outline-hidden w-full"
                   />
                 ) : (
                   <span className="truncate">{effectiveName(file)}</span>
@@ -848,15 +848,15 @@ function DetailsPanel({ file, currentPath, effectiveName, onClose }: DetailsPane
         <button type="button" onClick={onClose} className="opacity-50 hover:opacity-100 text-sm" aria-label="Close details">×</button>
       </div>
       {!file ? (
-        <div className="flex-grow flex items-center justify-center text-xs opacity-50 px-4 text-center">
+        <div className="grow flex items-center justify-center text-xs opacity-50 px-4 text-center">
           Select a file to see its properties.
         </div>
       ) : (
-        <div className="flex-grow overflow-y-auto p-4 space-y-4">
+        <div className="grow overflow-y-auto p-4 space-y-4">
           <div className="flex flex-col items-center">
-            <div className="w-20 h-20 flex items-center justify-center rounded shadow-sm">
+            <div className="w-20 h-20 flex items-center justify-center rounded-sm shadow-xs">
               {file.type === 'image' ? (
-                <img src={file.url} alt="" className="w-full h-full object-cover rounded" />
+                <img src={file.url} alt="" className="w-full h-full object-cover rounded-sm" />
               ) : file.icon && (file.icon.includes('.') || file.icon.startsWith('/')) ? (
                 <img src={file.icon} alt="" className="w-16 h-16 object-contain" />
               ) : (
@@ -885,7 +885,7 @@ function Row({ label, value }: { label: string; value: string }) {
   return (
     <div className="grid grid-cols-[5rem_1fr] gap-2">
       <dt className="opacity-50">{label}</dt>
-      <dd className="break-words">{value}</dd>
+      <dd className="wrap-break-word">{value}</dd>
     </div>
   )
 }

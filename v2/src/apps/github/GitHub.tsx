@@ -147,7 +147,7 @@ export default function GitHub() {
       </div>
 
       {/* Body */}
-      <div className="flex-grow overflow-auto">
+      <div className="grow overflow-auto">
         <div className="max-w-[1280px] mx-auto p-3 sm:p-4 grid grid-cols-1 lg:grid-cols-[1fr_296px] gap-4">
           {/* Main column */}
           <div className="min-w-0">
@@ -207,7 +207,7 @@ export default function GitHub() {
             {/* File list */}
             <div className="border border-[#30363d] rounded-md overflow-hidden">
               <div className="bg-[#161b22] px-3 py-2 text-[12px] opacity-80 border-b border-[#30363d] flex items-center gap-2">
-                <div className="w-7 h-7 rounded-full bg-gradient-to-br from-[#2f81f7] to-[#a371f7] flex items-center justify-center text-[10px] font-bold">
+                <div className="w-7 h-7 rounded-full bg-linear-to-br from-[#2f81f7] to-[#a371f7] flex items-center justify-center text-[10px] font-bold">
                   CV
                 </div>
                 <span className="font-semibold">CodedVisionDesign</span>
@@ -263,7 +263,7 @@ export default function GitHub() {
                 </p>
                 <p className="mb-4 opacity-90">
                   Two parallel builds of the same OS ship from the same repo and the same{' '}
-                  <code className="bg-[#161b22] px-1 py-0.5 rounded text-[12px]">assets/</code>:
+                  <code className="bg-[#161b22] px-1 py-0.5 rounded-sm text-[12px]">assets/</code>:
                 </p>
                 <table className="text-[13px] mb-4 border-collapse">
                   <thead>
@@ -382,7 +382,7 @@ export default function GitHub() {
             <section>
               <h3 className="text-[14px] font-semibold mb-2">Contributors</h3>
               <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#2f81f7] to-[#a371f7] flex items-center justify-center text-[11px] font-bold">
+                <div className="w-8 h-8 rounded-full bg-linear-to-br from-[#2f81f7] to-[#a371f7] flex items-center justify-center text-[11px] font-bold">
                   CV
                 </div>
                 <span className="text-[13px]">CodedVisionDesign</span>

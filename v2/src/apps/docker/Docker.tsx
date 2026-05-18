@@ -231,7 +231,7 @@ export default function Docker() {
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder="Search containers..."
-                    className="bg-[#21262d] border border-[#30363d] rounded-md pl-8 pr-3 py-1.5 text-[12px] text-[#e6edf3] placeholder-[#8b949e] w-56 focus:outline-none focus:ring-1 focus:ring-[#58a6ff] focus:border-[#58a6ff]"
+                    className="bg-[#21262d] border border-[#30363d] rounded-md pl-8 pr-3 py-1.5 text-[12px] text-[#e6edf3] placeholder-[#8b949e] w-56 focus:outline-hidden focus:ring-1 focus:ring-[#58a6ff] focus:border-[#58a6ff]"
                   />
                   <svg className="w-4 h-4 text-[#8b949e] absolute left-2.5 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -246,7 +246,7 @@ export default function Docker() {
                       <th className="py-2.5 px-4 font-medium text-[#8b949e] w-8">
                         <input
                           type="checkbox"
-                          className="rounded border-[#30363d] bg-[#21262d] text-[#58a6ff] focus:ring-[#58a6ff]"
+                          className="rounded-sm border-[#30363d] bg-[#21262d] text-[#58a6ff] focus:ring-[#58a6ff]"
                         />
                       </th>
                       <th className="py-2.5 px-4 font-medium text-[#8b949e]">Name</th>
@@ -267,7 +267,7 @@ export default function Docker() {
                         }`}
                       >
                         <td className="py-2 px-4" onClick={(e) => e.stopPropagation()}>
-                          <input type="checkbox" className="rounded border-[#30363d] bg-[#21262d] text-[#58a6ff] focus:ring-[#58a6ff]" />
+                          <input type="checkbox" className="rounded-sm border-[#30363d] bg-[#21262d] text-[#58a6ff] focus:ring-[#58a6ff]" />
                         </td>
                         <td className="py-2 px-4">
                           <div className="flex items-center gap-2">
@@ -300,7 +300,7 @@ export default function Docker() {
                               <button
                                 type="button"
                                 onClick={() => stopContainer(c)}
-                                className="px-2 py-1 rounded text-[10px] font-medium bg-[#21262d] hover:bg-red-500/20 text-red-400 border border-[#30363d] hover:border-red-500/50 transition-colors"
+                                className="px-2 py-1 rounded-sm text-[10px] font-medium bg-[#21262d] hover:bg-red-500/20 text-red-400 border border-[#30363d] hover:border-red-500/50 transition-colors"
                               >
                                 Stop
                               </button>
@@ -308,7 +308,7 @@ export default function Docker() {
                               <button
                                 type="button"
                                 onClick={() => startContainer(c)}
-                                className="px-2 py-1 rounded text-[10px] font-medium bg-[#21262d] hover:bg-green-500/20 text-green-400 border border-[#30363d] hover:border-green-500/50 transition-colors"
+                                className="px-2 py-1 rounded-sm text-[10px] font-medium bg-[#21262d] hover:bg-green-500/20 text-green-400 border border-[#30363d] hover:border-green-500/50 transition-colors"
                               >
                                 Start
                               </button>
@@ -317,7 +317,7 @@ export default function Docker() {
                               type="button"
                               onClick={() => restartContainer(c)}
                               disabled={c.status !== 'running'}
-                              className="px-2 py-1 rounded text-[10px] font-medium bg-[#21262d] hover:bg-[#58a6ff]/20 text-[#58a6ff] border border-[#30363d] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                              className="px-2 py-1 rounded-sm text-[10px] font-medium bg-[#21262d] hover:bg-[#58a6ff]/20 text-[#58a6ff] border border-[#30363d] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                             >
                               Restart
                             </button>
