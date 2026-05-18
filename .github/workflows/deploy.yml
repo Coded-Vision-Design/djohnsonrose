@@ -172,6 +172,30 @@ jobs:
           npm ci --prefer-offline --no-audit
           npm run build:css
 
+      # Sanity-check the compiled bundle. Catches the silent breakage
+      # mode where a dep bump (e.g. Tailwind 3→4) produces an empty/
+      # incompatible CSS file — the v1 desktop layout depends on these
+      # arbitrary utility classes, and there is no other test that
+      # exercises them at build time.
+      - name: Verify Tailwind output contains critical utilities
+        if: hashFiles('package.json') != ''
+        run: |
+          CSS=assets/css/app.css
+          if [ ! -s "$CSS" ]; then
+            echo "::error::$CSS is missing or empty"; exit 1
+          fi
+          MISSING=()
+          for cls in 'w-\[110px\]' 'h-\[44px\]' 'w-\[46px\]' 'h-\[32px\]'; do
+            if ! grep -qF "$cls" "$CSS"; then MISSING+=("$cls"); fi
+          done
+          if [ "${#MISSING[@]}" -gt 0 ]; then
+            echo "::error::Tailwind output is missing expected utility classes: ${MISSING[*]}"
+            echo "::error::This usually means a breaking Tailwind upgrade (e.g. v3→v4) landed."
+            echo "::error::Pin tailwindcss in package.json and re-run."
+            exit 1
+          fi
+          echo "Tailwind output OK ($(wc -c < "$CSS") bytes)"
+
       # ── 5b. Build v2 React sub-app if present ──────────────────────────────
       - name: Build v2 React app
         if: hashFiles('v2/package.json') != ''

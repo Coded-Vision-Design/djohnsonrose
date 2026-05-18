@@ -23,3 +23,37 @@ updates:
       patch-and-minor:
         applies-to: version-updates
         update-types: ["patch", "minor"]
+    # Framework-level majors break the build silently (e.g. Tailwind 3→4
+    # drops tailwind.config.js for CSS-first @theme blocks; React 19→20
+    # would change JSX runtime). These need a hand-rolled migration, not
+    # an auto-PR. Patches and minors still flow through normally.
+    ignore:
+      - dependency-name: "tailwindcss"
+        update-types: ["version-update:semver-major"]
+
+  # v2 React sub-app — same rules, separately scoped.
+  - package-ecosystem: "npm"
+    directory: "/v2"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 25
+    groups:
+      transitive-security:
+        applies-to: security-updates
+        patterns: ["*"]
+      patch-and-minor:
+        applies-to: version-updates
+        update-types: ["patch", "minor"]
+    ignore:
+      - dependency-name: "tailwindcss"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "react"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "react-dom"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "vite"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "typescript"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "zustand"
+        update-types: ["version-update:semver-major"]
