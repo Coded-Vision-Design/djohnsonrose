@@ -619,8 +619,12 @@ document.addEventListener('alpine:init', () => {
                 this.loggingIn = false;
                 localStorage.setItem('auth.loginTime', Date.now());
                 
-                // Set session identifier for the session
-                const sessionID = Math.random().toString(36).substring(7);
+                // Set session identifier for the session. Uses
+                // crypto.getRandomValues (cryptographically secure) — Math.random
+                // is predictable enough that CodeQL flags it for session IDs.
+                const sessionBuf = new Uint8Array(8);
+                window.crypto.getRandomValues(sessionBuf);
+                const sessionID = Array.from(sessionBuf, b => b.toString(16).padStart(2, '0')).join('');
                 sessionStorage.setItem('os.sessionID', sessionID);
 
                 Alpine.store('os').logEvent('Security', 'Information', `User DeVante logged in successfully (Session: ${sessionID})`);

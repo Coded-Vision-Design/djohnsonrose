@@ -44,6 +44,11 @@ concurrency:
   group: deploy-${{ github.repository }}
   cancel-in-progress: false
 
+# Least-privilege default for the whole workflow. The deploy job only reads
+# the repo and ships over SSH — it never writes back via the GITHUB_TOKEN.
+permissions:
+  contents: read
+
 jobs:
   deploy:
     name: Build & Deploy

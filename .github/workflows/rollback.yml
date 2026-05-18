@@ -27,6 +27,11 @@ on:
         required: false
         default: ""
 
+# Workflow-level default: read the repo only. The rollback-commit job
+# overrides this with `actions: write` so it can dispatch deploy.yml.
+permissions:
+  contents: read
+
 jobs:
   # ── List or restore snapshot ─────────────────────────────────────────────
   rollback-snapshot:
@@ -114,6 +119,11 @@ jobs:
     name: Redeploy Git Commit
     runs-on: ubuntu-latest
     if: github.event.inputs.mode == 'git-commit' && github.event.inputs.commit_sha != ''
+    # Override the workflow-level read-only default — this job dispatches
+    # deploy.yml, which requires actions: write on the GITHUB_TOKEN.
+    permissions:
+      contents: read
+      actions: write
     steps:
       - name: Trigger deploy workflow
         uses: actions/github-script@v9

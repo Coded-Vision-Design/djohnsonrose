@@ -21,10 +21,19 @@ function getDeviceInfo() {
   }
 }
 
+function randomHex(bytes: number): string {
+  const buf = new Uint8Array(bytes)
+  crypto.getRandomValues(buf)
+  return Array.from(buf, (b) => b.toString(16).padStart(2, '0')).join('')
+}
+
 function getSessionId() {
   let id = sessionStorage.getItem(SESSION_KEY)
   if (!id) {
-    id = crypto.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`
+    // Prefer randomUUID where available; fall back to crypto.getRandomValues
+    // (cryptographically secure) rather than Math.random. Same shape either
+    // way — a hex string we feed back to /api/log.php for session grouping.
+    id = crypto.randomUUID?.() ?? randomHex(16)
     sessionStorage.setItem(SESSION_KEY, id)
   }
   return id
