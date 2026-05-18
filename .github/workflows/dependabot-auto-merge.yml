@@ -19,12 +19,13 @@ jobs:
         with:
           github-token: "${{ secrets.GITHUB_TOKEN }}"
 
-      - name: Approve patch and minor updates
-        if: steps.meta.outputs.update-type == 'version-update:semver-patch' || steps.meta.outputs.update-type == 'version-update:semver-minor'
-        run: gh pr review --approve "$PR_URL"
-        env:
-          PR_URL: ${{ github.event.pull_request.html_url }}
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      # Skipped the `gh pr review --approve` step that's commonly used
+      # alongside auto-merge. The enterprise has "GitHub Actions can approve
+      # pull requests" disabled at org level, so the API call fails and
+      # marks the workflow red (blocking the very auto-merge it should
+      # unblock). Branch protection on this repo doesn't require approval
+      # so `--auto` alone is sufficient — GitHub merges as soon as the
+      # other required checks come back green.
 
       - name: Enable auto-merge (squash) for patch and minor
         if: steps.meta.outputs.update-type == 'version-update:semver-patch' || steps.meta.outputs.update-type == 'version-update:semver-minor'
