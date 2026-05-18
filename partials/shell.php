@@ -93,7 +93,15 @@
     </script>
 
     <!-- Custom CSS -->
-    <link rel="stylesheet" href="<?php echo BASE_PATH; ?>assets/css/app.css">
+    <?php
+    // Cache-bust on file mtime so a fresh CSS bundle invalidates the
+    // browser + Hostinger CDN cache immediately (default Cache-Control on
+    // /assets is max-age=604800 — without this the URL never changes and
+    // the old bundle keeps serving for a week after each deploy).
+    $cssPath = __DIR__ . '/../assets/css/app.css';
+    $cssVer  = @filemtime($cssPath) ?: time();
+    ?>
+    <link rel="stylesheet" href="<?php echo BASE_PATH; ?>assets/css/app.css?v=<?php echo $cssVer; ?>">
     <script>
         window.portfolioConfig = {
             email: '<?php echo $config["email"]; ?>',
