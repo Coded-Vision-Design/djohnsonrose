@@ -50,7 +50,7 @@ function AppButton({ appId }: { appId: string }) {
         isFocused ? 'bg-white/10 shadow-inner' : ''
       }`}
     >
-      <div className="w-7 h-7 rounded flex items-center justify-center overflow-hidden transition-transform group-hover:scale-110">
+      <div className="w-7 h-7 rounded-sm flex items-center justify-center overflow-hidden transition-transform group-hover:scale-110">
         <img src={def.icon} alt="" className="w-full h-full object-contain" />
       </div>
       {indicatorClass && (
@@ -107,7 +107,7 @@ export function Taskbar() {
 
   return (
     <div
-      className="absolute left-0 right-0 bottom-0 taskbar-glass flex items-center justify-between px-2 z-[9999] border-t border-white/20"
+      className="absolute left-0 right-0 bottom-0 taskbar-glass flex items-center justify-between px-2 z-9999 border-t border-white/20"
       style={{ height: TASKBAR_HEIGHT }}
     >
       {/* Left — weather widget toggle (v1 puts this in a w-48 container) */}
@@ -116,10 +116,10 @@ export function Taskbar() {
           type="button"
           data-popup-toggle="widgets"
           onClick={toggleWidgets}
-          className="px-2 py-1.5 rounded hover:bg-white/10 cursor-pointer flex items-center space-x-2 transition-colors group"
+          className="px-2 py-1.5 rounded-sm hover:bg-white/10 cursor-pointer flex items-center space-x-2 transition-colors group"
           title="Widgets"
         >
-          <span className="text-xl filter drop-shadow-sm group-hover:scale-110 transition-transform">
+          <span className="text-xl filter drop-shadow-xs group-hover:scale-110 transition-transform">
             {weather.icon}
           </span>
           <div className="flex flex-col leading-tight text-left">
@@ -159,7 +159,7 @@ export function Taskbar() {
           onClick={() => {
             if (!startMenuOpen) toggleStartMenu()
           }}
-          className="w-10 h-10 flex items-center justify-center rounded hover:bg-white/10 transition-colors"
+          className="w-10 h-10 flex items-center justify-center rounded-sm hover:bg-white/10 transition-colors"
           title="Search"
         >
           <svg className="w-5 h-5 text-win-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -170,7 +170,7 @@ export function Taskbar() {
         <button
           type="button"
           onClick={() => openApp('taskmanager')}
-          className="w-10 h-10 flex items-center justify-center rounded hover:bg-white/10 transition-colors"
+          className="w-10 h-10 flex items-center justify-center rounded-sm hover:bg-white/10 transition-colors"
           title="Task view"
         >
           <svg className="w-5 h-5 text-gray-500 dark:text-gray-400" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
@@ -194,14 +194,14 @@ export function Taskbar() {
         <a
           href="/"
           title="Switch to the original PHP (v1) build"
-          className="hidden md:flex items-center px-2 py-1 mr-1 rounded text-[10px] font-medium border border-win-blue/30 bg-win-blue/10 text-win-blue hover:bg-win-blue hover:text-white transition-colors"
+          className="hidden md:flex items-center px-2 py-1 mr-1 rounded-sm text-[10px] font-medium border border-win-blue/30 bg-win-blue/10 text-win-blue hover:bg-win-blue hover:text-white transition-colors"
         >
           🐘 PHP v1
         </a>
 
         {/* Hidden-icons popup */}
         {hiddenIconsOpen && (
-          <div className="absolute bottom-14 right-32 bg-white/90 dark:bg-[#1c1c1c]/95 backdrop-blur-xl border border-white/20 dark:border-white/10 rounded-xl shadow-2xl p-2 flex flex-row items-center space-x-1 z-[10001]">
+          <div className="absolute bottom-14 right-32 bg-white/90 dark:bg-[#1c1c1c]/95 backdrop-blur-xl border border-white/20 dark:border-white/10 rounded-xl shadow-2xl p-2 flex flex-row items-center space-x-1 z-10001">
             {runningAppIds.has('outlook') && (
               <button
                 type="button"
@@ -209,7 +209,7 @@ export function Taskbar() {
                   openApp('outlook')
                   setHiddenIconsOpen(false)
                 }}
-                className="p-2 hover:bg-black/5 dark:hover:bg-white/10 rounded transition-colors flex items-center justify-center"
+                className="p-2 hover:bg-black/5 dark:hover:bg-white/10 rounded-sm transition-colors flex items-center justify-center"
                 title="Outlook"
               >
                 <img src="/assets/img/outlook.webp" alt="" className="w-5 h-5" />
@@ -222,7 +222,7 @@ export function Taskbar() {
                   openApp('pdfreader')
                   setHiddenIconsOpen(false)
                 }}
-                className="p-2 hover:bg-black/5 dark:hover:bg-white/10 rounded transition-colors"
+                className="p-2 hover:bg-black/5 dark:hover:bg-white/10 rounded-sm transition-colors"
                 title="PDF Reader"
               >
                 <img src="/assets/img/pdf.webp" alt="" className="w-5 h-5" />
@@ -235,7 +235,7 @@ export function Taskbar() {
                   openApp('vscode')
                   setHiddenIconsOpen(false)
                 }}
-                className="p-2 hover:bg-black/5 dark:hover:bg-white/10 rounded transition-colors"
+                className="p-2 hover:bg-black/5 dark:hover:bg-white/10 rounded-sm transition-colors"
                 title="VS Code"
               >
                 <img src="/assets/img/vscode.webp" alt="" className="w-5 h-5" />
@@ -243,14 +243,14 @@ export function Taskbar() {
             )}
             {settings.bluetooth && (
               <div
-                className="p-2 hover:bg-black/5 dark:hover:bg-white/10 rounded transition-colors flex items-center justify-center"
+                className="p-2 hover:bg-black/5 dark:hover:bg-white/10 rounded-sm transition-colors flex items-center justify-center"
                 title="Bluetooth"
               >
                 <img src="/assets/img/bluetooth.webp" alt="" className="w-5 h-5 dark:invert opacity-80" />
               </div>
             )}
             <div
-              className="p-2 hover:bg-black/5 dark:hover:bg-white/10 rounded transition-colors flex items-center justify-center"
+              className="p-2 hover:bg-black/5 dark:hover:bg-white/10 rounded-sm transition-colors flex items-center justify-center"
               title="Windows Security"
             >
               <img src="/assets/img/win11/view.webp" alt="" className="w-5 h-5 dark:invert opacity-70" />
@@ -261,7 +261,7 @@ export function Taskbar() {
                 openApp('settings')
                 setHiddenIconsOpen(false)
               }}
-              className="p-2 hover:bg-black/5 dark:hover:bg-white/10 rounded transition-colors flex items-center justify-center"
+              className="p-2 hover:bg-black/5 dark:hover:bg-white/10 rounded-sm transition-colors flex items-center justify-center"
               title="Settings"
             >
               <img src="/assets/img/settings.webp" alt="" className="w-5 h-5 opacity-70" />
@@ -327,7 +327,7 @@ export function Taskbar() {
               }`}
             />
             {settings.batterySaver && (
-              <div className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 rounded-full border border-white dark:border-win-dark shadow-sm bg-yellow-500" />
+              <div className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 rounded-full border border-white dark:border-win-dark shadow-xs bg-yellow-500" />
             )}
           </div>
         </button>
@@ -336,7 +336,7 @@ export function Taskbar() {
         <button
           type="button"
           onClick={closeAllPopups}
-          className="px-2 py-1 rounded hover:bg-white/10 text-xs text-right leading-tight transition-colors"
+          className="px-2 py-1 rounded-sm hover:bg-white/10 text-xs text-right leading-tight transition-colors"
           title="Date and time"
         >
           <div>{clock.time}</div>

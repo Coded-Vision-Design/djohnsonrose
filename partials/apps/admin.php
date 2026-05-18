@@ -8,7 +8,7 @@
 
     <!-- ============ Lock screen (unauthenticated) ============ -->
     <template x-if="!me || !me.authenticated">
-        <div class="h-full flex flex-col items-center justify-center gap-5 bg-gradient-to-br from-[#003a8c] via-[#0050b3] to-[#1890ff] text-white p-6 text-center">
+        <div class="h-full flex flex-col items-center justify-center gap-5 bg-linear-to-br from-[#003a8c] via-[#0050b3] to-[#1890ff] text-white p-6 text-center">
             <img src="<?php echo IMG_PATH; ?>profile.webp" alt="" class="w-20 h-20 rounded-full ring-4 ring-white/20">
             <div>
                 <h1 class="text-2xl font-semibold">Admin Console</h1>
@@ -35,7 +35,7 @@
             <!-- Header -->
             <header class="shrink-0 bg-white dark:bg-[#2b2b2b] border-b border-gray-200 dark:border-gray-800 px-4 py-3 flex flex-wrap items-center gap-3 justify-between">
                 <div class="flex items-center gap-3 min-w-0">
-                    <div class="w-9 h-9 rounded-lg bg-gradient-to-br from-[#0078d4] to-[#5cb6ff] flex items-center justify-center text-white font-bold text-lg shrink-0">A</div>
+                    <div class="w-9 h-9 rounded-lg bg-linear-to-br from-win-blue to-[#5cb6ff] flex items-center justify-center text-white font-bold text-lg shrink-0">A</div>
                     <div class="min-w-0">
                         <div class="font-semibold leading-tight truncate">Portfolio OS · Admin Console</div>
                         <div class="text-[11px] opacity-60 truncate">
@@ -47,14 +47,14 @@
                 <div class="flex items-center gap-2 ml-auto">
                     <nav class="flex bg-gray-100 dark:bg-black/20 rounded-full p-1 text-[12px]">
                         <button type="button" @click="tab = 'dashboard'"
-                                :class="tab === 'dashboard' ? 'bg-white dark:bg-[#1c1c1c] shadow text-[#0078d4]' : 'opacity-70 hover:opacity-100'"
+                                :class="tab === 'dashboard' ? 'bg-white dark:bg-[#1c1c1c] shadow-sm text-win-blue' : 'opacity-70 hover:opacity-100'"
                                 class="px-3 py-1 rounded-full transition">Dashboard</button>
                         <button type="button" @click="tab = 'enquiries'"
-                                :class="tab === 'enquiries' ? 'bg-white dark:bg-[#1c1c1c] shadow text-[#0078d4]' : 'opacity-70 hover:opacity-100'"
+                                :class="tab === 'enquiries' ? 'bg-white dark:bg-[#1c1c1c] shadow-sm text-win-blue' : 'opacity-70 hover:opacity-100'"
                                 class="px-3 py-1 rounded-full transition">
                             Enquiries
                             <template x-if="stats && stats.enquiries_count > 0">
-                                <span class="ml-1 inline-flex min-w-[18px] justify-center bg-[#0078d4] text-white rounded-full text-[10px] px-1.5" x-text="stats.enquiries_count"></span>
+                                <span class="ml-1 inline-flex min-w-[18px] justify-center bg-win-blue text-white rounded-full text-[10px] px-1.5" x-text="stats.enquiries_count"></span>
                             </template>
                         </button>
                     </nav>
@@ -70,7 +70,7 @@
             </header>
 
             <!-- Body -->
-            <div class="flex-grow overflow-auto p-4 md:p-6 space-y-6">
+            <div class="grow overflow-auto p-4 md:p-6 space-y-6">
                 <template x-if="busy && !stats">
                     <div class="flex items-center justify-center py-20">
                         <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-win-blue"></div>
@@ -82,19 +82,19 @@
                     <div class="space-y-6">
                         <!-- KPI strip -->
                         <section class="grid grid-cols-2 md:grid-cols-4 gap-3">
-                            <div class="bg-white dark:bg-[#2b2b2b] border border-gray-200 dark:border-gray-800 rounded-xl p-4 shadow-sm ring-1 ring-gray-200/60 dark:ring-white/10">
+                            <div class="bg-white dark:bg-[#2b2b2b] border border-gray-200 dark:border-gray-800 rounded-xl p-4 shadow-xs ring-1 ring-gray-200/60 dark:ring-white/10">
                                 <div class="text-[11px] uppercase tracking-wide opacity-60">Total events</div>
                                 <div class="text-2xl font-semibold mt-1" x-text="stats.total_events.toLocaleString()"></div>
                             </div>
-                            <div class="bg-white dark:bg-[#2b2b2b] border border-gray-200 dark:border-gray-800 rounded-xl p-4 shadow-sm ring-1 ring-gray-200/60 dark:ring-white/10">
+                            <div class="bg-white dark:bg-[#2b2b2b] border border-gray-200 dark:border-gray-800 rounded-xl p-4 shadow-xs ring-1 ring-gray-200/60 dark:ring-white/10">
                                 <div class="text-[11px] uppercase tracking-wide opacity-60">Enquiries</div>
                                 <div class="text-2xl font-semibold mt-1" x-text="stats.enquiries_count.toLocaleString()"></div>
                             </div>
-                            <div class="bg-white dark:bg-[#2b2b2b] border border-gray-200 dark:border-gray-800 rounded-xl p-4 shadow-sm ring-1 ring-amber-200/60 dark:ring-amber-500/30">
+                            <div class="bg-white dark:bg-[#2b2b2b] border border-gray-200 dark:border-gray-800 rounded-xl p-4 shadow-xs ring-1 ring-amber-200/60 dark:ring-amber-500/30">
                                 <div class="text-[11px] uppercase tracking-wide opacity-60">v1 events (PHP)</div>
                                 <div class="text-2xl font-semibold mt-1" x-text="kpi('php')"></div>
                             </div>
-                            <div class="bg-white dark:bg-[#2b2b2b] border border-gray-200 dark:border-gray-800 rounded-xl p-4 shadow-sm ring-1 ring-blue-200/60 dark:ring-blue-500/30">
+                            <div class="bg-white dark:bg-[#2b2b2b] border border-gray-200 dark:border-gray-800 rounded-xl p-4 shadow-xs ring-1 ring-blue-200/60 dark:ring-blue-500/30">
                                 <div class="text-[11px] uppercase tracking-wide opacity-60">v2 events (React)</div>
                                 <div class="text-2xl font-semibold mt-1" x-text="kpi('react')"></div>
                             </div>
@@ -102,44 +102,44 @@
 
                         <!-- Source pie + Daily sessions -->
                         <section class="grid grid-cols-1 lg:grid-cols-3 gap-4">
-                            <div class="bg-white dark:bg-[#2b2b2b] border border-gray-200 dark:border-gray-800 rounded-xl p-4 shadow-sm flex flex-col lg:col-span-1">
+                            <div class="bg-white dark:bg-[#2b2b2b] border border-gray-200 dark:border-gray-800 rounded-xl p-4 shadow-xs flex flex-col lg:col-span-1">
                                 <h3 class="text-sm font-semibold mb-3">v1 vs v2 (lifetime)</h3>
-                                <div class="relative flex-grow min-h-[240px]"><canvas x-ref="sourceChart"></canvas></div>
+                                <div class="relative grow min-h-[240px]"><canvas x-ref="sourceChart"></canvas></div>
                             </div>
-                            <div class="bg-white dark:bg-[#2b2b2b] border border-gray-200 dark:border-gray-800 rounded-xl p-4 shadow-sm flex flex-col lg:col-span-2">
+                            <div class="bg-white dark:bg-[#2b2b2b] border border-gray-200 dark:border-gray-800 rounded-xl p-4 shadow-xs flex flex-col lg:col-span-2">
                                 <h3 class="text-sm font-semibold mb-3">Daily sessions (last 14 days)</h3>
-                                <div class="relative flex-grow min-h-[240px]"><canvas x-ref="dailyChart"></canvas></div>
+                                <div class="relative grow min-h-[240px]"><canvas x-ref="dailyChart"></canvas></div>
                             </div>
                         </section>
 
                         <!-- Per-app + Device type -->
                         <section class="grid grid-cols-1 lg:grid-cols-3 gap-4">
-                            <div class="bg-white dark:bg-[#2b2b2b] border border-gray-200 dark:border-gray-800 rounded-xl p-4 shadow-sm flex flex-col lg:col-span-2">
+                            <div class="bg-white dark:bg-[#2b2b2b] border border-gray-200 dark:border-gray-800 rounded-xl p-4 shadow-xs flex flex-col lg:col-span-2">
                                 <h3 class="text-sm font-semibold mb-3">Most used apps (60 days)</h3>
-                                <div class="relative flex-grow min-h-[240px]"><canvas x-ref="perAppChart"></canvas></div>
+                                <div class="relative grow min-h-[240px]"><canvas x-ref="perAppChart"></canvas></div>
                             </div>
-                            <div class="bg-white dark:bg-[#2b2b2b] border border-gray-200 dark:border-gray-800 rounded-xl p-4 shadow-sm flex flex-col lg:col-span-1">
+                            <div class="bg-white dark:bg-[#2b2b2b] border border-gray-200 dark:border-gray-800 rounded-xl p-4 shadow-xs flex flex-col lg:col-span-1">
                                 <h3 class="text-sm font-semibold mb-3">Device type</h3>
-                                <div class="relative flex-grow min-h-[240px]"><canvas x-ref="deviceChart"></canvas></div>
+                                <div class="relative grow min-h-[240px]"><canvas x-ref="deviceChart"></canvas></div>
                             </div>
                         </section>
 
                         <!-- Browser + country -->
                         <section class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                            <div class="bg-white dark:bg-[#2b2b2b] border border-gray-200 dark:border-gray-800 rounded-xl p-4 shadow-sm flex flex-col">
+                            <div class="bg-white dark:bg-[#2b2b2b] border border-gray-200 dark:border-gray-800 rounded-xl p-4 shadow-xs flex flex-col">
                                 <h3 class="text-sm font-semibold mb-3">Browser breakdown</h3>
-                                <div class="relative flex-grow min-h-[240px]"><canvas x-ref="browserChart"></canvas></div>
+                                <div class="relative grow min-h-[240px]"><canvas x-ref="browserChart"></canvas></div>
                             </div>
-                            <div class="bg-white dark:bg-[#2b2b2b] border border-gray-200 dark:border-gray-800 rounded-xl p-4 shadow-sm flex flex-col">
+                            <div class="bg-white dark:bg-[#2b2b2b] border border-gray-200 dark:border-gray-800 rounded-xl p-4 shadow-xs flex flex-col">
                                 <h3 class="text-sm font-semibold mb-3">Top countries</h3>
-                                <div class="relative flex-grow min-h-[240px]"><canvas x-ref="countryChart"></canvas></div>
+                                <div class="relative grow min-h-[240px]"><canvas x-ref="countryChart"></canvas></div>
                             </div>
                         </section>
 
                         <!-- Screen time -->
                         <section class="grid grid-cols-1 md:grid-cols-3 gap-3">
                             <template x-for="row in stats.screen_time" :key="row.source">
-                                <div class="bg-white dark:bg-[#2b2b2b] border border-gray-200 dark:border-gray-800 rounded-xl p-4 shadow-sm">
+                                <div class="bg-white dark:bg-[#2b2b2b] border border-gray-200 dark:border-gray-800 rounded-xl p-4 shadow-xs">
                                     <div class="text-[11px] uppercase tracking-wide opacity-60">
                                         <span x-text="(row.source || 'unknown').toUpperCase()"></span> session depth
                                     </div>
@@ -156,7 +156,7 @@
 
                 <!-- Enquiries tab -->
                 <template x-if="tab === 'enquiries' && stats">
-                    <section class="bg-white dark:bg-[#2b2b2b] border border-gray-200 dark:border-gray-800 rounded-xl shadow-sm overflow-hidden">
+                    <section class="bg-white dark:bg-[#2b2b2b] border border-gray-200 dark:border-gray-800 rounded-xl shadow-xs overflow-hidden">
                         <div class="flex flex-col md:flex-row min-h-[420px]">
                             <div class="md:w-2/5 border-b md:border-b-0 md:border-r border-gray-200 dark:border-gray-800 overflow-y-auto max-h-[60vh]">
                                 <template x-if="stats.enquiries.length === 0">

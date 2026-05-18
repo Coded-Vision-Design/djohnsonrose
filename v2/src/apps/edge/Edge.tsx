@@ -105,7 +105,7 @@ export default function Edge() {
                   e.stopPropagation()
                   closeTab(tab.id)
                 }}
-                className="ml-auto hover:bg-gray-300 dark:hover:bg-white/10 rounded p-0.5"
+                className="ml-auto hover:bg-gray-300 dark:hover:bg-white/10 rounded-sm p-0.5"
                 aria-label="Close tab"
               >
                 ✕
@@ -115,7 +115,7 @@ export default function Edge() {
           <button
             type="button"
             onClick={addTab}
-            className="p-1.5 rounded hover:bg-gray-200 dark:hover:bg-white/5 shrink-0 ml-1"
+            className="p-1.5 rounded-sm hover:bg-gray-200 dark:hover:bg-white/5 shrink-0 ml-1"
             aria-label="New tab"
           >
             +
@@ -127,7 +127,7 @@ export default function Edge() {
           <button
             type="button"
             onClick={() => updateActiveUrl(HOME_URL)}
-            className="p-2 rounded hover:bg-gray-200 dark:hover:bg-white/5 opacity-70"
+            className="p-2 rounded-sm hover:bg-gray-200 dark:hover:bg-white/5 opacity-70"
             title="Home"
           >
             ⌂
@@ -137,24 +137,24 @@ export default function Edge() {
             onClick={() => {
               setTabs((prev) => [...prev])
             }}
-            className="p-2 rounded hover:bg-gray-200 dark:hover:bg-white/5 opacity-70"
+            className="p-2 rounded-sm hover:bg-gray-200 dark:hover:bg-white/5 opacity-70"
             title="Refresh"
           >
             ⟳
           </button>
-          <div className="flex-grow bg-white dark:bg-black/20 border border-gray-200 dark:border-white/10 rounded-full px-4 py-1 flex items-center min-w-0 h-8 focus-within:ring-2 ring-win-blue/20">
+          <div className="grow bg-white dark:bg-black/20 border border-gray-200 dark:border-white/10 rounded-full px-4 py-1 flex items-center min-w-0 h-8 focus-within:ring-2 ring-win-blue/20">
             <input
               type="text"
               value={active.url}
               onChange={(e) => updateActiveUrl(e.target.value)}
-              className="bg-transparent border-none outline-none w-full text-xs"
+              className="bg-transparent border-none outline-hidden w-full text-xs"
             />
           </div>
         </div>
       </div>
 
       {/* Content */}
-      <div className="flex-grow relative overflow-auto bg-gray-50 dark:bg-[#1c1c1c]">
+      <div className="grow relative overflow-auto bg-gray-50 dark:bg-[#1c1c1c]">
         {active.url === HOME_URL ? (
           <div className="max-w-5xl mx-auto p-4 sm:p-6 md:p-8">
             <h1 className="font-bold mb-8 text-3xl">Featured Projects</h1>
@@ -194,7 +194,7 @@ export default function Edge() {
                           <img
                             src={`https://flagcdn.com/w20/${p.country_code.split('-')[0]}.png`}
                             alt=""
-                            className="w-4 h-auto rounded-sm"
+                            className="w-4 h-auto rounded-xs"
                           />
                           <span className="text-[10px] font-bold">{p.location ?? 'UK'}</span>
                         </div>
@@ -207,7 +207,7 @@ export default function Edge() {
                       {p.tags.map((t) => (
                         <span
                           key={t}
-                          className="px-2 py-0.5 bg-gray-100 dark:bg-white/10 rounded text-[10px] text-gray-500 uppercase tracking-wider"
+                          className="px-2 py-0.5 bg-gray-100 dark:bg-white/10 rounded-sm text-[10px] text-gray-500 uppercase tracking-wider"
                         >
                           {t}
                         </span>

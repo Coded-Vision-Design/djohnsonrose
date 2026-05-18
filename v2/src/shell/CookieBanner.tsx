@@ -28,7 +28,7 @@ export function CookieBanner() {
     <div
       role="dialog"
       aria-label="Cookie consent"
-      className="fixed bottom-16 right-4 z-[20000] w-[360px] glass rounded-xl p-4 win-shadow text-xs animate-window-open"
+      className="fixed bottom-16 right-4 z-20000 w-[360px] glass rounded-xl p-4 win-shadow text-xs animate-window-open"
     >
       <div className="font-semibold mb-2">Cookies &amp; telemetry</div>
       <p className="opacity-80 leading-relaxed mb-3">
@@ -41,14 +41,14 @@ export function CookieBanner() {
         <button
           type="button"
           onClick={decline}
-          className="px-3 py-1 rounded text-[11px] hover:bg-black/5 dark:hover:bg-white/10"
+          className="px-3 py-1 rounded-sm text-[11px] hover:bg-black/5 dark:hover:bg-white/10"
         >
           Decline
         </button>
         <button
           type="button"
           onClick={accept}
-          className="px-4 py-1 rounded bg-win-blue text-white text-[11px] font-medium hover:opacity-90"
+          className="px-4 py-1 rounded-sm bg-win-blue text-white text-[11px] font-medium hover:opacity-90"
         >
           Accept
         </button>

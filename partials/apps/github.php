@@ -95,7 +95,7 @@ $topics = ['portfolio', 'windows-11', 'react', 'php', 'typescript', 'alpinejs', 
     </div>
 
     <!-- Body -->
-    <div class="flex-grow overflow-auto">
+    <div class="grow overflow-auto">
         <div class="max-w-[1280px] mx-auto p-3 sm:p-4 grid grid-cols-1 lg:grid-cols-[1fr_296px] gap-4">
 
             <!-- Main column -->
@@ -124,7 +124,7 @@ $topics = ['portfolio', 'windows-11', 'react', 'php', 'typescript', 'alpinejs', 
                 <!-- File list -->
                 <div class="border border-[#30363d] rounded-md overflow-hidden">
                     <div class="bg-[#161b22] px-3 py-2 text-[12px] opacity-80 border-b border-[#30363d] flex items-center gap-2">
-                        <div class="w-7 h-7 rounded-full bg-gradient-to-br from-[#2f81f7] to-[#a371f7] flex items-center justify-center text-[10px] font-bold">CV</div>
+                        <div class="w-7 h-7 rounded-full bg-linear-to-br from-[#2f81f7] to-[#a371f7] flex items-center justify-center text-[10px] font-bold">CV</div>
                         <span class="font-semibold">CodedVisionDesign</span>
                         <span class="hidden sm:inline truncate opacity-80">fix(v2 mobile): tighten padding + stacking in high-traffic apps</span>
                         <span class="ml-auto shrink-0 opacity-70">2 minutes ago</span>
@@ -162,7 +162,7 @@ $topics = ['portfolio', 'windows-11', 'react', 'php', 'typescript', 'alpinejs', 
                         <h1 class="text-2xl font-bold border-b border-[#30363d] pb-3 mb-4">Portfolio OS — DeVanté Johnson-Rose</h1>
                         <p class="mb-3">A pixel-faithful Windows 11 desktop, in the browser, as a portfolio.</p>
                         <p class="mb-4">Live: <a href="https://devante.johnson-rose.co.uk" target="_blank" rel="noopener noreferrer" class="text-[#2f81f7] hover:underline">https://devante.johnson-rose.co.uk</a></p>
-                        <p class="mb-4 opacity-90">Two parallel builds of the same OS ship from the same repo and the same <code class="bg-[#161b22] px-1 py-0.5 rounded text-[12px]">assets/</code>:</p>
+                        <p class="mb-4 opacity-90">Two parallel builds of the same OS ship from the same repo and the same <code class="bg-[#161b22] px-1 py-0.5 rounded-sm text-[12px]">assets/</code>:</p>
                         <table class="text-[13px] mb-4 border-collapse">
                             <thead><tr class="border-b border-[#30363d]">
                                 <th class="text-left py-1 pr-6 font-semibold">Track</th>
@@ -217,7 +217,7 @@ $topics = ['portfolio', 'windows-11', 'react', 'php', 'typescript', 'alpinejs', 
                 <section>
                     <h3 class="text-[14px] font-semibold mb-2">Contributors</h3>
                     <div class="flex items-center gap-2">
-                        <div class="w-8 h-8 rounded-full bg-gradient-to-br from-[#2f81f7] to-[#a371f7] flex items-center justify-center text-[11px] font-bold">CV</div>
+                        <div class="w-8 h-8 rounded-full bg-linear-to-br from-[#2f81f7] to-[#a371f7] flex items-center justify-center text-[11px] font-bold">CV</div>
                         <span class="text-[13px]">CodedVisionDesign</span>
                     </div>
                 </section>

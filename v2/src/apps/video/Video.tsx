@@ -19,7 +19,7 @@ export default function Video() {
         src={src}
         controls
         autoPlay
-        className="flex-grow w-full h-full bg-black"
+        className="grow w-full h-full bg-black"
       />
     </div>
   )

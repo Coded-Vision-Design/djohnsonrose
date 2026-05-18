@@ -1,5 +1,5 @@
 <!-- partials/apps/settings.php -->
-<div class="h-full flex text-black dark:text-white" :class="isMobile ? 'flex-col bg-white dark:bg-[#1c1c1c]' : 'bg-[#f3f3f3] dark:bg-[#202020]'" x-data="settingsApp()">
+<div class="h-full flex text-black dark:text-white" :class="isMobile ? 'flex-col bg-white dark:bg-[#1c1c1c]' : 'bg-win-bg dark:bg-win-dark'" x-data="settingsApp()">
     <!-- Sidebar -->
     <div :class="isMobile ? 'w-full border-b flex overflow-x-auto p-2 space-x-2 shrink-0' : 'w-64 border-r p-4 space-y-2'" class="border-gray-300 dark:border-gray-700">
         <div class="flex items-center space-x-3 p-3 mb-6" x-show="!isMobile">
@@ -11,7 +11,7 @@
         </div>
         <template x-for="item in nav">
             <button @click="currentTab = item.id" 
-                    :class="{'bg-white dark:bg-white/10 shadow-sm': currentTab === item.id, 'px-4 py-2 rounded-full whitespace-nowrap text-[10px]': isMobile, 'w-full text-left px-3 py-2 rounded-md text-xs': !isMobile}"
+                    :class="{'bg-white dark:bg-white/10 shadow-xs': currentTab === item.id, 'px-4 py-2 rounded-full whitespace-nowrap text-[10px]': isMobile, 'w-full text-left px-3 py-2 rounded-md text-xs': !isMobile}"
                     class="font-medium flex items-center transition-all border border-transparent"
                     :class="isMobile && currentTab === item.id ? 'border-win-blue text-win-blue' : ''">
                 <span :class="isMobile ? 'mr-1 text-sm' : 'mr-3 text-lg'" x-text="item.icon"></span>
@@ -21,7 +21,7 @@
     </div>
 
     <!-- Content -->
-    <div class="flex-grow overflow-y-auto" :class="isMobile ? 'p-4' : 'p-10'">
+    <div class="grow overflow-y-auto" :class="isMobile ? 'p-4' : 'p-10'">
         <h1 class="font-semibold mb-8" :class="isMobile ? 'text-xl mb-4' : 'text-3xl'" x-text="nav.find(i => i.id === currentTab).label"></h1>
         
         <!-- System Tab -->
@@ -98,13 +98,13 @@
                     <!-- Mock Taskbar in preview -->
                     <div class="absolute bottom-0 inset-x-0 h-2 bg-white/20 backdrop-blur-md"></div>
                 </div>
-                <div class="flex-grow">
+                <div class="grow">
                     <h2 class="text-xl font-semibold mb-1">Background</h2>
                     <p class="text-xs text-gray-500 mb-4">Select a picture to preview, then click Save to apply it.</p>
                     <div class="flex items-center space-x-4">
                         <button @click="saveWallpaper()" 
                                 :disabled="!selectedWallpaper || selectedWallpaper === Alpine.store('os').settings.wallpaper"
-                                class="bg-win-blue text-white px-6 py-1.5 rounded text-xs font-medium hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all">
+                                class="bg-win-blue text-white px-6 py-1.5 rounded-sm text-xs font-medium hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all">
                             Save Changes
                         </button>
                         <button @click="selectedWallpaper = Alpine.store('os').settings.wallpaper"
@@ -130,11 +130,11 @@
 
         <!-- Experience Tab -->
         <div x-show="currentTab === 'experience'" class="space-y-6" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 translate-y-4" x-transition:enter-end="opacity-100 translate-y-0">
-            <div class="relative space-y-4 before:absolute before:inset-0 before:ml-5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-win-blue/20 before:to-transparent">
+            <div class="relative space-y-4 before:absolute before:inset-0 before:ml-5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-linear-to-b before:from-transparent before:via-win-blue/20 before:to-transparent">
                 <template x-for="job in experience" :key="job.id">
                     <div class="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
                         <!-- Icon / Logo -->
-                        <div class="flex items-center justify-center w-12 h-12 rounded-full border border-win-blue bg-white dark:bg-[#202020] text-win-blue shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 overflow-hidden">
+                        <div class="flex items-center justify-center w-12 h-12 rounded-full border border-win-blue bg-white dark:bg-win-dark text-win-blue shadow-sm shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 overflow-hidden">
                             <template x-if="job.logo">
                                 <img :src="window.portfolioConfig.basePath + job.logo" class="w-8 h-8 object-contain">
                             </template>
@@ -143,10 +143,10 @@
                             </template>
                         </div>
                         <!-- Content -->
-                        <div class="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] glass p-6 rounded-lg border border-gray-200 dark:border-white/10 shadow-sm transition-all hover:border-win-blue/50">
+                        <div class="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] glass p-6 rounded-lg border border-gray-200 dark:border-white/10 shadow-xs transition-all hover:border-win-blue/50">
                             <div class="flex items-center justify-between space-x-2 mb-1">
                                 <div class="font-bold dark:text-white text-base" x-text="job.role"></div>
-                                <time class="font-mono text-[10px] text-win-blue font-bold whitespace-nowrap bg-win-blue/10 px-2 py-0.5 rounded" x-text="job.period"></time>
+                                <time class="font-mono text-[10px] text-win-blue font-bold whitespace-nowrap bg-win-blue/10 px-2 py-0.5 rounded-sm" x-text="job.period"></time>
                             </div>
                             <div class="text-win-blue text-xs font-semibold mb-3">
                                 <span x-text="job.company"></span><template x-if="job.location"><span class="opacity-70" x-text="' · ' + job.location"></span></template>
@@ -224,7 +224,7 @@
                     <div class="font-bold text-xs uppercase text-gray-400 mb-4 tracking-wider">Frameworks & Technologies</div>
                     <div class="flex flex-wrap gap-2">
                         <template x-for="tech in skills.frameworks">
-                            <span class="px-2 py-1 bg-win-blue/10 border border-win-blue/20 rounded text-[10px] font-medium" x-text="tech"></span>
+                            <span class="px-2 py-1 bg-win-blue/10 border border-win-blue/20 rounded-sm text-[10px] font-medium" x-text="tech"></span>
                         </template>
                     </div>
                 </div>
@@ -232,7 +232,7 @@
                     <div class="font-bold text-xs uppercase text-gray-400 mb-4 tracking-wider">Tools & Infrastructure</div>
                     <div class="flex flex-wrap gap-2">
                         <template x-for="tool in skills.tools">
-                            <span class="px-2 py-1 bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded text-[10px] font-medium" x-text="tool"></span>
+                            <span class="px-2 py-1 bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-sm text-[10px] font-medium" x-text="tool"></span>
                         </template>
                     </div>
                 </div>
@@ -240,7 +240,7 @@
                     <div class="font-bold text-xs uppercase text-gray-400 mb-4 tracking-wider">Operations & Management</div>
                     <div class="flex flex-wrap gap-2">
                         <template x-for="op in skills.operations">
-                            <span class="px-2 py-1 bg-win-blue/10 border border-win-blue/20 rounded text-[10px] font-medium" x-text="op"></span>
+                            <span class="px-2 py-1 bg-win-blue/10 border border-win-blue/20 rounded-sm text-[10px] font-medium" x-text="op"></span>
                         </template>
                     </div>
                 </div>
@@ -248,7 +248,7 @@
                     <div class="font-bold text-xs uppercase text-gray-400 mb-4 tracking-wider">API Integration</div>
                     <div class="flex flex-wrap gap-2">
                         <template x-for="api in skills.apis">
-                            <span class="px-2 py-1 bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded text-[10px] font-medium" x-text="api"></span>
+                            <span class="px-2 py-1 bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-sm text-[10px] font-medium" x-text="api"></span>
                         </template>
                     </div>
                 </div>
@@ -270,7 +270,7 @@
                     <div class="font-bold text-xs uppercase text-gray-400 mb-4 tracking-wider">Interests & Human Profile</div>
                     <div class="flex flex-wrap gap-2">
                         <template x-for="interest in ['Technology', 'Fitness', 'MMA', 'IOT', 'Automation', 'Virtualisation', 'Photography', 'Athletics', 'Rugby', 'Brazilian Jiu-Jitsu']">
-                            <span class="px-2 py-1 bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded text-[10px] font-medium" x-text="interest"></span>
+                            <span class="px-2 py-1 bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-sm text-[10px] font-medium" x-text="interest"></span>
                         </template>
                     </div>
                 </div>

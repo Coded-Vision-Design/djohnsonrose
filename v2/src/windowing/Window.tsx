@@ -60,7 +60,7 @@ export function Window({ win, children }: Props) {
     <div
       className={`absolute flex flex-col pointer-events-auto win-shadow glass animate-window-open overflow-hidden ${
         isFocused ? 'window-active' : ''
-      } ${isMaximized ? '!rounded-none' : 'rounded-lg'}`}
+      } ${isMaximized ? 'rounded-none!' : 'rounded-lg'}`}
       style={style}
       onMouseDown={() => focusWindow(win.id)}
       role="dialog"
@@ -135,7 +135,7 @@ export function Window({ win, children }: Props) {
 
       {/* Window content */}
       <div
-        className={`flex-grow overflow-auto relative bg-white dark:bg-[#1c1c1c] ${
+        className={`grow overflow-auto relative bg-white dark:bg-[#1c1c1c] ${
           isMaximized ? '' : 'rounded-b-lg'
         }`}
       >

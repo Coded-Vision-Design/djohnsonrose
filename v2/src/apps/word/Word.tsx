@@ -54,7 +54,7 @@ export default function Word() {
   }
 
   return (
-    <div className="h-full flex flex-col bg-[#f3f3f3] dark:bg-[#1c1c1c] select-none">
+    <div className="h-full flex flex-col bg-win-bg dark:bg-[#1c1c1c] select-none">
       {/* Title bar */}
       <div className="h-8 bg-[#2b579a] flex items-center px-3 justify-between shrink-0">
         <div className="flex items-center space-x-3">
@@ -81,11 +81,11 @@ export default function Word() {
           ))}
         </div>
 
-        <div className="p-2 flex items-center space-x-2 bg-gray-50 dark:bg-[#2d2d2d] shadow-sm">
+        <div className="p-2 flex items-center space-x-2 bg-gray-50 dark:bg-[#2d2d2d] shadow-xs">
           <button
             type="button"
             onClick={() => exec('bold')}
-            className="w-7 h-7 font-bold hover:bg-gray-200 dark:hover:bg-white/10 rounded text-xs"
+            className="w-7 h-7 font-bold hover:bg-gray-200 dark:hover:bg-white/10 rounded-sm text-xs"
             title="Bold"
           >
             B
@@ -93,7 +93,7 @@ export default function Word() {
           <button
             type="button"
             onClick={() => exec('italic')}
-            className="w-7 h-7 italic hover:bg-gray-200 dark:hover:bg-white/10 rounded text-xs"
+            className="w-7 h-7 italic hover:bg-gray-200 dark:hover:bg-white/10 rounded-sm text-xs"
             title="Italic"
           >
             I
@@ -101,7 +101,7 @@ export default function Word() {
           <button
             type="button"
             onClick={() => exec('underline')}
-            className="w-7 h-7 underline hover:bg-gray-200 dark:hover:bg-white/10 rounded text-xs"
+            className="w-7 h-7 underline hover:bg-gray-200 dark:hover:bg-white/10 rounded-sm text-xs"
             title="Underline"
           >
             U
@@ -110,21 +110,21 @@ export default function Word() {
           <button
             type="button"
             onClick={() => exec('justifyLeft')}
-            className="px-2 h-7 hover:bg-gray-200 dark:hover:bg-white/10 rounded text-xs"
+            className="px-2 h-7 hover:bg-gray-200 dark:hover:bg-white/10 rounded-sm text-xs"
           >
             ←
           </button>
           <button
             type="button"
             onClick={() => exec('justifyCenter')}
-            className="px-2 h-7 hover:bg-gray-200 dark:hover:bg-white/10 rounded text-xs"
+            className="px-2 h-7 hover:bg-gray-200 dark:hover:bg-white/10 rounded-sm text-xs"
           >
             ≡
           </button>
           <button
             type="button"
             onClick={() => exec('justifyRight')}
-            className="px-2 h-7 hover:bg-gray-200 dark:hover:bg-white/10 rounded text-xs"
+            className="px-2 h-7 hover:bg-gray-200 dark:hover:bg-white/10 rounded-sm text-xs"
           >
             →
           </button>
@@ -132,7 +132,7 @@ export default function Word() {
           <button
             type="button"
             onClick={() => exec('insertUnorderedList')}
-            className="px-2 h-7 hover:bg-gray-200 dark:hover:bg-white/10 rounded text-xs"
+            className="px-2 h-7 hover:bg-gray-200 dark:hover:bg-white/10 rounded-sm text-xs"
             title="Bulleted list"
           >
             •
@@ -140,7 +140,7 @@ export default function Word() {
           <button
             type="button"
             onClick={() => exec('insertOrderedList')}
-            className="px-2 h-7 hover:bg-gray-200 dark:hover:bg-white/10 rounded text-xs"
+            className="px-2 h-7 hover:bg-gray-200 dark:hover:bg-white/10 rounded-sm text-xs"
             title="Numbered list"
           >
             1.
@@ -150,7 +150,7 @@ export default function Word() {
             <button
               type="button"
               onClick={print}
-              className="text-[11px] bg-[#2b579a] text-white px-4 py-1.5 rounded-sm hover:bg-[#1e3e6d] font-medium"
+              className="text-[11px] bg-[#2b579a] text-white px-4 py-1.5 rounded-xs hover:bg-[#1e3e6d] font-medium"
             >
               Print PDF
             </button>
@@ -159,13 +159,13 @@ export default function Word() {
       </div>
 
       {/* Document */}
-      <div className="flex-grow overflow-y-auto p-12 flex justify-center bg-[#e6e6e6] dark:bg-[#202020]">
+      <div className="grow overflow-y-auto p-12 flex justify-center bg-[#e6e6e6] dark:bg-win-dark">
         <div
           ref={editorRef}
           contentEditable
           suppressContentEditableWarning
           spellCheck={false}
-          className="w-full max-w-[816px] min-h-[1056px] bg-white text-black shadow-2xl p-16 outline-none font-serif"
+          className="w-full max-w-[816px] min-h-[1056px] bg-white text-black shadow-2xl p-16 outline-hidden font-serif"
           dangerouslySetInnerHTML={{ __html: html }}
           onInput={updateCounts}
           onMouseUp={updateCounts}

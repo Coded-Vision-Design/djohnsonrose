@@ -198,7 +198,7 @@ export default function Paint() {
   ]
 
   return (
-    <div className="h-full flex flex-col bg-[#f3f3f3] dark:bg-[#1c1c1c] text-black dark:text-white select-none">
+    <div className="h-full flex flex-col bg-win-bg dark:bg-[#1c1c1c] text-black dark:text-white select-none">
       {/* Ribbon */}
       <div className="bg-white dark:bg-[#2b2b2b] border-b border-gray-300 dark:border-gray-800 shrink-0 p-2 flex items-center space-x-2">
         <div className="flex items-center space-x-1 border-r border-gray-300 dark:border-gray-700 pr-2">
@@ -236,7 +236,7 @@ export default function Paint() {
               key={c}
               type="button"
               onClick={() => setColor(c)}
-              className={`w-4 h-4 rounded-sm border ${
+              className={`w-4 h-4 rounded-xs border ${
                 color === c ? 'ring-2 ring-win-blue ring-offset-1' : 'border-gray-300 dark:border-gray-700'
               }`}
               style={{ backgroundColor: c }}
@@ -249,7 +249,7 @@ export default function Paint() {
           type="color"
           value={color}
           onChange={(e) => setColor(e.target.value)}
-          className="w-8 h-8 rounded cursor-pointer"
+          className="w-8 h-8 rounded-sm cursor-pointer"
           aria-label="Custom colour"
         />
 
@@ -257,7 +257,7 @@ export default function Paint() {
           <button
             type="button"
             onClick={undo}
-            className="px-3 py-1 text-xs rounded hover:bg-gray-100 dark:hover:bg-white/10"
+            className="px-3 py-1 text-xs rounded-sm hover:bg-gray-100 dark:hover:bg-white/10"
             title="Undo (Ctrl+Z)"
           >
             ↶ Undo
@@ -265,7 +265,7 @@ export default function Paint() {
           <button
             type="button"
             onClick={redo}
-            className="px-3 py-1 text-xs rounded hover:bg-gray-100 dark:hover:bg-white/10"
+            className="px-3 py-1 text-xs rounded-sm hover:bg-gray-100 dark:hover:bg-white/10"
             title="Redo (Ctrl+Y)"
           >
             ↷ Redo
@@ -273,14 +273,14 @@ export default function Paint() {
           <button
             type="button"
             onClick={clearAll}
-            className="px-3 py-1 text-xs rounded hover:bg-gray-100 dark:hover:bg-white/10"
+            className="px-3 py-1 text-xs rounded-sm hover:bg-gray-100 dark:hover:bg-white/10"
           >
             🗑 Clear
           </button>
           <button
             type="button"
             onClick={download}
-            className="px-3 py-1 text-xs rounded bg-win-blue text-white hover:opacity-90"
+            className="px-3 py-1 text-xs rounded-sm bg-win-blue text-white hover:opacity-90"
           >
             💾 Save PNG
           </button>
@@ -288,7 +288,7 @@ export default function Paint() {
       </div>
 
       {/* Canvas */}
-      <div className="flex-grow overflow-auto bg-[#e6e6e6] dark:bg-[#0a0a0a] flex items-center justify-center p-6">
+      <div className="grow overflow-auto bg-[#e6e6e6] dark:bg-[#0a0a0a] flex items-center justify-center p-6">
         <canvas
           ref={canvasRef}
           width={CANVAS_W}

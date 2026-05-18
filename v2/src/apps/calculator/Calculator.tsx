@@ -9,7 +9,7 @@ interface Button {
 }
 
 const NUM_BTN =
-  'bg-white dark:bg-white/10 text-lg font-bold shadow-sm'
+  'bg-white dark:bg-white/10 text-lg font-bold shadow-xs'
 const OP_BTN = 'bg-gray-100 dark:bg-white/5'
 const OP_BTN_LG = 'bg-gray-100 dark:bg-white/5 text-xl'
 
@@ -37,7 +37,7 @@ const BUTTONS: Button[] = [
   { label: <span><sup>+</sup>⁄<sub>−</sub></span>, val: 'pm', className: NUM_BTN },
   { label: '0', val: '0', className: NUM_BTN },
   { label: '.', val: '.', className: NUM_BTN },
-  { label: '=', val: '=', className: 'bg-win-blue text-white text-xl hover:!bg-blue-600 shadow-sm' },
+  { label: '=', val: '=', className: 'bg-win-blue text-white text-xl hover:bg-blue-600! shadow-xs' },
 ]
 
 function reducer(state: CalcState, key: Key): CalcState {
@@ -74,13 +74,13 @@ export default function Calculator() {
         : 'text-5xl'
 
   return (
-    <div className="h-full flex flex-col bg-[#f3f3f3] dark:bg-[#1c1c1c] text-black dark:text-white select-none">
+    <div className="h-full flex flex-col bg-win-bg dark:bg-[#1c1c1c] text-black dark:text-white select-none">
       {/* Mock title strip */}
       <div className="flex items-center justify-between px-4 py-2 h-12 shrink-0">
         <div className="flex items-center space-x-3">
           <button
             type="button"
-            className="p-2 hover:bg-gray-200 dark:hover:bg-white/10 rounded"
+            className="p-2 hover:bg-gray-200 dark:hover:bg-white/10 rounded-sm"
             aria-label="Menu"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -91,7 +91,7 @@ export default function Calculator() {
         </div>
         <button
           type="button"
-          className="p-2 hover:bg-gray-200 dark:hover:bg-white/10 rounded"
+          className="p-2 hover:bg-gray-200 dark:hover:bg-white/10 rounded-sm"
           aria-label="History"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -116,7 +116,7 @@ export default function Calculator() {
           <button
             key={m}
             type="button"
-            className="px-3 py-1 hover:bg-gray-200 dark:hover:bg-white/10 rounded opacity-60 cursor-default"
+            className="px-3 py-1 hover:bg-gray-200 dark:hover:bg-white/10 rounded-sm opacity-60 cursor-default"
           >
             {m}
           </button>
@@ -124,13 +124,13 @@ export default function Calculator() {
       </div>
 
       {/* Keypad */}
-      <div className="flex-grow grid grid-cols-4 gap-0.5 p-1 pb-2">
+      <div className="grow grid grid-cols-4 gap-0.5 p-1 pb-2">
         {BUTTONS.map((btn, i) => (
           <button
             key={`${btn.val}-${i}`}
             type="button"
             onClick={() => dispatch(btn.val)}
-            className={`${btn.className} h-full flex items-center justify-center text-sm rounded transition-all hover:bg-gray-200 dark:hover:bg-white/10 border border-transparent active:scale-95 active:bg-gray-300 dark:active:bg-white/20`}
+            className={`${btn.className} h-full flex items-center justify-center text-sm rounded-sm transition-all hover:bg-gray-200 dark:hover:bg-white/10 border border-transparent active:scale-95 active:bg-gray-300 dark:active:bg-white/20`}
           >
             {btn.label}
           </button>

@@ -129,7 +129,7 @@
         <!-- Boot Screen -->
         <div x-show="isBooting" 
              x-cloak
-             class="fixed inset-0 z-[20000] bg-black flex flex-col items-center justify-center transition-opacity duration-1000"
+             class="fixed inset-0 z-20000 bg-black flex flex-col items-center justify-center transition-opacity duration-1000"
              x-transition:leave="opacity-0">
             <!-- Windows 11 Style Logo -->
             <div class="mb-24 scale-150">
@@ -149,7 +149,7 @@
         <!-- Login Animation Screen -->
         <div x-show="loggingIn" 
              x-cloak
-             class="fixed inset-0 z-[15000] flex flex-col items-center justify-center transition-opacity duration-500 wallpaper-bg"
+             class="fixed inset-0 z-15000 flex flex-col items-center justify-center transition-opacity duration-500 wallpaper-bg"
              x-transition:enter="opacity-0"
              x-transition:enter-end="opacity-100"
              x-transition:leave="opacity-100"
@@ -182,7 +182,7 @@
              @click.away="contextMenu.open = false"
              @keydown.escape.window="contextMenu.open = false"
              :class="contextMenu.variant === 'classic' ? 'bg-[#f0f0f0] dark:bg-[#2b2b2b] border border-[#a0a0a0] dark:border-black shadow-[2px_2px_4px_rgba(0,0,0,0.3)] py-1 min-w-[240px]' : 'bg-white/90 dark:bg-[#1c1c1c]/95 backdrop-blur-xl border border-white/20 dark:border-white/10 rounded-xl shadow-2xl py-1 min-w-[260px] context-menu'"
-             class="fixed z-[15000] animate-in fade-in zoom-in duration-75"
+             class="fixed z-15000 animate-in fade-in zoom-in duration-75"
              :style="`left: ${contextMenu.x}px; top: ${contextMenu.y}px;`"
              @contextmenu.prevent
              x-data="{ hoverItem: null, hoverTimer: null }">
@@ -249,7 +249,7 @@
         <!-- Snap Preview Overlay -->
         <div x-show="snapPreview.show" 
              x-cloak
-             class="fixed z-[10000] bg-win-blue/20 border-2 border-win-blue/50 backdrop-blur-sm pointer-events-none transition-all duration-200"
+             class="fixed z-10000 bg-win-blue/20 border-2 border-win-blue/50 backdrop-blur-xs pointer-events-none transition-all duration-200"
              :style="`left: ${snapPreview.x}px; top: ${snapPreview.y}px; width: ${snapPreview.w}px; height: ${snapPreview.h}px; opacity: ${snapPreview.opacity};`"
              x-transition:enter="ease-out duration-200"
              x-transition:enter-start="opacity-0 scale-95"
@@ -257,11 +257,11 @@
         </div>
 
         <!-- Main Content Area -->
-        <main id="main-content" class="flex-grow relative h-full w-full" @contextmenu.prevent="showDesktopContextMenu($event)">
+        <main id="main-content" class="grow relative h-full w-full" @contextmenu.prevent="showDesktopContextMenu($event)">
             <!-- Windows Error Dialog (Modal) -->
             <div x-show="$store.os.errorDialog.open" 
                  x-cloak
-                 class="fixed inset-0 z-[30000] flex items-center justify-center bg-black/20 backdrop-blur-[2px]">
+                 class="fixed inset-0 z-30000 flex items-center justify-center bg-black/20 backdrop-blur-[2px]">
                 <div @click.away="$store.os.errorDialog.open = false"
                      x-transition:enter="transition ease-out duration-200"
                      x-transition:enter-start="opacity-0 scale-95"
@@ -270,13 +270,13 @@
                     <!-- Titlebar -->
                     <div class="h-10 flex items-center justify-between px-4 select-none">
                         <span class="text-xs font-medium opacity-80" x-text="$store.os.errorDialog.title"></span>
-                        <button @click="$store.os.errorDialog.open = false" class="hover:bg-red-600 hover:text-white transition-colors p-2 rounded-sm group">
+                        <button @click="$store.os.errorDialog.open = false" class="hover:bg-red-600 hover:text-white transition-colors p-2 rounded-xs group">
                             <svg class="w-3 h-3 opacity-70 group-hover:opacity-100" viewBox="0 0 10 10"><path d="M10,1.4L8.6,0L5,3.6L1.4,0L0,1.4L3.6,5L0,8.6L1.4,10L5,6.4l3.6,3.6l1.4-1.4L6.4,5L10,1.4z" fill="currentColor"/></svg>
                         </button>
                     </div>
                     <!-- Content -->
                     <div class="p-6 flex items-start space-x-4">
-                        <div class="w-10 h-10 flex-shrink-0 flex items-center justify-center bg-red-100 dark:bg-red-900/30 rounded-full">
+                        <div class="w-10 h-10 shrink-0 flex items-center justify-center bg-red-100 dark:bg-red-900/30 rounded-full">
                             <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
                             </svg>
@@ -289,7 +289,7 @@
                     <!-- Footer -->
                     <div class="p-4 bg-gray-50 dark:bg-black/20 flex justify-end">
                         <button @click="$store.os.errorDialog.open = false" 
-                                class="bg-win-blue text-white px-8 py-1.5 rounded text-xs font-medium hover:bg-blue-600 shadow-sm transition-colors">
+                                class="bg-win-blue text-white px-8 py-1.5 rounded-sm text-xs font-medium hover:bg-blue-600 shadow-xs transition-colors">
                             OK
                         </button>
                     </div>
@@ -297,12 +297,12 @@
             </div>
 
             <!-- Login Screen -->
-            <div x-show="!loggedIn && !isBooting && !loggingIn" x-cloak class="h-full w-full absolute inset-0 z-[1000]">
+            <div x-show="!loggedIn && !isBooting && !loggingIn" x-cloak class="h-full w-full absolute inset-0 z-1000">
                 <?php include __DIR__ . '/login.php'; ?>
             </div>
             
             <!-- Desktop Environment -->
-            <div x-show="loggedIn && !isBooting && !loggingIn" x-cloak class="h-full w-full absolute inset-0 z-[1]">
+            <div x-show="loggedIn && !isBooting && !loggingIn" x-cloak class="h-full w-full absolute inset-0 z-1">
                 <?php include __DIR__ . '/desktop.php'; ?>
             </div>
         </main>
@@ -318,7 +318,7 @@
              x-transition:leave-end="opacity-0 scale-90"
              role="dialog"
              aria-label="Cookie consent"
-             class="fixed bottom-16 left-4 right-4 md:left-auto md:right-4 z-[20000] md:w-[360px] glass dark:bg-[#1c1c1c]/90 border border-white/20 dark:border-white/10 rounded-xl shadow-2xl overflow-hidden">
+             class="fixed bottom-16 left-4 right-4 md:left-auto md:right-4 z-20000 md:w-[360px] glass dark:bg-[#1c1c1c]/90 border border-white/20 dark:border-white/10 rounded-xl shadow-2xl overflow-hidden">
             <div class="p-4 flex flex-col space-y-3">
                 <div class="font-semibold text-sm">Cookies &amp; telemetry</div>
                 <p class="text-[11px] leading-relaxed opacity-80">
@@ -326,11 +326,11 @@
                 </p>
                 <div class="flex items-center justify-end space-x-2">
                     <button @click="$store.os.setCookieConsent(false)"
-                            class="px-3 py-1 rounded text-[11px] hover:bg-black/5 dark:hover:bg-white/10 transition-colors">
+                            class="px-3 py-1 rounded-sm text-[11px] hover:bg-black/5 dark:hover:bg-white/10 transition-colors">
                         Decline
                     </button>
                     <button @click="$store.os.setCookieConsent(true)"
-                            class="px-4 py-1 rounded bg-win-blue text-white text-[11px] font-medium hover:opacity-90 transition-opacity">
+                            class="px-4 py-1 rounded-sm bg-win-blue text-white text-[11px] font-medium hover:opacity-90 transition-opacity">
                         Accept
                     </button>
                 </div>

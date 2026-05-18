@@ -63,7 +63,7 @@ export function QuickSettings() {
   return (
     <div
       ref={ref}
-      className="fixed right-2 w-[360px] glass rounded-xl flex flex-col overflow-hidden shadow-2xl p-4 space-y-6 z-[10000] animate-window-open"
+      className="fixed right-2 w-[360px] glass rounded-xl flex flex-col overflow-hidden shadow-2xl p-4 space-y-6 z-10000 animate-window-open"
       style={{ bottom: TASKBAR_HEIGHT + 8 }}
     >
       {/* Quick Toggles — 3 cols, 6 cells */}
@@ -171,7 +171,7 @@ export function QuickSettings() {
               close()
             }}
             title="Personalise"
-            className="p-2 rounded hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
+            className="p-2 rounded-sm hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
           >
             <img src="/assets/img/win11/edit.svg" alt="" className="w-4 h-4 opacity-70 dark:invert" />
           </button>
@@ -182,7 +182,7 @@ export function QuickSettings() {
               close()
             }}
             title="All settings"
-            className="p-2 rounded hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
+            className="p-2 rounded-sm hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
           >
             <img src="/assets/img/win11/settings.svg" alt="" className="w-4 h-4 opacity-70 dark:invert" />
           </button>

@@ -31,7 +31,7 @@ export default function Putty() {
         <div className="h-6 bg-[#1a1a1a] flex items-center px-3 shrink-0 text-[10px] text-gray-400">
           {connected}:{port} — PuTTY
         </div>
-        <div className="flex-grow p-3 whitespace-pre-wrap leading-relaxed">
+        <div className="grow p-3 whitespace-pre-wrap leading-relaxed">
           {`Connecting to ${connected}:${port}...
 Using username "devante".
 Last login: ${new Date().toLocaleString()}
@@ -59,7 +59,7 @@ devante@${connected}:~$ `}
         PuTTY Configuration
       </div>
 
-      <div className="flex-grow flex min-h-0">
+      <div className="grow flex min-h-0">
         <div className="w-48 bg-white border-r border-gray-400 overflow-y-auto shrink-0 p-2">
           <div className="text-[10px] font-bold mb-1">Category:</div>
           <ul className="text-[11px] space-y-0.5">
@@ -76,7 +76,7 @@ devante@${connected}:~$ `}
           </ul>
         </div>
 
-        <div className="flex-grow p-4 space-y-3 text-xs bg-[#ece9d8]">
+        <div className="grow p-4 space-y-3 text-xs bg-[#ece9d8]">
           <div className="font-bold border-b border-gray-400 pb-1">
             Basic options for your PuTTY session
           </div>
@@ -89,7 +89,7 @@ devante@${connected}:~$ `}
                 type="text"
                 value={host}
                 onChange={(e) => setHost(e.target.value)}
-                className="flex-grow bg-white border border-gray-500 px-2 py-0.5"
+                className="grow bg-white border border-gray-500 px-2 py-0.5"
               />
               <label className="ml-3">Port</label>
               <input
@@ -113,7 +113,7 @@ devante@${connected}:~$ `}
           <div className="space-y-2 pt-3">
             <div className="font-medium">Load, save, or delete a stored session</div>
             <div className="flex space-x-3">
-              <div className="flex-grow border border-gray-500 bg-white p-1 space-y-0.5">
+              <div className="grow border border-gray-500 bg-white p-1 space-y-0.5">
                 {SAVED.map((s) => (
                   <button
                     key={s.name}

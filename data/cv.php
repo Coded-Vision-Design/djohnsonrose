@@ -1,4 +1,4 @@
-<div class="max-w-4xl mx-auto p-12 bg-white text-black shadow-sm font-sans leading-relaxed">
+<div class="max-w-4xl mx-auto p-12 bg-white text-black shadow-xs font-sans leading-relaxed">
     <!-- Header -->
     <div class="text-center mb-10 border-b-2 border-black pb-6">
         <h1 class="text-4xl font-bold uppercase tracking-widest mb-2">DeVanté Johnson-Rose</h1>
@@ -8,15 +8,15 @@
 
     <!-- Headline stats -->
     <div class="grid grid-cols-3 gap-4 mb-10">
-        <div class="border border-gray-200 rounded p-4 text-center">
+        <div class="border border-gray-200 rounded-sm p-4 text-center">
             <div class="text-2xl font-bold text-[#2b579a]">100+</div>
             <div class="text-[10px] uppercase tracking-wider text-gray-500">freelance projects</div>
         </div>
-        <div class="border border-gray-200 rounded p-4 text-center">
+        <div class="border border-gray-200 rounded-sm p-4 text-center">
             <div class="text-2xl font-bold text-[#2b579a]">8K+</div>
             <div class="text-[10px] uppercase tracking-wider text-gray-500">devices managed</div>
         </div>
-        <div class="border border-gray-200 rounded p-4 text-center">
+        <div class="border border-gray-200 rounded-sm p-4 text-center">
             <div class="text-2xl font-bold text-[#2b579a]">99.9%</div>
             <div class="text-[10px] uppercase tracking-wider text-gray-500">system availability</div>
         </div>
@@ -120,7 +120,7 @@
                 <h2 class="text-sm font-bold border-b border-black mb-3">INTERESTS</h2>
                 <div class="flex flex-wrap gap-1">
                     <?php foreach (['Technology','AI','IoT','Automation','Virtualisation','Photography','Media','Athletics','Rugby','Muay Thai','Brazilian Jiu-Jitsu'] as $i): ?>
-                        <span class="text-[10px] bg-gray-100 px-2 py-0.5 rounded"><?php echo $i; ?></span>
+                        <span class="text-[10px] bg-gray-100 px-2 py-0.5 rounded-sm"><?php echo $i; ?></span>
                     <?php endforeach; ?>
                 </div>
             </section>

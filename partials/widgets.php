@@ -7,7 +7,7 @@
      x-transition:leave="transition ease-in duration-200"
      x-transition:leave-start="opacity-100 translate-x-0"
      x-transition:leave-end="opacity-0 -translate-x-full"
-     class="fixed inset-y-4 left-4 w-[400px] bg-[#f3f3f3]/80 dark:bg-[#1c1c1c]/90 backdrop-blur-3xl rounded-2xl shadow-2xl z-[15000] flex flex-col overflow-hidden border border-white/20 dark:border-white/10"
+     class="fixed inset-y-4 left-4 w-[400px] bg-win-bg/80 dark:bg-[#1c1c1c]/90 backdrop-blur-3xl rounded-2xl shadow-2xl z-15000 flex flex-col overflow-hidden border border-white/20 dark:border-white/10"
      :class="isMobile ? 'w-[calc(100%-2rem)] max-w-full' : 'w-[400px]'">
     
     <!-- Widgets Header -->
@@ -24,9 +24,9 @@
     </div>
 
     <!-- Widgets Grid -->
-    <div class="flex-grow overflow-y-auto px-6 pb-6 space-y-4 custom-scrollbar">
+    <div class="grow overflow-y-auto px-6 pb-6 space-y-4 custom-scrollbar">
         <!-- Weather Widget Large -->
-        <div class="glass p-6 rounded-2xl flex flex-col space-y-4 shadow-sm border-white/10">
+        <div class="glass p-6 rounded-2xl flex flex-col space-y-4 shadow-xs border-white/10">
             <div class="flex justify-between items-start">
                 <div>
                     <div class="text-sm font-bold opacity-60" x-text="weather.city"></div>
@@ -52,7 +52,7 @@
             <template x-for="item in $store.os.news" :key="item.id || item.title">
                 <a :href="item.link" 
                    target="_blank"
-                   class="glass p-4 rounded-xl block hover:bg-white/40 dark:hover:bg-white/10 transition-all group shadow-sm border-white/10 no-underline">
+                   class="glass p-4 rounded-xl block hover:bg-white/40 dark:hover:bg-white/10 transition-all group shadow-xs border-white/10 no-underline">
                     <div class="flex flex-col space-y-1">
                         <h4 class="text-xs font-bold leading-tight group-hover:text-win-blue transition-colors text-black dark:text-white" x-text="item.title"></h4>
                         <p class="text-[10px] opacity-60 line-clamp-2 text-gray-700 dark:text-gray-300" x-text="item.description"></p>

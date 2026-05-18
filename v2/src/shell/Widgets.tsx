@@ -37,7 +37,7 @@ export function Widgets() {
   return (
     <div
       ref={ref}
-      className="fixed inset-y-4 left-4 w-[400px] bg-[#f3f3f3]/80 dark:bg-[#1c1c1c]/90 backdrop-blur-3xl rounded-2xl shadow-2xl z-[15000] flex flex-col overflow-hidden border border-white/20 dark:border-white/10 animate-window-open"
+      className="fixed inset-y-4 left-4 w-[400px] bg-win-bg/80 dark:bg-[#1c1c1c]/90 backdrop-blur-3xl rounded-2xl shadow-2xl z-15000 flex flex-col overflow-hidden border border-white/20 dark:border-white/10 animate-window-open"
     >
       {/* Header */}
       <div className="p-6 flex items-center justify-between shrink-0">
@@ -56,9 +56,9 @@ export function Widgets() {
       </div>
 
       {/* Grid */}
-      <div className="flex-grow overflow-y-auto px-6 pb-6 space-y-4">
+      <div className="grow overflow-y-auto px-6 pb-6 space-y-4">
         {/* Weather card */}
-        <div className="glass p-6 rounded-2xl flex flex-col space-y-4 shadow-sm border-white/10">
+        <div className="glass p-6 rounded-2xl flex flex-col space-y-4 shadow-xs border-white/10">
           <div className="flex justify-between items-start">
             <div>
               <div className="text-sm font-bold opacity-60">{weather.city}</div>
@@ -97,7 +97,7 @@ export function Widgets() {
                 href={item.link}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="glass p-4 rounded-xl block hover:bg-white/40 dark:hover:bg-white/10 transition-all group shadow-sm border-white/10 no-underline"
+                className="glass p-4 rounded-xl block hover:bg-white/40 dark:hover:bg-white/10 transition-all group shadow-xs border-white/10 no-underline"
               >
                 <div className="flex flex-col space-y-1">
                   <h4 className="text-xs font-bold leading-tight group-hover:text-win-blue transition-colors text-black dark:text-white">

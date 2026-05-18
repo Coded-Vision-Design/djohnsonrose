@@ -14,7 +14,7 @@
         </div>
     </div>
 
-    <div class="flex-grow flex">
+    <div class="grow flex">
         <!-- Tools Sidebar -->
         <div class="w-10 bg-[#333333] border-r border-black/40 flex flex-col items-center py-4 space-y-4 shrink-0">
             <span class="text-xs opacity-60">📐</span>
@@ -26,8 +26,8 @@
         </div>
 
         <!-- Canvas Area -->
-        <div class="flex-grow bg-[#111111] flex items-center justify-center p-12 relative overflow-hidden">
-            <div class="bg-white/5 border border-white/10 w-full h-full rounded shadow-2xl flex flex-col items-center justify-center space-y-6 text-center">
+        <div class="grow bg-[#111111] flex items-center justify-center p-12 relative overflow-hidden">
+            <div class="bg-white/5 border border-white/10 w-full h-full rounded-sm shadow-2xl flex flex-col items-center justify-center space-y-6 text-center">
                 <img :src="window.portfolioConfig.imgPath + 'photoshop.webp'" class="w-32 h-32 opacity-20">
                 <div>
                     <h2 class="text-xl font-bold opacity-40 uppercase tracking-[0.2em]">Adobe Photoshop</h2>
@@ -40,12 +40,12 @@
         <div class="w-64 bg-[#333333] border-l border-black/40 p-4 space-y-6 hidden lg:block shrink-0">
             <div>
                 <div class="text-[10px] font-bold uppercase opacity-40 mb-3 tracking-widest">Properties</div>
-                <div class="h-24 bg-black/20 rounded border border-white/5"></div>
+                <div class="h-24 bg-black/20 rounded-sm border border-white/5"></div>
             </div>
             <div>
                 <div class="text-[10px] font-bold uppercase opacity-40 mb-3 tracking-widest">Layers</div>
                 <div class="space-y-2">
-                    <div class="flex items-center space-x-3 bg-blue-600/40 p-2 rounded border border-blue-500/20">
+                    <div class="flex items-center space-x-3 bg-blue-600/40 p-2 rounded-sm border border-blue-500/20">
                         <span class="text-[10px]">👁️</span>
                         <span class="text-[10px] font-medium">Background.psd</span>
                     </div>

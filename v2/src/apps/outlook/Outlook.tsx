@@ -80,7 +80,7 @@ export default function Outlook() {
 
   return (
     <div className="h-full flex flex-col bg-white dark:bg-[#1c1c1c] text-black dark:text-white">
-      <div className="h-9 bg-[#0078d4] text-white flex items-center px-4 justify-between shrink-0">
+      <div className="h-9 bg-win-blue text-white flex items-center px-4 justify-between shrink-0">
         <div className="flex items-center space-x-4">
           <span className="font-semibold text-sm">Outlook</span>
           <div className="text-xs opacity-80 border-l border-white/20 pl-4">New message</div>
@@ -92,14 +92,14 @@ export default function Outlook() {
           type="button"
           onClick={send}
           disabled={status === 'sending'}
-          className="flex items-center text-win-blue font-semibold text-xs hover:bg-blue-50 dark:hover:bg-blue-900/20 px-3 py-1.5 rounded disabled:opacity-50"
+          className="flex items-center text-win-blue font-semibold text-xs hover:bg-blue-50 dark:hover:bg-blue-900/20 px-3 py-1.5 rounded-sm disabled:opacity-50"
         >
           <span className="mr-2">✈️</span> Send
         </button>
         <button
           type="button"
           onClick={sendViaMailto}
-          className="flex items-center text-gray-600 dark:text-gray-400 text-xs hover:bg-gray-100 dark:hover:bg-white/5 px-3 py-1.5 rounded"
+          className="flex items-center text-gray-600 dark:text-gray-400 text-xs hover:bg-gray-100 dark:hover:bg-white/5 px-3 py-1.5 rounded-sm"
         >
           <span className="mr-2">📧</span> Send from personal mail
         </button>
@@ -107,7 +107,7 @@ export default function Outlook() {
         <button
           type="button"
           onClick={() => fileInputRef.current?.click()}
-          className="flex items-center text-gray-600 dark:text-gray-400 text-xs hover:bg-gray-100 dark:hover:bg-white/5 px-3 py-1.5 rounded"
+          className="flex items-center text-gray-600 dark:text-gray-400 text-xs hover:bg-gray-100 dark:hover:bg-white/5 px-3 py-1.5 rounded-sm"
         >
           <span className="mr-2">📎</span> Attach
         </button>
@@ -121,7 +121,7 @@ export default function Outlook() {
         <button
           type="button"
           onClick={discard}
-          className="flex items-center text-gray-600 dark:text-gray-400 text-xs hover:bg-gray-100 dark:hover:bg-white/5 px-3 py-1.5 rounded"
+          className="flex items-center text-gray-600 dark:text-gray-400 text-xs hover:bg-gray-100 dark:hover:bg-white/5 px-3 py-1.5 rounded-sm"
         >
           <span className="mr-2">🗑️</span> Discard
         </button>
@@ -141,7 +141,7 @@ export default function Outlook() {
         )}
       </div>
 
-      <div className="flex-grow p-6 space-y-4 overflow-y-auto">
+      <div className="grow p-6 space-y-4 overflow-y-auto">
         {/* Honeypot — hidden from real users, bots fill it. */}
         <input
           type="text"
@@ -170,7 +170,7 @@ export default function Outlook() {
             type="text"
             value={subject}
             onChange={(e) => setSubject(e.target.value)}
-            className="flex-grow bg-transparent outline-none text-xs dark:text-white"
+            className="grow bg-transparent outline-hidden text-xs dark:text-white"
           />
         </div>
 
@@ -179,7 +179,7 @@ export default function Outlook() {
             {attachments.map((f, i) => (
               <div
                 key={i}
-                className="flex items-center bg-gray-100 dark:bg-white/5 px-2 py-1 rounded text-[10px] border border-gray-200 dark:border-white/10 group"
+                className="flex items-center bg-gray-100 dark:bg-white/5 px-2 py-1 rounded-sm text-[10px] border border-gray-200 dark:border-white/10 group"
               >
                 <span className="mr-2">📄</span>
                 <span className="max-w-[150px] truncate">{f.name}</span>
@@ -200,7 +200,7 @@ export default function Outlook() {
           value={body}
           onChange={(e) => setBody(e.target.value)}
           placeholder="Type your message here..."
-          className="w-full h-64 bg-transparent outline-none text-sm resize-none dark:text-white"
+          className="w-full h-64 bg-transparent outline-hidden text-sm resize-none dark:text-white"
         />
       </div>
     </div>

@@ -105,7 +105,7 @@ export default function Terminal() {
           <button
             type="button"
             onClick={() => focusedId && closeWindow(focusedId)}
-            className="hover:bg-white/10 rounded p-0.5"
+            className="hover:bg-white/10 rounded-sm p-0.5"
             aria-label="Close tab"
           >
             <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -115,7 +115,7 @@ export default function Terminal() {
         </div>
         <button
           type="button"
-          className="hover:bg-white/10 rounded p-1 text-gray-400"
+          className="hover:bg-white/10 rounded-sm p-1 text-gray-400"
           aria-label="New tab"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -128,7 +128,7 @@ export default function Terminal() {
       <div
         ref={outputRef}
         onClick={() => inputRef.current?.focus()}
-        className="flex-grow overflow-y-auto p-4 cursor-text"
+        className="grow overflow-y-auto p-4 cursor-text"
       >
         <div className="mb-4 text-gray-400">
           Windows PowerShell
@@ -164,7 +164,7 @@ export default function Terminal() {
             spellCheck={false}
             autoCapitalize="off"
             autoCorrect="off"
-            className="bg-transparent border-none outline-none flex-grow text-[#cccccc] font-mono"
+            className="bg-transparent border-none outline-hidden grow text-[#cccccc] font-mono"
             aria-label="Terminal input"
           />
         </div>

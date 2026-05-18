@@ -15,7 +15,7 @@
             <span>Explorer</span>
             <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M6 10c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm12 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm-6 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg>
         </div>
-        <div class="flex-grow overflow-y-auto">
+        <div class="grow overflow-y-auto">
             <div class="px-1 py-1">
                 <div class="flex items-center px-2 py-1 text-xs font-bold uppercase opacity-80 cursor-pointer">
                     <svg class="w-4 h-4 mr-1 transition-transform" :class="explorerOpen ? 'rotate-90' : ''" @click="explorerOpen = !explorerOpen" fill="currentColor" viewBox="0 0 24 24"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
@@ -57,7 +57,7 @@
     </div>
 
     <!-- Main Editor -->
-    <div class="flex-grow flex flex-col min-w-0 bg-[#1e1e1e]">
+    <div class="grow flex flex-col min-w-0 bg-[#1e1e1e]">
         <!-- Tabs -->
         <div class="h-9 bg-[#252526] flex items-center overflow-x-auto scrollbar-none shrink-0">
             <div @click="activeTab = 'editor'"
@@ -80,16 +80,16 @@
         </div>
 
         <!-- Editor/Terminal Content -->
-        <div class="flex-grow flex flex-col min-h-0 overflow-hidden">
+        <div class="grow flex flex-col min-h-0 overflow-hidden">
             <!-- Editor View -->
-            <div x-show="activeTab === 'editor'" class="flex-grow overflow-auto custom-scrollbar bg-[#1e1e1e] p-4">
+            <div x-show="activeTab === 'editor'" class="grow overflow-auto custom-scrollbar bg-[#1e1e1e] p-4">
                 <div class="flex h-full">
                     <!-- Line Numbers -->
                     <div class="w-10 shrink-0 text-right pr-4 text-[#858585] font-mono text-xs leading-6 select-none border-r border-[#333333]">
                         <?php for($i=1; $i<=50; $i++) echo $i . "<br>"; ?>
                     </div>
                     <!-- Code Area -->
-                    <div class="flex-grow font-mono text-xs leading-6 h-full px-4">
+                    <div class="grow font-mono text-xs leading-6 h-full px-4">
                         <!-- Project View -->
                         <div class="h-full flex flex-col">
                             <?php foreach ($projects as $p): ?>
@@ -113,11 +113,11 @@
                                         </div>
                                     </div>
                                     
-                                    <div class="flex-grow relative group overflow-hidden rounded-xl border border-white/10 bg-black/40 flex items-center justify-center min-h-0">
+                                    <div class="grow relative group overflow-hidden rounded-xl border border-white/10 bg-black/40 flex items-center justify-center min-h-0">
                                         <img src="<?php echo $p['thumbnail']; ?>"
                                              class="max-w-full max-h-full w-auto h-auto object-contain transition-transform duration-700 group-hover:scale-105"
                                              alt="<?php echo htmlspecialchars($p['title'], ENT_QUOTES); ?>">
-                                        <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex flex-col justify-end p-8 opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <div class="absolute inset-0 bg-linear-to-t from-black/80 via-transparent to-transparent flex flex-col justify-end p-8 opacity-0 group-hover:opacity-100 transition-opacity">
                                             <div class="flex flex-wrap gap-2">
                                                 <?php foreach ($p['tags'] as $t): ?>
                                                     <span class="px-3 py-1 bg-white/10 backdrop-blur-md rounded-full text-[10px] uppercase tracking-wider"><?php echo $t; ?></span>
@@ -141,11 +141,11 @@
                         <span>Debug Console</span>
                     </div>
                     <div class="flex items-center space-x-2">
-                        <div class="text-[10px] bg-white/10 px-2 py-0.5 rounded cursor-pointer">powershell</div>
+                        <div class="text-[10px] bg-white/10 px-2 py-0.5 rounded-sm cursor-pointer">powershell</div>
                         <button @click="terminalOutput = []" class="text-gray-400 hover:text-white p-1">🗑️</button>
                     </div>
                 </div>
-                <div id="vscode-terminal" class="flex-grow p-4 font-mono text-[12px] overflow-y-auto custom-scrollbar">
+                <div id="vscode-terminal" class="grow p-4 font-mono text-[12px] overflow-y-auto custom-scrollbar">
                     <template x-for="line in terminalOutput">
                         <div class="mb-1">
                             <span :class="{

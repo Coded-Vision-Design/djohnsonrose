@@ -4,7 +4,7 @@
      x-transition:enter="transition ease-out duration-200"
      x-transition:enter-start="opacity-0 translate-y-20 scale-95"
      x-transition:enter-end="opacity-100 translate-y-0 scale-100"
-     class="fixed bottom-14 right-2 w-[360px] glass rounded-xl z-[10000] flex flex-col overflow-hidden shadow-2xl p-4 space-y-6 animate-in fade-in slide-in-from-bottom-4"
+     class="fixed bottom-14 right-2 w-[360px] glass rounded-xl z-10000 flex flex-col overflow-hidden shadow-2xl p-4 space-y-6 animate-in fade-in slide-in-from-bottom-4"
      :class="{ 'w-[calc(100vw-1rem)]': !isDesktop }">
     
     <!-- Quick Toggles -->
@@ -69,11 +69,11 @@
         </div>
         <div class="flex items-center space-x-1">
             <button @click="openApp('settings', 'Settings', { currentTab: 'personalisation' }); quickSettingsOpen = false" 
-                    class="p-2 rounded hover:bg-black/5 dark:hover:bg-white/10 transition-colors" title="Personalise">
+                    class="p-2 rounded-sm hover:bg-black/5 dark:hover:bg-white/10 transition-colors" title="Personalise">
                 <img :src="window.portfolioConfig.imgPath + 'win11/edit.svg'" class="w-4 h-4 opacity-70 dark:invert">
             </button>
             <button @click="openApp('settings'); quickSettingsOpen = false" 
-                    class="p-2 rounded hover:bg-black/5 dark:hover:bg-white/10 transition-colors" title="All settings">
+                    class="p-2 rounded-sm hover:bg-black/5 dark:hover:bg-white/10 transition-colors" title="All settings">
                 <img :src="window.portfolioConfig.imgPath + 'win11/settings.svg'" class="w-4 h-4 opacity-70 dark:invert">
             </button>
         </div>

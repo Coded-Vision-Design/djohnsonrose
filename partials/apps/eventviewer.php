@@ -7,7 +7,7 @@
             <span class="text-[10px] sm:text-xs font-semibold truncate">Event Viewer (Local)</span>
         </div>
         <div class="flex items-center shrink-0">
-            <select x-model="filter" class="bg-transparent border border-gray-300 dark:border-gray-700 rounded text-[9px] sm:text-[10px] px-1 sm:px-2 py-0.5 outline-none">
+            <select x-model="filter" class="bg-transparent border border-gray-300 dark:border-gray-700 rounded-sm text-[9px] sm:text-[10px] px-1 sm:px-2 py-0.5 outline-hidden">
                 <option value="All">All Events</option>
                 <option value="Information">Information</option>
                 <option value="Warning">Warning</option>
@@ -16,34 +16,34 @@
         </div>
     </div>
 
-    <div class="flex-grow flex min-h-0">
+    <div class="grow flex min-h-0">
         <!-- Sidebar -->
         <div class="w-56 bg-white dark:bg-[#252526] border-r border-gray-300 dark:border-gray-800 flex flex-col shrink-0 hidden lg:flex">
             <div class="p-3 text-[11px] font-bold opacity-60 border-b border-gray-200 dark:border-gray-800">Console Tree</div>
-            <div class="flex-grow overflow-y-auto py-2">
+            <div class="grow overflow-y-auto py-2">
                 <div class="px-4 py-1 text-xs bg-blue-100 dark:bg-blue-900/30 text-win-blue font-medium flex items-center">
                     <span class="mr-2">📂</span> Windows Logs
                 </div>
                 <div class="pl-8 space-y-1 mt-1">
-                    <div class="text-xs hover:bg-black/5 dark:hover:bg-white/5 py-1 px-2 rounded cursor-pointer">Application</div>
-                    <div class="text-xs hover:bg-black/5 dark:hover:bg-white/5 py-1 px-2 rounded cursor-pointer font-bold">Security</div>
-                    <div class="text-xs hover:bg-black/5 dark:hover:bg-white/5 py-1 px-2 rounded cursor-pointer">Setup</div>
-                    <div class="text-xs hover:bg-black/5 dark:hover:bg-white/5 py-1 px-2 rounded cursor-pointer">System</div>
+                    <div class="text-xs hover:bg-black/5 dark:hover:bg-white/5 py-1 px-2 rounded-sm cursor-pointer">Application</div>
+                    <div class="text-xs hover:bg-black/5 dark:hover:bg-white/5 py-1 px-2 rounded-sm cursor-pointer font-bold">Security</div>
+                    <div class="text-xs hover:bg-black/5 dark:hover:bg-white/5 py-1 px-2 rounded-sm cursor-pointer">Setup</div>
+                    <div class="text-xs hover:bg-black/5 dark:hover:bg-white/5 py-1 px-2 rounded-sm cursor-pointer">System</div>
                 </div>
             </div>
         </div>
 
         <!-- Main View -->
-        <div class="flex-grow flex flex-col min-w-0">
+        <div class="grow flex flex-col min-w-0">
             <!-- Log Table -->
-            <div class="flex-grow flex flex-col min-h-0 bg-white dark:bg-[#1e1e1e]">
+            <div class="grow flex flex-col min-h-0 bg-white dark:bg-[#1e1e1e]">
                 <div class="grid grid-cols-4 sm:grid-cols-12 bg-gray-100 dark:bg-[#2d2d2d] py-1.5 px-4 text-[10px] sm:text-[11px] font-bold border-b border-gray-300 dark:border-gray-800 shrink-0 sticky top-0">
                     <div class="col-span-1 sm:col-span-2">Level</div>
                     <div class="col-span-1 sm:col-span-2">Time</div>
                     <div class="hidden sm:block sm:col-span-2">Source</div>
                     <div class="col-span-2 sm:col-span-6">Description</div>
                 </div>
-                <div class="flex-grow overflow-y-auto custom-scrollbar">
+                <div class="grow overflow-y-auto custom-scrollbar">
                     <template x-for="log in logs" :key="log.id">
                         <div @click="selectedLog = log"
                              :class="selectedLog?.id === log.id ? 'bg-blue-100 dark:bg-blue-900/40' : 'hover:bg-gray-50 dark:hover:bg-white/5'"

@@ -3,7 +3,7 @@
     <!-- Player Header -->
     <div class="h-10 bg-[#1a1a1a] flex items-center px-4 justify-between border-b border-white/5">
         <div class="flex items-center space-x-2">
-            <div class="w-5 h-5 bg-win-blue rounded flex items-center justify-center">
+            <div class="w-5 h-5 bg-win-blue rounded-sm flex items-center justify-center">
                 <svg class="w-3 h-3 text-white fill-current" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
             </div>
             <span class="text-[11px] font-medium truncate max-w-[300px]" x-text="videoName || 'Media Player'"></span>
@@ -11,7 +11,7 @@
     </div>
 
     <!-- Video Container -->
-    <div class="flex-grow relative group overflow-hidden bg-black flex items-center justify-center">
+    <div class="grow relative group overflow-hidden bg-black flex items-center justify-center">
         <video x-ref="videoPlayer" 
                class="max-h-full max-w-full shadow-2xl"
                @click="togglePlay"

@@ -441,7 +441,7 @@ export default function FLStudio() {
             <button
               type="button"
               onClick={exportProject}
-              className="hover:text-white cursor-pointer px-1 bg-win-blue/20 rounded border border-win-blue/30 text-win-blue"
+              className="hover:text-white cursor-pointer px-1 bg-win-blue/20 rounded-sm border border-win-blue/30 text-win-blue"
             >
               EXPORT WAV
             </button>
@@ -463,7 +463,7 @@ export default function FLStudio() {
       {/* Main toolbar */}
       <div className="h-16 bg-[#252a2e] border-b border-black/60 flex items-center px-2 space-x-2 shrink-0 shadow-lg relative z-10">
         {/* Transport */}
-        <div className="flex items-center space-x-1 bg-black/30 p-1.5 rounded-sm border border-white/5 shadow-inner h-12">
+        <div className="flex items-center space-x-1 bg-black/30 p-1.5 rounded-xs border border-white/5 shadow-inner h-12">
           <button
             type="button"
             onClick={() => setPlaying((p) => !p)}
@@ -512,13 +512,13 @@ export default function FLStudio() {
               max={999}
               step={1}
               onChange={(e) => setBpm(Math.max(40, Math.min(999, Number(e.target.value) || 128)))}
-              className="bg-transparent text-lg font-mono text-[#ff6600] w-12 text-center focus:outline-none focus:bg-black/20 rounded"
+              className="bg-transparent text-lg font-mono text-[#ff6600] w-12 text-center focus:outline-hidden focus:bg-black/20 rounded-sm"
             />
           </div>
         </div>
 
         {/* PAT / SONG */}
-        <div className="flex flex-col space-y-0.5 bg-black/20 p-1 rounded border border-white/5 h-12 justify-center px-3">
+        <div className="flex flex-col space-y-0.5 bg-black/20 p-1 rounded-sm border border-white/5 h-12 justify-center px-3">
           {(['pattern', 'song'] as const).map((m) => (
             <button
               key={m}
@@ -546,12 +546,12 @@ export default function FLStudio() {
         </div>
 
         {/* Time display */}
-        <div className="bg-black/50 px-4 h-12 rounded border border-white/10 shadow-inner flex items-center justify-center min-w-[120px]">
+        <div className="bg-black/50 px-4 h-12 rounded-sm border border-white/10 shadow-inner flex items-center justify-center min-w-[120px]">
           <div className="text-2xl font-mono text-[#00ccff] tracking-widest">{timeDisplay}</div>
         </div>
 
         {/* Window switchers */}
-        <div className="flex items-center space-x-1 bg-black/20 p-1 rounded border border-white/5 h-12">
+        <div className="flex items-center space-x-1 bg-black/20 p-1 rounded-sm border border-white/5 h-12">
           <button
             type="button"
             onClick={() => setShowPlaylist((v) => !v)}
@@ -609,7 +609,7 @@ export default function FLStudio() {
         </div>
 
         {/* Visualizer */}
-        <div className="flex-grow flex items-center justify-end px-4 space-x-4">
+        <div className="grow flex items-center justify-end px-4 space-x-4">
           <div className="flex items-center space-x-1 opacity-40">
             {Array.from({ length: 20 }).map((_, i) => (
               <Bar key={i} playing={playing} />
@@ -619,13 +619,13 @@ export default function FLStudio() {
       </div>
 
       {/* Workspace */}
-      <div className="flex-grow flex min-h-0 overflow-hidden relative">
+      <div className="grow flex min-h-0 overflow-hidden relative">
         {showBrowser && (
           <div className="w-48 bg-[#1a1f22] border-r border-black/40 flex flex-col shrink-0 text-[11px]">
             <div className="h-7 bg-[#252a2e] flex items-center px-2 font-bold border-b border-black/40 text-gray-400">
               BROWSER
             </div>
-            <div className="flex-grow overflow-y-auto p-1 space-y-0.5 text-gray-500">
+            <div className="grow overflow-y-auto p-1 space-y-0.5 text-gray-500">
               <div className="flex items-center space-x-2 p-1 hover:bg-white/5 cursor-default text-gray-300">
                 <span>📁</span>
                 <span>Samples</span>
@@ -634,7 +634,7 @@ export default function FLStudio() {
                 {BROWSER_SAMPLES.map((s) => (
                   <div
                     key={s.name}
-                    className="flex items-center space-x-2 p-1 hover:bg-white/10 hover:text-white cursor-grab transition-colors rounded"
+                    className="flex items-center space-x-2 p-1 hover:bg-white/10 hover:text-white cursor-grab transition-colors rounded-sm"
                     title={s.url}
                   >
                     <span>🔊</span>
@@ -650,7 +650,7 @@ export default function FLStudio() {
                 {BROWSER_PACK.map((p) => (
                   <div
                     key={p}
-                    className="flex items-center space-x-2 p-1 hover:bg-white/10 hover:text-white cursor-grab transition-colors rounded"
+                    className="flex items-center space-x-2 p-1 hover:bg-white/10 hover:text-white cursor-grab transition-colors rounded-sm"
                   >
                     <span>🔊</span>
                     <span>{p}</span>
@@ -661,7 +661,7 @@ export default function FLStudio() {
           </div>
         )}
 
-        <div className="flex-grow flex flex-col min-w-0 bg-[#121518] relative">
+        <div className="grow flex flex-col min-w-0 bg-[#121518] relative">
           {showChannelRack && (
             <ChannelRack
               channels={channels}
@@ -769,7 +769,7 @@ function ChannelRack({
   onOpenPianoRoll: (ci: number) => void
 }) {
   return (
-    <div className="absolute top-10 left-10 w-[580px] h-[450px] bg-[#2b3339] rounded border border-white/10 shadow-2xl flex flex-col overflow-hidden z-20">
+    <div className="absolute top-10 left-10 w-[580px] h-[450px] bg-[#2b3339] rounded-sm border border-white/10 shadow-2xl flex flex-col overflow-hidden z-20">
       <div className="h-8 bg-[#32393f] flex items-center px-3 text-[10px] font-bold border-b border-black/40 text-gray-300 justify-between shrink-0">
         <div className="flex items-center space-x-2">
           <span className="text-[#ff6600]">■</span>
@@ -780,11 +780,11 @@ function ChannelRack({
           <button type="button" onClick={onClose} className="hover:text-white text-red-500" aria-label="Close">×</button>
         </div>
       </div>
-      <div className="flex-grow overflow-y-auto p-3 space-y-1 bg-[#1e2327]">
+      <div className="grow overflow-y-auto p-3 space-y-1 bg-[#1e2327]">
         {channels.map((channel, ci) => (
           <div
             key={ci}
-            className="flex items-center space-x-3 group hover:bg-white/[0.02] p-1 rounded-sm transition-colors"
+            className="flex items-center space-x-3 group hover:bg-white/2 p-1 rounded-xs transition-colors"
             onDoubleClick={() => channel.type !== 'drum' && onOpenPianoRoll(ci)}
           >
             <div className="flex items-center space-x-1 shrink-0">
@@ -821,7 +821,7 @@ function ChannelRack({
                 type="text"
                 value={channel.name}
                 onChange={(e) => onChannelField(ci, 'name', e.target.value)}
-                className="w-24 bg-[#32393f] h-7 px-2 text-[10px] rounded border border-black/40 text-gray-300 hover:bg-[#3d454c] focus:bg-black/40 focus:outline-none shadow-sm transition-colors font-bold"
+                className="w-24 bg-[#32393f] h-7 px-2 text-[10px] rounded-sm border border-black/40 text-gray-300 hover:bg-[#3d454c] focus:bg-black/40 focus:outline-hidden shadow-xs transition-colors font-bold"
                 style={{ borderLeft: `4px solid ${channel.color}` }}
               />
 
@@ -829,7 +829,7 @@ function ChannelRack({
                 <select
                   value={channel.type}
                   onChange={(e) => onChannelField(ci, 'type', e.target.value as ChannelType)}
-                  className="bg-transparent text-[9px] text-gray-500 focus:outline-none cursor-pointer hover:text-gray-300 ml-1 font-bold"
+                  className="bg-transparent text-[9px] text-gray-500 focus:outline-hidden cursor-pointer hover:text-gray-300 ml-1 font-bold"
                 >
                   <option value="drum">DRUM</option>
                   <option value="synth">SYNTH</option>
@@ -843,7 +843,7 @@ function ChannelRack({
                     step={10}
                     min={20}
                     max={2000}
-                    className="w-10 bg-black/20 rounded text-[8px] text-win-blue focus:outline-none text-center h-4 mt-0.5"
+                    className="w-10 bg-black/20 rounded-sm text-[8px] text-win-blue focus:outline-hidden text-center h-4 mt-0.5"
                   />
                 )}
               </div>
@@ -880,7 +880,7 @@ function ChannelRack({
                     onClick={() => onToggleStep(ci, si)}
                     aria-label={`${channel.name} step ${si + 1}`}
                     aria-pressed={step === 1}
-                    className={`w-7 h-6 rounded-sm cursor-pointer hover:brightness-125 transition-all active:scale-90 shadow-sm ${base} ${
+                    className={`w-7 h-6 rounded-xs cursor-pointer hover:brightness-125 transition-all active:scale-90 shadow-xs ${base} ${
                       step === 1 ? 'shadow-[inset_0_0_8px_rgba(255,255,255,0.3)]' : ''
                     } ${playingHere ? 'ring-2 ring-white/40 brightness-150 z-10' : 'ring-1 ring-black/20'}`}
                   />
@@ -894,7 +894,7 @@ function ChannelRack({
         <button
           type="button"
           onClick={onAdd}
-          className="h-5 px-3 bg-black/40 border border-white/10 rounded-sm flex items-center justify-center text-[10px] hover:bg-white/10 transition-colors text-gray-400 font-bold"
+          className="h-5 px-3 bg-black/40 border border-white/10 rounded-xs flex items-center justify-center text-[10px] hover:bg-white/10 transition-colors text-gray-400 font-bold"
         >
           + ADD CHANNEL
         </button>
@@ -918,7 +918,7 @@ function PianoRoll({
   onPreview: () => void
 }) {
   return (
-    <div className="absolute top-20 left-20 w-[600px] h-[400px] bg-[#2b3339] rounded border border-white/10 shadow-2xl flex flex-col overflow-hidden z-30">
+    <div className="absolute top-20 left-20 w-[600px] h-[400px] bg-[#2b3339] rounded-sm border border-white/10 shadow-2xl flex flex-col overflow-hidden z-30">
       <div className="h-8 bg-[#32393f] flex items-center px-3 text-[10px] font-bold border-b border-black/40 text-gray-300 justify-between shrink-0">
         <div className="flex items-center space-x-2">
           <span className="text-[#00ff00]">■</span>
@@ -929,7 +929,7 @@ function PianoRoll({
           <button type="button" onClick={onClose} className="hover:text-white">×</button>
         </div>
       </div>
-      <div className="flex-grow flex overflow-hidden">
+      <div className="grow flex overflow-hidden">
         <div className="w-12 bg-[#1a1f22] border-r border-black flex flex-col-reverse">
           {PIANO_NOTES.map((note) => (
             <div
@@ -943,7 +943,7 @@ function PianoRoll({
           ))}
         </div>
         <div
-          className="flex-grow overflow-auto bg-[#121518] relative"
+          className="grow overflow-auto bg-[#121518] relative"
           style={{
             backgroundImage:
               'linear-gradient(#1e2327 1px, transparent 1px), linear-gradient(90deg, #1e2327 1px, transparent 1px)',
@@ -1006,7 +1006,7 @@ function Playlist({
         </div>
       </div>
       <div
-        className="flex-grow relative overflow-auto playlist-grid-container"
+        className="grow relative overflow-auto playlist-grid-container"
         style={{
           backgroundImage:
             'linear-gradient(#1e2327 1px, transparent 1px), linear-gradient(90deg, #1e2327 1px, transparent 1px)',
@@ -1033,7 +1033,7 @@ function Playlist({
               tabIndex={0}
               onMouseDown={(e) => onStartDrag(e, clip)}
               title={clip.name}
-              className={`absolute h-7 flex items-center px-2 text-[9px] text-white font-bold rounded-sm border cursor-grab active:cursor-grabbing shadow-lg overflow-hidden ${
+              className={`absolute h-7 flex items-center px-2 text-[9px] text-white font-bold rounded-xs border cursor-grab active:cursor-grabbing shadow-lg overflow-hidden ${
                 activeDragId === clip.id ? 'z-50 ring-1 ring-white/50 opacity-90' : 'z-10'
               }`}
               style={{
@@ -1116,7 +1116,7 @@ function Mixer({
           <button type="button" onClick={onClose} className="hover:text-white">×</button>
         </div>
       </div>
-      <div className="flex-grow flex overflow-x-auto p-1 space-x-0.5 bg-[#121518]">
+      <div className="grow flex overflow-x-auto p-1 space-x-0.5 bg-[#121518]">
         {tracks.map((track) => (
           <MixerLane
             key={track.index}
@@ -1182,7 +1182,7 @@ function MixerLane({
 
   return (
     <div className="w-[52px] h-full bg-[#202529] flex flex-col items-center border border-black/60 shadow-inner shrink-0 relative overflow-hidden">
-      <div className="absolute right-0 top-1 bottom-10 w-2 flex flex-col-reverse space-y-[1px] px-[1px]">
+      <div className="absolute right-0 top-1 bottom-10 w-2 flex flex-col-reverse space-y-px px-px">
         {Array.from({ length: 15 }).map((_, i) => {
           const colour = i > 12 ? 'bg-red-500' : i > 9 ? 'bg-yellow-500' : 'bg-green-500'
           const dim = i > 12 ? 'bg-red-500/20' : i > 9 ? 'bg-yellow-500/20' : 'bg-green-500/20'
@@ -1190,7 +1190,7 @@ function MixerLane({
           return (
             <div
               key={i}
-              className={`flex-grow w-full rounded-sm transition-all duration-75 ${lit ? colour : dim}`}
+              className={`grow w-full rounded-xs transition-all duration-75 ${lit ? colour : dim}`}
             />
           )
         })}
@@ -1204,7 +1204,7 @@ function MixerLane({
         {track.name}
       </div>
 
-      <div className="flex-grow flex items-center justify-center py-4 w-full px-2">
+      <div className="grow flex items-center justify-center py-4 w-full px-2">
         <div className="w-6 h-full flex flex-col items-center relative">
           <div
             className="w-1.5 h-full bg-black/60 rounded-full border border-white/5 relative overflow-hidden cursor-pointer"
@@ -1216,12 +1216,12 @@ function MixerLane({
             />
           </div>
           <div
-            className="absolute w-8 h-4 bg-[#3d454c] border border-black/60 rounded-sm shadow-lg pointer-events-none flex flex-col items-center justify-center space-y-0.5 z-10"
+            className="absolute w-8 h-4 bg-[#3d454c] border border-black/60 rounded-xs shadow-lg pointer-events-none flex flex-col items-center justify-center space-y-0.5 z-10"
             style={{ bottom: `calc(${track.volume * 100}% - 8px)` }}
           >
-            <div className="w-5 h-[1px] bg-white/20" />
-            <div className="w-5 h-[1px] bg-[#00ccff]" />
-            <div className="w-5 h-[1px] bg-white/20" />
+            <div className="w-5 h-px bg-white/20" />
+            <div className="w-5 h-px bg-[#00ccff]" />
+            <div className="w-5 h-px bg-white/20" />
           </div>
         </div>
       </div>

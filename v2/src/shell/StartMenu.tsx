@@ -96,7 +96,7 @@ export function StartMenu() {
   return (
     <div
       ref={containerRef}
-      className="absolute glass rounded-xl flex flex-col overflow-hidden win-shadow animate-start-menu z-[10000] start-menu-mobile"
+      className="absolute glass rounded-xl flex flex-col overflow-hidden win-shadow animate-start-menu z-10000 start-menu-mobile"
       style={{
         bottom: TASKBAR_HEIGHT + 8,
         left: '50%',
@@ -116,7 +116,7 @@ export function StartMenu() {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search for apps, settings, and documents"
-            className="w-full bg-white dark:bg-black/20 border-b-2 border-win-blue px-10 py-2 rounded-md outline-none text-sm transition-all focus:bg-white dark:focus:bg-[#1c1c1c]"
+            className="w-full bg-white dark:bg-black/20 border-b-2 border-win-blue px-10 py-2 rounded-md outline-hidden text-sm transition-all focus:bg-white dark:focus:bg-[#1c1c1c]"
             onKeyDown={(e) => {
               if (e.key === 'Enter' && searchResults[0]) launch(searchResults[0].id)
             }}
@@ -153,7 +153,7 @@ export function StartMenu() {
 
       {/* Profile bar */}
       <div className="h-16 bg-black/5 dark:bg-black/20 flex items-center justify-between px-8 border-t border-white/10 shrink-0">
-        <div className="flex items-center space-x-3 group cursor-pointer p-1 rounded hover:bg-white/10">
+        <div className="flex items-center space-x-3 group cursor-pointer p-1 rounded-sm hover:bg-white/10">
           <img
             src="/assets/img/profile.webp"
             alt=""
@@ -169,7 +169,7 @@ export function StartMenu() {
           }}
           aria-label="Sign out"
           title="Sign out"
-          className="p-2 rounded hover:bg-white/10 group"
+          className="p-2 rounded-sm hover:bg-white/10 group"
         >
           <svg
             className="w-5 h-5 dark:text-white"
@@ -200,7 +200,7 @@ function SearchView({
   onClose: () => void
 }) {
   return (
-    <div className="flex-grow overflow-y-auto px-8">
+    <div className="grow overflow-y-auto px-8">
       <h3 className="text-[11px] font-bold text-gray-500 uppercase mb-3 tracking-wider">
         Top results
       </h3>
@@ -213,12 +213,12 @@ function SearchView({
               key={a.id}
               type="button"
               onClick={() => onLaunch(a.id)}
-              className="w-full flex items-center p-2 rounded hover:bg-win-blue hover:text-white text-left transition-colors group"
+              className="w-full flex items-center p-2 rounded-sm hover:bg-win-blue hover:text-white text-left transition-colors group"
             >
-              <div className="w-8 h-8 rounded bg-black/5 dark:bg-white/5 group-hover:bg-white/20 flex items-center justify-center mr-3">
+              <div className="w-8 h-8 rounded-sm bg-black/5 dark:bg-white/5 group-hover:bg-white/20 flex items-center justify-center mr-3">
                 <img src={a.icon} alt="" className="w-5 h-5 object-contain" />
               </div>
-              <div className="min-w-0 flex-grow text-black dark:text-white group-hover:text-white">
+              <div className="min-w-0 grow text-black dark:text-white group-hover:text-white">
                 <div className="text-xs font-medium truncate">{a.title}</div>
                 <div className="text-[10px] opacity-60 truncate">App</div>
               </div>
@@ -240,13 +240,13 @@ function PinnedView({
   onAllApps: () => void
 }) {
   return (
-    <div className="flex-grow overflow-y-auto px-8">
+    <div className="grow overflow-y-auto px-8">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-sm font-semibold dark:text-white">Pinned</h2>
         <button
           type="button"
           onClick={onAllApps}
-          className="text-xs bg-white/20 dark:bg-white/5 px-2 py-1 rounded hover:bg-white/30 dark:hover:bg-white/10 dark:text-gray-300 transition-colors"
+          className="text-xs bg-white/20 dark:bg-white/5 px-2 py-1 rounded-sm hover:bg-white/30 dark:hover:bg-white/10 dark:text-gray-300 transition-colors"
         >
           All apps &gt;
         </button>
@@ -261,7 +261,7 @@ function PinnedView({
               onClick={() => onLaunch(a.id)}
               className="flex flex-col items-center group cursor-pointer transition-all active:scale-95 w-full min-w-0"
             >
-              <div className="w-10 h-10 rounded flex items-center justify-center bg-white/5 dark:bg-white/5 group-hover:bg-white/10 shrink-0 overflow-hidden transition-transform group-hover:scale-110">
+              <div className="w-10 h-10 rounded-sm flex items-center justify-center bg-white/5 dark:bg-white/5 group-hover:bg-white/10 shrink-0 overflow-hidden transition-transform group-hover:scale-110">
                 <img src={a.icon} alt="" className="w-7 h-7 object-contain" />
               </div>
               <span className="text-[11px] mt-2 dark:text-white text-center truncate w-full px-0.5">
@@ -278,9 +278,9 @@ function PinnedView({
           <button
             type="button"
             onClick={() => onLaunch('pdfreader')}
-            className="flex items-center p-2 rounded hover:bg-white/20 dark:hover:bg-white/10 text-left transition-colors"
+            className="flex items-center p-2 rounded-sm hover:bg-white/20 dark:hover:bg-white/10 text-left transition-colors"
           >
-            <div className="w-8 h-8 rounded bg-white flex items-center justify-center mr-3 overflow-hidden">
+            <div className="w-8 h-8 rounded-sm bg-white flex items-center justify-center mr-3 overflow-hidden">
               <img src="/assets/img/pdf.webp" alt="" className="w-6 h-6 object-contain" />
             </div>
             <div>
@@ -293,9 +293,9 @@ function PinnedView({
           <button
             type="button"
             onClick={() => onLaunch('explorer')}
-            className="flex items-center p-2 rounded hover:bg-white/20 dark:hover:bg-white/10 text-left transition-colors"
+            className="flex items-center p-2 rounded-sm hover:bg-white/20 dark:hover:bg-white/10 text-left transition-colors"
           >
-            <div className="w-8 h-8 rounded bg-yellow-100 flex items-center justify-center mr-3 overflow-hidden">
+            <div className="w-8 h-8 rounded-sm bg-yellow-100 flex items-center justify-center mr-3 overflow-hidden">
               <img src="/assets/img/win11/folder.webp" alt="" className="w-6 h-6 object-contain" />
             </div>
             <div>
@@ -319,13 +319,13 @@ function AllAppsView({
   onBack: () => void
 }) {
   return (
-    <div className="flex-grow overflow-y-auto px-8">
+    <div className="grow overflow-y-auto px-8">
       <div className="flex items-center justify-between mb-4 sticky top-0 bg-white/10 backdrop-blur-md py-2 z-10">
         <h2 className="text-sm font-semibold dark:text-white">All apps</h2>
         <button
           type="button"
           onClick={onBack}
-          className="text-xs bg-white/20 dark:bg-white/5 px-2 py-1 rounded hover:bg-white/30 dark:hover:bg-white/10 dark:text-gray-300 transition-colors"
+          className="text-xs bg-white/20 dark:bg-white/5 px-2 py-1 rounded-sm hover:bg-white/30 dark:hover:bg-white/10 dark:text-gray-300 transition-colors"
         >
           &lt; Back
         </button>
@@ -340,9 +340,9 @@ function AllAppsView({
                   key={a.id}
                   type="button"
                   onClick={() => onLaunch(a.id)}
-                  className="w-full flex items-center p-2 rounded hover:bg-white/10 transition-colors text-left group"
+                  className="w-full flex items-center p-2 rounded-sm hover:bg-white/10 transition-colors text-left group"
                 >
-                  <div className="w-8 h-8 rounded flex items-center justify-center mr-3 overflow-hidden shrink-0 transition-transform group-hover:scale-110">
+                  <div className="w-8 h-8 rounded-sm flex items-center justify-center mr-3 overflow-hidden shrink-0 transition-transform group-hover:scale-110">
                     <img src={a.icon} alt="" className="w-6 h-6 object-contain" />
                   </div>
                   <span className="text-[11px] font-medium dark:text-white">{a.title}</span>

@@ -7,19 +7,19 @@
 
     <!-- SSMS toolbar -->
     <div class="h-9 bg-white dark:bg-[#2b2b2b] border-b border-gray-300 dark:border-gray-800 flex items-center px-2 space-x-1 shrink-0">
-        <button type="button" class="p-1.5 rounded hover:bg-gray-100 dark:hover:bg-white/5 flex items-center space-x-1">
+        <button type="button" class="p-1.5 rounded-sm hover:bg-gray-100 dark:hover:bg-white/5 flex items-center space-x-1">
             <span class="text-[10px] font-semibold">New Query</span>
         </button>
         <div class="w-px h-6 bg-gray-300 dark:bg-gray-700 mx-1"></div>
-        <button type="button" @click="runQuery()" class="p-1.5 rounded hover:bg-gray-100 dark:hover:bg-white/5 flex items-center space-x-1 text-green-600">
+        <button type="button" @click="runQuery()" class="p-1.5 rounded-sm hover:bg-gray-100 dark:hover:bg-white/5 flex items-center space-x-1 text-green-600">
             <span class="text-[10px] font-bold">▶ Execute</span>
         </button>
-        <button type="button" @click="helpOpen = !helpOpen" class="p-1.5 rounded hover:bg-gray-100 dark:hover:bg-white/5 flex items-center space-x-1">
+        <button type="button" @click="helpOpen = !helpOpen" class="p-1.5 rounded-sm hover:bg-gray-100 dark:hover:bg-white/5 flex items-center space-x-1">
             <span class="text-[10px]">💡 Examples</span>
         </button>
         <div class="w-px h-6 bg-gray-300 dark:bg-gray-700 mx-1"></div>
         <div class="flex items-center space-x-2 px-2">
-            <div class="flex items-center space-x-1 bg-gray-100 dark:bg-black/20 border border-gray-300 dark:border-gray-700 rounded px-2 py-0.5">
+            <div class="flex items-center space-x-1 bg-gray-100 dark:bg-black/20 border border-gray-300 dark:border-gray-700 rounded-sm px-2 py-0.5">
                 <img :src="window.portfolioConfig.imgPath + 'mssql.webp'" alt="" class="w-3 h-3 object-contain">
                 <span class="text-[10px]">DeVante-Workstation · Portfolio_DB</span>
             </div>
@@ -34,7 +34,7 @@
         <template x-for="ex in EXAMPLES" :key="ex.sql">
             <button type="button" @click="runExample(ex.sql)"
                     :title="ex.sql"
-                    class="text-left p-2 rounded hover:bg-white dark:hover:bg-white/5 border border-gray-200 dark:border-gray-700">
+                    class="text-left p-2 rounded-sm hover:bg-white dark:hover:bg-white/5 border border-gray-200 dark:border-gray-700">
                 <div class="font-semibold" x-text="ex.label"></div>
                 <div class="opacity-60 truncate font-mono" x-text="ex.sql"></div>
             </button>
@@ -42,14 +42,14 @@
     </div>
 
     <!-- Workspace -->
-    <div class="flex-grow flex min-h-0">
+    <div class="grow flex min-h-0">
         <!-- Object Explorer -->
         <div class="w-64 border-r border-gray-300 dark:border-gray-800 flex flex-col bg-[#f0f0f0] dark:bg-[#252526] shrink-0 overflow-hidden">
             <div class="p-2 bg-gray-200 dark:bg-[#333333] text-[11px] font-semibold border-b border-gray-300 dark:border-gray-800 flex items-center justify-between">
                 <span>Object Explorer</span>
                 <button type="button" class="opacity-60">✕</button>
             </div>
-            <div class="flex-grow overflow-y-auto p-2 text-[11px]">
+            <div class="grow overflow-y-auto p-2 text-[11px]">
                 <div class="flex items-center space-x-1 cursor-default">
                     <span class="text-[10px] transform rotate-90 opacity-60">▶</span>
                     <img :src="window.portfolioConfig.imgPath + 'mssql.webp'" alt="" class="w-3.5 h-3.5 object-contain">
@@ -92,7 +92,7 @@
         </div>
 
         <!-- Query + results -->
-        <div class="flex-grow flex flex-col min-w-0 bg-white dark:bg-[#1e1e1e]">
+        <div class="grow flex flex-col min-w-0 bg-white dark:bg-[#1e1e1e]">
             <!-- SQL editor -->
             <div class="h-1/3 border-b border-gray-300 dark:border-gray-800 flex flex-col shrink-0">
                 <div class="h-6 bg-gray-100 dark:bg-[#2d2d2d] border-b border-gray-300 dark:border-gray-800 px-2 flex items-center text-[10px] space-x-2">
@@ -104,11 +104,11 @@
                           @keydown.enter.ctrl.prevent="runQuery()"
                           spellcheck="false"
                           aria-label="SQL query editor"
-                          class="flex-grow w-full p-4 font-mono text-[13px] outline-none resize-none bg-white dark:bg-[#1e1e1e] text-black dark:text-white"></textarea>
+                          class="grow w-full p-4 font-mono text-[13px] outline-hidden resize-none bg-white dark:bg-[#1e1e1e] text-black dark:text-white"></textarea>
             </div>
 
             <!-- Results -->
-            <div class="flex-grow flex flex-col min-h-0">
+            <div class="grow flex flex-col min-h-0">
                 <div class="h-6 bg-gray-100 dark:bg-[#2d2d2d] border-b border-gray-300 dark:border-gray-800 px-2 flex items-center text-[10px] space-x-4">
                     <button type="button" @click="resultsTab = 'results'"
                             :class="resultsTab === 'results' ? 'font-bold border-b-2 border-win-blue pb-0.5' : 'opacity-60'">Results</button>
@@ -116,7 +116,7 @@
                             :class="resultsTab === 'messages' ? 'font-bold border-b-2 border-win-blue pb-0.5' : 'opacity-60'">Messages</button>
                 </div>
 
-                <div class="flex-grow overflow-auto relative">
+                <div class="grow overflow-auto relative">
                     <div x-show="loading" x-cloak class="absolute inset-0 flex items-center justify-center bg-white/50 dark:bg-black/50 z-20">
                         <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-win-blue"></div>
                     </div>
@@ -169,7 +169,7 @@
     </div>
 
     <!-- Status bar -->
-    <div class="h-6 bg-[#0078d4] flex items-center px-2 shrink-0 text-white text-[10px] justify-between">
+    <div class="h-6 bg-win-blue flex items-center px-2 shrink-0 text-white text-[10px] justify-between">
         <div class="flex items-center space-x-4">
             <span class="flex items-center space-x-1">
                 <span :class="error ? 'bg-red-400' : 'bg-green-400'" class="w-2 h-2 rounded-full border border-white"></span>

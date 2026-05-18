@@ -3,28 +3,28 @@
     <!-- FileZilla Toolbar -->
     <div class="h-10 bg-white dark:bg-[#2b2b2b] border-b border-gray-300 dark:border-gray-800 flex items-center px-2 space-x-2 shrink-0">
         <div class="flex items-center space-x-1 border-r border-gray-300 dark:border-gray-700 pr-2">
-            <button class="p-1 rounded hover:bg-gray-100 dark:hover:bg-white/5"><span class="text-xs">📂</span></button>
-            <button class="p-1 rounded hover:bg-gray-100 dark:hover:bg-white/5"><span class="text-xs">⚙️</span></button>
+            <button class="p-1 rounded-sm hover:bg-gray-100 dark:hover:bg-white/5"><span class="text-xs">📂</span></button>
+            <button class="p-1 rounded-sm hover:bg-gray-100 dark:hover:bg-white/5"><span class="text-xs">⚙️</span></button>
         </div>
-        <div class="flex items-center space-x-2 flex-grow">
+        <div class="flex items-center space-x-2 grow">
             <div class="flex flex-col">
                 <span class="text-[9px] opacity-60">Host:</span>
-                <input type="text" x-model="host" placeholder="sftp.johnson-rose.co.uk" class="bg-gray-100 dark:bg-black/20 border border-gray-300 dark:border-gray-700 px-2 py-0.5 text-[10px] rounded outline-none w-32">
+                <input type="text" x-model="host" placeholder="sftp.johnson-rose.co.uk" class="bg-gray-100 dark:bg-black/20 border border-gray-300 dark:border-gray-700 px-2 py-0.5 text-[10px] rounded-sm outline-hidden w-32">
             </div>
             <div class="flex flex-col">
                 <span class="text-[9px] opacity-60">Username:</span>
-                <input type="text" x-model="user" placeholder="devante" class="bg-gray-100 dark:bg-black/20 border border-gray-300 dark:border-gray-700 px-2 py-0.5 text-[10px] rounded outline-none w-24">
+                <input type="text" x-model="user" placeholder="devante" class="bg-gray-100 dark:bg-black/20 border border-gray-300 dark:border-gray-700 px-2 py-0.5 text-[10px] rounded-sm outline-hidden w-24">
             </div>
             <div class="flex flex-col">
                 <span class="text-[9px] opacity-60">Password:</span>
-                <input type="password" x-model="pass" placeholder="••••••••" class="bg-gray-100 dark:bg-black/20 border border-gray-300 dark:border-gray-700 px-2 py-0.5 text-[10px] rounded outline-none w-24">
+                <input type="password" x-model="pass" placeholder="••••••••" class="bg-gray-100 dark:bg-black/20 border border-gray-300 dark:border-gray-700 px-2 py-0.5 text-[10px] rounded-sm outline-hidden w-24">
             </div>
             <div class="flex flex-col">
                 <span class="text-[9px] opacity-60">Port:</span>
-                <input type="text" x-model="port" placeholder="22" class="bg-gray-100 dark:bg-black/20 border border-gray-300 dark:border-gray-700 px-2 py-0.5 text-[10px] rounded outline-none w-12">
+                <input type="text" x-model="port" placeholder="22" class="bg-gray-100 dark:bg-black/20 border border-gray-300 dark:border-gray-700 px-2 py-0.5 text-[10px] rounded-sm outline-hidden w-12">
             </div>
             <button @click="isConnected ? disconnect() : connect()" 
-                    class="mt-3 px-4 py-1 bg-gray-200 dark:bg-white/10 hover:bg-gray-300 dark:hover:bg-white/20 border border-gray-400 dark:border-gray-600 rounded text-[10px] transition-all flex items-center">
+                    class="mt-3 px-4 py-1 bg-gray-200 dark:bg-white/10 hover:bg-gray-300 dark:hover:bg-white/20 border border-gray-400 dark:border-gray-600 rounded-sm text-[10px] transition-all flex items-center">
                 <span x-text="isConnecting ? 'Connecting...' : (isConnected ? 'Disconnect' : 'Quickconnect')"></span>
             </button>
         </div>
@@ -42,13 +42,13 @@
     </div>
 
     <!-- File Explorer Split View -->
-    <div class="flex-grow flex min-h-0">
+    <div class="grow flex min-h-0">
         <!-- Local Site -->
         <div class="flex-1 flex flex-col border-r border-gray-300 dark:border-gray-800">
             <div class="h-6 bg-gray-100 dark:bg-[#252526] border-b border-gray-300 dark:border-gray-800 px-2 flex items-center justify-between">
                 <span class="text-[10px] font-semibold">Local site: <span class="font-normal opacity-70" x-text="localPath"></span></span>
             </div>
-            <div class="flex-grow bg-white dark:bg-[#1e1e1e] overflow-y-auto custom-scrollbar">
+            <div class="grow bg-white dark:bg-[#1e1e1e] overflow-y-auto custom-scrollbar">
                 <div class="grid grid-cols-12 py-1 px-4 text-[10px] font-bold border-b border-gray-100 dark:border-white/5 opacity-60">
                     <div class="col-span-6">Filename</div>
                     <div class="col-span-3">Filesize</div>
@@ -79,7 +79,7 @@
             <div class="h-6 bg-gray-100 dark:bg-[#252526] border-b border-gray-300 dark:border-gray-800 px-2 flex items-center justify-between">
                 <span class="text-[10px] font-semibold">Remote site: <span class="font-normal opacity-70" x-text="remotePath"></span></span>
             </div>
-            <div class="flex-grow bg-white dark:bg-[#1e1e1e] overflow-y-auto custom-scrollbar relative">
+            <div class="grow bg-white dark:bg-[#1e1e1e] overflow-y-auto custom-scrollbar relative">
                 <template x-if="!isConnected">
                     <div class="absolute inset-0 flex items-center justify-center text-xs opacity-40">
                         Not connected to any server
