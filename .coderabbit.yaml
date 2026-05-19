@@ -1,0 +1,30 @@
+# CodeRabbit configuration (canonical Coded Vision Design template)
+# Docs: https://docs.coderabbit.ai/reference/configuration
+language: en-GB
+early_access: false
+tone_instructions: "Use British English spelling (colour, centre, behaviour, optimise). No em-dashes."
+
+reviews:
+  profile: chill
+  request_changes_workflow: false
+  high_level_summary: true
+  poem: false
+  review_status: true
+  collapse_walkthrough: true
+  auto_review:
+    enabled: true
+    drafts: false
+  path_filters:
+    - "!dist/**"
+    - "!build/**"
+    - "!node_modules/**"
+    - "!vendor/**"
+    - "!**/*.min.js"
+    - "!**/*.min.css"
+    - "!**/*.lock"
+    - "!**/package-lock.json"
+    - "!**/pnpm-lock.yaml"
+    - "!**/composer.lock"
+
+chat:
+  auto_reply: true
