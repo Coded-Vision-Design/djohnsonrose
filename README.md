@@ -1,5 +1,7 @@
 <!-- BEGIN: cvd-org-header (auto-managed by scripts/inject-readme-header.ps1 in cdv-vps-ops; this block may be regenerated) -->
 
+[![CI](https://github.com/Coded-Vision-Design/djohnsonrose/actions/workflows/ci-deps-check.yml/badge.svg)](https://github.com/Coded-Vision-Design/djohnsonrose/actions/workflows/ci-deps-check.yml) [![Deploy](https://github.com/Coded-Vision-Design/djohnsonrose/actions/workflows/deploy.yml/badge.svg)](https://github.com/Coded-Vision-Design/djohnsonrose/actions/workflows/deploy.yml) [![CodeQL](https://img.shields.io/badge/CodeQL-scanning-2ea44f?style=flat-square&logo=github&logoColor=white)](https://github.com/Coded-Vision-Design/djohnsonrose/security/code-scanning) [![Built by Coded Vision Design](https://img.shields.io/badge/Built%20by-Coded%20Vision%20Design-111827?style=flat-square)](https://github.com/Coded-Vision-Design)
+
 Part of the [Coded Vision Design](https://github.com/Coded-Vision-Design) organisation. Org-wide standards: [community profile](https://github.com/Coded-Vision-Design/.github) | [security disclosure](https://github.com/Coded-Vision-Design/.github/blob/main/SECURITY.md)
 
 <!-- END: cvd-org-header -->
