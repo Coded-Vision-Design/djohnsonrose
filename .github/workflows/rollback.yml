@@ -39,7 +39,7 @@ jobs:
     runs-on: ubuntu-latest
     if: github.event.inputs.mode == 'server-snapshot'
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Read config
         id: config
