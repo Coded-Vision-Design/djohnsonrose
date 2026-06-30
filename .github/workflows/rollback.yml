@@ -105,8 +105,8 @@ jobs:
             fi
             TIMESTAMP=\$(date +%Y%m%d_%H%M%S)
             mkdir -p "${RELEASES_DIR}/\${TIMESTAMP}_pre_rollback"
-            rsync -a --exclude='.releases' "${DEPLOY_PATH}/" "${RELEASES_DIR}/\${TIMESTAMP}_pre_rollback/"
-            rsync -a --delete --exclude='.releases' "\${SNAP_DIR}/" "${DEPLOY_PATH}/"
+            rsync -a --exclude='.releases' --exclude='vendor' --exclude='node_modules' "${DEPLOY_PATH}/" "${RELEASES_DIR}/\${TIMESTAMP}_pre_rollback/"
+            rsync -a --delete --exclude='.releases' --exclude='vendor' --exclude='node_modules' "\${SNAP_DIR}/" "${DEPLOY_PATH}/"
             echo "Restored snapshot: ${SNAPSHOT}"
           SCRIPT
 
