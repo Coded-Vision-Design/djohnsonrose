@@ -105,6 +105,8 @@ jobs:
             fi
             TIMESTAMP=\$(date +%Y%m%d_%H%M%S)
             mkdir -p "${RELEASES_DIR}/\${TIMESTAMP}_pre_rollback"
+            chmod 700 "${RELEASES_DIR}"
+            [ -e "${RELEASES_DIR}/.htaccess" ] || printf '%s\n' '# Deploy snapshots are rollback copies, never meant to be served.' 'Require all denied' > "${RELEASES_DIR}/.htaccess"
             rsync -a --exclude='.releases' --exclude='vendor' --exclude='node_modules' "${DEPLOY_PATH}/" "${RELEASES_DIR}/\${TIMESTAMP}_pre_rollback/"
             rsync -a --delete --exclude='.releases' --exclude='vendor' --exclude='node_modules' "\${SNAP_DIR}/" "${DEPLOY_PATH}/"
             echo "Restored snapshot: ${SNAPSHOT}"
