@@ -281,6 +281,8 @@ jobs:
 
           ssh deployserver << SCRIPT
             mkdir -p "${RELEASES_DIR}"
+            chmod 700 "${RELEASES_DIR}"
+            [ -e "${RELEASES_DIR}/.htaccess" ] || printf '%s\n' '# Deploy snapshots are rollback copies, never meant to be served.' 'Require all denied' > "${RELEASES_DIR}/.htaccess"
             if [ -d "${DEPLOY_PATH}" ] && [ "\$(ls -A ${DEPLOY_PATH} 2>/dev/null | grep -v .releases | head -1)" ]; then
               SNAPSHOT="${RELEASES_DIR}/${TIMESTAMP}_${COMMIT_SHORT}_pre"
               mkdir -p "\${SNAPSHOT}"
