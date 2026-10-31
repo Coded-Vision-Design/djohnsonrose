@@ -6,6 +6,8 @@ import {
   listAt,
   type FsEntry,
 } from '../../data/filesystem'
+import { showClassicDesktopMenu, showMenu } from '../../shell/menus'
+import { isImageEntry } from '../../shell/openEntry'
 
 // 1:1 port of partials/apps/explorer.php — toolbar (back/forward/up,
 // breadcrumb + editable path, search), 52 px sidebar with pinned + This PC
@@ -140,7 +142,7 @@ export default function Explorer() {
   const recycleItem = useOsStore((s) => s.recycleItem)
   const emptyRecycleBin = useOsStore((s) => s.emptyRecycleBin)
   const renameFile = useOsStore((s) => s.renameFile)
-  const openContextMenu = useOsStore((s) => s.openContextMenu)
+  const updateSetting = useOsStore((s) => s.updateSetting)
   const closeContextMenu = useOsStore((s) => s.closeContextMenu)
   const focusedAppId = useOsStore((s) => s.focusedWindowId)
   const focusedAppName = useOsStore((s) =>
@@ -345,34 +347,51 @@ export default function Explorer() {
   }
 
   // ---- Right-click context menu ----
-  const showFileContextMenu = (file: FsEntry, x: number, y: number) => {
+  const showFileContextMenu = (file: FsEntry, clientX: number, clientY: number) => {
     setSelected(file.name)
-    const items = [
-      { label: 'Open', icon: '↗️', action: () => openItem(file) },
-      { separator: true } as const,
-      ...(isRecycle
-        ? [{ label: 'Restore', icon: '↺', action: () => restoreFromRecycle(file.name) }]
-        : [
-            { label: 'Rename', icon: '✎', action: () => beginRename(file) },
-            { label: 'Delete', icon: '🗑', action: () => recycleItem(file.name, currentPath, { ...file }) },
-          ]),
-      { separator: true } as const,
-      { label: 'Properties', icon: 'ℹ️', action: () => setDetailsOpen(true) },
-    ]
-    openContextMenu(x, y, items, 'modern')
+    const here = { clientX, clientY }
+    const shared = {
+      open: () => openItem(file),
+      properties: () => setDetailsOpen(true),
+      classic: () => showClassicDesktopMenu(here),
+    }
+    if (isRecycle) {
+      showMenu('recycledFile', here, { ...shared, restore: () => restoreFromRecycle(file.name) })
+      return
+    }
+    showMenu(
+      'file',
+      here,
+      {
+        ...shared,
+        rename: () => beginRename(file),
+        delete: () => recycleItem(file.name, currentPath, { ...file }),
+        setBackground: () => {
+          if ('url' in file) updateSetting('wallpaper', file.url)
+        },
+      },
+      { setBackground: { hidden: !isImageEntry(file) } },
+    )
   }
 
-  const showPaneContextMenu = (x: number, y: number) => {
-    openContextMenu(x, y, [
-      { label: viewMode === 'grid' ? 'View · Details' : 'View · Grid', icon: '⊞', action: () => setViewMode((v) => (v === 'grid' ? 'details' : 'grid')) },
-      { label: detailsOpen ? 'Hide details pane' : 'Show details pane', icon: 'ℹ️', action: () => setDetailsOpen((v) => !v) },
-      { separator: true },
-      { label: `Sort by · ${sortKey}`, icon: '↕', disabled: true },
-      { label: 'Name',          action: () => setSortKey('name') },
-      { label: 'Type',          action: () => setSortKey('type') },
-      { label: 'Date modified', action: () => setSortKey('date') },
-      { label: 'Size',          action: () => setSortKey('size') },
-    ], 'modern')
+  const showPaneContextMenu = (clientX: number, clientY: number) => {
+    showMenu(
+      'explorerPane',
+      { clientX, clientY },
+      {
+        view: () => setViewMode(viewMode === 'grid' ? 'details' : 'grid'),
+        details: () => setDetailsOpen(!detailsOpen),
+        sortName: () => setSortKey('name'),
+        sortType: () => setSortKey('type'),
+        sortDate: () => setSortKey('date'),
+        sortSize: () => setSortKey('size'),
+      },
+      {
+        view: { label: viewMode === 'grid' ? 'View · Details' : 'View · Grid' },
+        details: { label: detailsOpen ? 'Hide details pane' : 'Show details pane' },
+        sortHeader: { label: `Sort by · ${sortKey}` },
+      },
+    )
   }
 
   // ---- Keyboard shortcuts ----
@@ -694,6 +713,7 @@ function GridView({
             key={file.name}
             onClick={() => onSelect(file.name)}
             onDoubleClick={() => onOpen(file)}
+            data-explorer-file={file.name}
             onContextMenu={(e) => { e.preventDefault(); e.stopPropagation(); onContextMenu(file, e.clientX, e.clientY) }}
             draggable={!isRenaming}
             onDragStart={onDragStart(file)}
@@ -781,7 +801,8 @@ function DetailsView({
               key={file.name}
               onClick={() => onSelect(file.name)}
               onDoubleClick={() => onOpen(file)}
-              onContextMenu={(e) => { e.preventDefault(); e.stopPropagation(); onContextMenu(file, e.clientX, e.clientY) }}
+              data-explorer-file={file.name}
+            onContextMenu={(e) => { e.preventDefault(); e.stopPropagation(); onContextMenu(file, e.clientX, e.clientY) }}
               className={`cursor-pointer hover:bg-blue-50/50 dark:hover:bg-blue-900/10 ${isSelected ? 'bg-blue-100/50 dark:bg-blue-900/30' : ''}`}
             >
               <td className="pl-4 py-1.5 flex items-center space-x-2">

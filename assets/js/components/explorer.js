@@ -174,6 +174,18 @@ document.addEventListener('alpine:init', () => {
             }
         },
 
+        showExplorerItemMenu(e, file) {
+            if (this.currentPath !== 'C:\\Recycle Bin') {
+                this.showFileContextMenu(e, file, this.currentPath);
+                return;
+            }
+            this.openMenu('recycledFile', e, {
+                open: () => this.openItem(file),
+                restore: () => this.restoreItem(file),
+                classic: () => this.showClassicDesktopContextMenu(e)
+            });
+        },
+
         restoreItem(item) {
             const osStore = Alpine.store('os');
             const recycleBin = osStore.fileSystem['C:\\Recycle Bin'];

@@ -1,9 +1,12 @@
 import { useMemo, useRef, useState } from 'react'
 import { useOsStore, TASKBAR_HEIGHT } from '../store/osStore'
 import { listAt, type FsEntry } from '../data/filesystem'
+import { showClassicDesktopMenu, showMenu, type MenuPoint } from './menus'
+import { isImageEntry, openEntry } from './openEntry'
 import { playSound } from '../lib/sounds'
 
 const DESKTOP_PATH = 'C:\\Users\\DeVante\\Desktop'
+const RECYCLE_PATH = 'C:\\Recycle Bin'
 const PC_NAME = "DeVanté's PC"
 const ICON_W = 110
 const ICON_H = 110
@@ -78,11 +81,15 @@ export function DesktopIcons() {
   const iconPositions = useOsStore((s) => s.iconPositions)
   const setIconPosition = useOsStore((s) => s.setIconPosition)
   const recycleItem = useOsStore((s) => s.recycleItem)
-  const recycleCount = useOsStore((s) => s.recycleBin.length)
+  const recycled = useOsStore((s) => s.recycleBin.length)
+  const restoredSeeds = useOsStore((s) => s.restoredSeeds)
+  const recycleCount =
+    recycled + listAt(RECYCLE_PATH).filter((e) => !restoredSeeds.includes(e.name)).length
   const hiddenDesktop = useOsStore((s) => s.hiddenDesktop)
   const recoveredItems = useOsStore((s) => s.recoveredItems)
   const emptyRecycleBin = useOsStore((s) => s.emptyRecycleBin)
-  const openContextMenu = useOsStore((s) => s.openContextMenu)
+  const updateSetting = useOsStore((s) => s.updateSetting)
+  const desktopZoom = useOsStore((s) => s.desktopZoom)
 
   const [hoverRecycle, setHoverRecycle] = useState(false)
   const [draggingName, setDraggingName] = useState<string | null>(null)
@@ -142,32 +149,45 @@ export function DesktopIcons() {
     return placed
   }, [iconPositions, recycleCount, hiddenDesktop, recoveredItems])
 
-  const logEvent = useOsStore((s) => s.logEvent)
 
   const open = (i: PlacedIcon) => {
     if (i.type === 'pc') {
       openApp('explorer', 'This PC', { extra: { initialPath: 'C:\\' } })
       return
     }
-    const e = i.entry
-    if (!e) return
-    if (e.type === 'folder') {
-      const target = 'path' in e && e.path ? e.path : `${DESKTOP_PATH}\\${e.name}`
-      openApp('explorer', e.name, { extra: { initialPath: target } })
-    } else if (e.type === 'app') {
-      openApp(e.app, e.name, { extra: e.extraData })
-    } else if (e.type === 'image') {
-      openApp('photos', e.name, { extra: { imageUrl: e.url } })
-    } else if (e.type === 'video') {
-      openApp('video', e.name, { extra: { videoUrl: e.url } })
-    } else if (e.type === 'file') {
-      openApp('notepad', e.name, { extra: { content: e.content ?? '' } })
-    } else if (e.type === 'link') {
-      // Cross-build hop (e.g. PHP/React Desktop shortcuts). Logged via the
-      // same Security/System event mechanism v1 uses so emails read alike.
-      logEvent('System', 'Information', `Version switch: opening ${e.name} (${e.url})`)
-      window.location.href = e.url
+    if (i.entry) openEntry(i.entry, DESKTOP_PATH)
+  }
+
+  const showIconMenu = (icon: PlacedIcon, { clientX, clientY }: MenuPoint) => {
+    const here = { clientX, clientY }
+    const classic = () => showClassicDesktopMenu(here)
+    if (icon.isRecycleBin) {
+      showMenu(
+        'recycleBin',
+        here,
+        { open: () => open(icon), empty: () => emptyRecycleBin(), classic },
+        { empty: { disabled: recycleCount === 0 } },
+      )
+      return
     }
+    const { entry } = icon
+    showMenu(
+      'file',
+      here,
+      {
+        open: () => open(icon),
+        delete: () => {
+          if (!entry) return
+          recycleItem(icon.name, DESKTOP_PATH, { ...entry })
+          playSound('recycle')
+        },
+        setBackground: () => {
+          if (entry && 'url' in entry) updateSetting('wallpaper', entry.url)
+        },
+        classic,
+      },
+      { setBackground: { hidden: !entry || !isImageEntry(entry) } },
+    )
   }
 
   const onMouseDown = (icon: PlacedIcon, e: React.MouseEvent) => {
@@ -223,7 +243,11 @@ export function DesktopIcons() {
   }
 
   return (
-    <div className="absolute inset-0 pointer-events-none p-2" aria-label="Desktop icons">
+    <div
+      className="absolute inset-0 pointer-events-none p-2 transition-transform duration-75 origin-center"
+      style={{ transform: `scale(${desktopZoom})` }}
+      aria-label="Desktop icons"
+    >
       {icons.map((icon) => {
         const isDragging = draggingName === icon.name
         const recycleHover = icon.isRecycleBin && hoverRecycle
@@ -237,48 +261,7 @@ export function DesktopIcons() {
             onContextMenu={(e) => {
               e.preventDefault()
               e.stopPropagation()
-              const items = icon.isRecycleBin
-                ? [
-                    {
-                      label: 'Open',
-                      icon: '📂',
-                      action: () => open(icon),
-                    },
-                    {
-                      label: 'Empty Recycle Bin',
-                      icon: '🗑',
-                      disabled: recycleCount === 0,
-                      action: () => emptyRecycleBin(),
-                    },
-                  ]
-                : icon.type === 'pc'
-                  ? [
-                      {
-                        label: 'Open',
-                        icon: '📂',
-                        action: () => open(icon),
-                      },
-                      {
-                        label: 'Properties',
-                        icon: 'ℹ️',
-                        action: () => openApp('settings'),
-                      },
-                    ]
-                  : [
-                      { label: 'Open', icon: '📂', action: () => open(icon) },
-                      { separator: true },
-                      {
-                        label: 'Delete',
-                        icon: '🗑',
-                        action: () => {
-                          if (icon.entry) {
-                            recycleItem(icon.name, DESKTOP_PATH, { ...icon.entry })
-                            playSound('recycle')
-                          }
-                        },
-                      },
-                    ]
-              openContextMenu(e.clientX, e.clientY, items)
+              showIconMenu(icon, e)
             }}
             data-desktop-item={icon.name}
             title={icon.name}

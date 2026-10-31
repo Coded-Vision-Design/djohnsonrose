@@ -130,6 +130,7 @@ export interface IconPosition {
 export interface ContextMenuItem {
   label?: string
   icon?: string
+  shortcut?: string
   /** Click handler — receives no args, called once. */
   action?: () => void
   /** Render as a horizontal divider between groups. */
@@ -143,6 +144,8 @@ export interface ContextMenuState {
   x: number
   y: number
   items: ContextMenuItem[]
+  /** The icon row above the items, on file menus. */
+  actions: ContextMenuItem[]
   /** Win11 modern (rounded) vs Win10 classic (square, dense). */
   variant: 'modern' | 'classic'
 }
@@ -197,6 +200,10 @@ interface OsState {
   clock: Clock
   weather: Weather
   news: NewsItem[]
+
+  /** Reported by the browser where it can, which is not persisted. */
+  battery: { level: number; charging: boolean }
+  desktopZoom: number
 
   // Recycle bin + desktop icon layout (both persisted)
   recycleBin: RecycledItem[]
@@ -274,11 +281,15 @@ interface OsState {
   renameFile: (path: string, originalName: string, newName: string) => void
 
   // Responsive flags + context menu
+  setBattery: (battery: OsState['battery']) => void
+  setDesktopZoom: (zoom: number) => void
+  togglePinned: (app: string) => void
   openContextMenu: (
     x: number,
     y: number,
     items: ContextMenuItem[],
-    variant?: 'modern' | 'classic',
+    variant?: ContextMenuState['variant'],
+    actions?: ContextMenuItem[],
   ) => void
   closeContextMenu: () => void
 }
@@ -355,7 +366,9 @@ export const useOsStore = create<OsState>()(
       isTablet: initialMode() === 'tablet',
       isDesktop: initialMode() === 'desktop',
 
-      contextMenu: { open: false, x: 0, y: 0, items: [], variant: 'modern' },
+      contextMenu: { open: false, x: 0, y: 0, items: [], actions: [], variant: 'modern' },
+      battery: { level: 85, charging: false },
+      desktopZoom: 1,
 
       finishBoot: () => set({ isBooting: false }),
       login: () => {
@@ -698,10 +711,18 @@ export const useOsStore = create<OsState>()(
         get().logEvent('FileSystem', 'Information', `Renamed ${originalName} → ${trimmed}`)
       },
 
-      openContextMenu: (x, y, items, variant = 'modern') =>
-        set({ contextMenu: { open: true, x, y, items, variant } }),
+      openContextMenu: (x, y, items, variant = 'modern', actions = []) =>
+        set({ contextMenu: { open: true, x, y, items, actions, variant } }),
       closeContextMenu: () =>
-        set({ contextMenu: { open: false, x: 0, y: 0, items: [], variant: 'modern' } }),
+        set({ contextMenu: { open: false, x: 0, y: 0, items: [], actions: [], variant: 'modern' } }),
+      setBattery: (battery) => set({ battery }),
+      setDesktopZoom: (zoom) => set({ desktopZoom: Math.min(Math.max(0.7, zoom), 1.3) }),
+      togglePinned: (app) =>
+        set((state) => ({
+          pinnedApps: state.pinnedApps.includes(app)
+            ? state.pinnedApps.filter((id) => id !== app)
+            : [...state.pinnedApps, app],
+        })),
       }
     },
     {

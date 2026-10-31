@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useOsStore, type Settings as SettingsShape } from '../../store/osStore'
+import { useWindowExtras } from '../../windowing/WindowContext'
 
 // 1:1 port of partials/apps/settings.php — five-tab Win11 Settings shell that
 // reads the same data/portfolio.json the PHP version reads. All copy below
@@ -110,7 +111,8 @@ export default function Settings() {
   const settings = useOsStore((s) => s.settings)
   const updateSetting = useOsStore((s) => s.updateSetting)
   const isMobile = useOsStore((s) => s.isMobile)
-  const [tab, setTab] = useState<Tab>('system')
+  const { currentTab } = useWindowExtras<{ currentTab?: Tab }>()
+  const [tab, setTab] = useState<Tab>(currentTab ?? 'system')
   const [preview, setPreview] = useState<string | null>(null)
   const [data, setData] = useState<Portfolio | null>(null)
   const [consent, setConsent] = useState<boolean>(readConsent)

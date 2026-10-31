@@ -1,9 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useOsStore } from '../store/osStore'
 import { startPinnedApps } from '../apps/manifest'
-import { getApp, groupAppsByLetter, searchApps } from '../apps/registry'
+import { getApp, groupAppsByLetter, listApps } from '../apps/registry'
+import { searchOs, type SearchResult } from '../../../assets/js/windowing/shell-core.js'
+import { filesystem, type FsEntry } from '../data/filesystem'
+import { openEntry } from './openEntry'
 
 type View = 'pinned' | 'allApps'
+type Result = SearchResult<FsEntry>
 
 // 1:1 port of partials/start-menu.php — 540x600 panel above the taskbar with
 // search, Pinned grid (6 cols), All Apps A-Z view, Recommended row, and a
@@ -55,7 +59,31 @@ export function StartMenu() {
   )
 
   const grouped = useMemo(() => groupAppsByLetter(), [])
-  const searchResults = query ? searchApps(query) : []
+  const recycleBin = useOsStore((s) => s.recycleBin)
+  const recoveredItems = useOsStore((s) => s.recoveredItems)
+  const renames = useOsStore((s) => s.renames)
+
+  // The file system as the visitor has left it: v1 changes its copy directly,
+  // and v2 keeps their changes as overlays.
+  const files = useMemo(() => {
+    const visible: Record<string, FsEntry[]> = {}
+    for (const [path, entries] of Object.entries(filesystem)) {
+      const recycled = recycleBin.filter((r) => r.fromPath === path).map((r) => r.name)
+      const recovered = recoveredItems
+        .filter((r) => r.path === path)
+        .map((r) => r.item as unknown as FsEntry)
+        .filter((item) => !entries.some((entry) => entry.name === item.name))
+      visible[path] = [...entries.filter((entry) => !recycled.includes(entry.name)), ...recovered].map(
+        (entry) => ({ ...entry, name: renames[`${path}::${entry.name}`] ?? entry.name }),
+      )
+    }
+    return visible
+  }, [recycleBin, recoveredItems, renames])
+
+  const searchResults = useMemo(
+    () => (query ? searchOs(query, listApps(), files) : []),
+    [query, files],
+  )
 
   if (!open) return null
 
@@ -66,6 +94,13 @@ export function StartMenu() {
       def?.title,
       def ? { size: { w: def.defaultSize.w, h: def.defaultSize.h } } : undefined,
     )
+  }
+
+  const openResult = (result: Result) => {
+    if (result.fullPath) openEntry(result as FsEntry, result.fullPath)
+    else launch((result as { app: string }).app)
+    setQuery('')
+    close()
   }
 
   // 540x600 panel on desktop; the .start-menu-mobile rule in globals.css
@@ -96,7 +131,7 @@ export function StartMenu() {
             placeholder="Search for apps, settings, and documents"
             className="w-full bg-white dark:bg-black/20 border-b-2 border-win-blue px-10 py-2 rounded-md outline-hidden text-sm transition-all focus:bg-white dark:focus:bg-[#1c1c1c]"
             onKeyDown={(e) => {
-              if (e.key === 'Enter' && searchResults[0]) launch(searchResults[0].id)
+              if (e.key === 'Enter' && searchResults[0]) openResult(searchResults[0])
             }}
           />
           <svg
@@ -118,7 +153,7 @@ export function StartMenu() {
 
       {/* Body */}
       {query ? (
-        <SearchView results={searchResults} onLaunch={launch} onClose={close} />
+        <SearchView results={searchResults} onLaunch={openResult} onClose={close} />
       ) : view === 'pinned' ? (
         <PinnedView
           pinned={pinned}
@@ -173,8 +208,8 @@ function SearchView({
   results,
   onLaunch,
 }: {
-  results: ReturnType<typeof searchApps>
-  onLaunch: (id: string) => void
+  results: Result[]
+  onLaunch: (result: Result) => void
   onClose: () => void
 }) {
   return (
@@ -186,20 +221,25 @@ function SearchView({
         {results.length === 0 ? (
           <div className="text-xs opacity-50 py-4">No matches.</div>
         ) : (
-          results.map((a) => (
+          results.map((result) => (
             <button
-              key={a.id}
+              key={result.fullPath + result.name}
               type="button"
-              data-search-app={a.id}
-              onClick={() => onLaunch(a.id)}
-              className="w-full flex items-center p-2 rounded-sm hover:bg-win-blue hover:text-white text-left transition-colors group"
+              data-search-result={result.name}
+              data-search-app={result.type === 'app' ? result.app : undefined}
+              onClick={() => onLaunch(result)}
+              className="w-full flex items-center p-2 rounded-sm hover:bg-win-blue hover:text-white text-left group transition-colors"
             >
               <div className="w-8 h-8 rounded-sm bg-black/5 dark:bg-white/5 group-hover:bg-white/20 flex items-center justify-center mr-3">
-                <img src={a.icon} alt="" className="w-5 h-5 object-contain" />
+                {result.icon?.includes('.') ? (
+                  <img src={result.icon} alt="" className="w-5 h-5 object-contain" />
+                ) : (
+                  <span className="text-lg">{result.icon || '📄'}</span>
+                )}
               </div>
               <div className="min-w-0 grow text-black dark:text-white group-hover:text-white">
-                <div className="text-xs font-medium truncate">{a.title}</div>
-                <div className="text-[10px] opacity-60 truncate">App</div>
+                <div className="text-xs font-medium truncate">{result.name}</div>
+                <div className="text-[10px] opacity-60 truncate capitalize">{result.type}</div>
               </div>
             </button>
           ))

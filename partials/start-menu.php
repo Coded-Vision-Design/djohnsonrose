@@ -24,8 +24,10 @@
     <div x-show="searchQuery.length > 0" class="grow overflow-y-auto px-8 custom-scrollbar">
         <h3 class="text-[11px] font-bold text-gray-500 uppercase mb-3 tracking-wider">Top Results</h3>
         <div class="space-y-1">
+            <div x-show="searchResults.length === 0" class="text-xs opacity-50 py-4">No matches.</div>
             <template x-for="item in searchResults" :key="item.fullPath + item.name">
                 <div @click="openItem(item, item.fullPath); searchQuery = ''; startMenuOpen = false"
+                     :data-search-result="item.name"
                      :data-search-app="item.type === 'app' ? item.app : null"
                      draggable="true"
                      @dragstart="$event.dataTransfer.setData('application/json', JSON.stringify({item: item, fromPath: item.fullPath}))"
@@ -40,7 +42,7 @@
                     </div>
                     <div class="min-w-0 grow text-black dark:text-white group-hover:text-white">
                         <div class="text-xs font-medium truncate" x-text="item.name"></div>
-                        <div class="text-[10px] opacity-60 truncate" x-text="item.type === 'app' ? 'App' : (item.type || 'File')"></div>
+                        <div class="text-[10px] opacity-60 truncate capitalize" x-text="item.type || 'File'"></div>
                     </div>
                 </div>
             </template>

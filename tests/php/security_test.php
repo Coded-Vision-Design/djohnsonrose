@@ -87,5 +87,12 @@ check('manifest: has taskbar pins', count($manifest['pinned']) > 0);
 check('manifest: has Start pins', count($manifest['startPinned'] ?? []) > 0);
 check('manifest: Start pins are real apps', array_diff($manifest['startPinned'] ?? ['none'], $manifestIds) === []);
 
+$fileSystem = load_shared_data('filesystem');
+$menus = load_shared_data('menus');
+check('shared data: the file system loads', isset($fileSystem['C:\\Users\\DeVante\\Desktop']));
+check('shared data: the menus load', isset($menus['desktop']['items']));
+check('shared data: a missing file gives nothing', load_shared_data('no-such-file') === []);
+check('shared data: survives the trip into a script block', !str_contains(js_value($fileSystem), '</script'));
+
 echo "{$passes} passed, {$failures} failed\n";
 exit($failures === 0 ? 0 : 1);

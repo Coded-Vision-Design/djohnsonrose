@@ -104,7 +104,9 @@
 
             <div class="grid gap-4 grid-cols-[repeat(auto-fill,minmax(100px,1fr))]">
                 <template x-for="file in currentFiles" :key="file.name">
-                    <div @dblclick="openItem(file)" 
+                    <div @dblclick="openItem(file)"
+                         :data-explorer-file="file.name"
+                         @contextmenu.prevent.stop="showExplorerItemMenu($event, file)"
                          @click="selected = file.name"
                          @touchstart="handleTouchStart($event, (pos) => showFileContextMenu(pos, file, currentPath))"
                          @touchend="handleTouchEnd($event)"

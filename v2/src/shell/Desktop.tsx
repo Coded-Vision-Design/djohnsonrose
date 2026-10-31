@@ -1,4 +1,4 @@
-import { Suspense, memo, useEffect, useRef } from 'react'
+import { Suspense, memo, useEffect, useRef, type TouchEvent } from 'react'
 import { useOsStore, type WinWindow } from '../store/osStore'
 import { Window } from '../windowing/Window'
 import { WindowContextProvider } from '../windowing/WindowContext'
@@ -6,6 +6,7 @@ import { WindowErrorBoundary } from '../windowing/WindowErrorBoundary'
 import { SnapUi } from './SnapUi'
 import { TaskSwitcher } from './TaskSwitcher'
 import { Taskbar } from './Taskbar'
+import { showDesktopMenu } from './menus'
 import { StartMenu } from './StartMenu'
 import { QuickSettings } from './QuickSettings'
 import { Widgets } from './Widgets'
@@ -70,91 +71,33 @@ export function Desktop() {
     [],
   )
 
-  const openContextMenu = useOsStore((s) => s.openContextMenu)
-  const minimizeAll = useOsStore((s) => s.minimizeAll)
-  const updateSetting = useOsStore((s) => s.updateSetting)
-  const resetIconPositions = useOsStore((s) => s.resetIconPositions)
-  const openApp = useOsStore((s) => s.openApp)
-  const isDark = useOsStore((s) => s.settings.theme === 'dark')
-
-  const openClassicDesktopMenu = (x: number, y: number) => {
-    openContextMenu(
-      x,
-      y,
-      [
-        { label: 'View', icon: '🖼', disabled: true },
-        { label: 'Sort by', icon: '↕', disabled: true },
-        { label: 'Refresh', icon: '↻', action: () => window.location.reload() },
-        { separator: true },
-        { label: 'Paste', icon: '📋', disabled: true },
-        { label: 'Paste shortcut', icon: '🔗', disabled: true },
-        { separator: true },
-        { label: 'New', icon: '✱', disabled: true },
-        { label: 'Display settings', icon: '🖥', action: () => openApp('settings') },
-        {
-          label: 'Personalise',
-          icon: '🎨',
-          action: () => openApp('settings'),
-        },
-        { separator: true },
-        {
-          label: 'Reset icon layout',
-          icon: '🔁',
-          action: resetIconPositions,
-        },
-        {
-          label: 'Show desktop',
-          icon: '⬇',
-          action: minimizeAll,
-        },
-        {
-          label: isDark ? 'Light mode' : 'Dark mode',
-          icon: isDark ? '☀' : '🌙',
-          action: () => updateSetting('theme', isDark ? 'light' : 'dark'),
-        },
-      ],
-      'classic',
-    )
+  // Pinching the desktop zooms its icons, as in v1.
+  const pinchDistance = useRef(0)
+  const fingerGap = ({ touches }: TouchEvent) =>
+    Math.hypot(touches[0].clientX - touches[1].clientX, touches[0].clientY - touches[1].clientY)
+  const onDesktopTouchStart = (e: TouchEvent) => {
+    if (e.touches.length === 2) pinchDistance.current = fingerGap(e)
   }
-
-  const onDesktopContextMenu = (e: React.MouseEvent) => {
-    e.preventDefault()
-    const x = e.clientX
-    const y = e.clientY
-    openContextMenu(x, y, [
-      { label: 'View', icon: '👁', disabled: true },
-      { label: 'Sort by', icon: '↕', disabled: true },
-      { label: 'Refresh', icon: '↻', action: () => window.location.reload() },
-      { separator: true },
-      {
-        label: 'Show desktop',
-        icon: '🖥️',
-        action: minimizeAll,
-      },
-      {
-        label: 'Reset icon layout',
-        icon: '🔁',
-        action: resetIconPositions,
-      },
-      {
-        label: isDark ? 'Light mode' : 'Dark mode',
-        icon: isDark ? '☀' : '🌙',
-        action: () => updateSetting('theme', isDark ? 'light' : 'dark'),
-      },
-      { separator: true },
-      {
-        label: 'Show more options',
-        icon: '⤓',
-        action: () => openClassicDesktopMenu(x, y),
-      },
-    ])
+  const onDesktopTouchMove = (e: TouchEvent) => {
+    if (e.touches.length !== 2 || (e.target as Element).closest('.os-window')) return
+    const gap = fingerGap(e)
+    const change = gap - pinchDistance.current
+    if (Math.abs(change) <= 2) return
+    const { desktopZoom, setDesktopZoom } = useOsStore.getState()
+    setDesktopZoom(desktopZoom + (change > 0 ? 0.02 : -0.02))
+    pinchDistance.current = gap
   }
 
   return (
     <div
       className="relative h-dvh w-dvw overflow-hidden bg-cover bg-center"
       style={{ backgroundImage: `url(${wallpaper})` }}
-      onContextMenu={onDesktopContextMenu}
+      onContextMenu={(e) => {
+        e.preventDefault()
+        showDesktopMenu(e)
+      }}
+      onTouchStart={onDesktopTouchStart}
+      onTouchMove={onDesktopTouchMove}
     >
       <DesktopIcons />
       <div

@@ -63,7 +63,7 @@
 
     <!-- Bottom Info -->
     <div class="pt-4 border-t border-black/5 dark:border-white/10 flex items-center justify-between px-1">
-        <div class="flex items-center space-x-2 text-[11px] dark:text-white font-medium">
+        <div data-quick-battery class="flex items-center space-x-2 text-[11px] dark:text-white font-medium">
             <img :src="batteryIcon" class="w-4 h-4 opacity-70 dark:invert">
             <span class="opacity-80" x-text="`${settings.batteryLevel}% ${settings.batterySaver ? '(Saver On)' : ''}`"></span>
         </div>

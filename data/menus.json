@@ -1,0 +1,114 @@
+{
+  "desktop": {
+    "items": [
+      { "id": "view", "label": "View", "icon": "win11/view.svg" },
+      { "id": "autoArrange", "label": "Auto-arrange icons", "icon": "win11/check.svg" },
+      { "id": "sortBy", "label": "Sort by", "icon": "win11/sort.svg" },
+      { "id": "refresh", "label": "Refresh", "icon": "win11/refresh.svg" },
+      { "separator": true },
+      { "id": "resetZoom", "label": "Reset Zoom", "icon": "win11/search.webp" },
+      { "separator": true },
+      { "id": "new", "label": "New", "icon": "win11/new.svg", "disabled": true },
+      { "separator": true },
+      { "id": "displaySettings", "label": "Display settings", "icon": "win11/display.webp" },
+      { "id": "personalise", "label": "Personalise", "icon": "win11/settings.webp" },
+      { "separator": true },
+      { "id": "terminal", "label": "Open in PowerShell", "icon": "terminal.webp" },
+      { "separator": true },
+      { "id": "classic", "label": "Show more options", "icon": "win11/more.svg" }
+    ]
+  },
+  "desktopClassic": {
+    "variant": "classic",
+    "items": [
+      { "id": "view", "label": "View", "icon": "win11/view.svg", "disabled": true },
+      { "id": "sortBy", "label": "Sort by", "icon": "win11/sort.svg", "disabled": true },
+      { "id": "refresh", "label": "Refresh", "icon": "win11/refresh.svg" },
+      { "separator": true },
+      { "id": "paste", "label": "Paste", "icon": "win11/copy.svg", "disabled": true },
+      { "id": "pasteShortcut", "label": "Paste shortcut", "icon": "win11/open.svg", "disabled": true },
+      { "separator": true },
+      { "id": "new", "label": "New", "icon": "win11/new.svg", "disabled": true },
+      { "id": "displaySettings", "label": "Display settings", "icon": "win11/display.webp" },
+      { "id": "personalise", "label": "Personalise", "icon": "win11/personalize.webp" },
+      { "separator": true },
+      { "id": "terminal", "label": "Open in PowerShell", "icon": "terminal.webp" }
+    ]
+  },
+  "taskbar": {
+    "items": [
+      { "id": "taskbarSettings", "label": "Taskbar settings", "icon": "win11/settings.webp" },
+      { "id": "taskManager", "label": "Task Manager", "icon": "win11/taskmgr.webp", "shortcut": "Ctrl+Shift+Esc" },
+      { "separator": true },
+      { "id": "desktop", "label": "Desktop", "icon": "win11/display.webp" },
+      { "separator": true },
+      { "id": "classic", "label": "Show more options", "icon": "win11/more.svg", "shortcut": "Shift+F10" }
+    ]
+  },
+  "taskbarApp": {
+    "items": [
+      { "id": "pin", "label": "Pin to taskbar", "icon": "win11/pin.svg" },
+      { "id": "taskManager", "label": "Task Manager", "icon": "win11/taskmgr.webp" },
+      { "separator": true },
+      { "id": "close", "label": "Close window", "icon": "win11/delete.webp" },
+      { "separator": true },
+      { "id": "classic", "label": "Show more options", "icon": "win11/more.svg", "shortcut": "Shift+F10" }
+    ]
+  },
+  "recycleBin": {
+    "items": [
+      { "id": "open", "label": "Open", "icon": "win11/open.svg" },
+      { "id": "empty", "label": "Empty Recycle Bin", "icon": "win11/delete.svg" },
+      { "separator": true },
+      { "id": "pinStart", "label": "Pin to Start", "icon": "win11/pin.svg" },
+      { "id": "properties", "label": "Properties", "icon": "win11/properties.svg" },
+      { "separator": true },
+      { "id": "classic", "label": "Show more options", "icon": "win11/more.svg", "shortcut": "Shift+F10" }
+    ]
+  },
+  "file": {
+    "actions": [
+      { "id": "cut", "label": "Cut", "icon": "win11/cut.svg" },
+      { "id": "copy", "label": "Copy", "icon": "win11/copy.svg" },
+      { "id": "rename", "label": "Rename", "icon": "win11/rename.svg" },
+      { "id": "share", "label": "Share", "icon": "win11/share.svg" },
+      { "id": "delete", "label": "Delete", "icon": "win11/delete.svg" }
+    ],
+    "items": [
+      { "id": "open", "label": "Open", "icon": "win11/open.svg" },
+      { "id": "openLocation", "label": "Open file location", "icon": "win11/folder_open.svg" },
+      { "id": "setBackground", "label": "Set as desktop background", "icon": "win11/image.webp", "hidden": true },
+      { "separator": true },
+      { "id": "pinStart", "label": "Pin to Start", "icon": "win11/pin.svg" },
+      { "id": "favourites", "label": "Add to Favourites", "icon": "win11/star.svg" },
+      { "separator": true },
+      { "id": "zip", "label": "Compress to Zip file", "icon": "win11/zip.svg" },
+      { "id": "copyPath", "label": "Copy as path", "icon": "win11/path.svg" },
+      { "id": "properties", "label": "Properties", "icon": "win11/properties.svg" },
+      { "separator": true },
+      { "id": "classic", "label": "Show more options", "icon": "win11/more.svg", "shortcut": "Shift+F10" }
+    ]
+  },
+  "explorerPane": {
+    "items": [
+      { "id": "view", "label": "View", "icon": "win11/view.svg" },
+      { "id": "details", "label": "Show details pane", "icon": "win11/properties.svg" },
+      { "separator": true },
+      { "id": "sortHeader", "label": "Sort by", "icon": "win11/sort.svg", "disabled": true },
+      { "id": "sortName", "label": "Name", "icon": "win11/sort.svg" },
+      { "id": "sortType", "label": "Type", "icon": "win11/sort.svg" },
+      { "id": "sortDate", "label": "Date modified", "icon": "win11/sort.svg" },
+      { "id": "sortSize", "label": "Size", "icon": "win11/sort.svg" }
+    ]
+  },
+  "recycledFile": {
+    "items": [
+      { "id": "open", "label": "Open", "icon": "win11/open.svg" },
+      { "id": "restore", "label": "Restore", "icon": "win11/refresh.svg" },
+      { "separator": true },
+      { "id": "properties", "label": "Properties", "icon": "win11/properties.svg" },
+      { "separator": true },
+      { "id": "classic", "label": "Show more options", "icon": "win11/more.svg", "shortcut": "Shift+F10" }
+    ]
+  }
+}

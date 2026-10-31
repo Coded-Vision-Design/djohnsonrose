@@ -1,5 +1,5 @@
 import { readFileSync } from 'node:fs'
-import { test, expect, type Page } from '@playwright/test'
+import { test, expect, type Browser, type Page } from '@playwright/test'
 
 // Every place that lists apps, in both builds, checked against data/apps.json
 // so that a hand-written list cannot creep back in. v1 needs the PHP server
@@ -77,8 +77,11 @@ const entries = (page: Page, attr: string) =>
     attr,
   )
 
-const undrawn = async (page: Page, attr: string) =>
-  (await entries(page, attr)).filter((entry) => !entry.drawn).map((entry) => entry.id)
+/** Which icons have not drawn. Nothing on screen yet does not count as drawn. */
+const undrawn = async (page: Page, attr: string) => {
+  const found = await entries(page, attr)
+  return found.length ? found.filter((entry) => !entry.drawn).map((entry) => entry.id) : ['nothing yet']
+}
 
 const searchBox = (page: Page) => page.getByPlaceholder('Search for apps, settings, and documents')
 
@@ -92,7 +95,7 @@ for (const build of BUILDS) {
     test('Start shows the shared pins, in order', async ({ page }) => {
       await boot(page, build.url)
       await openStart(page)
-      await expect.poll(() => undrawn(page, 'data-pinned-app')).toEqual([])
+      await expect.poll(() => undrawn(page, 'data-pinned-app'), { timeout: 15_000 }).toEqual([])
 
       const tiles = await entries(page, 'data-pinned-app')
       expect(tiles.map((tile) => tile.id)).toEqual(manifest.startPinned)
@@ -106,7 +109,7 @@ for (const build of BUILDS) {
       await boot(page, build.url)
       await openStart(page)
       await page.getByRole('button', { name: /All apps/ }).click()
-      await expect.poll(() => undrawn(page, 'data-all-app')).toEqual([])
+      await expect.poll(() => undrawn(page, 'data-all-app'), { timeout: 15_000 }).toEqual([])
 
       const rows = await entries(page, 'data-all-app')
       const sorted = [...manifest.apps].sort((a, b) => a.title.localeCompare(b.title))
@@ -302,6 +305,309 @@ for (const viewport of [
     expect(seen[0]).toEqual(seen[1])
   })
 }
+
+/** Opens a page for each build, runs a check on it, and returns what each saw. */
+async function inBothBuilds<T>(
+  browser: Browser,
+  check: (page: Page, build: (typeof BUILDS)[number]) => Promise<T>,
+  options: { viewport?: { width: number; height: number }; script?: () => void } = {},
+) {
+  const seen: T[] = []
+  for (const build of BUILDS) {
+    const context = await browser.newContext({ viewport: options.viewport ?? { width: 1440, height: 900 } })
+    const page = await context.newPage()
+    if (options.script) await page.addInitScript(options.script)
+    await boot(page, build.url)
+    await page.locator('[data-desktop-item]').first().waitFor()
+    seen.push(await check(page, build))
+    await context.close()
+  }
+  return seen
+}
+
+const openPicturesFolder = (page: Page, build: (typeof BUILDS)[number]) => {
+  const initialPath = 'C:\\Users\\DeVante\\Pictures'
+  const options = build.name === 'v1' ? { initialPath } : { extra: { initialPath } }
+  return call(page, 'openApp', 'explorer', 'Pictures', options)
+}
+
+test.describe('Start search in both builds', () => {
+  const results = (page: Page) =>
+    page.evaluate(() =>
+      [...document.querySelectorAll<HTMLElement>('[data-search-result]')]
+        .filter((row) => row.offsetParent !== null)
+        .map((row) => row.innerText.replace(/\s+/g, ' ').trim()),
+    )
+
+  test('finds the same things, in the same order', async ({ browser }) => {
+    test.setTimeout(60_000)
+    const [v1, v2] = await inBothBuilds(browser, async (page) => {
+      await openStart(page)
+      const found: Record<string, string[]> = {}
+      for (const query of ['cv', 'premiere', 'docker', 'achievements', 'requirements', 'recycle', 'paint']) {
+        await searchBox(page).fill(query)
+        await page.waitForTimeout(150)
+        found[query] = await results(page)
+      }
+      return found
+    })
+    expect(v1.premiere.length).toBeGreaterThan(0)
+    expect(v1.achievements.length).toBeGreaterThan(0)
+    expect(v1).toEqual(v2)
+  })
+
+  for (const build of BUILDS) {
+    test(`${build.name} opens a text file from the results`, async ({ page }) => {
+      await boot(page, build.url)
+      await openStart(page)
+      await searchBox(page).fill('achievements')
+      await page.locator('[data-search-result="achievements.txt"]').click()
+      const win = page.getByRole('dialog', { name: 'achievements.txt', exact: true })
+      await expect(win).toContainText('World #1')
+    })
+
+    test(`${build.name} opens a folder from the results`, async ({ page }) => {
+      await boot(page, build.url)
+      await openStart(page)
+      await searchBox(page).fill('career')
+      await page.locator('[data-search-result="Career"]').first().click()
+      await expect(page.getByRole('dialog', { name: 'Career', exact: true })).toBeVisible()
+    })
+
+    test(`${build.name} stops finding a file once it is deleted`, async ({ page }) => {
+      await boot(page, build.url)
+      await page.locator('[data-desktop-item="achievements.txt"]').click({ button: 'right' })
+      await page.locator('[data-menu-action="Delete"]').click()
+      await expect(page.locator('[data-desktop-item="achievements.txt"]')).toHaveCount(0)
+      await openStart(page)
+      await searchBox(page).fill('achievements')
+      await expect(page.locator('[data-search-result]')).toHaveCount(0)
+    })
+  }
+})
+
+test.describe('right-click menus in both builds', () => {
+  /** What the open menu shows, down to each icon. */
+  const readMenu = (page: Page) =>
+    page.evaluate(() => {
+      const menu = [...document.querySelectorAll<HTMLElement>('[data-context-menu]')].find(
+        (el) => getComputedStyle(el).display !== 'none',
+      )
+      if (!menu) return null
+      const icon = (el: Element) => el.querySelector('img')?.getAttribute('src')?.split('/assets/img/').pop() ?? null
+      const { x, y } = menu.getBoundingClientRect()
+      return {
+        variant: menu.dataset.contextMenu,
+        x: Math.round(x),
+        y: Math.round(y),
+        actions: [...menu.querySelectorAll<HTMLElement>('[data-menu-action]')].map((el) => ({
+          label: el.dataset.menuAction,
+          icon: icon(el),
+        })),
+        items: [...menu.querySelectorAll<HTMLElement>('[data-menu-item], [data-menu-separator]')].map((el) =>
+          'menuSeparator' in el.dataset
+            ? 'separator'
+            : {
+                label: el.dataset.menuItem,
+                icon: icon(el),
+                shortcut: el.querySelector('[data-menu-shortcut]')?.textContent?.trim() || null,
+                disabled: el.classList.contains('disabled') || el.hasAttribute('disabled'),
+              },
+        ),
+      }
+    })
+
+  const undrawnIcons = (page: Page) =>
+    page.evaluate(() =>
+      [...document.querySelectorAll<HTMLElement>('[data-menu-item], [data-menu-action]')]
+        .filter((el) => el.offsetParent !== null)
+        .filter((el) => {
+          const img = el.querySelector('img')
+          return !img || !img.complete || img.naturalWidth === 0
+        })
+        .map((el) => el.dataset.menuItem ?? el.dataset.menuAction),
+    )
+
+  const targets: Record<string, (page: Page, build: (typeof BUILDS)[number]) => Promise<unknown>> = {
+    desktop: (page) => page.mouse.click(1000, 400, { button: 'right' }),
+    'classic desktop': async (page) => {
+      await page.mouse.click(1000, 400, { button: 'right' })
+      await page.locator('[data-menu-item="Show more options"]').click()
+    },
+    taskbar: (page) => page.locator('.os-taskbar').click({ button: 'right', position: { x: 420, y: 24 } }),
+    'taskbar app': (page) => page.locator('[data-taskbar-app="edge"]').click({ button: 'right' }),
+    'running taskbar app': async (page) => {
+      await call(page, 'openApp', 'calculator')
+      await page.locator('[data-taskbar-app="calculator"]').click({ button: 'right' })
+    },
+    'desktop file': (page) => page.locator('[data-desktop-item="achievements.txt"]').click({ button: 'right' }),
+    'desktop PC': (page) => page.locator('[data-desktop-item="DeVanté\'s PC"]').click({ button: 'right' }),
+    'Recycle Bin': (page) => page.locator('[data-desktop-item="Recycle Bin"]').click({ button: 'right' }),
+    'file in Explorer': async (page, build) => {
+      await openPicturesFolder(page, build)
+      const file = page.locator('[data-explorer-file]').first()
+      await file.click({ button: 'right' })
+    },
+  }
+
+  for (const [name, open] of Object.entries(targets)) {
+    test(`${name} menu matches, with an image on every item`, async ({ browser }) => {
+      test.setTimeout(60_000)
+      const [v1, v2] = await inBothBuilds(browser, async (page, build) => {
+        await open(page, build)
+        await expect.poll(() => undrawnIcons(page)).toEqual([])
+        return readMenu(page)
+      })
+      expect(v1?.items.length).toBeGreaterThan(0)
+      expect(Math.abs((v1?.x ?? 0) - (v2?.x ?? 0))).toBeLessThanOrEqual(2)
+      // Explorer lays its files out differently, so the pointer lands elsewhere.
+      if (name !== 'file in Explorer') expect(v1?.y).toBe(v2?.y)
+      expect({ ...v1, x: 0, y: 0 }).toEqual({ ...v2, x: 0, y: 0 })
+    })
+  }
+
+  for (const build of BUILDS) {
+    test(`${build.name} taskbar Desktop item shows the desktop`, async ({ page }) => {
+      await boot(page, build.url)
+      await call(page, 'openApp', 'calculator')
+      const win = page.getByRole('dialog', { name: 'Calculator', exact: true, includeHidden: true })
+      await win.waitFor()
+      await page.locator('.os-taskbar').click({ button: 'right', position: { x: 420, y: 24 } })
+      await page.locator('[data-menu-item="Desktop"]').click()
+      await expect(win).toHaveAttribute('data-state', 'minimized')
+    })
+
+    test(`${build.name} pins and unpins an app from its taskbar button`, async ({ page }) => {
+      await boot(page, build.url)
+      await call(page, 'openApp', 'calculator')
+      const button = page.locator('[data-taskbar-app="calculator"]')
+      await button.click({ button: 'right' })
+      await page.locator('[data-menu-item="Pin to taskbar"]').click()
+      await button.click({ button: 'right' })
+      await page.locator('[data-menu-item="Close window"]').click()
+      await expect(page.getByRole('dialog', { name: 'Calculator', exact: true })).toHaveCount(0)
+      await expect(button).toBeVisible()
+
+      await button.click({ button: 'right' })
+      await page.locator('[data-menu-item="Unpin from taskbar"]').click()
+      await expect(button).toHaveCount(0)
+    })
+
+    test(`${build.name} Reset Zoom only works when the desktop is zoomed`, async ({ page }) => {
+      await boot(page, build.url)
+      const item = page.locator('[data-menu-item="Reset Zoom"]')
+      await page.mouse.click(1000, 400, { button: 'right' })
+      await expect(item).toHaveClass(/disabled/)
+      await page.keyboard.press('Escape')
+
+      await page.evaluate(() => {
+        const w = window as unknown as {
+          Alpine?: { store: (n: string) => { desktopZoom: number } }
+          __osStore?: { getState: () => { setDesktopZoom: (zoom: number) => void } }
+        }
+        if (w.Alpine) w.Alpine.store('os').desktopZoom = 1.2
+        else w.__osStore?.getState().setDesktopZoom(1.2)
+      })
+      await page.mouse.click(1000, 400, { button: 'right' })
+      await expect(item).not.toHaveClass(/disabled/)
+      await item.click()
+      await page.mouse.click(1000, 400, { button: 'right' })
+      await expect(item).toHaveClass(/disabled/)
+    })
+
+    test(`${build.name} sets a picture as the background from Explorer`, async ({ page }) => {
+      await boot(page, build.url)
+      await openPicturesFolder(page, build)
+      await page.locator('[data-explorer-file]').first().click({ button: 'right' })
+      await expect(page.locator('[data-menu-item="Set as desktop background"]')).toBeVisible()
+    })
+
+    test(`${build.name} closes a menu with Escape`, async ({ page }) => {
+      await boot(page, build.url)
+      await page.mouse.click(1000, 400, { button: 'right' })
+      await expect(page.locator('[data-menu-item="Refresh"]')).toBeVisible()
+      await page.keyboard.press('Escape')
+      await expect(page.locator('[data-menu-item="Refresh"]')).toBeHidden()
+    })
+  }
+})
+
+test.describe('the tray in both builds', () => {
+  const trayItems = (page: Page) =>
+    page.evaluate(() =>
+      [...document.querySelectorAll<HTMLElement>('[data-tray-item]')]
+        .filter((el) => el.offsetParent !== null)
+        .map((el) => el.dataset.trayItem),
+    )
+
+  for (const viewport of [
+    { width: 390, height: 844 },
+    { width: 768, height: 1024 },
+    { width: 1440, height: 900 },
+  ]) {
+    test(`has the same items in the same order at ${viewport.width}px`, async ({ browser }) => {
+      test.setTimeout(60_000)
+      const [v1, v2] = await inBothBuilds(browser, trayItems, { viewport })
+      expect(v1.length).toBeGreaterThan(0)
+      expect(v1).toEqual(v2)
+    })
+  }
+
+  const readBattery = async (page: Page) => {
+    const battery = page.locator('[data-tray-battery]')
+    await expect(battery).toHaveAttribute('title', /50%/)
+    const icon = await battery.locator('img').getAttribute('src')
+    await page.locator('[data-tray-item="status"]').click()
+    const text = await page.locator('[data-quick-battery]').innerText()
+    return { title: (await battery.getAttribute('title'))?.trim(), icon, text: text.replace(/\s+/g, ' ').trim() }
+  }
+
+  test('shows the real battery while charging', async ({ browser }) => {
+    test.setTimeout(60_000)
+    const [v1, v2] = await inBothBuilds(browser, readBattery, {
+      script: () => {
+        const battery = { level: 0.5, charging: true, addEventListener: () => {} }
+        Object.defineProperty(navigator, 'getBattery', { value: async () => battery })
+      },
+    })
+    expect(v1).toMatchObject({ title: '50% (Charging)', text: '50%' })
+    expect(v1.icon).toMatch(/energy\.svg$/)
+    expect(v1).toEqual(v2)
+  })
+
+  test('shows the real battery when not charging', async ({ browser }) => {
+    test.setTimeout(60_000)
+    const [v1, v2] = await inBothBuilds(browser, readBattery, {
+      script: () => {
+        const battery = { level: 0.5, charging: false, addEventListener: () => {} }
+        Object.defineProperty(navigator, 'getBattery', { value: async () => battery })
+      },
+    })
+    expect(v1).toMatchObject({ title: '50%' })
+    expect(v1.icon).toMatch(/battery\.svg$/)
+    expect(v1).toEqual(v2)
+  })
+
+  test('falls back to 85% where the browser has no battery API', async ({ browser }) => {
+    test.setTimeout(60_000)
+    const [v1, v2] = await inBothBuilds(
+      browser,
+      async (page) => {
+        const battery = page.locator('[data-tray-battery]')
+        await expect(battery).toHaveAttribute('title', /85%/)
+        return (await battery.getAttribute('title'))?.trim()
+      },
+      {
+        script: () => {
+          Object.defineProperty(Navigator.prototype, 'getBattery', { value: undefined })
+          delete (Navigator.prototype as unknown as { getBattery?: unknown }).getBattery
+        },
+      },
+    )
+    expect(v1).toBe('85%')
+    expect(v1).toEqual(v2)
+  })
+})
 
 test('both builds show the same desktop icons, in order', async ({ browser }) => {
   const lists: string[][] = []

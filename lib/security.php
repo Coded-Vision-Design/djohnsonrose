@@ -28,6 +28,12 @@ function load_app_manifest(): array {
     return is_array($manifest) ? $manifest : ['apps' => [], 'pinned' => [], 'startPinned' => []];
 }
 
+/** A shared data file, read by both builds. See data/. */
+function load_shared_data(string $file): array {
+    $data = json_decode((string)@file_get_contents(__DIR__ . "/../data/{$file}.json"), true);
+    return is_array($data) ? $data : [];
+}
+
 /** Encodes a value for a script block. It cannot break out of the block. */
 function js_value($value): string {
     return json_encode($value, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP | JSON_UNESCAPED_SLASHES);

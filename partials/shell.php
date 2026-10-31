@@ -66,7 +66,8 @@
     <!-- Window manager core, shared with v2. Runs before Alpine, as both are deferred. -->
     <script type="module" nonce="<?php echo $cspNonce; ?>">
         import * as windowing from '<?php echo BASE_PATH; ?>assets/js/windowing/windowing.js?v=<?php echo @filemtime(__DIR__ . '/../assets/js/windowing/windowing.js') ?: time(); ?>';
-        window.OsWindowing = windowing;
+        import * as shellCore from '<?php echo BASE_PATH; ?>assets/js/windowing/shell-core.js?v=<?php echo @filemtime(__DIR__ . '/../assets/js/windowing/shell-core.js'); ?>';
+        window.OsWindowing = { ...windowing, ...shellCore };
     </script>
     <!-- Alpine.js -->
     <script defer src="<?php echo BASE_PATH; ?>assets/js/alpine/alpine-3.17.5.min.js"></script>
@@ -111,6 +112,8 @@
             apps: <?php echo js_value((object)array_column($appManifest['apps'], null, 'id')); ?>,
             pinned: <?php echo js_value($appManifest['pinned']); ?>,
             startPinned: <?php echo js_value($appManifest['startPinned']); ?>,
+            fileSystem: <?php echo js_value((object)load_shared_data('filesystem')); ?>,
+            menus: <?php echo js_value((object)load_shared_data('menus')); ?>,
             email: <?php echo js_value($config['email']); ?>,
             appToOpen: <?php echo js_value($appToOpen ?? ''); ?>,
             basePath: <?php echo js_value(BASE_PATH); ?>,
@@ -187,6 +190,7 @@
         <!-- Global Context Menu -->
         <div x-show="contextMenu.open"
              x-cloak
+             :data-context-menu="contextMenu.variant || 'modern'"
              @click.away="contextMenu.open = false"
              @keydown.escape.window="contextMenu.open = false"
              :class="contextMenu.variant === 'classic' ? 'bg-[#f0f0f0] dark:bg-[#2b2b2b] border border-[#a0a0a0] dark:border-black shadow-[2px_2px_4px_rgba(0,0,0,0.3)] py-1 min-w-[240px]' : 'bg-white/90 dark:bg-[#1c1c1c]/95 backdrop-blur-xl border border-white/20 dark:border-white/10 rounded-xl shadow-2xl py-1 min-w-[260px] context-menu'"
@@ -202,8 +206,9 @@
                         <div @click="if(!action.disabled) { contextMenu.open = false; action.action() }"
                              class="context-menu-action-btn group"
                              :class="{ 'disabled': action.disabled }"
+                             :data-menu-action="action.label"
                              :title="action.label">
-                            <span class="context-menu-icon pointer-events-none" x-html="action.icon"></span>
+                            <span class="context-menu-icon pointer-events-none"><img :src="action.icon" alt="" class="w-4 h-4"></span>
                         </div>
                     </template>
                 </div>
@@ -212,44 +217,22 @@
             <template x-for="(item, index) in (contextMenu.items || [])" :key="item.label ? item.label + index : 'sep' + index">
                 <div>
                     <template x-if="item.separator">
-                        <div class="context-menu-separator"></div>
+                        <div class="context-menu-separator" data-menu-separator></div>
                     </template>
                     <template x-if="!item.separator">
                         <div @click="if(!item.disabled) { contextMenu.open = false; item.action() }"
+                             :data-menu-item="item.label"
                              @mouseenter="clearTimeout(hoverTimer); hoverTimer = setTimeout(() => hoverItem = index, 60)"
                              @mouseleave="clearTimeout(hoverTimer); hoverItem = null"
                              :class="{ 'active': hoverItem === index, 'disabled': item.disabled }"
                              class="context-menu-item flex items-center justify-between px-3 py-1.5 cursor-default group transition-colors">
                             <div class="flex items-center">
-                                <span class="w-4 h-4 mr-3 flex items-center justify-center text-sm context-menu-icon" x-html="item.icon"></span>
+                                <span class="w-4 h-4 mr-3 flex items-center justify-center text-sm context-menu-icon"><img :src="item.icon" alt="" class="w-4 h-4"></span>
                                 <span class="context-menu-label" x-text="item.label"></span>
                             </div>
-                            <span x-show="item.shortcut" class="text-[10px] opacity-50 ml-4 font-mono" x-text="item.shortcut"></span>
+                            <span x-show="item.shortcut" data-menu-shortcut class="text-[10px] opacity-50 ml-4 font-mono" x-text="item.shortcut"></span>
                         </div>
                     </template>
-                </div>
-            </template>
-            <!-- Show more options — only on the Win11 modern menu, hides
-                 itself once the classic menu has taken over. The menu builders
-                 (showDesktopContextMenu/showFileContextMenu) explicitly add a
-                 "Show more options" item that maps to the classic builder
-                 (showClassicDesktopContextMenu et al.), so this footer is
-                 redundant for those entry points; it stays here as a fallback
-                 for any context menu without its own entry. -->
-            <template x-if="contextMenu.variant !== 'classic' && !(contextMenu.items || []).some(i => i.label === 'Show more options')">
-                <div>
-                    <div class="context-menu-separator"></div>
-                    <div @click="showClassicDesktopContextMenu({ clientX: contextMenu.x, clientY: contextMenu.y })"
-                         @mouseenter="clearTimeout(hoverTimer); hoverTimer = setTimeout(() => hoverItem = 'more', 60)"
-                         @mouseleave="clearTimeout(hoverTimer); hoverItem = null"
-                         :class="{ 'active': hoverItem === 'more' }"
-                         class="context-menu-item flex items-center justify-between px-3 py-1.5 cursor-default transition-colors">
-                        <div class="flex items-center">
-                            <span class="w-4 h-4 mr-3 flex items-center justify-center context-menu-icon">⤓</span>
-                            <span class="context-menu-label">Show more options</span>
-                        </div>
-                        <span class="text-[10px] opacity-50 ml-4 font-mono">Shift+F10</span>
-                    </div>
                 </div>
             </template>
         </div>
