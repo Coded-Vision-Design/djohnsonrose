@@ -18,6 +18,7 @@
         
         <!-- PC Icon (Always present) -->
         <div @mousedown="startIconDrag({name: 'DeVanté\'s PC'}, $event)"
+             data-desktop-item="DeVanté's PC"
              @touchstart.stop="handleTouchStart($event, (pos) => showFileContextMenu(pos, {name: 'DeVanté\'s PC', type: 'folder'}, 'C:\\'))"
              @touchmove="handleTouchMove($event)"
              @touchend="handleTouchEnd($event)"
@@ -35,6 +36,7 @@
         <!-- Dynamic Desktop Icons -->
         <template x-for="(icon, index) in desktopIcons" :key="icon.name">
             <div @mousedown="startIconDrag(icon, $event)"
+                 :data-desktop-item="icon.name"
                  @touchstart.stop="handleTouchStart($event, (pos) => showFileContextMenu(pos, icon, 'C:\\Users\\DeVante\\Desktop'))"
                  @touchmove="handleTouchMove($event)"
                  @touchend="handleTouchEnd($event)"

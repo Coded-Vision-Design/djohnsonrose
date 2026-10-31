@@ -6,7 +6,7 @@ document.addEventListener('alpine:init', () => {
         loggingIn: false,
         loggedIn: localStorage.getItem('auth.loggedIn') === 'true',
         user: {
-            name: 'DeVante Johnson-Rose',
+            name: 'DeVanté Johnson-Rose',
             avatar: window.portfolioConfig.imgPath + 'profile.webp'
         },
         clock: {
@@ -201,6 +201,15 @@ document.addEventListener('alpine:init', () => {
         recentWindows() { return [...this.windows].sort((a, b) => b.z - a.z); },
         appIcon(app) {
             return window.portfolioConfig.imgPath + (window.portfolioConfig.apps[app]?.icon ?? 'favicon.webp');
+        },
+        appTitle(app) {
+            return window.portfolioConfig.apps[app]?.title ?? app;
+        },
+        manifestApp(id) {
+            return { id, name: this.appTitle(id), icon: this.appIcon(id) };
+        },
+        get startPinnedApps() {
+            return window.portfolioConfig.startPinned.map(id => this.manifestApp(id));
         },
         assistWindows() {
             return Alpine.store('os').snapAssist.candidates
@@ -619,42 +628,29 @@ document.addEventListener('alpine:init', () => {
 
         get searchResults() {
             if (!this.searchQuery) return [];
+            const query = this.searchQuery.toLowerCase();
+            const apps = Object.keys(window.portfolioConfig.apps)
+                .map(id => this.manifestApp(id))
+                .filter(app => app.name.toLowerCase().includes(query))
+                .map(app => ({ name: app.name, type: 'app', app: app.id, icon: app.icon, fullPath: '' }));
+
             const allFiles = [];
             Object.keys(Alpine.store('os').fileSystem).forEach(path => {
                 Alpine.store('os').fileSystem[path].forEach(file => {
                     allFiles.push({ ...file, fullPath: path });
                 });
             });
-            return allFiles.filter(file => 
-                file.name.toLowerCase().includes(this.searchQuery.toLowerCase())
-            ).slice(0, 10);
+            // Apps come first, as in v2. A shortcut to one of them would only
+            // repeat it, but a document that opens in one still counts.
+            const files = allFiles.filter(file =>
+                file.name.toLowerCase().includes(query) &&
+                !(file.type === 'app' && apps.some(app => app.name === file.name))
+            );
+            return [...apps, ...files].slice(0, 10);
         },
 
         get allApps() {
-            const apps = [
-                { id: 'edge', name: 'Chrome', icon: window.portfolioConfig.imgPath + 'chrome.webp' },
-                { id: 'vscode', name: 'VS Code', icon: window.portfolioConfig.imgPath + 'vscode.webp' },
-                { id: 'word', name: 'Word', icon: window.portfolioConfig.imgPath + 'word.webp' },
-                { id: 'excel', name: 'Excel', icon: window.portfolioConfig.imgPath + 'excel.webp' },
-                { id: 'powerpoint', name: 'PowerPoint', icon: window.portfolioConfig.imgPath + 'powerpoint.webp' },
-                { id: 'outlook', name: 'Outlook', icon: window.portfolioConfig.imgPath + 'outlook.webp' },
-                { id: 'photoshop', name: 'Photoshop', icon: window.portfolioConfig.imgPath + 'photoshop.webp' },
-                { id: 'flstudio', name: 'FL Studio 24', icon: window.portfolioConfig.imgPath + 'fl studio.webp' },
-                { id: 'docker', name: 'Docker', icon: window.portfolioConfig.imgPath + 'docker.webp' },
-                { id: 'explorer', name: 'Explorer', icon: window.portfolioConfig.imgPath + 'win11/folder.webp' },
-                { id: 'notepad', name: 'Notepad++', icon: window.portfolioConfig.imgPath + 'notepad++.webp' },
-                { id: 'putty', name: 'PuTTY', icon: window.portfolioConfig.imgPath + 'putty.webp' },
-                { id: 'filezilla', name: 'FileZilla', icon: window.portfolioConfig.imgPath + 'filezilla.webp' },
-                { id: 'terminal', name: 'Terminal', icon: window.portfolioConfig.imgPath + 'terminal.webp' },
-                { id: 'database', name: 'SQL Server Management Studio', icon: window.portfolioConfig.imgPath + 'mssql.webp' },
-                { id: 'settings', name: 'Settings', icon: window.portfolioConfig.imgPath + 'settings.webp' },
-                { id: 'taskmanager', name: 'Task Manager', icon: window.portfolioConfig.imgPath + 'taskmanager.webp' },
-                { id: 'eventviewer', name: 'Event Viewer', icon: window.portfolioConfig.imgPath + 'eventviewer.webp' },
-                { id: 'calculator', name: 'Calculator', icon: window.portfolioConfig.imgPath + 'calculator.webp' },
-                { id: 'references', name: 'References', icon: window.portfolioConfig.imgPath + 'notepad++.webp' },
-                { id: 'admin', name: 'Admin Console', icon: window.portfolioConfig.imgPath + 'mssql.webp' },
-                { id: 'github', name: 'GitHub', icon: window.portfolioConfig.imgPath + 'github.webp' }
-            ];
+            const apps = Object.keys(window.portfolioConfig.apps).map(id => this.manifestApp(id));
 
             // Group by letter
             const groups = {};

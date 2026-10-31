@@ -337,6 +337,10 @@ body {
         border-radius: 0 !important;
     }
 
+    /* Tailwind 4 centres with translate, not transform. This needs a rule of its
+       own, as the minifier folds translate into transform when they share one. */
+    div.start-menu-mobile { translate: none !important; }
+
     /* Inner padding tightens on narrow screens so the 6-col Pinned grid +
        search bar don't get cramped. v1 does the same via its own mobile CSS. */
     .start-menu-mobile .p-8 { padding: 1rem !important; }

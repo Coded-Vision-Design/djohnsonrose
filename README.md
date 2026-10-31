@@ -239,7 +239,7 @@ Secrets live in GitHub Actions Secrets only — no `.env` is ever rsync'd. A sep
 ## Testing
 
 - **`npm run test`** - Vitest specs cover the window manager core, the store, the calculator engine, the paint flood‑fill, the terminal commands, the filesystem model, the clock hook, and the app registry and shared app list.
-- **`npm run e2e`** - Playwright drives real browser interactions. [e2e/windowing.spec.ts](v2/e2e/windowing.spec.ts) runs every window behaviour against both builds, at desktop, tablet and phone sizes, including real touch input. It needs the PHP server on :8765 and Vite on :5173.
+- **`npm run e2e`** - Playwright drives real browser interactions. [e2e/windowing.spec.ts](v2/e2e/windowing.spec.ts) runs every window behaviour against both builds, at desktop, tablet and phone sizes, including real touch input. [e2e/app-parity.spec.ts](v2/e2e/app-parity.spec.ts) checks every place that lists apps against [data/apps.json](data/apps.json), and opens each app alone in both builds to catch runtime errors. They need the PHP server on :8765 and Vite on :5173. Set `V1_URL` or `V2_ORIGIN` to use other addresses.
 - **`npm run test:php`** (repo root) - unit tests for the contact form library.
 - **`actionlint`** — every CI workflow is linted on push.
 

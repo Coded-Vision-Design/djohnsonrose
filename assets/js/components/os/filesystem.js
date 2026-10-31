@@ -156,6 +156,7 @@ PROFILES:
         // so the same shortcut lives on the Desktop. Handled by openItem's
         // 'link' branch below.
         { name: 'React Build', type: 'link', url: '/v2/', icon: window.portfolioConfig.imgPath + 'react.webp' },
+        { name: 'GitHub', type: 'app', app: 'github', icon: window.portfolioConfig.imgPath + 'github.webp' },
         { name: 'Recycle Bin', type: 'folder', path: 'C:\\Recycle Bin', icon: window.portfolioConfig.imgPath + 'recyclebinempty.webp' }
     ],
     'C:\\Users\\DeVante\\Documents': [
@@ -333,4 +334,28 @@ PROFILES:
     'C:\\Users\\DeVante\\Projects\\Freelance\\Boulevard Logistics\\Pictures': [
         { name: 'Desktop UI.webp', type: 'image', icon: '🖼️', url: window.portfolioConfig.basePath + 'portfolio/boulevardlogistics.webp' }
     ]
+};
+
+// Visitors who have changed something keep a saved copy, which predates anything
+// added above since. Each upgrade runs once, so an item a visitor then deletes
+// stays deleted. saveFileSystem() records the version.
+window.osFileSystemVersion = 2;
+
+window.loadFileSystem = function () {
+    let saved = null;
+    try {
+        saved = JSON.parse(localStorage.getItem('os.fileSystem'));
+    } catch {
+        return window.osFileSystem;
+    }
+    if (!saved || typeof saved !== 'object') return window.osFileSystem;
+
+    const version = Number(localStorage.getItem('os.fileSystem.version')) || 1;
+    const path = 'C:\\Users\\DeVante\\Desktop';
+    const desktop = saved[path];
+    if (version < 2 && desktop && !desktop.some(item => item.name === 'GitHub')) {
+        const bin = desktop.findIndex(item => item.name === 'Recycle Bin');
+        desktop.splice(bin === -1 ? desktop.length : bin, 0, window.osFileSystem[path].find(item => item.name === 'GitHub'));
+    }
+    return saved;
 };

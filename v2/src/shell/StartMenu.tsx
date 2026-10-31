@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useOsStore } from '../store/osStore'
+import { startPinnedApps } from '../apps/manifest'
 import { getApp, groupAppsByLetter, searchApps } from '../apps/registry'
 
 type View = 'pinned' | 'allApps'
@@ -7,29 +8,6 @@ type View = 'pinned' | 'allApps'
 // 1:1 port of partials/start-menu.php — 540x600 panel above the taskbar with
 // search, Pinned grid (6 cols), All Apps A-Z view, Recommended row, and a
 // profile bar at the bottom.
-
-// v1's hard-coded pinned order — kept identical so the grid matches exactly.
-const PINNED_IDS = [
-  'edge',
-  'vscode',
-  'word',
-  'excel',
-  'powerpoint',
-  'outlook',
-  'photoshop',
-  'flstudio',
-  'docker',
-  'explorer',
-  'notepad',
-  'putty',
-  'filezilla',
-  'terminal',
-  'database',
-  'settings',
-  'taskmanager',
-  'eventviewer',
-  'admin',
-] as const
 
 export function StartMenu() {
   const open = useOsStore((s) => s.startMenuOpen)
@@ -72,7 +50,7 @@ export function StartMenu() {
   }, [open])
 
   const pinned = useMemo(
-    () => PINNED_IDS.map(getApp).filter((a): a is NonNullable<typeof a> => !!a),
+    () => startPinnedApps.map(getApp).filter((a): a is NonNullable<typeof a> => !!a),
     [],
   )
 
@@ -100,7 +78,7 @@ export function StartMenu() {
       style={{
         bottom: 'calc(var(--os-taskbar-height) + 8px)',
         left: '50%',
-        transform: 'translateX(-50%)',
+        translate: '-50%', // The opening animation sets transform.
         width: 540,
         maxWidth: '100vw',
         height: 600,
@@ -212,6 +190,7 @@ function SearchView({
             <button
               key={a.id}
               type="button"
+              data-search-app={a.id}
               onClick={() => onLaunch(a.id)}
               className="w-full flex items-center p-2 rounded-sm hover:bg-win-blue hover:text-white text-left transition-colors group"
             >
@@ -251,12 +230,13 @@ function PinnedView({
           All apps &gt;
         </button>
       </div>
-      <div className="grid gap-y-6 gap-x-4 grid-cols-6">
+      <div className="grid gap-y-6 gap-x-4 grid-cols-4 sm:grid-cols-6">
         {pinned.map((a) =>
           a ? (
             <button
               key={a.id}
               type="button"
+              data-pinned-app={a.id}
               title={a.title}
               onClick={() => onLaunch(a.id)}
               className="flex flex-col items-center group cursor-pointer transition-all active:scale-95 w-full min-w-0"
@@ -274,7 +254,7 @@ function PinnedView({
 
       <div className="mt-8">
         <h2 className="text-sm font-semibold dark:text-white mb-4">Recommended</h2>
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <button
             type="button"
             onClick={() => onLaunch('pdfreader')}
@@ -339,6 +319,7 @@ function AllAppsView({
                 <button
                   key={a.id}
                   type="button"
+                  data-all-app={a.id}
                   onClick={() => onLaunch(a.id)}
                   className="w-full flex items-center p-2 rounded-sm hover:bg-white/10 transition-colors text-left group"
                 >

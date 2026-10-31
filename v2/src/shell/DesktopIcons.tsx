@@ -280,6 +280,7 @@ export function DesktopIcons() {
                     ]
               openContextMenu(e.clientX, e.clientY, items)
             }}
+            data-desktop-item={icon.name}
             title={icon.name}
             className={`pointer-events-auto absolute flex flex-col items-center justify-start p-2 w-[110px] rounded-md text-center group desktop-icon-container ${
               recycleHover

@@ -6,7 +6,7 @@ import { test, expect, type Locator, type Page } from '@playwright/test'
 
 const BUILDS = [
   { name: 'v1', url: process.env.V1_URL ?? 'http://localhost:8765/' },
-  { name: 'v2', url: 'http://localhost:5173/v2/' },
+  { name: 'v2', url: `${process.env.V2_ORIGIN ?? 'http://localhost:5173'}/v2/` },
 ] as const
 
 interface Box {
@@ -52,7 +52,10 @@ async function open(page: Page, app: string, title: string) {
   await call(page, 'openApp', app)
   const win = windowFor(page, title)
   await win.waitFor()
-  await page.waitForTimeout(240) // The opening animation scales the window.
+  // The opening animation scales the window, so sizes mean nothing until it ends.
+  await win.evaluate(async (el) => {
+    await Promise.allSettled(el.getAnimations().map((animation) => animation.finished))
+  })
   return win
 }
 

@@ -15,6 +15,8 @@ export const appManifest: Record<string, AppManifestEntry> = Object.fromEntries(
 
 export const pinnedApps: string[] = data.pinned
 
+export const startPinnedApps: string[] = data.startPinned
+
 export function getManifestEntry(id: string): AppManifestEntry | undefined {
   return Object.hasOwn(appManifest, id) ? appManifest[id] : undefined
 }

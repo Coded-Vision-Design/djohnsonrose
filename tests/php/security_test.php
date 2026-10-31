@@ -80,5 +80,12 @@ check('csp: no unpkg, now that Alpine is self-hosted', !str_contains($policy, 'u
 check('csp: no wildcard script host', !preg_match('/script-src[^;]*\shttps:(\s|;|$)/', $policy));
 check('csp: a nonce cannot inject a directive', !str_contains(v1_content_security_policy('a;b'), 'a;b'));
 
+$manifest = load_app_manifest();
+$manifestIds = array_column($manifest['apps'], 'id');
+check('manifest: has apps', count($manifestIds) > 0);
+check('manifest: has taskbar pins', count($manifest['pinned']) > 0);
+check('manifest: has Start pins', count($manifest['startPinned'] ?? []) > 0);
+check('manifest: Start pins are real apps', array_diff($manifest['startPinned'] ?? ['none'], $manifestIds) === []);
+
 echo "{$passes} passed, {$failures} failed\n";
 exit($failures === 0 ? 0 : 1);
