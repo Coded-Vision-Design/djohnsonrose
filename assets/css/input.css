@@ -137,6 +137,16 @@ body {
     filter: invert(1) brightness(2);
 }
 
+.context-menu-separator {
+    height: 1px;
+    margin: 4px 12px;
+    background: rgba(0, 0, 0, 0.08);
+}
+
+.dark .context-menu-separator {
+    background: rgba(255, 255, 255, 0.1);
+}
+
 .context-menu-action-bar {
     display: flex;
     align-items: center;

@@ -1,8 +1,9 @@
-import { useMemo, useState, useEffect, useRef } from 'react'
+import { useMemo, useState, useEffect, useRef, type MouseEvent as ReactMouseEvent } from 'react'
 import { useOsStore } from '../store/osStore'
 import { getApp } from '../apps/registry'
 import { playSound } from '../lib/sounds'
 import { VolumeIcon } from './VolumeIcon'
+import { showClassicDesktopMenu, showMenu, type MenuPoint } from './menus'
 
 // 1:1 port of partials/taskbar.php — left widget area, centre pinned + running
 // apps with the v1 active indicators (active/inactive/minimized), right system
@@ -41,10 +42,36 @@ function AppButton({ appId }: { appId: string }) {
     }
   }
 
+  const showAppMenu = (e: ReactMouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    const { clientX, clientY } = e
+    const here = { clientX, clientY }
+    const { closeWindow, pinnedApps, togglePinned, openApp: launch } = useOsStore.getState()
+    const pinned = pinnedApps.includes(appId)
+    showMenu(
+      'taskbarApp',
+      here,
+      {
+        pin: () => togglePinned(appId),
+        taskManager: () => launch('taskmanager'),
+        close: () => closeWindow(windowsForApp[0].id),
+        classic: () => showClassicDesktopMenu(here),
+      },
+      {
+        // Task Manager cannot be unpinned, as in Windows.
+        pin: { label: pinned ? 'Unpin from taskbar' : 'Pin to taskbar', hidden: appId === 'taskmanager' },
+        close: { hidden: !isOpen },
+      },
+      true,
+    )
+  }
+
   return (
     <button
       type="button"
       onClick={handleClick}
+      onContextMenu={showAppMenu}
       data-taskbar-app={appId}
       title={def.title}
       className={`w-10 h-10 flex items-center justify-center rounded hover:bg-white/10 transition-all relative group ${
@@ -61,6 +88,11 @@ function AppButton({ appId }: { appId: string }) {
       )}
     </button>
   )
+}
+
+interface BatteryManager extends EventTarget {
+  level: number
+  charging: boolean
 }
 
 export function Taskbar() {
@@ -80,6 +112,52 @@ export function Taskbar() {
   const toggleWidgets = useOsStore((s) => s.toggleWidgets)
   const toggleTaskSwitcher = useOsStore((s) => s.toggleTaskSwitcher)
   const isDesktop = useOsStore((s) => s.isDesktop)
+  const battery = useOsStore((s) => s.battery)
+
+  useEffect(() => {
+    const nav = navigator as Navigator & { getBattery?: () => Promise<BatteryManager> }
+    if (!nav.getBattery) return
+    let cancelled = false
+    let stop = () => {}
+    void nav.getBattery().then((manager) => {
+      if (cancelled) return
+      const update = () =>
+        useOsStore.getState().setBattery({
+          level: Math.round(manager.level * 100),
+          charging: manager.charging,
+        })
+      update()
+      manager.addEventListener('levelchange', update)
+      manager.addEventListener('chargingchange', update)
+      stop = () => {
+        manager.removeEventListener('levelchange', update)
+        manager.removeEventListener('chargingchange', update)
+      }
+    })
+    return () => {
+      cancelled = true
+      stop()
+    }
+  }, [])
+
+  const showTaskbarMenu = (e: ReactMouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    const here: MenuPoint = { clientX: e.clientX, clientY: e.clientY }
+    const { openApp: launch, minimizeAll: showDesktop } = useOsStore.getState()
+    showMenu(
+      'taskbar',
+      here,
+      {
+        taskbarSettings: () => launch('settings'),
+        taskManager: () => launch('taskmanager'),
+        desktop: showDesktop,
+        classic: () => showClassicDesktopMenu(here),
+      },
+      {},
+      true,
+    )
+  }
   const isMobile = useOsStore((s) => s.isMobile)
   const closeAllPopups = useOsStore((s) => s.closeAllPopups)
   const minimizeAll = useOsStore((s) => s.minimizeAll)
@@ -111,6 +189,7 @@ export function Taskbar() {
 
   return (
     <div
+      onContextMenu={showTaskbarMenu}
       className="os-taskbar absolute left-0 right-0 bottom-0 taskbar-glass flex items-center justify-between px-2 z-9999 border-t border-white/20"
     >
       {/* Left — weather widget toggle (v1 puts this in a w-48 container) */}
@@ -208,15 +287,6 @@ export function Taskbar() {
         ref={trayRef}
         className="os-taskbar-tray flex items-center space-x-1 px-2 text-black dark:text-white relative"
       >
-        {/* Cross-version flip */}
-        <a
-          href="/"
-          title="Switch to the original PHP (v1) build"
-          className="hidden md:flex items-center px-2 py-1 mr-1 rounded-sm text-[10px] font-medium border border-win-blue/30 bg-win-blue/10 text-win-blue hover:bg-win-blue hover:text-white transition-colors"
-        >
-          🐘 PHP v1
-        </a>
-
         {/* Hidden-icons popup */}
         {hiddenIconsOpen && (
           <div className="absolute bottom-14 right-32 bg-white/90 dark:bg-[#1c1c1c]/95 backdrop-blur-xl border border-white/20 dark:border-white/10 rounded-xl shadow-2xl p-2 flex flex-row items-center space-x-1 z-10001">
@@ -291,6 +361,7 @@ export function Taskbar() {
         <button
           type="button"
           onClick={() => setHiddenIconsOpen((v) => !v)}
+          data-tray-item="chevron"
           className={`os-tray-optional p-1 rounded hover:bg-white/10 transition-colors ${
             hiddenIconsOpen ? 'bg-white/10' : ''
           }`}
@@ -306,7 +377,7 @@ export function Taskbar() {
         </button>
 
         {/* Mic */}
-        <div className="p-1 hidden md:block" title="Microphone">
+        <div className="p-1" title="Microphone" data-tray-item="mic" hidden={!isDesktop}>
           <img src="/assets/img/win11/mic.svg" alt="" className="w-4 h-4 opacity-80 dark:invert" />
         </div>
 
@@ -314,6 +385,7 @@ export function Taskbar() {
         <button
           type="button"
           data-popup-toggle="quick-settings"
+          data-tray-item="status"
           onClick={() => {
             playSound('click')
             toggleQuickSettings()
@@ -336,9 +408,13 @@ export function Taskbar() {
           <VolumeIcon className="w-4 h-4 transition-opacity" />
 
           {/* Battery */}
-          <div className="flex items-center relative" title="Battery">
+          <div
+            data-tray-battery=""
+            className="flex items-center relative"
+            title={`${battery.level}%${battery.charging ? ' (Charging)' : ''}`}
+          >
             <img
-              src="/assets/img/win11/battery.svg"
+              src={`/assets/img/win11/${battery.charging ? 'energy' : 'battery'}.svg`}
               alt=""
               className={`w-5 h-5 dark:invert transition-opacity ${
                 settings.batterySaver ? 'opacity-60' : 'opacity-80'
@@ -350,9 +426,20 @@ export function Taskbar() {
           </div>
         </button>
 
+        {/* Cross-version flip */}
+        <a
+          data-tray-item="build"
+          href="/"
+          title="Switch to the original PHP (v1) build"
+          className="hidden md:flex items-center px-2 py-1 mr-1 rounded-sm text-[10px] font-medium border border-win-blue/30 bg-win-blue/10 text-win-blue hover:bg-win-blue hover:text-white transition-colors"
+        >
+          🐘 PHP v1
+        </a>
+
         {/* Clock + date */}
         <button
           type="button"
+          data-tray-item="clock"
           onClick={closeAllPopups}
           className="px-2 py-1 rounded-sm hover:bg-white/10 text-xs text-right leading-tight transition-colors"
           title="Date and time"

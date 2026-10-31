@@ -31,6 +31,7 @@ export function QuickSettings() {
   const open = useOsStore((s) => s.quickSettingsOpen)
   const close = useOsStore((s) => s.closeAllPopups)
   const settings = useOsStore((s) => s.settings)
+  const battery = useOsStore((s) => s.battery)
   const updateSetting = useOsStore((s) => s.updateSetting)
   const openApp = useOsStore((s) => s.openApp)
   const ref = useRef<HTMLDivElement>(null)
@@ -155,13 +156,13 @@ export function QuickSettings() {
 
       {/* Bottom info — battery + personalise/all-settings shortcuts */}
       <div className="pt-4 border-t border-black/5 dark:border-white/10 flex items-center justify-between px-1">
-        <div className="flex items-center space-x-2 text-[11px] dark:text-white font-medium">
+        <div data-quick-battery="" className="flex items-center space-x-2 text-[11px] dark:text-white font-medium">
           <img
-            src="/assets/img/win11/battery.svg"
+            src={`/assets/img/win11/${battery.charging ? 'energy' : 'battery'}.svg`}
             alt=""
             className="w-4 h-4 opacity-70 dark:invert"
           />
-          <span className="opacity-80">85% {settings.batterySaver ? '(Saver On)' : ''}</span>
+          <span className="opacity-80">{battery.level}% {settings.batterySaver ? '(Saver On)' : ''}</span>
         </div>
         <div className="flex items-center space-x-1">
           <button

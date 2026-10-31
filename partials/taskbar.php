@@ -1,9 +1,9 @@
 <!-- partials/taskbar.php -->
 <div class="os-taskbar w-full taskbar-glass flex items-center justify-between px-2 z-9999 border-t border-white/20"
      :class="{ 'taskbar-mobile': !isDesktop }"
-     @contextmenu.prevent="showTaskbarContextMenu($event)">
+     @contextmenu.prevent.stop="showTaskbarContextMenu($event)">
     <!-- Widgets Area (Left) -->
-    <div class="flex items-center w-48 overflow-hidden" x-show="isDesktop" @contextmenu.prevent="showTaskbarContextMenu($event)">
+    <div class="flex items-center w-48 overflow-hidden" x-show="isDesktop" @contextmenu.prevent.stop="showTaskbarContextMenu($event)">
         <div @click="toggleWidgets()" class="px-2 py-1.5 rounded-sm hover:bg-white/10 cursor-pointer flex items-center space-x-2 transition-colors group">
             <span class="text-xl filter drop-shadow-xs group-hover:scale-110 transition-transform" x-text="weather.icon"></span>
             <div class="flex flex-col leading-tight">
@@ -72,7 +72,7 @@
     <!-- System Tray (Right) -->
     <div class="os-taskbar-tray flex flex-row items-center space-x-1 px-2 text-black dark:text-white" 
          x-data="{ hiddenIconsOpen: false }"
-         @contextmenu.prevent="showTaskbarContextMenu($event)">
+         @contextmenu.prevent.stop="showTaskbarContextMenu($event)">
         
         <!-- Hidden Icons Popup -->
         <div x-show="hiddenIconsOpen" 
@@ -116,7 +116,8 @@
 
         <!-- Hidden Icons Chevron -->
         <button @click="hiddenIconsOpen = !hiddenIconsOpen" 
-                class="p-1 rounded-sm hover:bg-white/10 transition-colors"
+                data-tray-item="chevron"
+                class="os-tray-optional p-1 rounded-sm hover:bg-white/10 transition-colors"
                 :class="{ 'bg-white/10': hiddenIconsOpen }">
             <img src="<?php echo IMG_PATH; ?>win11/chevron_up.svg" 
                  class="w-3.5 h-3.5 opacity-70 dark:invert transition-transform duration-200"
@@ -124,12 +125,13 @@
         </button>
 
         <!-- Mic Icon -->
-        <div class="p-1" x-show="isDesktop">
+        <div class="p-1" x-show="isDesktop" data-tray-item="mic">
             <img src="<?php echo IMG_PATH; ?>win11/mic.svg" class="w-4 h-4 opacity-80 dark:invert">
         </div>
 
         <!-- System Status Group (Opens Quick Settings) -->
         <button @click="quickSettingsOpen = !quickSettingsOpen; playSound('click')" 
+                data-tray-item="status"
                 class="tray-group hover:bg-white/10 flex flex-row items-center space-x-2"
                 :class="{ 'bg-white/20': quickSettingsOpen }">
             
@@ -142,7 +144,7 @@
             <?php $className = "w-4 h-4 transition-opacity"; include __DIR__ . '/volume-icon.php'; ?>
 
             <!-- Battery -->
-            <div class="flex flex-row items-center relative" :title="`${settings.batteryLevel}% ${settings.isCharging ? '(Charging)' : ''}`">
+            <div data-tray-battery class="flex flex-row items-center relative" :title="`${settings.batteryLevel}% ${settings.isCharging ? '(Charging)' : ''}`">
                 <img :src="batteryIcon" class="w-5 h-5 dark:invert transition-opacity" :class="settings.batterySaver ? 'opacity-60' : 'opacity-80'">
                 <template x-if="settings.batterySaver && !settings.isCharging">
                     <div class="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 rounded-full border border-white dark:border-win-dark shadow-xs bg-yellow-500"></div>
@@ -152,13 +154,14 @@
 
         <!-- Switch to React v2 -->
         <a href="/v2/"
+           data-tray-item="build"
            title="Switch to the React (v2) build"
            class="hidden md:flex items-center px-2 py-1 mr-1 rounded-sm text-[10px] font-medium border border-win-blue/30 bg-win-blue/10 text-win-blue hover:bg-win-blue hover:text-white transition-colors">
             ⚛ React v2
         </a>
 
         <!-- Clock/Date -->
-        <button class="px-2 py-1 rounded-sm hover:bg-white/10 text-xs text-right leading-tight transition-colors" @click="startMenuOpen = false; quickSettingsOpen = false">
+        <button data-tray-item="clock" class="px-2 py-1 rounded-sm hover:bg-white/10 text-xs text-right leading-tight transition-colors" @click="startMenuOpen = false; quickSettingsOpen = false">
             <div x-text="clock.time"></div>
             <div x-show="isDesktop" x-text="clock.date" class="text-[10px] opacity-70"></div>
         </button>

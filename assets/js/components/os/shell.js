@@ -369,231 +369,89 @@ document.addEventListener('alpine:init', () => {
             clearTimeout(this.touchData.timer);
         },
 
-        showDesktopContextMenu(e) {
-            const menuWidth = 260;
-            const menuHeight = 340; // Estimated height with "Show more options"
-            let x = e.clientX;
-            let y = e.clientY;
+        // Opens a menu from data/menus.json, which v2 shares, so that the two
+        // cannot drift apart. Each menu here only says what its items do.
+        openMenu(name, e, handlers, overrides = {}, above = false) {
+            const config = window.portfolioConfig;
+            const menu = OsWindowing.buildMenu(config.menus[name], config.imgPath, handlers, overrides);
+            const viewport = { width: window.innerWidth, height: window.innerHeight };
+            this.contextMenu = { open: true, ...menu, ...OsWindowing.placeMenu(e.clientX, e.clientY, menu, viewport, above) };
+        },
 
-            // Edge awareness / Clamping
-            if (x + menuWidth > window.innerWidth) x = window.innerWidth - menuWidth - 8;
-            if (y + menuHeight > window.innerHeight) y = window.innerHeight - menuHeight - 8;
-            if (x < 8) x = 8;
-            if (y < 8) y = 8;
-
-            const isZoomed = Alpine.store('os').desktopZoom !== 1;
-            const imgPath = window.portfolioConfig.imgPath + 'win11/';
-
-            this.contextMenu = {
-                open: true,
-                x: x,
-                y: y,
-                items: [
-                    { 
-                        label: 'View', 
-                        icon: `<img src="${imgPath}view.svg" class="w-4 h-4">`, 
-                        action: () => {} 
-                    },
-                    { 
-                        label: 'Auto-arrange icons', 
-                        icon: '✅', 
-                        action: () => this.clearDesktopPositions() 
-                    },
-                    { 
-                        label: 'Sort by', 
-                        icon: `<img src="${imgPath}sort.svg" class="w-4 h-4">`, 
-                        action: () => this.clearDesktopPositions() 
-                    },
-                    { 
-                        label: 'Refresh', 
-                        icon: `<img src="${imgPath}refresh.svg" class="w-4 h-4">`, 
-                        action: () => { 
-                            // Fake refresh animation would happen here
-                            location.reload(); 
-                        } 
-                    },
-                    { separator: true },
-                    { 
-                        label: 'Reset Zoom', 
-                        icon: '🔍', 
-                        disabled: !isZoomed,
-                        action: () => { Alpine.store('os').desktopZoom = 1; } 
-                    },
-                    { separator: true },
-                    { label: 'New', icon: '✨', disabled: true, action: () => {} },
-                    { separator: true },
-                    { label: 'Display settings', icon: `<img src="${imgPath}display.webp" class="w-4 h-4">`, action: () => Alpine.store('os').openApp('settings') },
-                    { label: 'Personalise', icon: `<img src="${imgPath}settings.webp" class="w-4 h-4">`, action: () => Alpine.store('os').openApp('settings', 'Settings', { currentTab: 'personalisation' }) },
-                    { separator: true },
-                    {
-                        label: 'Open in PowerShell',
-                        icon: `<img src="${window.portfolioConfig.imgPath}terminal.webp" class="w-4 h-4">`,
-                        action: () => Alpine.store('os').openApp('terminal')
-                    },
-                    { separator: true },
-                    {
-                        label: 'Show more options',
-                        icon: '⤓',
-                        action: () => this.showClassicDesktopContextMenu(e)
-                    }
-                ]
+        desktopMenuHandlers() {
+            const os = Alpine.store('os');
+            return {
+                refresh: () => location.reload(),
+                displaySettings: () => os.openApp('settings'),
+                personalise: () => os.openApp('settings', 'Settings', { currentTab: 'personalisation' }),
+                terminal: () => os.openApp('terminal')
             };
         },
 
-        // Win10-style "classic" context menu — opened from the Win11 modern
-        // menu via the "Show more options" item. v1 was missing this; it's
-        // wired now so the right-click flow matches real Windows 11.
+        showDesktopContextMenu(e) {
+            const os = Alpine.store('os');
+            this.openMenu('desktop', e, {
+                ...this.desktopMenuHandlers(),
+                autoArrange: () => this.clearDesktopPositions(),
+                sortBy: () => this.clearDesktopPositions(),
+                resetZoom: () => { os.desktopZoom = 1; },
+                classic: () => this.showClassicDesktopContextMenu(e)
+            }, { resetZoom: { disabled: os.desktopZoom === 1 } });
+        },
+
+        // Win10-style menu, opened from "Show more options".
         showClassicDesktopContextMenu(e) {
-            const menuWidth = 240;
-            const menuHeight = 360;
-            let x = e.clientX;
-            let y = e.clientY;
-            if (x + menuWidth > window.innerWidth) x = window.innerWidth - menuWidth - 8;
-            if (y + menuHeight > window.innerHeight) y = window.innerHeight - menuHeight - 8;
-            if (x < 8) x = 8;
-            if (y < 8) y = 8;
-
-            const imgPath = window.portfolioConfig.imgPath + 'win11/';
-
-            this.contextMenu = {
-                open: true,
-                variant: 'classic',
-                x: x,
-                y: y,
-                items: [
-                    { label: 'View', icon: `<img src="${imgPath}view.svg" class="w-4 h-4">`, disabled: true, action: () => {} },
-                    { label: 'Sort by', icon: `<img src="${imgPath}sort.svg" class="w-4 h-4">`, disabled: true, action: () => {} },
-                    { label: 'Refresh', icon: `<img src="${imgPath}refresh.svg" class="w-4 h-4">`, action: () => location.reload() },
-                    { separator: true },
-                    { label: 'Paste', icon: `<img src="${imgPath}copy.svg" class="w-4 h-4">`, disabled: true, action: () => {} },
-                    { label: 'Paste shortcut', icon: `<img src="${imgPath}open.svg" class="w-4 h-4">`, disabled: true, action: () => {} },
-                    { separator: true },
-                    { label: 'New', icon: '✨', disabled: true, action: () => {} },
-                    { label: 'Display settings', icon: `<img src="${imgPath}display.webp" class="w-4 h-4">`, action: () => Alpine.store('os').openApp('settings') },
-                    { label: 'Personalise', icon: `<img src="${imgPath}personalize.webp" class="w-4 h-4">`, action: () => Alpine.store('os').openApp('settings', 'Settings', { currentTab: 'personalisation' }) },
-                    { separator: true },
-                    { label: 'Open in PowerShell', icon: `<img src="${window.portfolioConfig.imgPath}terminal.webp" class="w-4 h-4">`, action: () => Alpine.store('os').openApp('terminal') },
-                ]
-            };
+            this.openMenu('desktopClassic', e, this.desktopMenuHandlers());
         },
 
         showTaskbarContextMenu(e) {
-            const menuWidth = 240;
-            const menuHeight = 180;
-            let x = e.clientX;
-            let y = e.clientY - menuHeight;
-
-            if (x + menuWidth > window.innerWidth) x = window.innerWidth - menuWidth - 8;
-            if (y < 8) y = 8;
-
-            const imgPath = window.portfolioConfig.imgPath + 'win11/';
-
-            this.contextMenu = {
-                open: true,
-                x: x,
-                y: y,
-                items: [
-                    { label: 'Taskbar settings', icon: `<img src="${imgPath}settings.webp" class="w-4 h-4">`, action: () => Alpine.store('os').openApp('settings') },
-                    { label: 'Task Manager', icon: `<img src="${imgPath}taskmgr.webp" class="w-4 h-4">`, shortcut: 'Ctrl+Shift+Esc', action: () => Alpine.store('os').openApp('taskmanager') },
-                    { separator: true },
-                    { label: 'Desktop', icon: `<img src="${imgPath}display.webp" class="w-4 h-4">`, action: () => { Alpine.store('os').Alpine.store('os').minimizeAll(); } }
-                ]
-            };
+            const os = Alpine.store('os');
+            this.openMenu('taskbar', e, {
+                taskbarSettings: () => os.openApp('settings'),
+                taskManager: () => os.openApp('taskmanager'),
+                desktop: () => os.minimizeAll(),
+                classic: () => this.showClassicDesktopContextMenu(e)
+            }, {}, true);
         },
 
         showAppContextMenu(e, appHandle) {
+            const os = Alpine.store('os');
             const isPinned = this.pinnedApps.includes(appHandle);
-            const isSystemApp = ['taskmanager'].includes(appHandle);
-            
-            const items = [];
-            
-            // Core apps/buttons like Start, Search, and Task Manager cannot be unpinned
-            if (!isSystemApp) {
-                items.push({ 
-                    label: isPinned ? 'Unpin from taskbar' : 'Pin to taskbar', 
-                    icon: '📌', 
-                    action: () => {
-                        if (isPinned) {
-                            Alpine.store('os').pinnedApps = Alpine.store('os').pinnedApps.filter(a => a !== appHandle);
-                        } else {
-                            Alpine.store('os').pinnedApps.push(appHandle);
-                        }
-                    } 
-                });
-            }
-            
-            const imgPath = window.portfolioConfig.imgPath + 'win11/';
-            items.push({ label: 'Task Manager', icon: `<img src="${imgPath}taskmgr.webp" class="w-4 h-4">`, action: () => Alpine.store('os').openApp('taskmanager') });
-            
             const win = this.windows.find(w => w.app === appHandle);
-            if (win) {
-                items.push({ separator: true });
-                items.push({ label: 'Close window', icon: `<img src="${imgPath}delete.webp" class="w-4 h-4">`, action: () => this.closeWindow(win.id) });
-            }
-
-            this.contextMenu = {
-                open: true,
-                x: e.clientX,
-                y: e.clientY - (items.length * 36 + 20), // Adjusted for new item height
-                items: items
-            };
+            this.openMenu('taskbarApp', e, {
+                pin: () => {
+                    os.pinnedApps = isPinned ? os.pinnedApps.filter(a => a !== appHandle) : [...os.pinnedApps, appHandle];
+                },
+                taskManager: () => os.openApp('taskmanager'),
+                close: () => this.closeWindow(win.id),
+                classic: () => this.showClassicDesktopContextMenu(e)
+            }, {
+                // Task Manager cannot be unpinned, as in Windows.
+                pin: { label: isPinned ? 'Unpin from taskbar' : 'Pin to taskbar', hidden: appHandle === 'taskmanager' },
+                close: { hidden: !win }
+            }, true);
         },
 
         showFileContextMenu(e, item, path) {
-            const menuWidth = 260;
-            const menuHeight = 320;
-            let x = e.clientX;
-            let y = e.clientY;
+            const classic = () => this.showClassicDesktopContextMenu(e);
 
-            if (x + menuWidth > window.innerWidth) x = window.innerWidth - menuWidth - 8;
-            if (y + menuHeight > window.innerHeight) y = window.innerHeight - menuHeight - 8;
-
-            const imgPath = window.portfolioConfig.imgPath + 'win11/';
-            
             if (item.name === 'Recycle Bin') {
-                this.contextMenu = {
-                    open: true,
-                    x: x,
-                    y: y,
-                    items: [
-                        { label: 'Open', icon: `<img src="${imgPath}open.svg" class="w-4 h-4">`, action: () => this.openItem(item) },
-                        { label: 'Empty Recycle Bin', icon: `<img src="${imgPath}delete.svg" class="w-4 h-4">`, disabled: (Alpine.store('os').fileSystem['C:\\Recycle Bin'] || []).length === 0, action: () => Alpine.store('os').emptyRecycleBin() },
-                        { separator: true },
-                        { label: 'Pin to Start', icon: '📌', action: () => {} },
-                        { label: 'Properties', icon: `<img src="${imgPath}properties.svg" class="w-4 h-4">`, action: () => {} }
-                    ]
-                };
+                const binned = Alpine.store('os').fileSystem['C:\\Recycle Bin'] || [];
+                this.openMenu('recycleBin', e, {
+                    open: () => this.openItem(item),
+                    empty: () => this.emptyRecycleBin(),
+                    classic
+                }, { empty: { disabled: binned.length === 0 } });
                 return;
             }
 
-            this.contextMenu = {
-                open: true,
-                x: x,
-                y: y,
-                actions: [
-                    { label: 'Cut', icon: `<img src="${imgPath}cut.svg" class="w-4 h-4">`, action: () => {} },
-                    { label: 'Copy', icon: `<img src="${imgPath}copy.svg" class="w-4 h-4">`, action: () => {} },
-                    { label: 'Rename', icon: `<img src="${imgPath}rename.svg" class="w-4 h-4">`, action: () => {} },
-                    { label: 'Share', icon: `<img src="${imgPath}share.svg" class="w-4 h-4">`, action: () => {} },
-                    { label: 'Delete', icon: `<img src="${imgPath}delete.svg" class="w-4 h-4">`, action: () => this.deleteItem(item, path) }
-                ],
-                items: [
-                    { label: 'Open', icon: `<img src="${imgPath}open.svg" class="w-4 h-4">`, action: () => this.openItem(item) },
-                    { label: 'Open file location', icon: `<img src="${imgPath}folder_open.svg" class="w-4 h-4">`, action: () => {} },
-                    { separator: true },
-                    { label: 'Pin to Start', icon: '📌', action: () => {} },
-                    { label: 'Add to Favourites', icon: '⭐', action: () => {} },
-                    { separator: true },
-                    { label: 'Compress to Zip file', icon: '🗜️', action: () => {} },
-                    { label: 'Copy as path', icon: '📍', action: () => {} },
-                    { label: 'Properties', icon: `<img src="${imgPath}properties.svg" class="w-4 h-4">`, action: () => {} }
-                ]
-            };
-
-            // Add background option for images
-            if (item.type === 'image' || (item.name && (item.name.endsWith('.webp') || item.name.endsWith('.jpg') || item.name.endsWith('.jpeg')))) {
-                this.contextMenu.items.splice(2, 0, { label: 'Set as desktop background', icon: `<img src="${imgPath}image.webp" class="w-4 h-4">`, action: () => this.setWallpaper(item.url || (window.portfolioConfig.basePath + item.name)) });
-            }
+            const isImage = item.type === 'image' || /\.(webp|jpe?g)$/.test(item.name || '');
+            this.openMenu('file', e, {
+                open: () => this.openItem(item, path),
+                delete: () => this.deleteItem(item, path),
+                setBackground: () => this.setWallpaper(item.url || (window.portfolioConfig.basePath + item.name)),
+                classic
+            }, { setBackground: { hidden: !isImage } });
         },
 
         openItem(item, path = null) {
@@ -627,26 +485,12 @@ document.addEventListener('alpine:init', () => {
         },
 
         get searchResults() {
-            if (!this.searchQuery) return [];
-            const query = this.searchQuery.toLowerCase();
-            const apps = Object.keys(window.portfolioConfig.apps)
-                .map(id => this.manifestApp(id))
-                .filter(app => app.name.toLowerCase().includes(query))
-                .map(app => ({ name: app.name, type: 'app', app: app.id, icon: app.icon, fullPath: '' }));
-
-            const allFiles = [];
-            Object.keys(Alpine.store('os').fileSystem).forEach(path => {
-                Alpine.store('os').fileSystem[path].forEach(file => {
-                    allFiles.push({ ...file, fullPath: path });
-                });
-            });
-            // Apps come first, as in v2. A shortcut to one of them would only
-            // repeat it, but a document that opens in one still counts.
-            const files = allFiles.filter(file =>
-                file.name.toLowerCase().includes(query) &&
-                !(file.type === 'app' && apps.some(app => app.name === file.name))
-            );
-            return [...apps, ...files].slice(0, 10);
+            const apps = Object.keys(window.portfolioConfig.apps).map(id => ({
+                id,
+                title: this.appTitle(id),
+                icon: this.appIcon(id)
+            }));
+            return OsWindowing.searchOs(this.searchQuery, apps, Alpine.store('os').fileSystem);
         },
 
         get allApps() {

@@ -1,13 +1,18 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useOsStore } from '../store/osStore'
 
-// 1:1 port of v1's `<div x-show="$store.os.contextMenu.open">` block — a
-// floating Win11-style context menu fed by openContextMenu(x, y, items).
-// Closes on Escape, outside click, scroll, or the host window being closed.
+// The same markup as the menu in partials/shell.php. Closes on Escape, an
+// outside click or a scroll. See menus.ts for what opens it.
+const MODERN =
+  'bg-white/90 dark:bg-[#1c1c1c]/95 backdrop-blur-xl border border-white/20 dark:border-white/10 rounded-xl shadow-2xl py-1 min-w-[260px] context-menu'
+const CLASSIC =
+  'bg-[#f0f0f0] dark:bg-[#2b2b2b] border border-[#a0a0a0] dark:border-black shadow-[2px_2px_4px_rgba(0,0,0,0.3)] py-1 min-w-[240px]'
+
 export function ContextMenu() {
   const menu = useOsStore((s) => s.contextMenu)
   const close = useOsStore((s) => s.closeContextMenu)
   const ref = useRef<HTMLDivElement>(null)
+  const [hovered, setHovered] = useState<number | null>(null)
 
   useEffect(() => {
     if (!menu.open) return
@@ -33,67 +38,74 @@ export function ContextMenu() {
 
   if (!menu.open) return null
 
-  // Position is clamped to the viewport so menus opened near the right/bottom
-  // edge still fit.
-  const left = Math.min(menu.x, window.innerWidth - 240)
-  const top = Math.min(menu.y, window.innerHeight - menu.items.length * 36 - 20)
-
-  const isClassic = menu.variant === 'classic'
-  // Classic Win10 style: tighter rows, square corners, grey background; the
-  // shell uses this when the user picks "Show more options".
-  const containerClass = isClassic
-    ? 'fixed z-20000 bg-[#f0f0f0] dark:bg-[#2b2b2b] border border-[#a0a0a0] dark:border-black shadow-[2px_2px_4px_rgba(0,0,0,0.3)] min-w-[220px] text-black dark:text-white animate-window-open py-1'
-    : 'fixed z-20000 context-menu bg-white/95 dark:bg-[#252526]/95 backdrop-blur-md border border-black/10 dark:border-white/10 min-w-[200px] text-black dark:text-white animate-window-open'
-
-  const itemClass = isClassic
-    ? 'w-full text-left flex items-center px-3 py-1 text-[11px] hover:bg-win-blue hover:text-white'
-    : 'context-menu-item w-full text-left flex items-center px-3 text-xs hover:bg-black/5 dark:hover:bg-white/5'
+  // Close before running the action, so that an action which opens a follow-up
+  // menu, such as "Show more options", is not closed straight away.
+  const run = (action?: () => void) => {
+    close()
+    action?.()
+  }
 
   return (
     <div
       ref={ref}
       role="menu"
-      data-variant={menu.variant}
-      className={containerClass}
-      style={{ left, top }}
-      onContextMenu={(e) => e.preventDefault()}
+      data-context-menu={menu.variant}
+      className={`fixed z-20000 text-black dark:text-white ${menu.variant === 'classic' ? CLASSIC : MODERN}`}
+      style={{ left: menu.x, top: menu.y }}
+      onContextMenu={(e) => {
+        e.preventDefault()
+        e.stopPropagation()
+      }}
     >
+      {menu.actions.length > 0 && (
+        <div className="context-menu-action-bar">
+          {menu.actions.map((action) => (
+            <button
+              key={action.label}
+              type="button"
+              role="menuitem"
+              aria-label={action.label}
+              data-menu-action={action.label}
+              title={action.label}
+              disabled={action.disabled}
+              onClick={() => run(action.action)}
+              className={`context-menu-action-btn group ${action.disabled ? 'disabled' : ''}`}
+            >
+              <span className="context-menu-icon pointer-events-none">
+                <img src={action.icon} alt="" className="w-4 h-4" />
+              </span>
+            </button>
+          ))}
+        </div>
+      )}
       {menu.items.map((item, i) =>
         item.separator ? (
-          <div
-            key={`sep-${i}`}
-            className={
-              isClassic
-                ? 'my-1 border-t border-[#a0a0a0]/50 dark:border-white/10'
-                : 'my-1 border-t border-black/10 dark:border-white/10'
-            }
-          />
+          <div key={`separator-${i}`} className="context-menu-separator" data-menu-separator="" />
         ) : (
           <button
-            key={item.label ?? `item-${i}`}
+            key={item.label}
             type="button"
             role="menuitem"
+            data-menu-item={item.label}
             disabled={item.disabled}
-            onClick={() => {
-              if (item.disabled) return
-              // Close *before* invoking the action so an action that opens
-              // a follow-up menu (e.g. "Show more options" → the classic
-              // Win10 menu) isn't clobbered by our own close right after.
-              close()
-              item.action?.()
-            }}
-            className={`${itemClass} ${item.disabled ? 'opacity-40 pointer-events-none' : ''}`}
+            onClick={() => run(item.action)}
+            onMouseEnter={() => setHovered(i)}
+            onMouseLeave={() => setHovered(null)}
+            className={`context-menu-item flex items-center justify-between w-[calc(100%-8px)] text-left px-3 py-1.5 cursor-default group transition-colors ${
+              hovered === i ? 'active' : ''
+            } ${item.disabled ? 'disabled' : ''}`}
           >
-            {item.icon && (
-              <span className="mr-3 w-4 h-4 flex items-center justify-center">
-                {item.icon.startsWith('/') || item.icon.includes('.') ? (
-                  <img src={item.icon} alt="" className="w-4 h-4 object-contain" />
-                ) : (
-                  <span>{item.icon}</span>
-                )}
+            <span className="flex items-center">
+              <span className="w-4 h-4 mr-3 flex items-center justify-center text-sm context-menu-icon">
+                <img src={item.icon} alt="" className="w-4 h-4" />
+              </span>
+              <span className="context-menu-label">{item.label}</span>
+            </span>
+            {item.shortcut && (
+              <span data-menu-shortcut="" className="text-[10px] opacity-50 ml-4 font-mono">
+                {item.shortcut}
               </span>
             )}
-            <span className="grow">{item.label}</span>
           </button>
         ),
       )}
