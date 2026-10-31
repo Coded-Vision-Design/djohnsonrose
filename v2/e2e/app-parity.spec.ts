@@ -77,8 +77,11 @@ const entries = (page: Page, attr: string) =>
     attr,
   )
 
-const undrawn = async (page: Page, attr: string) =>
-  (await entries(page, attr)).filter((entry) => !entry.drawn).map((entry) => entry.id)
+/** Which icons have not drawn. Nothing on screen yet does not count as drawn. */
+const undrawn = async (page: Page, attr: string) => {
+  const found = await entries(page, attr)
+  return found.length ? found.filter((entry) => !entry.drawn).map((entry) => entry.id) : ['nothing yet']
+}
 
 const searchBox = (page: Page) => page.getByPlaceholder('Search for apps, settings, and documents')
 
