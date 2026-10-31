@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
 import { track } from '../lib/telemetry'
+import { getManifestEntry, pinnedApps } from '../apps/manifest'
 
 // Static C:\Recycle Bin seeds — when restored, we re-materialise them at
 // their originalPath. Keep this list aligned with data/filesystem.ts.
@@ -279,7 +280,7 @@ export const useOsStore = create<OsState>()(
       startMenuOpen: false,
       quickSettingsOpen: false,
       widgetsOpen: false,
-      pinnedApps: ['edge', 'explorer', 'outlook', 'vscode', 'flstudio'],
+      pinnedApps,
 
       clock: { time: '', date: '' },
       weather: { temp: '--', condition: 'Loading...', icon: '☁️', city: 'London' },
@@ -340,7 +341,8 @@ export const useOsStore = create<OsState>()(
 
         const id = nextWindowId()
         const isSmallScreen = window.innerWidth < 1024
-        const requested = options?.size
+        const manifest = getManifestEntry(app)
+        const requested = options?.size ?? manifest?.size
         let width = isSmallScreen ? window.innerWidth : (requested?.w ?? 800)
         let height = isSmallScreen ? window.innerHeight - TASKBAR_H : (requested?.h ?? 600)
         width = Math.min(width, window.innerWidth)
@@ -353,7 +355,7 @@ export const useOsStore = create<OsState>()(
         const w: WinWindow = {
           id,
           app,
-          title: title ?? app.charAt(0).toUpperCase() + app.slice(1),
+          title: title ?? manifest?.title ?? app.charAt(0).toUpperCase() + app.slice(1),
           x,
           y,
           width,

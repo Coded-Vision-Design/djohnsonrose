@@ -3,6 +3,8 @@ import react from '@vitejs/plugin-react'
 
 export default defineConfig({
   plugins: [react()],
+  // The manifest test reads v1 files that sit outside the Vite root.
+  server: { fs: { allow: ['..'] } },
   test: {
     environment: 'jsdom',
     globals: true,

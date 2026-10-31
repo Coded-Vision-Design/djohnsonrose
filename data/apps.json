@@ -1,0 +1,31 @@
+{
+  "pinned": ["edge", "explorer", "outlook", "vscode", "flstudio"],
+  "apps": [
+    { "id": "edge", "title": "Chrome", "icon": "chrome.webp", "size": { "w": 1024, "h": 720 } },
+    { "id": "vscode", "title": "VS Code", "icon": "vscode.webp", "size": { "w": 1100, "h": 720 } },
+    { "id": "explorer", "title": "File Explorer", "icon": "explorer.webp", "size": { "w": 900, "h": 600 } },
+    { "id": "terminal", "title": "Terminal", "icon": "terminal.webp", "size": { "w": 720, "h": 480 } },
+    { "id": "notepad", "title": "Notepad", "icon": "notepad++.webp", "size": { "w": 700, "h": 500 } },
+    { "id": "word", "title": "Word", "icon": "word.webp", "size": { "w": 980, "h": 720 } },
+    { "id": "excel", "title": "Excel", "icon": "excel.webp", "size": { "w": 980, "h": 720 } },
+    { "id": "powerpoint", "title": "PowerPoint", "icon": "powerpoint.webp", "size": { "w": 980, "h": 720 } },
+    { "id": "outlook", "title": "Outlook", "icon": "outlook.webp", "size": { "w": 720, "h": 600 } },
+    { "id": "photoshop", "title": "Photoshop", "icon": "photoshop.webp", "size": { "w": 1100, "h": 720 } },
+    { "id": "flstudio", "title": "FL Studio 24", "icon": "fl%20studio.webp", "size": { "w": 1200, "h": 720 } },
+    { "id": "docker", "title": "Docker", "icon": "docker.webp", "size": { "w": 1000, "h": 700 } },
+    { "id": "putty", "title": "PuTTY", "icon": "putty.webp", "size": { "w": 720, "h": 480 } },
+    { "id": "filezilla", "title": "FileZilla", "icon": "filezilla.webp", "size": { "w": 980, "h": 640 } },
+    { "id": "database", "title": "SQL Server Management Studio", "icon": "mssql.webp", "size": { "w": 1100, "h": 720 } },
+    { "id": "settings", "title": "Settings", "icon": "settings.webp", "size": { "w": 900, "h": 640 } },
+    { "id": "taskmanager", "title": "Task Manager", "icon": "taskmanager.webp", "size": { "w": 900, "h": 640 } },
+    { "id": "eventviewer", "title": "Event Viewer", "icon": "eventviewer.webp", "size": { "w": 980, "h": 640 } },
+    { "id": "calculator", "title": "Calculator", "icon": "calculator.webp", "size": { "w": 320, "h": 480 } },
+    { "id": "paint", "title": "Paint", "icon": "win11/image.webp", "size": { "w": 900, "h": 650 } },
+    { "id": "photos", "title": "Photos", "icon": "win11/pictures.webp", "size": { "w": 900, "h": 640 } },
+    { "id": "video", "title": "Movies & TV", "icon": "win11/videos.webp", "size": { "w": 900, "h": 600 } },
+    { "id": "pdfreader", "title": "PDF Reader", "icon": "pdf.webp", "size": { "w": 900, "h": 720 } },
+    { "id": "admin", "title": "Admin Console", "icon": "mssql.webp", "size": { "w": 1180, "h": 760 } },
+    { "id": "references", "title": "References", "icon": "notepad++.webp", "size": { "w": 820, "h": 560 } },
+    { "id": "github", "title": "GitHub", "icon": "github.webp", "size": { "w": 1180, "h": 760 } }
+  ]
+}

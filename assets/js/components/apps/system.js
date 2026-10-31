@@ -10,9 +10,13 @@ document.addEventListener('alpine:init', () => {
         startTime: Date.now(),
         init() {
             this.updateStats();
-            setInterval(() => this.updateStats(), 2000);
+            this.statsTimer = setInterval(() => this.updateStats(), 2000);
             this.updateUptime();
-            setInterval(() => this.updateUptime(), 1000);
+            this.uptimeTimer = setInterval(() => this.updateUptime(), 1000);
+        },
+        destroy() {
+            clearInterval(this.statsTimer);
+            clearInterval(this.uptimeTimer);
         },
         updateStats() {
             const osStore = Alpine.store('os');
@@ -43,7 +47,7 @@ document.addEventListener('alpine:init', () => {
                     id: win.id,
                     name: win.title,
                     icon: icon,
-                    cpu: Math.floor(Math.random() * 5) + (win.focused ? 2 : 0),
+                    cpu: Math.floor(Math.random() * 5) + (win.id === osStore.focusedWindowId ? 2 : 0),
                     ram: Math.floor(Math.random() * 100) + 150,
                     network: Math.random() > 0.7 ? (Math.random() * 2).toFixed(1) : 0,
                     status: win.minimized ? 'Suspended' : 'Running'
@@ -86,12 +90,12 @@ document.addEventListener('alpine:init', () => {
     Alpine.data('settingsApp', () => ({
         _currentTab: 'system',
         get currentTab() {
-            const win = Alpine.store('os').windows.find(w => w.app === 'settings' && w.focused);
+            const win = Alpine.store('os').windows.find(w => w.app === 'settings');
             return win?.currentTab || this._currentTab;
         },
         set currentTab(val) {
             this._currentTab = val;
-            const win = Alpine.store('os').windows.find(w => w.app === 'settings' && w.focused);
+            const win = Alpine.store('os').windows.find(w => w.app === 'settings');
             if (win) win.currentTab = val;
         },
         user: {

@@ -3,13 +3,14 @@ import { useRef, useState } from 'react'
 const RECIPIENT = 'devante@johnson-rose.co.uk'
 // Same starter copy as v1's outlookApp() so visitors see a populated draft
 // instead of an empty form.
-const DEFAULT_SUBJECT = 'Project Inquiry - Portfolio OS'
+const DEFAULT_SUBJECT = 'Project Enquiry - Portfolio OS'
 const DEFAULT_BODY =
   'Hi,\n\nI was browsing your portfolio and would like to get in touch regarding...'
 
 type Status = 'idle' | 'sending' | 'sent' | 'error'
 
 export default function Outlook() {
+  const [replyTo, setReplyTo] = useState('')
   const [subject, setSubject] = useState(DEFAULT_SUBJECT)
   const [body, setBody] = useState(DEFAULT_BODY)
   const [attachments, setAttachments] = useState<File[]>([])
@@ -29,6 +30,11 @@ export default function Outlook() {
   }
 
   const send = async () => {
+    if (!replyTo.trim()) {
+      setStatus('error')
+      setStatusMsg('Please enter your email address so I can reply.')
+      return
+    }
     if (!subject.trim() || !body.trim()) {
       setStatus('error')
       setStatusMsg('Subject and message are required.')
@@ -38,16 +44,17 @@ export default function Outlook() {
     setStatusMsg('Sending…')
     try {
       const form = new FormData()
-      form.set('recipient', RECIPIENT)
+      form.set('reply_to', replyTo)
       form.set('subject', subject)
       form.set('body', body)
-      form.set('website_hp', honeypot) // honeypot — bots fill this in
+      form.set('website_hp', honeypot) // honeypot: bots fill this in
       for (const f of attachments) form.append('attachments[]', f)
 
       const res = await fetch('/api/send_email.php', { method: 'POST', body: form })
       const data = (await res.json().catch(() => ({}))) as {
         success?: boolean
         message?: string
+        error?: string
       }
       if (data.success) {
         setStatus('sent')
@@ -57,7 +64,7 @@ export default function Outlook() {
         setAttachments([])
       } else {
         setStatus('error')
-        setStatusMsg(data.message || 'Send failed. Please try again.')
+        setStatusMsg(data.error || 'Send failed. Please try again.')
       }
     } catch {
       setStatus('error')
@@ -153,6 +160,21 @@ export default function Outlook() {
           aria-hidden="true"
           className="hidden"
         />
+
+        <div className="flex items-center border-b border-gray-200 dark:border-gray-800 py-2">
+          <label htmlFor="outlook-from" className="w-12 text-xs text-gray-500">
+            From
+          </label>
+          <input
+            id="outlook-from"
+            type="email"
+            autoComplete="email"
+            value={replyTo}
+            onChange={(e) => setReplyTo(e.target.value)}
+            placeholder="you@example.com"
+            className="grow bg-transparent outline-hidden text-xs dark:text-white"
+          />
+        </div>
 
         <div className="flex items-center border-b border-gray-200 dark:border-gray-800 py-2">
           <label className="w-12 text-xs text-gray-500">To</label>

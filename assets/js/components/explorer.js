@@ -75,7 +75,7 @@ document.addEventListener('alpine:init', () => {
                 // Global listener for navigation
                 window.addEventListener('explorer-navigate', (e) => {
                     const osStore = Alpine.store('os');
-                    const focusedWin = osStore.windows.find(w => w.app === 'explorer' && w.focused);
+                    const focusedWin = osStore.windows.find(w => w.app === 'explorer');
                     
                     // If we are the focused window, or if we were just opened
                     if (e.detail && e.detail.path && focusedWin && focusedWin.id == myWinId) {

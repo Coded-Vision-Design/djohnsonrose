@@ -1,4 +1,16 @@
 // assets/js/components/os/store.js
+// Matches WindowErrorBoundary in v2. closeWindow and win resolve from the
+// window's Alpine scope once this is mounted.
+const APP_LOAD_ERROR = `
+    <div role="alert" class="h-full flex flex-col items-center justify-center gap-3 p-6 text-center text-sm text-black dark:text-white">
+        <p class="font-semibold">This app could not be opened.</p>
+        <p class="text-xs opacity-70">Reload the page to try again.</p>
+        <div class="flex gap-2">
+            <button onclick="location.reload()" class="min-h-[44px] px-4 rounded-sm bg-win-blue text-white text-xs font-semibold">Reload</button>
+            <button @click="closeWindow(win.id)" class="min-h-[44px] px-4 rounded-sm border border-gray-300 dark:border-white/20 text-xs">Close</button>
+        </div>
+    </div>`;
+
 document.addEventListener('alpine:init', () => {
     Alpine.store('os', {
         windows: [],
@@ -71,7 +83,7 @@ document.addEventListener('alpine:init', () => {
         windowHeight: window.innerHeight,
         windowWidth: window.innerWidth,
         previewWallpaper: null,
-        pinnedApps: ['edge', 'explorer', 'outlook', 'vscode', 'flstudio'],
+        pinnedApps: window.portfolioConfig.pinned,
         cookieConsent: localStorage.getItem('cookie.consent') === 'true',
         showCookieNotification: localStorage.getItem('auth.loggedIn') === 'true' && localStorage.getItem('cookie.consent') === null,
         errorDialog: { open: false, title: '', message: '', path: '' },
@@ -152,6 +164,15 @@ document.addEventListener('alpine:init', () => {
                     existing.pdfUrl = extraData.pdfUrl;
                     existing.title = title || existing.title;
                 }
+                if (appHandle === 'notepad' && extraData.fileContent !== undefined) {
+                    existing.fileContent = extraData.fileContent;
+                    existing.filePath = extraData.filePath;
+                    existing.fileRevision = (existing.fileRevision ?? 0) + 1;
+                    existing.title = title || existing.title;
+                }
+                if (appHandle === 'settings' && extraData.currentTab) {
+                    existing.currentTab = extraData.currentTab;
+                }
                 
                 this.focusWindow(existing.id);
                 if (existing.minimized) this.toggleMinimize(existing.id);
@@ -168,8 +189,10 @@ document.addEventListener('alpine:init', () => {
             const id = Date.now();
             const isSmallScreen = window.innerWidth < 1024;
             
-            let width = isSmallScreen ? window.innerWidth : 800;
-            let height = isSmallScreen ? window.innerHeight - 48 : 600;
+            const manifest = window.portfolioConfig.apps[appHandle];
+
+            let width = isSmallScreen ? window.innerWidth : (manifest?.size.w ?? 800);
+            let height = isSmallScreen ? window.innerHeight - 48 : (manifest?.size.h ?? 600);
             
             if (width > window.innerWidth) width = window.innerWidth;
             if (height > window.innerHeight - 48) height = window.innerHeight - 48;
@@ -180,7 +203,7 @@ document.addEventListener('alpine:init', () => {
             const newWindow = {
                 id,
                 app: appHandle,
-                title: title || appHandle.charAt(0).toUpperCase() + appHandle.slice(1),
+                title: title || manifest?.title || appHandle.charAt(0).toUpperCase() + appHandle.slice(1),
                 x,
                 y,
                 width,
@@ -197,11 +220,21 @@ document.addEventListener('alpine:init', () => {
             this.playSound('open');
 
             fetch(`${window.portfolioConfig.basePath}api/app.php?name=${appHandle}`)
-                .then(res => res.text())
+                .then(res => {
+                    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                    return res.text();
+                })
                 .then(html => {
                     const win = this.windows.find(w => w.id === id);
                     if (win) {
                         win.content = html;
+                        win.loading = false;
+                    }
+                })
+                .catch(() => {
+                    const win = this.windows.find(w => w.id === id);
+                    if (win) {
+                        win.content = APP_LOAD_ERROR;
                         win.loading = false;
                     }
                 });

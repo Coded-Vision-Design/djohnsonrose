@@ -4,30 +4,33 @@
     <div class="h-9 bg-win-blue text-white flex items-center px-4 justify-between shrink-0">
         <div class="flex items-center space-x-4">
             <span class="font-semibold text-sm">Outlook</span>
-            <div class="text-xs opacity-80 border-l border-white/20 pl-4 hidden sm:block">New Message</div>
-        </div>
-        <div class="flex items-center space-x-4 text-xs">
-            <span class="cursor-pointer hover:underline">Settings</span>
-            <span class="cursor-pointer hover:underline hidden sm:inline">Help</span>
+            <div class="text-xs opacity-80 border-l border-white/20 pl-4">New message</div>
         </div>
     </div>
 
     <!-- Toolbar -->
     <div class="h-12 border-b border-gray-200 dark:border-gray-800 flex items-center px-4 space-x-2 sm:space-x-6 shrink-0 overflow-x-auto scrollbar-none">
-        <button @click="send()" class="flex items-center text-win-blue font-semibold text-xs hover:bg-blue-50 dark:hover:bg-blue-900/20 px-3 py-1.5 rounded-sm transition-colors whitespace-nowrap">
-            <span class="mr-1 sm:mr-2 text-base">✈️</span> Send Securely
+        <button @click="send()" :disabled="isSending" class="flex items-center text-win-blue font-semibold text-xs hover:bg-blue-50 dark:hover:bg-blue-900/20 px-3 py-1.5 rounded-sm transition-colors whitespace-nowrap">
+            <span class="mr-1 sm:mr-2 text-base">✈️</span> Send
         </button>
         <button @click="sendViaPersonalMail()" class="flex items-center text-gray-600 dark:text-gray-400 font-semibold text-xs hover:bg-gray-100 dark:hover:bg-white/5 px-3 py-1.5 rounded-sm transition-colors whitespace-nowrap">
-            <span class="mr-1 sm:mr-2 text-base">📧</span> Send from Personal Mail
+            <span class="mr-1 sm:mr-2 text-base">📧</span> Send from personal mail
         </button>
         <div class="w-px h-6 bg-gray-200 dark:bg-gray-800 hidden sm:block"></div>
         <button @click="triggerAttach()" class="flex items-center text-gray-600 dark:text-gray-400 text-xs hover:bg-gray-100 dark:hover:bg-white/5 px-3 py-1.5 rounded-sm transition-colors whitespace-nowrap">
             <span class="mr-1 sm:mr-2 text-base">📎</span> Attach
         </button>
         <input type="file" x-ref="fileInput" class="hidden" multiple @change="handleFileSelect($event)">
-        <button @click="subject = ''; body = ''; attachments = []" class="flex items-center text-gray-600 dark:text-gray-400 text-xs hover:bg-gray-100 dark:hover:bg-white/5 px-3 py-1.5 rounded-sm transition-colors whitespace-nowrap">
+        <button @click="discard()" class="flex items-center text-gray-600 dark:text-gray-400 text-xs hover:bg-gray-100 dark:hover:bg-white/5 px-3 py-1.5 rounded-sm transition-colors whitespace-nowrap">
             <span class="mr-1 sm:mr-2 text-base">🗑️</span> Discard
         </button>
+        <div x-show="status !== 'idle'" x-text="statusMsg" role="status"
+             class="ml-auto text-[11px] font-medium"
+             :class="{
+                 'text-emerald-600 dark:text-emerald-400': status === 'sent',
+                 'text-red-500': status === 'error',
+                 'text-gray-500': status === 'sending'
+             }"></div>
     </div>
 
     <!-- Compose Form -->
@@ -37,6 +40,11 @@
             <input type="text" x-model="honeypot" name="website_hp" autocomplete="off">
         </div>
 
+        <div class="flex items-center border-b border-gray-200 dark:border-gray-800 py-2">
+            <label for="outlook-from" class="w-12 text-xs text-gray-500">From</label>
+            <input id="outlook-from" type="email" autocomplete="email" x-model="replyTo" placeholder="you@example.com"
+                   class="grow bg-transparent outline-hidden text-xs dark:text-white">
+        </div>
         <div class="flex items-center border-b border-gray-200 dark:border-gray-800 py-2">
             <label class="w-12 text-xs text-gray-500">To</label>
             <div class="grow flex flex-wrap gap-2">

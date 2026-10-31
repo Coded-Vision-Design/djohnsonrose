@@ -6,6 +6,7 @@
     "keep_releases": 1,
     "exclude_patterns": [
         "vendor",
+        "tests",
         ".git",
         ".github",
         "node_modules",

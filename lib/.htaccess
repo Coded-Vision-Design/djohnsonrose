@@ -1,0 +1,2 @@
+# Block direct HTTP access. These are libraries, included by api/ endpoints.
+Require all denied

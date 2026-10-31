@@ -1,4 +1,5 @@
 import { lazy, type LazyExoticComponent, type FC } from 'react'
+import { appManifest } from './manifest'
 
 const Calculator = lazy(() => import('./calculator/Calculator'))
 const Notepad = lazy(() => import('./notepad/Notepad'))
@@ -38,40 +39,48 @@ export interface AppDef {
 }
 
 // Icons share the PHP version's /assets/img/ tree (proxied in dev, served by
-// Apache in prod). When we port a real app in Phase 2+, swap its `Component`.
+// Apache in prod).
 const IMG = '/assets/img/'
 
-export const apps: Record<string, AppDef> = {
-  edge: { id: 'edge', title: 'Chrome', icon: `${IMG}chrome.webp`, defaultSize: { w: 1024, h: 720 }, Component: Edge },
-  vscode: { id: 'vscode', title: 'VS Code', icon: `${IMG}vscode.webp`, defaultSize: { w: 1100, h: 720 }, Component: VSCode },
-  explorer: { id: 'explorer', title: 'File Explorer', icon: `${IMG}explorer.webp`, defaultSize: { w: 900, h: 600 }, Component: Explorer },
-  terminal: { id: 'terminal', title: 'Terminal', icon: `${IMG}terminal.webp`, defaultSize: { w: 720, h: 480 }, Component: Terminal },
-  notepad: { id: 'notepad', title: 'Notepad', icon: `${IMG}notepad++.webp`, defaultSize: { w: 700, h: 500 }, Component: Notepad },
-  word: { id: 'word', title: 'Word', icon: `${IMG}word.webp`, defaultSize: { w: 980, h: 720 }, Component: Word },
-  excel: { id: 'excel', title: 'Excel', icon: `${IMG}excel.webp`, defaultSize: { w: 980, h: 720 }, Component: Excel },
-  powerpoint: { id: 'powerpoint', title: 'PowerPoint', icon: `${IMG}powerpoint.webp`, defaultSize: { w: 980, h: 720 }, Component: PowerPoint },
-  outlook: { id: 'outlook', title: 'Outlook', icon: `${IMG}outlook.webp`, defaultSize: { w: 720, h: 600 }, Component: Outlook },
-  photoshop: { id: 'photoshop', title: 'Photoshop', icon: `${IMG}photoshop.webp`, defaultSize: { w: 1100, h: 720 }, Component: Photoshop },
-  flstudio: { id: 'flstudio', title: 'FL Studio 24', icon: `${IMG}fl%20studio.webp`, defaultSize: { w: 1200, h: 720 }, Component: FLStudio },
-  docker: { id: 'docker', title: 'Docker', icon: `${IMG}docker.webp`, defaultSize: { w: 1000, h: 700 }, Component: Docker },
-  putty: { id: 'putty', title: 'PuTTY', icon: `${IMG}putty.webp`, defaultSize: { w: 720, h: 480 }, Component: Putty },
-  filezilla: { id: 'filezilla', title: 'FileZilla', icon: `${IMG}filezilla.webp`, defaultSize: { w: 980, h: 640 }, Component: FileZilla },
-  database: { id: 'database', title: 'SQL Server Management Studio', icon: `${IMG}mssql.webp`, defaultSize: { w: 1100, h: 720 }, Component: Database },
-  settings: { id: 'settings', title: 'Settings', icon: `${IMG}settings.webp`, defaultSize: { w: 900, h: 640 }, Component: Settings },
-  taskmanager: { id: 'taskmanager', title: 'Task Manager', icon: `${IMG}taskmanager.webp`, defaultSize: { w: 900, h: 640 }, Component: TaskManager },
-  eventviewer: { id: 'eventviewer', title: 'Event Viewer', icon: `${IMG}eventviewer.webp`, defaultSize: { w: 980, h: 640 }, Component: EventViewer },
-  calculator: { id: 'calculator', title: 'Calculator', icon: `${IMG}calculator.webp`, defaultSize: { w: 320, h: 480 }, Component: Calculator },
-  paint: { id: 'paint', title: 'Paint', icon: `${IMG}win11/paint.webp`, defaultSize: { w: 900, h: 650 }, Component: Paint },
-  photos: { id: 'photos', title: 'Photos', icon: `${IMG}win11/photos.webp`, defaultSize: { w: 900, h: 640 }, Component: Photos },
-  video: { id: 'video', title: 'Movies & TV', icon: `${IMG}win11/videos.webp`, defaultSize: { w: 900, h: 600 }, Component: Video },
-  pdfreader: { id: 'pdfreader', title: 'PDF Reader', icon: `${IMG}pdf.webp`, defaultSize: { w: 900, h: 720 }, Component: PdfReader },
-  admin: { id: 'admin', title: 'Admin Console', icon: `${IMG}mssql.webp`, defaultSize: { w: 1180, h: 760 }, Component: AdminConsole },
-  references: { id: 'references', title: 'References', icon: `${IMG}notepad++.webp`, defaultSize: { w: 820, h: 560 }, Component: ReferencesVault },
-  github: { id: 'github', title: 'GitHub', icon: `${IMG}github.webp`, defaultSize: { w: 1180, h: 760 }, Component: GitHubApp },
+const components: Record<string, LazyExoticComponent<FC>> = {
+  edge: Edge,
+  vscode: VSCode,
+  explorer: Explorer,
+  terminal: Terminal,
+  notepad: Notepad,
+  word: Word,
+  excel: Excel,
+  powerpoint: PowerPoint,
+  outlook: Outlook,
+  photoshop: Photoshop,
+  flstudio: FLStudio,
+  docker: Docker,
+  putty: Putty,
+  filezilla: FileZilla,
+  database: Database,
+  settings: Settings,
+  taskmanager: TaskManager,
+  eventviewer: EventViewer,
+  calculator: Calculator,
+  paint: Paint,
+  photos: Photos,
+  video: Video,
+  pdfreader: PdfReader,
+  admin: AdminConsole,
+  references: ReferencesVault,
+  github: GitHubApp,
 }
 
+// Titles, icons and sizes come from the manifest shared with v1.
+export const apps: Record<string, AppDef> = Object.fromEntries(
+  Object.values(appManifest).map(({ id, title, icon, size }) => [
+    id,
+    { id, title, icon: `${IMG}${icon}`, defaultSize: size, Component: components[id] },
+  ]),
+)
+
 export function getApp(id: string): AppDef | undefined {
-  return apps[id]
+  return Object.hasOwn(apps, id) ? apps[id] : undefined
 }
 
 export function listApps(): AppDef[] {

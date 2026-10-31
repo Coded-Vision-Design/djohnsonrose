@@ -53,6 +53,12 @@ RewriteRule ^adminconsole/?$ /v2/app/admin [R=302,L]
 RewriteCond %{DOCUMENT_ROOT}/v2/dist/$1 -f [OR]
 RewriteCond %{DOCUMENT_ROOT}/v2/dist/$1 -d
 RewriteRule ^v2/(.+)$ v2/dist/$1 [END]
+
+# A missing hashed file must 404. Falling through to the SPA would answer a
+# stale chunk request with index.html and a 200, which fails as a bad script
+# instead of a clear load error. Each deploy removes the previous chunks.
+RewriteRule ^v2/assets/ - [R=404,L]
+
 RewriteRule ^v2(/.*)?$ v2/dist/index.html [END]
 
 # v1 (PHP): handle routing to index.php if file/dir doesn't exist

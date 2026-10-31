@@ -1,0 +1,2 @@
+# Tests are excluded from deployment; this is a second line of defence.
+Require all denied

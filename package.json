@@ -4,7 +4,8 @@
   "description": "Tailwind toolchain for the v1 (PHP) build. The v2 React app lives under v2/.",
   "scripts": {
     "build:css": "tailwindcss -i assets/css/input.css -o assets/css/app.css --minify",
-    "watch:css": "tailwindcss -i assets/css/input.css -o assets/css/app.css --watch"
+    "watch:css": "tailwindcss -i assets/css/input.css -o assets/css/app.css --watch",
+    "test:php": "php tests/php/contact_test.php"
   },
   "devDependencies": {
     "@tailwindcss/cli": "^4.3.3",

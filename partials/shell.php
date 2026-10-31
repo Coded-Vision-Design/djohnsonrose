@@ -102,8 +102,14 @@
     $cssVer  = @filemtime($cssPath) ?: time();
     ?>
     <link rel="stylesheet" href="<?php echo BASE_PATH; ?>assets/css/app.css?v=<?php echo $cssVer; ?>">
+    <?php
+    // The list of apps is shared with v2. See data/apps.json.
+    $appManifest = json_decode((string)@file_get_contents(__DIR__ . '/../data/apps.json'), true) ?: [];
+    ?>
     <script>
         window.portfolioConfig = {
+            apps: <?php echo json_encode(array_column($appManifest['apps'] ?? [], null, 'id'), JSON_HEX_TAG | JSON_HEX_AMP); ?>,
+            pinned: <?php echo json_encode($appManifest['pinned'] ?? [], JSON_HEX_TAG | JSON_HEX_AMP); ?>,
             email: '<?php echo $config["email"]; ?>',
             appToOpen: '<?php echo $appToOpen ?? ""; ?>',
             basePath: '<?php echo BASE_PATH; ?>',

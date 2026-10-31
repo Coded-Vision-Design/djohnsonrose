@@ -11,6 +11,7 @@ document.addEventListener('alpine:init', () => {
         selectedDialogFile: null,
         currentFile: null,
         fileTypeFilter: 'txt', // 'txt' or 'all'
+        loadedRevision: null,
 
         init() {
             this.updateFromStore();
@@ -18,11 +19,17 @@ document.addEventListener('alpine:init', () => {
         },
 
         updateFromStore() {
-            const win = Alpine.store('os').windows.find(w => w.app === 'notepad' && (w.focused || !this.content));
-            if (win && win.fileContent !== undefined) {
-                this.content = win.fileContent;
-                this.currentFile = { name: win.title, path: win.filePath || 'C:\\Users\\DeVante\\Desktop' };
-            }
+            const win = Alpine.store('os').windows.find(w => w.app === 'notepad');
+            if (!win || win.fileContent === undefined) return;
+
+            // This runs on every window change, so only load a newly opened file.
+            // Loading it again would overwrite whatever the visitor has typed.
+            const revision = win.fileRevision ?? 0;
+            if (revision === this.loadedRevision) return;
+            this.loadedRevision = revision;
+
+            this.content = win.fileContent;
+            this.currentFile = { name: win.title, path: win.filePath || 'C:\\Users\\DeVante\\Desktop' };
         },
 
         get dialogFiles() {
@@ -66,7 +73,7 @@ document.addEventListener('alpine:init', () => {
                 this.currentFile = { name: this.selectedDialogFile.name, path: this.dialogPath };
                 this.showDialog = null;
                 
-                const win = Alpine.store('os').windows.find(w => w.app === 'notepad' && w.focused);
+                const win = Alpine.store('os').windows.find(w => w.app === 'notepad');
                 if (win) win.title = this.selectedDialogFile.name;
             } else {
                 this.saveFile();
@@ -86,7 +93,7 @@ document.addEventListener('alpine:init', () => {
             this.currentFile = { name: name, path: this.dialogPath };
             this.showDialog = null;
 
-            const win = Alpine.store('os').windows.find(w => w.app === 'notepad' && w.focused);
+            const win = Alpine.store('os').windows.find(w => w.app === 'notepad');
             if (win) win.title = name;
         },
 

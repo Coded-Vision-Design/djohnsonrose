@@ -122,7 +122,9 @@
                     <div x-show="win.loading" class="absolute inset-0 flex items-center justify-center">
                         <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-win-blue"></div>
                     </div>
-                    <div x-html="win.content" class="h-full"></div>
+                    <!-- Not x-html: it initialises apps inside its reactive effect, so any value an
+                         app reads in init() would rebuild the whole app whenever that value changed. -->
+                    <div class="h-full" x-init="$watch('win.content', html => { $el.innerHTML = html })"></div>
                 </div>
 
                 <!-- Resize Handles (Invisible hit-test borders for Windows-level realism) -->

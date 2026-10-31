@@ -26,9 +26,9 @@ document.addEventListener('alpine:init', () => {
         },
 
         updateFromStore() {
-            const win = Alpine.store('os').windows.find(w => w.app === 'video' && (w.focused || !this.videoUrl));
+            const win = Alpine.store('os').windows.find(w => w.app === 'video');
             if (win) {
-                this.videoUrl = win.videoUrl;
+                if (win.videoUrl) this.videoUrl = win.videoUrl;
                 this.videoName = win.title;
             }
         },
@@ -86,7 +86,7 @@ document.addEventListener('alpine:init', () => {
         },
         updateFromStore() {
             // Find the active pdfreader window
-            const win = Alpine.store('os').windows.find(w => w.app === 'pdfreader' && (w.focused || !this.pdfUrl));
+            const win = Alpine.store('os').windows.find(w => w.app === 'pdfreader');
             if (win) {
                 // Priority: window data > fallback
                 this.pdfUrl = win.pdfUrl || (window.portfolioConfig.basePath + 'data/cv.pdf');

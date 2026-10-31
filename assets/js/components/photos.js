@@ -13,7 +13,7 @@ document.addEventListener('alpine:init', () => {
 
             // Watch currentIndex to update the window title and store state
             this.$watch('currentIndex', (newIdx) => {
-                const win = Alpine.store('os').windows.find(w => w.app === 'photos' && w.focused);
+                const win = Alpine.store('os').windows.find(w => w.app === 'photos');
                 if (win && this.allImages[newIdx]) {
                     const img = this.allImages[newIdx];
                     win.title = img.name;
@@ -23,8 +23,9 @@ document.addEventListener('alpine:init', () => {
 
             // Handle arrow keys
             window.addEventListener('keydown', (e) => {
-                const win = Alpine.store('os').windows.find(w => w.app === 'photos' && w.focused);
-                if (!win) return;
+                const osStore = Alpine.store('os');
+                const win = osStore.windows.find(w => w.app === 'photos');
+                if (!win || win.id !== osStore.focusedWindowId) return;
                 if (e.key === 'ArrowRight') this.next();
                 if (e.key === 'ArrowLeft') this.prev();
             });
@@ -32,7 +33,7 @@ document.addEventListener('alpine:init', () => {
 
         updateFromStore() {
             // Get the imageName passed from the window object
-            const win = Alpine.store('os').windows.find(w => w.app === 'photos' && (w.focused || !this.currentImage));
+            const win = Alpine.store('os').windows.find(w => w.app === 'photos');
             if (!win) return;
 
             const folderPath = win.folderPath || 'C:\\Users\\DeVante\\Pictures';

@@ -1,101 +1,111 @@
 <?php
-// api/send_email.php
+// api/send_email.php - contact form endpoint for Outlook in both builds.
+// Emails the enquiry to the configured address, then records it for the
+// Admin Console. Validation and limits live in lib/contact.php.
 require_once __DIR__ . '/../bootstrap.php';
+require_once __DIR__ . '/../lib/contact.php';
 
 header('Content-Type: application/json');
 
-if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    echo json_encode(['error' => 'Invalid request method']);
+function contact_fail(int $status, string $message): void {
+    http_response_code($status);
+    echo json_encode(['success' => false, 'error' => $message]);
     exit;
 }
 
-// Since we are now sending FormData (for attachments), we use $_POST
-$recipient = $_POST['recipient'] ?? '';
-$subject = $_POST['subject'] ?? '';
-$body = $_POST['body'] ?? '';
-$honeypot = $_POST['website_hp'] ?? '';
+/** Best effort: a logging failure must never lose an enquiry already sent. */
+function contact_log(array $config, array $data, array $attachments, string $status, string $ip): void {
+    try {
+        $dbConfig = $config['db'];
+        $dsn = "mysql:host={$dbConfig['host']};dbname={$dbConfig['name']};charset=utf8mb4";
+        $pdo = new PDO($dsn, $dbConfig['user'], $dbConfig['pass'], [
+            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+            PDO::ATTR_TIMEOUT => 3,
+        ]);
 
-// Honeypot Check
-if (!empty($honeypot)) {
-    // Silently fail for bots
-    echo json_encode(['success' => true, 'message' => 'Email sent successfully!']);
-    exit;
-}
+        $pdo->exec("CREATE TABLE IF NOT EXISTS email_logs (
+            id VARCHAR(36) PRIMARY KEY,
+            sender VARCHAR(255) NOT NULL,
+            recipient VARCHAR(255) NOT NULL,
+            subject VARCHAR(255) NOT NULL,
+            body TEXT NOT NULL,
+            status VARCHAR(32) NOT NULL,
+            ip_address VARCHAR(45) NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        ) DEFAULT CHARSET=utf8mb4");
 
-if (empty($recipient) || empty($subject) || empty($body)) {
-    echo json_encode(['error' => 'All fields are required']);
-    exit;
-}
+        $uuid = sprintf('%04x%04x-%04x-%04x-%04x-%04x%04x%04x',
+            mt_rand(0, 0xffff), mt_rand(0, 0xffff),
+            mt_rand(0, 0xffff),
+            mt_rand(0, 0x0fff) | 0x4000,
+            mt_rand(0, 0x3fff) | 0x8000,
+            mt_rand(0, 0xffff), mt_rand(0, 0xffff), mt_rand(0, 0xffff)
+        );
 
-try {
-    $dbConfig = $config['db'];
-    $dsn = "mysql:host={$dbConfig['host']};dbname={$dbConfig['name']};charset=utf8mb4";
-    $pdo = new PDO($dsn, $dbConfig['user'], $dbConfig['pass'], [
-        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION
-    ]);
+        $body = $data['body'];
+        if ($attachments !== []) {
+            $body .= "\n\n[Attachments: " . implode(', ', array_column($attachments, 'name')) . "]";
+        }
 
-    // 1. Generate UUID
-    $uuid = sprintf('%04x%04x-%04x-%04x-%04x-%04x%04x%04x',
-        mt_rand(0, 0xffff), mt_rand(0, 0xffff),
-        mt_rand(0, 0xffff),
-        mt_rand(0, 0x0fff) | 0x4000,
-        mt_rand(0, 0x3fff) | 0x8000,
-        mt_rand(0, 0xffff), mt_rand(0, 0xffff), mt_rand(0, 0xffff)
-    );
-
-    // 2. Handle Attachments (Metadata logging)
-    $attachmentNames = [];
-    foreach ($_FILES as $file) {
-        if ($file['error'] === UPLOAD_ERR_OK) {
-            $attachmentNames[] = $file['name'];
+        $stmt = $pdo->prepare("INSERT INTO email_logs (id, sender, recipient, subject, body, status, ip_address) VALUES (?, ?, ?, ?, ?, ?, ?)");
+        $stmt->execute([$uuid, $data['reply_to'], $config['email'], $data['subject'], $body, $status, $ip]);
+    } catch (Throwable $e) {
+        if (!empty($config['debug'])) {
+            error_log('send_email log failed: ' . $e->getMessage());
         }
     }
-    
-    $fullBody = $body;
-    if (!empty($attachmentNames)) {
-        $fullBody .= "\n\n[Attachments: " . implode(', ', $attachmentNames) . "]";
-    }
-
-    // 3. Log to audit table
-    $stmt = $pdo->prepare("INSERT INTO email_logs (id, sender, recipient, subject, body, status, ip_address) VALUES (?, ?, ?, ?, ?, ?, ?)");
-    $sender = "Web Visitor";
-    $status = "sent";
-    $ip = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
-    
-    $stmt->execute([$uuid, $sender, $recipient, $subject, $fullBody, $status, $ip]);
-
-    // REAL SENDING LOGIC (Placeholder)
-    // In production, use PHPMailer here:
-    /*
-    $mail = new PHPMailer(true);
-    $mail->isSMTP();
-    $mail->Host = $config['smtp']['host'];
-    $mail->SMTPAuth = true;
-    $mail->Username = $config['smtp']['user'];
-    $mail->Password = $config['smtp']['pass'];
-    $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
-    $mail->Port = $config['smtp']['port'];
-    $mail->setFrom($config['smtp']['from'], 'Portfolio No-Reply');
-    $mail->addAddress($recipient);
-    $mail->Subject = $subject;
-    $mail->Body = $body;
-    foreach ($_FILES as $file) {
-        $mail->addAttachment($file['tmp_name'], $file['name']);
-    }
-    $mail->send();
-    */
-
-    echo json_encode([
-        'success' => true,
-        'message' => 'Email processed and logged.',
-        'log_id' => $uuid,
-        'attachments_count' => count($attachmentNames)
-    ]);
-
-} catch (Throwable $e) {
-    if (!empty($config['debug'])) {
-        error_log('send_email failed: ' . $e->getMessage());
-    }
-    http_response_code(500);
-    echo json_encode(['error' => 'Unable to send email at this time.']);
 }
+
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    contact_fail(405, 'Invalid request method');
+}
+
+$host = $_SERVER['HTTP_HOST'] ?? '';
+if (!contact_origin_allowed($_SERVER['HTTP_ORIGIN'] ?? null, $host)) {
+    contact_fail(403, 'Requests from other sites are not allowed.');
+}
+
+// Bots fill the hidden field. Tell them it worked and do nothing.
+if (!empty($_POST['website_hp'])) {
+    echo json_encode(['success' => true, 'message' => 'Your message has been sent.']);
+    exit;
+}
+
+$validated = contact_validate($_POST);
+if (!$validated['ok']) {
+    contact_fail(422, $validated['error']);
+}
+$data = $validated['data'];
+
+$collected = contact_collect_attachments($_FILES);
+if (!$collected['ok']) {
+    contact_fail(422, $collected['error']);
+}
+$attachments = $collected['files'];
+
+$ip = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
+if (!contact_rate_allowed(sys_get_temp_dir(), $ip, time())) {
+    contact_fail(429, "Too many messages. Please try again later, or email {$config['email']} directly.");
+}
+
+$mail = contact_build_mail($data, $attachments, [
+    'to' => $config['email'],
+    'from' => $config['smtp']['from'],
+    'from_name' => $config['smtp']['name'],
+]);
+
+// As in api/log.php, local development never sends real mail.
+$isLocal = $host === 'localhost' || $host === '127.0.0.1' || strpos($host, 'localhost:') === 0;
+$sent = $isLocal || mail($mail['to'], $mail['subject'], $mail['body'], $mail['headers']);
+
+contact_log($config, $data, $attachments, $sent ? ($isLocal ? 'local' : 'sent') : 'failed', $ip);
+
+if (!$sent) {
+    contact_fail(502, "Sorry, that did not send. Please email {$config['email']} directly.");
+}
+
+echo json_encode([
+    'success' => true,
+    'message' => 'Your message has been sent.',
+    'attachments_count' => count($attachments),
+]);

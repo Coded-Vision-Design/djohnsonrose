@@ -41,6 +41,8 @@ export default defineConfig({
   plugins: [react(), redirectRootToPhp()],
   server: {
     port: 5173,
+    // data/apps.json is shared with v1 and sits outside the Vite root.
+    fs: { allow: ['..'] },
     proxy: {
       '/api': {
         target: 'http://localhost:8765',

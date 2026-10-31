@@ -58,25 +58,32 @@ document.addEventListener('alpine:init', () => {
     // Outlook App Logic
     Alpine.data('outlookApp', () => ({
         recipient: 'devante@johnson-rose.co.uk',
-        subject: 'Project Inquiry - Portfolio OS',
+        replyTo: '',
+        subject: 'Project Enquiry - Portfolio OS',
         body: 'Hi,\n\nI was browsing your portfolio and would like to get in touch regarding...',
         isSending: false,
+        status: 'idle', // idle | sending | sent | error
+        statusMsg: '',
         attachments: [],
         honeypot: '', // Honeypot field
         
         async send() {
             if (this.isSending) return;
-            if (this.honeypot) {
-                console.warn('Spam detected via honeypot');
-                alert('Message sent successfully!'); // Fake success for bots
+            if (!this.replyTo.trim()) {
+                this.setStatus('error', 'Please enter your email address so I can reply.');
+                return;
+            }
+            if (!this.subject.trim() || !this.body.trim()) {
+                this.setStatus('error', 'Subject and message are required.');
                 return;
             }
             
             this.isSending = true;
+            this.setStatus('sending', 'Sending…');
 
             try {
                 const formData = new FormData();
-                formData.append('recipient', this.recipient);
+                formData.append('reply_to', this.replyTo);
                 formData.append('subject', this.subject);
                 formData.append('body', this.body);
                 formData.append('website_hp', this.honeypot);
@@ -90,22 +97,36 @@ document.addEventListener('alpine:init', () => {
                     body: formData
                 });
 
-                const result = await response.json();
+                const result = await response.json().catch(() => ({}));
 
                 if (result.success) {
                     Alpine.store('os').logEvent('Outlook', 'Information', `Email sent via no-reply to ${this.recipient}`);
-                    alert('Email sent successfully via our secure server!');
-                    this.subject = '';
-                    this.body = '';
-                    this.attachments = [];
+                    this.setStatus('sent', result.message || 'Message sent.');
+                    this.resetDraft();
                 } else {
-                    alert('Error: ' + result.error);
+                    this.setStatus('error', result.error || 'Send failed. Please try again.');
                 }
             } catch (e) {
-                alert('Failed to send email. Check if the database is running.');
+                this.setStatus('error', 'Network error. Check your connection and try again.');
             } finally {
                 this.isSending = false;
             }
+        },
+
+        setStatus(status, message) {
+            this.status = status;
+            this.statusMsg = message;
+        },
+
+        resetDraft() {
+            this.subject = 'Project Enquiry - Portfolio OS';
+            this.body = 'Hi,\n\nI was browsing your portfolio and would like to get in touch regarding...';
+            this.attachments = [];
+        },
+
+        discard() {
+            this.resetDraft();
+            this.setStatus('idle', '');
         },
 
         sendViaPersonalMail() {

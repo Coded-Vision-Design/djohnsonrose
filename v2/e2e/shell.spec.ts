@@ -185,6 +185,6 @@ test.describe('desktop icons + recycle bin', () => {
     const win = page.getByRole('dialog', { name: 'Recycle Bin' })
     await expect(win).toBeVisible()
     // v1 seeds the bin with an Easter Egg video — verify it's visible.
-    await expect(win.getByText('Easter Egg - Drone Footage.mp4')).toBeVisible()
+    await expect(win.getByText('Easter Egg - South Africa 25 Video.mp4')).toBeVisible()
   })
 })

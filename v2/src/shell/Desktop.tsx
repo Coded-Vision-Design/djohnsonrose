@@ -2,6 +2,7 @@ import { Suspense } from 'react'
 import { useOsStore } from '../store/osStore'
 import { Window } from '../windowing/Window'
 import { WindowContextProvider } from '../windowing/WindowContext'
+import { WindowErrorBoundary } from '../windowing/WindowErrorBoundary'
 import { SnapPreview } from './SnapPreview'
 import { Taskbar } from './Taskbar'
 import { StartMenu } from './StartMenu'
@@ -43,6 +44,7 @@ export function Desktop() {
   const updateSetting = useOsStore((s) => s.updateSetting)
   const resetIconPositions = useOsStore((s) => s.resetIconPositions)
   const openApp = useOsStore((s) => s.openApp)
+  const closeWindow = useOsStore((s) => s.closeWindow)
   const isDark = useOsStore((s) => s.settings.theme === 'dark')
 
   const openClassicDesktopMenu = (x: number, y: number) => {
@@ -133,9 +135,11 @@ export function Desktop() {
           <Window key={win.id} win={win}>
             {Component ? (
               <WindowContextProvider value={win}>
-                <Suspense fallback={<WindowLoader />}>
-                  <Component />
-                </Suspense>
+                <WindowErrorBoundary onClose={() => closeWindow(win.id)}>
+                  <Suspense fallback={<WindowLoader />}>
+                    <Component />
+                  </Suspense>
+                </WindowErrorBoundary>
               </WindowContextProvider>
             ) : (
               <div className="p-6 text-sm opacity-60">App not found: {win.app}</div>
