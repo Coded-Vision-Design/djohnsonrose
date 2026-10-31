@@ -77,13 +77,24 @@ document.addEventListener('alpine:init', () => {
                 body: JSON.stringify(data)
             }).catch(err => console.warn('Telemetry failed:', err));
         },
-        isMobile: window.innerWidth < 640,
-        isTablet: window.innerWidth >= 640 && window.innerWidth < 1024,
-        isDesktop: window.innerWidth >= 1024,
+        // Kept up to date by setDesktop.
+        isMobile: false,
+        isTablet: false,
+        isDesktop: true,
         windowHeight: window.innerHeight,
         windowWidth: window.innerWidth,
         previewWallpaper: null,
         pinnedApps: window.portfolioConfig.pinned,
+        snapPreview: { rect: null, bar: null, target: null },
+        snapFlyout: null,
+        snapAssist: null,
+        taskSwitcherOpen: false,
+        desktop: { left: 0, top: 0, width: window.innerWidth, height: window.innerHeight - 48 },
+        windowMode: OsWindowing.detectMode({
+            width: window.innerWidth,
+            height: window.innerHeight,
+            coarse: window.matchMedia('(pointer: coarse)').matches
+        }),
         cookieConsent: localStorage.getItem('cookie.consent') === 'true',
         showCookieNotification: localStorage.getItem('auth.loggedIn') === 'true' && localStorage.getItem('cookie.consent') === null,
         errorDialog: { open: false, title: '', message: '', path: '' },
@@ -145,6 +156,7 @@ document.addEventListener('alpine:init', () => {
 
         openApp(appHandle, title = null, extraData = {}) {
             this.contextMenu.open = false; // Close menu when opening app
+            this.taskSwitcherOpen = false;
             this.logEvent('System', 'Information', `Starting application: ${title || appHandle}`);
             if (extraData.fromRecycleBin) {
                 this.playSound('error');
@@ -175,7 +187,7 @@ document.addEventListener('alpine:init', () => {
                 }
                 
                 this.focusWindow(existing.id);
-                if (existing.minimized) this.toggleMinimize(existing.id);
+                if (existing.state === 'minimized') this.toggleMinimize(existing.id);
 
                 if (appHandle === 'explorer' && extraData.initialPath) {
                     // Dispatch after focusing to ensure the listener identifies the right window
@@ -187,30 +199,15 @@ document.addEventListener('alpine:init', () => {
             }
 
             const id = Date.now();
-            const isSmallScreen = window.innerWidth < 1024;
-            
             const manifest = window.portfolioConfig.apps[appHandle];
-
-            let width = isSmallScreen ? window.innerWidth : (manifest?.size.w ?? 800);
-            let height = isSmallScreen ? window.innerHeight - 48 : (manifest?.size.h ?? 600);
-            
-            if (width > window.innerWidth) width = window.innerWidth;
-            if (height > window.innerHeight - 48) height = window.innerHeight - 48;
-
-            let x = isSmallScreen ? 0 : (window.innerWidth - width) / 2 + (this.windows.length * 30);
-            let y = isSmallScreen ? 0 : (window.innerHeight - 48 - height) / 2 + (this.windows.length * 30);
 
             const newWindow = {
                 id,
                 app: appHandle,
                 title: title || manifest?.title || appHandle.charAt(0).toUpperCase() + appHandle.slice(1),
-                x,
-                y,
-                width,
-                height,
+                ...OsWindowing.placeNewWindow(manifest?.size ?? { w: 800, h: 600 }, this.desktop, this.windows.length),
                 z: this.nextWindowZ++,
-                minimized: false,
-                maximized: isSmallScreen,
+                state: 'floating',
                 loading: true,
                 ...extraData
             };
@@ -253,18 +250,16 @@ document.addEventListener('alpine:init', () => {
             }
             this.windows = this.windows.filter(w => w.id !== id);
             if (this.focusedWindowId === id) {
-                const remaining = this.windows.filter(w => !w.minimized);
-                if (remaining.length > 0) {
-                    this.focusWindow(remaining[remaining.length - 1].id);
-                } else {
-                    this.focusedWindowId = null;
-                }
+                this.focusedWindowId = OsWindowing.nextFocusedWindow(this.windows)?.id ?? null;
             }
+            this.snapAssist = null;
+            if (this.snapFlyout?.windowId === id) this.snapFlyout = null;
         },
 
         focusWindow(id) {
             const win = this.windows.find(w => w.id === id);
-            if (win) {
+            // Already on top: nothing to change, so nothing needs to update.
+            if (win && !(this.focusedWindowId === id && win.z === this.nextWindowZ - 1)) {
                 win.z = this.nextWindowZ++;
                 this.focusedWindowId = id;
             }
@@ -272,21 +267,107 @@ document.addEventListener('alpine:init', () => {
 
         toggleMinimize(id) {
             const win = this.windows.find(w => w.id === id);
-            if (win) {
-                win.minimized = !win.minimized;
-                if (!win.minimized) {
-                    this.focusWindow(id);
-                } else {
-                    this.playSound('minimize');
-                }
+            if (!win) return;
+            if (win.state === 'minimized') {
+                Object.assign(win, OsWindowing.unminimizePatch(win, this.desktop));
+                this.focusWindow(id);
+                return;
             }
+            Object.assign(win, OsWindowing.minimizePatch(win));
+            this.playSound('minimize');
+            if (this.focusedWindowId === id) {
+                this.focusedWindowId = OsWindowing.nextFocusedWindow(this.windows)?.id ?? null;
+            }
+        },
+
+        minimizeAll() {
+            this.windows.forEach(win => {
+                if (win.state !== 'minimized') Object.assign(win, OsWindowing.minimizePatch(win));
+            });
+            this.focusedWindowId = null;
         },
 
         toggleMaximize(id) {
             const win = this.windows.find(w => w.id === id);
-            if (win) {
-                win.maximized = !win.maximized;
+            if (!win || win.state === 'minimized') return;
+            Object.assign(win, win.state === 'maximized'
+                ? OsWindowing.restorePatch(win, this.desktop)
+                : OsWindowing.maximizePatch(win, this.desktop));
+            this.snapFlyout = null;
+            this.snapAssist = null;
+        },
+
+        moveWindow(id, x, y) {
+            const win = this.windows.find(w => w.id === id);
+            if (win) Object.assign(win, { x, y });
+        },
+
+        detachWindow(id, rect) {
+            const win = this.windows.find(w => w.id === id);
+            if (win) Object.assign(win, OsWindowing.detachPatch(rect));
+        },
+
+        applyWindowPatches(patches) {
+            this.windows.forEach(win => {
+                if (patches[win.id]) Object.assign(win, patches[win.id]);
+            });
+        },
+
+        snapWindow(id, layout, zone) {
+            const win = this.windows.find(w => w.id === id);
+            if (!win) return;
+            Object.assign(win, OsWindowing.snapPatch(win, layout, zone, this.desktop));
+            this.focusWindow(id);
+            this.snapFlyout = null;
+            this.snapAssist = OsWindowing.planAssist(this.windows, layout, this.desktop);
+        },
+
+        fillSnapAssist(id) {
+            const win = this.windows.find(w => w.id === id);
+            if (!this.snapAssist || !win) return;
+            const { layout, zone } = this.snapAssist;
+            Object.assign(win, OsWindowing.snapPatch(win, layout, zone, this.desktop));
+            this.focusWindow(id);
+            this.snapAssist = OsWindowing.planAssist(this.windows, layout, this.desktop);
+        },
+
+        setDesktop(desktop, mode) {
+            const changed = this.desktop.width !== desktop.width || this.desktop.height !== desktop.height;
+            this.desktop = desktop;
+            this.windowMode = mode;
+            this.isMobile = mode === 'phone';
+            this.isTablet = mode === 'tablet';
+            this.isDesktop = mode === 'desktop';
+            this.windowWidth = window.innerWidth;
+            this.windowHeight = window.innerHeight;
+            if (changed) {
+                this.snapPreview = { rect: null, bar: null, target: null };
+                this.snapFlyout = null;
+                this.snapAssist = null;
             }
+            this.windows.forEach(win => {
+                const patch = OsWindowing.reflowPatch(win, desktop, mode);
+                if (patch) Object.assign(win, patch);
+            });
+        },
+
+        // Runs a window shortcut. Returns true when it did something.
+        runShortcut(shortcut) {
+            const win = this.windows.find(w => w.id === this.focusedWindowId);
+            if (!win) return false;
+            if (shortcut === 'close') {
+                this.closeWindow(win.id);
+                return true;
+            }
+            if (shortcut === 'layouts' || this.windowMode === 'phone') return false;
+
+            const placement = OsWindowing.keyboardPlacement(win, shortcut, this.desktop, this.windowMode);
+            if (!placement) return false;
+            if (placement.type === 'snap') this.snapWindow(win.id, placement.layout, placement.zone);
+            else if (placement.type === 'minimize') this.toggleMinimize(win.id);
+            else if (placement.type === 'maximize') this.toggleMaximize(win.id);
+            else Object.assign(win, OsWindowing.restorePatch(win, this.desktop));
+            return true;
         },
 
         setWallpaper(url) {

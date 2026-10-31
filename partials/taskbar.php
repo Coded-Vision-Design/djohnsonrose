@@ -1,5 +1,5 @@
 <!-- partials/taskbar.php -->
-<div class="h-12 w-full taskbar-glass flex items-center justify-between px-2 z-9999 border-t border-white/20"
+<div class="os-taskbar w-full taskbar-glass flex items-center justify-between px-2 z-9999 border-t border-white/20"
      :class="{ 'taskbar-mobile': !isDesktop }"
      @contextmenu.prevent="showTaskbarContextMenu($event)">
     <!-- Widgets Area (Left) -->
@@ -14,7 +14,7 @@
     </div>
 
     <!-- Pinned/Running Apps (Center) -->
-    <div class="flex items-center space-x-1" :class="{ 'taskbar-center-mobile': !isDesktop }">
+    <div class="os-taskbar-apps flex items-center space-x-1">
         <!-- Start Button -->
         <button x-cloak @click="startMenuOpen = !startMenuOpen; playSound('click')" 
                 class="w-10 h-10 flex items-center justify-center rounded-sm hover:bg-white/10 transition-colors group"
@@ -32,11 +32,20 @@
             <svg class="w-5 h-5 text-gray-500" viewBox="0 0 24 24" fill="currentColor"><path d="M3 3h18v18H3V3zm16 16V5H5v14h14zM7 7h10v2H7V7zm0 4h10v2H7v-2zm0 4h7v2H7v-2z"/></svg>
         </button>
 
-        <div class="w-px h-6 bg-white/10 mx-1"></div>
+        <!-- Task switcher (phones) -->
+        <button type="button" class="os-task-button w-10 h-10 items-center justify-center rounded-sm hover:bg-white/10 relative text-black dark:text-white"
+                @click="$store.os.taskSwitcherOpen = !$store.os.taskSwitcherOpen"
+                :aria-label="`Open apps: ${windows.length}`"
+                title="Open apps">
+            <svg class="w-5 h-5 fill-current opacity-80" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h11v13H4V7zm2 2v9h7V9H6zm11-5H7v2h10v11h2V4h-2z"/></svg>
+            <span class="absolute top-0.5 right-0.5 text-[9px] font-semibold" x-text="windows.length || ''"></span>
+        </button>
+
+        <div class="w-px h-6 bg-white/10 mx-1 shrink-0"></div>
 
         <!-- Pinned and Running Apps -->
         <template x-for="appId in [...new Set([...$store.os.pinnedApps, ...windows.map(w => w.app)])]" :key="appId">
-            <button @click="openApp(appId)" 
+            <button @click="taskbarClick(appId)" 
                     @contextmenu.prevent.stop="showAppContextMenu($event, appId)"
                     class="w-10 h-10 flex items-center justify-center rounded-sm hover:bg-white/10 transition-all relative group"
                     :class="{ 'bg-white/10 shadow-inner': windows.some(w => w.app === appId && focusedWindowId === w.id) }">
@@ -112,8 +121,8 @@
                     <div x-cloak class="absolute bottom-1 left-1/2 -translate-x-1/2 app-indicator" 
                          :class="{ 
                             'app-indicator-active glow': windows.some(w => w.app === appId && focusedWindowId === w.id), 
-                            'app-indicator-inactive': windows.some(w => w.app === appId && !windows.some(w => w.app === appId && focusedWindowId === w.id) && !windows.every(w => w.app === appId && w.minimized)),
-                            'app-indicator-minimized': windows.every(w => w.app === appId && w.minimized)
+                            'app-indicator-inactive': windows.some(w => w.app === appId && !windows.some(w => w.app === appId && focusedWindowId === w.id) && !windows.every(w => w.app === appId && w.state === 'minimized')),
+                            'app-indicator-minimized': windows.every(w => w.app === appId && w.state === 'minimized')
                          }"></div>
                 </template>
             </button>
@@ -121,7 +130,7 @@
     </div>
 
     <!-- System Tray (Right) -->
-    <div class="flex flex-row items-center space-x-1 px-2 text-black dark:text-white" 
+    <div class="os-taskbar-tray flex flex-row items-center space-x-1 px-2 text-black dark:text-white" 
          x-data="{ hiddenIconsOpen: false }"
          @contextmenu.prevent="showTaskbarContextMenu($event)">
         
@@ -215,6 +224,6 @@
         </button>
         
         <!-- Desktop Peek -->
-        <div x-show="isDesktop" class="w-[2px] hover:bg-white/20 h-8 ml-1 cursor-pointer transition-colors" @click="windows.forEach(w => w.minimized = true)"></div>
+        <div x-show="isDesktop" class="w-[2px] hover:bg-white/20 h-8 ml-1 cursor-pointer transition-colors" @click="$store.os.minimizeAll()"></div>
     </div>
 </div>

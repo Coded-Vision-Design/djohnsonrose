@@ -2,7 +2,7 @@
 <html lang="en" class="h-full">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content">
     <title>DeVanté Johnson-Rose | Full Stack Developer & Systems Engineer · Portfolio OS</title>
     <meta name="description" content="DeVanté Johnson-Rose is a Senior Full Stack Developer and Systems Engineer in the UK building scalable web platforms, enterprise infrastructure, and developer tooling. Explore the interactive Windows-style portfolio.">
     <meta name="author" content="DeVanté Johnson-Rose">
@@ -65,6 +65,11 @@
     </script>
     <!-- HTMX -->
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <!-- Window manager core, shared with v2. Runs before Alpine, as both are deferred. -->
+    <script type="module">
+        import * as windowing from '<?php echo BASE_PATH; ?>assets/js/windowing/windowing.js?v=<?php echo @filemtime(__DIR__ . '/../assets/js/windowing/windowing.js') ?: time(); ?>';
+        window.OsWindowing = windowing;
+    </script>
     <!-- Alpine.js -->
     <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
     
@@ -129,7 +134,8 @@
       x-data="os" 
       :class="{ 'dark': settings.theme === 'dark' }"
       :style="`--wallpaper: url(${Alpine.store('os').previewWallpaper || settings.wallpaper}); filter: brightness(${settings.brightness}%) ${settings.nightLight ? 'sepia(40%) saturate(120%)' : ''} ${settings.accessibility ? 'contrast(120%) brightness(110%)' : ''};`"
-      @keydown.window="handleGlobalKeys($event)">
+      @keydown.window="handleGlobalKeys($event)"
+      @keyup.window="handleGlobalKeyUp($event)">
 
     <div id="os-root" class="h-full w-full relative overflow-hidden flex flex-col wallpaper-bg">
         <!-- Boot Screen -->
@@ -252,15 +258,6 @@
             </template>
         </div>
 
-        <!-- Snap Preview Overlay -->
-        <div x-show="snapPreview.show" 
-             x-cloak
-             class="fixed z-10000 bg-win-blue/20 border-2 border-win-blue/50 backdrop-blur-xs pointer-events-none transition-all duration-200"
-             :style="`left: ${snapPreview.x}px; top: ${snapPreview.y}px; width: ${snapPreview.w}px; height: ${snapPreview.h}px; opacity: ${snapPreview.opacity};`"
-             x-transition:enter="ease-out duration-200"
-             x-transition:enter-start="opacity-0 scale-95"
-             x-transition:enter-end="opacity-100 scale-100">
-        </div>
 
         <!-- Main Content Area -->
         <main id="main-content" class="grow relative h-full w-full" @contextmenu.prevent="showDesktopContextMenu($event)">

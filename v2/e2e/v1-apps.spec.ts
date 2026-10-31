@@ -52,7 +52,8 @@ test.describe('v1 window content', () => {
     await page.keyboard.type(' plus edits')
     await open(page, 'calculator')
     await page.waitForTimeout(600)
-    await expect(page.locator('[x-data="notepadApp()"] textarea').first()).toHaveValue('original plus edits')
+    // The new window takes focus, so Notepad is back to showing its preview.
+    await expect(page.locator('[x-data="notepadApp()"]').first()).toContainText('original plus edits')
   })
 
   test('opening a second file replaces the first in Notepad', async ({ page }) => {

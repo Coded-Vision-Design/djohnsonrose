@@ -150,7 +150,7 @@ export default function TaskManager() {
                   </button>
                 </div>
                 <div className="col-span-2 text-right opacity-60">
-                  {w.minimized ? 'Suspended' : 'Running'}
+                  {w.state === 'minimized' ? 'Suspended' : 'Running'}
                 </div>
                 <div className="col-span-1 text-right opacity-80">{cpuFor(focused)}%</div>
                 <div className="col-span-2 text-right opacity-80">{ramFor(w)} MB</div>

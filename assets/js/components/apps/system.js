@@ -50,7 +50,7 @@ document.addEventListener('alpine:init', () => {
                     cpu: Math.floor(Math.random() * 5) + (win.id === osStore.focusedWindowId ? 2 : 0),
                     ram: Math.floor(Math.random() * 100) + 150,
                     network: Math.random() > 0.7 ? (Math.random() * 2).toFixed(1) : 0,
-                    status: win.minimized ? 'Suspended' : 'Running'
+                    status: win.state === 'minimized' ? 'Suspended' : 'Running'
                 };
             });
             

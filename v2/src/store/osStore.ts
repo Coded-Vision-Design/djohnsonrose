@@ -2,6 +2,30 @@ import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
 import { track } from '../lib/telemetry'
 import { getManifestEntry, pinnedApps } from '../apps/manifest'
+import {
+  TASKBAR_HEIGHT,
+  detachPatch,
+  detectMode,
+  keyboardPlacement,
+  maximizePatch,
+  minimizePatch,
+  nextFocusedWindow,
+  placeNewWindow,
+  planAssist,
+  reflowPatch,
+  restorePatch,
+  snapPatch,
+  unminimizePatch,
+  type AssistPlan,
+  type Desktop,
+  type ManagedWindow,
+  type Rect,
+  type Shortcut,
+  type SnapBar,
+  type SnapTarget,
+  type WindowMode,
+  type WindowPatch,
+} from '../../../assets/js/windowing/windowing.js'
 
 // Static C:\Recycle Bin seeds — when restored, we re-materialise them at
 // their originalPath. Keep this list aligned with data/filesystem.ts.
@@ -23,17 +47,9 @@ function lookupRecycleBinSeed(
   return null
 }
 
-export interface WinWindow {
-  id: number
+export interface WinWindow extends ManagedWindow {
   app: string
   title: string
-  x: number
-  y: number
-  width: number
-  height: number
-  z: number
-  minimized: boolean
-  maximized: boolean
   loading: boolean
   // Per-app extras (photos image, pdf url, etc.) — typed as unknown for now.
   extra?: Record<string, unknown>
@@ -53,12 +69,19 @@ export interface Settings {
   accessibility: boolean
 }
 
+/** What a drag in progress is offering. Held apart from the windows so that it
+ *  never rerenders them. */
 export interface SnapPreview {
-  show: boolean
-  x: number
-  y: number
-  w: number
-  h: number
+  rect: Rect | null
+  bar: SnapBar | null
+  target: SnapTarget | null
+}
+
+export interface SnapFlyoutState {
+  windowId: number
+  anchor: { left: number; top: number; width: number; height: number }
+  /** Opened from the keyboard, so focus moves into the flyout. */
+  fromKeyboard: boolean
 }
 
 export interface EventLog {
@@ -124,9 +147,16 @@ export interface ContextMenuState {
   variant: 'modern' | 'classic'
 }
 
-const TASKBAR_H = 48
-const MIN_W = 300
-const MIN_H = 200
+const EMPTY_PREVIEW: SnapPreview = { rect: null, bar: null, target: null }
+
+function initialDesktop(): Desktop {
+  return { left: 0, top: 0, width: window.innerWidth, height: window.innerHeight - TASKBAR_HEIGHT }
+}
+
+function initialMode(): WindowMode {
+  const coarse = window.matchMedia?.('(pointer: coarse)').matches ?? false
+  return detectMode({ width: window.innerWidth, height: window.innerHeight, coarse })
+}
 const DEFAULT_WALLPAPER =
   'https://images.unsplash.com/photo-1620641788421-7a1c342ea42e?q=80&w=1974&auto=format&fit=crop'
 
@@ -144,6 +174,12 @@ interface OsState {
   focusedWindowId: number | null
   nextWindowZ: number
   snapPreview: SnapPreview
+  snapFlyout: SnapFlyoutState | null
+  snapAssist: AssistPlan | null
+  taskSwitcherOpen: boolean
+  /** The usable desktop: the windows layer, excluding the taskbar. */
+  desktop: Desktop
+  windowMode: WindowMode
 
   // Settings (persisted)
   settings: Settings
@@ -176,7 +212,7 @@ interface OsState {
   // Viewport flags — kept in-memory only, updated by a global listener.
   isMobile: boolean
   isTablet: boolean
-  isWideDesktop: boolean
+  isDesktop: boolean
 
   // Right-click context menu — single instance, mounted at root.
   contextMenu: ContextMenuState
@@ -196,9 +232,20 @@ interface OsState {
   toggleMinimize: (id: number) => void
   toggleMaximize: (id: number) => void
   moveWindow: (id: number, x: number, y: number) => void
-  resizeWindow: (id: number, x: number, y: number, w: number, h: number) => void
-  setMaximized: (id: number, maximized: boolean) => void
+  /** A snapped or maximised window pulled away by its title bar. */
+  detachWindow: (id: number, rect: Rect) => void
+  /** Commits a resize. Snapped windows can move several at once. */
+  applyWindowPatches: (patches: Record<number, WindowPatch>) => void
+  snapWindow: (id: number, layout: string, zone: string) => void
+  fillSnapAssist: (id: number) => void
+  dismissSnapAssist: () => void
+  openSnapFlyout: (flyout: SnapFlyoutState) => void
+  closeSnapFlyout: () => void
   setSnapPreview: (preview: SnapPreview) => void
+  toggleTaskSwitcher: () => void
+  setDesktop: (desktop: Desktop, mode: WindowMode) => void
+  /** Runs a window shortcut. Returns true when it did something. */
+  runShortcut: (shortcut: Shortcut) => boolean
 
   updateSetting: <K extends keyof Settings>(key: K, value: Settings[K]) => void
 
@@ -227,7 +274,6 @@ interface OsState {
   renameFile: (path: string, originalName: string, newName: string) => void
 
   // Responsive flags + context menu
-  setBreakpoint: (width: number) => void
   openContextMenu: (
     x: number,
     y: number,
@@ -252,14 +298,25 @@ interface PersistedSlice {
 
 export const useOsStore = create<OsState>()(
   persist(
-    (set, get) => ({
+    (set, get) => {
+      const patchWindows = (patches: Record<number, WindowPatch>) => {
+        if (Object.keys(patches).length === 0) return
+        set({ windows: get().windows.map((w) => (patches[w.id] ? { ...w, ...patches[w.id] } : w)) })
+      }
+
+      return {
       isBooting: true,
       loggedIn: false,
 
       windows: [],
       focusedWindowId: null,
       nextWindowZ: 100,
-      snapPreview: { show: false, x: 0, y: 0, w: 0, h: 0 },
+      snapPreview: EMPTY_PREVIEW,
+      snapFlyout: null,
+      snapAssist: null,
+      taskSwitcherOpen: false,
+      desktop: initialDesktop(),
+      windowMode: initialMode(),
 
       settings: {
         theme: 'light',
@@ -293,12 +350,10 @@ export const useOsStore = create<OsState>()(
       renames: {},
       iconPositions: {},
 
-      // Initialised from window.innerWidth — useBreakpoint() keeps these
-      // updated. SSR-safe via the typeof check.
-      isMobile: typeof window !== 'undefined' ? window.innerWidth < 640 : false,
-      isTablet:
-        typeof window !== 'undefined' ? window.innerWidth >= 640 && window.innerWidth < 1024 : false,
-      isWideDesktop: typeof window !== 'undefined' ? window.innerWidth >= 1024 : true,
+      // Kept up to date by setDesktop.
+      isMobile: initialMode() === 'phone',
+      isTablet: initialMode() === 'tablet',
+      isDesktop: initialMode() === 'desktop',
 
       contextMenu: { open: false, x: 0, y: 0, items: [], variant: 'modern' },
 
@@ -325,13 +380,23 @@ export const useOsStore = create<OsState>()(
       openApp: (app, title, options) => {
         const state = get()
         // Launching an app always closes start/quick-settings/widgets popups.
-        if (state.startMenuOpen || state.quickSettingsOpen || state.widgetsOpen) {
-          set({ startMenuOpen: false, quickSettingsOpen: false, widgetsOpen: false })
+        if (
+          state.startMenuOpen ||
+          state.quickSettingsOpen ||
+          state.widgetsOpen ||
+          state.taskSwitcherOpen
+        ) {
+          set({
+            startMenuOpen: false,
+            quickSettingsOpen: false,
+            widgetsOpen: false,
+            taskSwitcherOpen: false,
+          })
         }
         // If already open, focus + restore.
         const existing = state.windows.find((w) => w.app === app)
         if (existing) {
-          if (existing.minimized) {
+          if (existing.state === 'minimized') {
             get().toggleMinimize(existing.id)
           } else {
             get().focusWindow(existing.id)
@@ -340,29 +405,16 @@ export const useOsStore = create<OsState>()(
         }
 
         const id = nextWindowId()
-        const isSmallScreen = window.innerWidth < 1024
         const manifest = getManifestEntry(app)
-        const requested = options?.size ?? manifest?.size
-        let width = isSmallScreen ? window.innerWidth : (requested?.w ?? 800)
-        let height = isSmallScreen ? window.innerHeight - TASKBAR_H : (requested?.h ?? 600)
-        width = Math.min(width, window.innerWidth)
-        height = Math.min(height, window.innerHeight - TASKBAR_H)
-
-        const offset = state.windows.length * 30
-        const x = isSmallScreen ? 0 : (window.innerWidth - width) / 2 + offset
-        const y = isSmallScreen ? 0 : (window.innerHeight - TASKBAR_H - height) / 2 + offset
+        const size = options?.size ?? manifest?.size ?? { w: 800, h: 600 }
 
         const w: WinWindow = {
           id,
           app,
           title: title ?? manifest?.title ?? app.charAt(0).toUpperCase() + app.slice(1),
-          x,
-          y,
-          width,
-          height,
+          ...placeNewWindow(size, state.desktop, state.windows.length),
           z: state.nextWindowZ,
-          minimized: false,
-          maximized: isSmallScreen,
+          state: 'floating',
           loading: false,
           extra: options?.extra,
         }
@@ -385,18 +437,23 @@ export const useOsStore = create<OsState>()(
           state.logEvent('System', 'Information', `Closing application: ${win.title}`)
         }
         const remaining = state.windows.filter((w) => w.id !== id)
-        let focus = state.focusedWindowId
-        if (focus === id) {
-          const visible = remaining.filter((w) => !w.minimized)
-          focus = visible.length ? visible[visible.length - 1].id : null
-        }
-        set({ windows: remaining, focusedWindowId: focus })
+        set({
+          windows: remaining,
+          focusedWindowId:
+            state.focusedWindowId === id
+              ? (nextFocusedWindow(remaining)?.id ?? null)
+              : state.focusedWindowId,
+          snapAssist: null,
+          snapFlyout: state.snapFlyout?.windowId === id ? null : state.snapFlyout,
+        })
       },
 
       focusWindow: (id) => {
         const state = get()
         const win = state.windows.find((w) => w.id === id)
         if (!win) return
+        // Already on top: nothing to change, so nothing needs to rerender.
+        if (state.focusedWindowId === id && win.z === state.nextWindowZ - 1) return
         set({
           windows: state.windows.map((w) =>
             w.id === id ? { ...w, z: state.nextWindowZ } : w,
@@ -410,47 +467,102 @@ export const useOsStore = create<OsState>()(
         const state = get()
         const win = state.windows.find((w) => w.id === id)
         if (!win) return
-        const nextMin = !win.minimized
-        set({
-          windows: state.windows.map((w) =>
-            w.id === id ? { ...w, minimized: nextMin } : w,
-          ),
-        })
-        if (!nextMin) get().focusWindow(id)
+        if (win.state === 'minimized') {
+          patchWindows({ [id]: unminimizePatch(win, state.desktop) })
+          get().focusWindow(id)
+          return
+        }
+        patchWindows({ [id]: minimizePatch(win) })
+        const windows = get().windows
+        if (state.focusedWindowId === id) {
+          set({ focusedWindowId: nextFocusedWindow(windows)?.id ?? null })
+        }
       },
 
       toggleMaximize: (id) => {
         const state = get()
+        const win = state.windows.find((w) => w.id === id)
+        if (!win || win.state === 'minimized') return
+        patchWindows({
+          [id]: win.state === 'maximized' ? restorePatch(win, state.desktop) : maximizePatch(win, state.desktop),
+        })
+        set({ snapFlyout: null, snapAssist: null })
+      },
+
+      moveWindow: (id, x, y) => patchWindows({ [id]: { x, y } }),
+
+      detachWindow: (id, rect) => patchWindows({ [id]: detachPatch(rect) }),
+
+      applyWindowPatches: (patches) => patchWindows(patches),
+
+      snapWindow: (id, layout, zone) => {
+        const state = get()
+        const win = state.windows.find((w) => w.id === id)
+        if (!win) return
+        patchWindows({ [id]: snapPatch(win, layout, zone, state.desktop) })
+        get().focusWindow(id)
         set({
-          windows: state.windows.map((w) =>
-            w.id === id ? { ...w, maximized: !w.maximized } : w,
-          ),
+          snapFlyout: null,
+          snapAssist: planAssist(get().windows, layout, state.desktop),
         })
       },
 
-      moveWindow: (id, x, y) => {
-        set({
-          windows: get().windows.map((w) => (w.id === id ? { ...w, x, y } : w)),
-        })
+      fillSnapAssist: (id) => {
+        const { snapAssist, desktop, windows } = get()
+        const win = windows.find((w) => w.id === id)
+        if (!snapAssist || !win) return
+        patchWindows({ [id]: snapPatch(win, snapAssist.layout, snapAssist.zone, desktop) })
+        get().focusWindow(id)
+        set({ snapAssist: planAssist(get().windows, snapAssist.layout, desktop) })
       },
 
-      resizeWindow: (id, x, y, w, h) => {
-        set({
-          windows: get().windows.map((win) =>
-            win.id === id ? { ...win, x, y, width: w, height: h } : win,
-          ),
-        })
-      },
+      dismissSnapAssist: () => set({ snapAssist: null }),
 
-      setMaximized: (id, maximized) => {
-        set({
-          windows: get().windows.map((w) =>
-            w.id === id ? { ...w, maximized } : w,
-          ),
-        })
-      },
+      openSnapFlyout: (snapFlyout) => set({ snapFlyout }),
+
+      closeSnapFlyout: () => set({ snapFlyout: null }),
 
       setSnapPreview: (snapPreview) => set({ snapPreview }),
+
+      toggleTaskSwitcher: () => set({ taskSwitcherOpen: !get().taskSwitcherOpen }),
+
+      setDesktop: (desktop, mode) => {
+        const state = get()
+        const changed = state.desktop.width !== desktop.width || state.desktop.height !== desktop.height
+        const patches: Record<number, WindowPatch> = {}
+        for (const win of state.windows) {
+          const patch = reflowPatch(win, desktop, mode)
+          if (patch) patches[win.id] = patch
+        }
+        set({
+          desktop,
+          windowMode: mode,
+          isMobile: mode === 'phone',
+          isTablet: mode === 'tablet',
+          isDesktop: mode === 'desktop',
+          ...(changed ? { snapPreview: EMPTY_PREVIEW, snapFlyout: null, snapAssist: null } : {}),
+        })
+        patchWindows(patches)
+      },
+
+      runShortcut: (shortcut) => {
+        const { focusedWindowId, windows, desktop, windowMode } = get()
+        const win = windows.find((w) => w.id === focusedWindowId)
+        if (!win) return false
+        if (shortcut === 'close') {
+          get().closeWindow(win.id)
+          return true
+        }
+        if (shortcut === 'layouts' || windowMode === 'phone') return false
+
+        const placement = keyboardPlacement(win, shortcut, desktop, windowMode)
+        if (!placement) return false
+        if (placement.type === 'snap') get().snapWindow(win.id, placement.layout, placement.zone)
+        else if (placement.type === 'minimize') get().toggleMinimize(win.id)
+        else if (placement.type === 'maximize') get().toggleMaximize(win.id)
+        else patchWindows({ [win.id]: restorePatch(win, desktop) })
+        return true
+      },
 
       updateSetting: (key, value) => {
         set({ settings: { ...get().settings, [key]: value } })
@@ -494,7 +606,10 @@ export const useOsStore = create<OsState>()(
 
       minimizeAll: () => {
         set({
-          windows: get().windows.map((w) => ({ ...w, minimized: true })),
+          windows: get().windows.map((w) =>
+            w.state === 'minimized' ? w : { ...w, ...minimizePatch(w) },
+          ),
+          focusedWindowId: null,
         })
       },
 
@@ -583,33 +698,12 @@ export const useOsStore = create<OsState>()(
         get().logEvent('FileSystem', 'Information', `Renamed ${originalName} → ${trimmed}`)
       },
 
-      setBreakpoint: (width) => {
-        const isMobile = width < 640
-        const isTablet = width >= 640 && width < 1024
-        const isWideDesktop = width >= 1024
-        const s = get()
-        if (
-          s.isMobile === isMobile &&
-          s.isTablet === isTablet &&
-          s.isWideDesktop === isWideDesktop
-        ) {
-          return
-        }
-        set({ isMobile, isTablet, isWideDesktop })
-        // On mobile, force every window into the maximised state so it always
-        // takes the full available area (matches v1's resize handler).
-        if (!isWideDesktop) {
-          set({
-            windows: s.windows.map((w) => ({ ...w, maximized: true })),
-          })
-        }
-      },
-
       openContextMenu: (x, y, items, variant = 'modern') =>
         set({ contextMenu: { open: true, x, y, items, variant } }),
       closeContextMenu: () =>
         set({ contextMenu: { open: false, x: 0, y: 0, items: [], variant: 'modern' } }),
-    }),
+      }
+    },
     {
       name: 'react.os',
       storage: createJSONStorage(() => localStorage),
@@ -627,6 +721,9 @@ export const useOsStore = create<OsState>()(
   ),
 )
 
-export const TASKBAR_HEIGHT = TASKBAR_H
-export const WINDOW_MIN_WIDTH = MIN_W
-export const WINDOW_MIN_HEIGHT = MIN_H
+export { TASKBAR_HEIGHT }
+
+// Lets the browser tests read and drive the store. Stripped from production.
+if (import.meta.env.DEV) {
+  ;(window as unknown as { __osStore: typeof useOsStore }).__osStore = useOsStore
+}

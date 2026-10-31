@@ -191,6 +191,24 @@ RewriteRule ^v2/(.+)$ v2/dist/$1 [L]
 RewriteRule ^v2(/.*)?$ v2/dist/index.html [L]
 ```
 
+### 6. One window manager, two stacks
+
+Both builds share a single framework-neutral core, [assets/js/windowing/windowing.js](assets/js/windowing/windowing.js), for geometry, snapping, state transitions, pointer handling and keyboard shortcuts. v1 renders windows with Alpine and v2 with React, and neither holds any window logic of its own, so they behave identically by construction. Styles are shared the same way through [assets/css/windowing.css](assets/css/windowing.css).
+
+A window is always in one explicit state: `floating`, `snapped`, `maximized` or `minimized`. Its last floating rectangle is stored separately, and a snap is stored as fractions of the desktop, so every layout can be recalculated when the browser resizes or a device rotates. Layouts are measured from the windows layer rather than `window.innerWidth`, so the taskbar and safe areas are always respected.
+
+During a drag the engine writes a transform straight to the DOM, once per frame, and the store only changes on release. Moving a window never rerenders an app.
+
+The experience adapts to three device classes, chosen from the viewport and the primary pointer:
+
+| Class | Behaviour |
+|---|---|
+| **Desktop** | Floating windows, edge and corner snapping, Snap Layouts, Snap Assist and shared-boundary resizing |
+| **Tablet** | Touch dragging, larger handles and targets, and a reduced set of layouts that fit the screen |
+| **Phone** | Full-screen apps with a task switcher. Real window state is kept, so rotating to a wider layout restores it |
+
+Shortcuts: `Win`+arrows, `Win`+`Z` and `Alt`+`F4`. Operating systems usually keep the `Win` combinations for themselves, so `Alt`+`Shift`+arrows and `Alt`+`Shift`+`Z` do the same job.
+
 ---
 
 ## CI/CD
@@ -220,14 +238,10 @@ Secrets live in GitHub Actions Secrets only — no `.env` is ever rsync'd. A sep
 
 ## Testing
 
-- **`npm run test`** — 118 Vitest specs across 10 files cover the store, the windowing hooks (drag/resize), the calculator engine, the paint flood‑fill, the terminal commands, the filesystem model, the clock hook, and the app registry contract.
-- **`npm run e2e`** — Playwright drives the shell end‑to‑end (boot → login → open apps → minimise/restore).
+- **`npm run test`** - Vitest specs cover the window manager core, the store, the calculator engine, the paint flood‑fill, the terminal commands, the filesystem model, the clock hook, and the app registry and shared app list.
+- **`npm run e2e`** - Playwright drives real browser interactions. [e2e/windowing.spec.ts](v2/e2e/windowing.spec.ts) runs every window behaviour against both builds, at desktop, tablet and phone sizes, including real touch input. It needs the PHP server on :8765 and Vite on :5173.
+- **`npm run test:php`** (repo root) - unit tests for the contact form library.
 - **`actionlint`** — every CI workflow is linted on push.
-
-```
- Test Files  10 passed (10)
-      Tests  118 passed (118)
-```
 
 ---
 

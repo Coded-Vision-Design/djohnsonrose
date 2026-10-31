@@ -11,7 +11,12 @@ const reset = () => {
     windows: [],
     focusedWindowId: null,
     nextWindowZ: 100,
-    snapPreview: { show: false, x: 0, y: 0, w: 0, h: 0 },
+    snapPreview: { rect: null, bar: null, target: null },
+    snapAssist: null,
+    snapFlyout: null,
+    taskSwitcherOpen: false,
+    desktop: { left: 0, top: 0, width: 1920, height: 1032 },
+    windowMode: 'desktop',
     eventLogs: [],
     startMenuOpen: false,
     quickSettingsOpen: false,
@@ -82,9 +87,9 @@ describe('osStore', () => {
       openApp('paint')
       const id = useOsStore.getState().windows[0].id
       toggleMinimize(id)
-      expect(useOsStore.getState().windows[0].minimized).toBe(true)
+      expect(useOsStore.getState().windows[0].state).toBe('minimized')
       openApp('paint')
-      expect(useOsStore.getState().windows[0].minimized).toBe(false)
+      expect(useOsStore.getState().windows[0].state).toBe('floating')
     })
 
     it('assigns increasing z-index to each new window', () => {
@@ -112,14 +117,14 @@ describe('osStore', () => {
   })
 
   describe('toggleMinimize', () => {
-    it('flips minimized flag', () => {
+    it('moves between minimised and the previous state', () => {
       const { openApp, toggleMinimize } = useOsStore.getState()
       openApp('paint')
       const id = useOsStore.getState().windows[0].id
       toggleMinimize(id)
-      expect(useOsStore.getState().windows[0].minimized).toBe(true)
+      expect(useOsStore.getState().windows[0].state).toBe('minimized')
       toggleMinimize(id)
-      expect(useOsStore.getState().windows[0].minimized).toBe(false)
+      expect(useOsStore.getState().windows[0].state).toBe('floating')
     })
 
     it('focuses the window when un-minimizing', () => {
@@ -135,13 +140,26 @@ describe('osStore', () => {
   })
 
   describe('toggleMaximize', () => {
-    it('flips maximized flag', () => {
+    it('fills the usable desktop and restores the floating rectangle', () => {
       const { openApp, toggleMaximize } = useOsStore.getState()
       openApp('paint')
-      const id = useOsStore.getState().windows[0].id
-      const wasMax = useOsStore.getState().windows[0].maximized
-      toggleMaximize(id)
-      expect(useOsStore.getState().windows[0].maximized).toBe(!wasMax)
+      const before = useOsStore.getState().windows[0]
+      toggleMaximize(before.id)
+      expect(useOsStore.getState().windows[0]).toMatchObject({
+        state: 'maximized',
+        x: 0,
+        y: 0,
+        width: 1920,
+        height: 1032,
+      })
+      toggleMaximize(before.id)
+      expect(useOsStore.getState().windows[0]).toMatchObject({
+        state: 'floating',
+        x: before.x,
+        y: before.y,
+        width: before.width,
+        height: before.height,
+      })
     })
   })
 
@@ -176,7 +194,7 @@ describe('osStore', () => {
     })
   })
 
-  describe('moveWindow + resizeWindow', () => {
+  describe('moveWindow + applyWindowPatches', () => {
     it('moveWindow updates x/y only', () => {
       const { openApp, moveWindow } = useOsStore.getState()
       openApp('paint')
@@ -189,11 +207,11 @@ describe('osStore', () => {
       expect(updated.height).toBe(w.height)
     })
 
-    it('resizeWindow updates all four dimensions', () => {
-      const { openApp, resizeWindow } = useOsStore.getState()
+    it('applyWindowPatches updates all four dimensions', () => {
+      const { openApp, applyWindowPatches } = useOsStore.getState()
       openApp('paint')
       const id = useOsStore.getState().windows[0].id
-      resizeWindow(id, 10, 20, 500, 400)
+      applyWindowPatches({ [id]: { x: 10, y: 20, width: 500, height: 400 } })
       const w = useOsStore.getState().windows[0]
       expect(w).toMatchObject({ x: 10, y: 20, width: 500, height: 400 })
     })
@@ -222,9 +240,13 @@ describe('osStore', () => {
   })
 
   describe('snap preview', () => {
-    it('setSnapPreview swaps state shape wholesale', () => {
-      useOsStore.getState().setSnapPreview({ show: true, x: 1, y: 2, w: 3, h: 4 })
-      expect(useOsStore.getState().snapPreview).toEqual({ show: true, x: 1, y: 2, w: 3, h: 4 })
+    it('holds the preview apart from the windows', () => {
+      useOsStore.getState().openApp('paint')
+      const windows = useOsStore.getState().windows
+      const rect = { x: 1, y: 2, width: 3, height: 4 }
+      useOsStore.getState().setSnapPreview({ rect, bar: null, target: null })
+      expect(useOsStore.getState().snapPreview.rect).toEqual(rect)
+      expect(useOsStore.getState().windows).toBe(windows)
     })
   })
 
@@ -306,8 +328,118 @@ describe('osStore', () => {
       openApp('calculator')
       openApp('notepad')
       minimizeAll()
-      const allMin = useOsStore.getState().windows.every((w) => w.minimized)
+      const allMin = useOsStore.getState().windows.every((w) => w.state === 'minimized')
       expect(allMin).toBe(true)
+      expect(useOsStore.getState().focusedWindowId).toBeNull()
+    })
+  })
+
+  describe('focus', () => {
+    it('hands focus to the highest window when one is closed', () => {
+      const { openApp, focusWindow, closeWindow } = useOsStore.getState()
+      openApp('paint')
+      openApp('calculator')
+      openApp('notepad')
+      const [paint, , notepad] = useOsStore.getState().windows
+      focusWindow(paint.id)
+      focusWindow(notepad.id)
+      closeWindow(notepad.id)
+      expect(useOsStore.getState().focusedWindowId).toBe(paint.id)
+    })
+
+    it('hands focus on when a window is minimised', () => {
+      const { openApp, toggleMinimize } = useOsStore.getState()
+      openApp('paint')
+      openApp('calculator')
+      const [paint, calculator] = useOsStore.getState().windows
+      toggleMinimize(calculator.id)
+      expect(useOsStore.getState().focusedWindowId).toBe(paint.id)
+    })
+
+    it('does not replace the window when it is already on top', () => {
+      const { openApp, focusWindow } = useOsStore.getState()
+      openApp('paint')
+      const before = useOsStore.getState().windows[0]
+      focusWindow(before.id)
+      expect(useOsStore.getState().windows[0]).toBe(before)
+    })
+  })
+
+  describe('snapping', () => {
+    const open = (...apps: string[]) => {
+      for (const app of apps) useOsStore.getState().openApp(app)
+      return useOsStore.getState().windows
+    }
+
+    it('snaps, then restores the floating rectangle', () => {
+      const [w] = open('paint')
+      const { snapWindow, runShortcut } = useOsStore.getState()
+      snapWindow(w.id, 'halves', 'left')
+      expect(useOsStore.getState().windows[0]).toMatchObject({ state: 'snapped', x: 0, width: 960, height: 1032 })
+      runShortcut('left')
+      expect(useOsStore.getState().windows[0]).toMatchObject({ state: 'snapped', x: 960 })
+      runShortcut('left')
+      expect(useOsStore.getState().windows[0]).toMatchObject({ state: 'floating', x: w.x, width: w.width })
+    })
+
+    it('offers other windows for the empty side, then fills it', () => {
+      const [a, b] = open('paint', 'calculator')
+      useOsStore.getState().snapWindow(a.id, 'halves', 'left')
+      expect(useOsStore.getState().snapAssist).toMatchObject({ zone: 'right', candidates: [b.id] })
+      useOsStore.getState().fillSnapAssist(b.id)
+      expect(useOsStore.getState().windows[1]).toMatchObject({ state: 'snapped', x: 960 })
+      expect(useOsStore.getState().snapAssist).toBeNull()
+    })
+
+    it('offers nothing when no other window is open', () => {
+      const [a] = open('paint')
+      useOsStore.getState().snapWindow(a.id, 'halves', 'left')
+      expect(useOsStore.getState().snapAssist).toBeNull()
+    })
+
+    it('refits windows when the desktop changes, and clears anything mid-arrangement', () => {
+      const [a, b] = open('paint', 'calculator')
+      useOsStore.getState().snapWindow(a.id, 'halves', 'right')
+      useOsStore.getState().setDesktop({ left: 0, top: 0, width: 1280, height: 672 }, 'desktop')
+      const state = useOsStore.getState()
+      expect(state.windows[0]).toMatchObject({ x: 640, width: 640, height: 672 })
+      expect(state.snapAssist).toBeNull()
+      expect(state.windows[1].id).toBe(b.id)
+    })
+
+    it('keeps real window state through a phone layout', () => {
+      const [a] = open('paint')
+      const { snapWindow, setDesktop } = useOsStore.getState()
+      snapWindow(a.id, 'halves', 'left')
+      setDesktop({ left: 0, top: 0, width: 390, height: 796 }, 'phone')
+      expect(useOsStore.getState().isMobile).toBe(true)
+      setDesktop({ left: 0, top: 0, width: 1920, height: 1032 }, 'desktop')
+      expect(useOsStore.getState().windows[0]).toMatchObject({ state: 'snapped', width: 960 })
+    })
+  })
+
+  describe('runShortcut', () => {
+    it('closes the focused window', () => {
+      useOsStore.getState().openApp('paint')
+      expect(useOsStore.getState().runShortcut('close')).toBe(true)
+      expect(useOsStore.getState().windows).toHaveLength(0)
+    })
+
+    it('does nothing without a focused window', () => {
+      expect(useOsStore.getState().runShortcut('left')).toBe(false)
+    })
+
+    it('does not snap on a phone', () => {
+      useOsStore.setState({ windowMode: 'phone' })
+      useOsStore.getState().openApp('paint')
+      expect(useOsStore.getState().runShortcut('left')).toBe(false)
+      expect(useOsStore.getState().windows[0].state).toBe('floating')
+    })
+
+    it('minimises a floating window on the way down', () => {
+      useOsStore.getState().openApp('paint')
+      useOsStore.getState().runShortcut('down')
+      expect(useOsStore.getState().windows[0].state).toBe('minimized')
     })
   })
 

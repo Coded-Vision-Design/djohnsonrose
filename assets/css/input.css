@@ -1,4 +1,5 @@
 @import 'tailwindcss';
+@import './windowing.css';
 
 @import url('https://fonts.googleapis.com/css2?family=Segoe+UI:wght@400;600;700&display=swap')
 layer(utilities);
@@ -46,8 +47,8 @@ body {
 
 .glass {
     background: rgba(255, 255, 255, 0.6);
-    backdrop-filter: blur(25px) saturate(180%);
     -webkit-backdrop-filter: blur(25px) saturate(180%);
+    backdrop-filter: blur(25px) saturate(180%);
     border: 1px solid rgba(255, 255, 255, 0.4);
     box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
 }
@@ -59,8 +60,8 @@ body {
 
 .taskbar-glass {
     background: rgba(243, 243, 243, 0.85);
-    backdrop-filter: blur(30px);
     -webkit-backdrop-filter: blur(30px);
+    backdrop-filter: blur(30px);
 }
 
 .dark .taskbar-glass {
@@ -254,7 +255,7 @@ body {
 }
 
 .animate-window-open {
-    animation: windowOpen 0.2s ease-out forwards;
+    animation: windowOpen 0.2s ease-out;
 }
 
 @keyframes startMenuOpen {
@@ -292,8 +293,8 @@ body {
 /* Tablet and Mobile Optimisations */
 @media (max-width: 1023px) {
     .glass {
-        backdrop-filter: blur(15px) saturate(160%);
         -webkit-backdrop-filter: blur(15px) saturate(160%);
+        backdrop-filter: blur(15px) saturate(160%);
     }
     #windows-layer > div { border-radius: 0 !important; }
     .start-menu-mobile {
@@ -333,8 +334,8 @@ body {
 
 @media (max-width: 640px) {
     .glass {
-        backdrop-filter: blur(10px) saturate(150%);
         -webkit-backdrop-filter: blur(10px) saturate(150%);
+        backdrop-filter: blur(10px) saturate(150%);
     }
     .desktop-icon-mobile { width: 80px !important; height: 80px !important; }
 }

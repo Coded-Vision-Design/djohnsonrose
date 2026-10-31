@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { useOsStore, TASKBAR_HEIGHT } from '../store/osStore'
+import { useOsStore } from '../store/osStore'
 import { getApp, groupAppsByLetter, searchApps } from '../apps/registry'
 
 type View = 'pinned' | 'allApps'
@@ -98,13 +98,13 @@ export function StartMenu() {
       ref={containerRef}
       className="absolute glass rounded-xl flex flex-col overflow-hidden win-shadow animate-start-menu z-10000 start-menu-mobile"
       style={{
-        bottom: TASKBAR_HEIGHT + 8,
+        bottom: 'calc(var(--os-taskbar-height) + 8px)',
         left: '50%',
         transform: 'translateX(-50%)',
         width: 540,
         maxWidth: '100vw',
         height: 600,
-        maxHeight: `calc(100dvh - ${TASKBAR_HEIGHT + 8}px)`,
+        maxHeight: 'calc(100dvh - var(--os-taskbar-height) - 8px)',
       }}
     >
       {/* Search */}

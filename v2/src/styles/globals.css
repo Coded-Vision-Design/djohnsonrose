@@ -2,6 +2,7 @@
 layer(base);
 
 @import 'tailwindcss';
+@import '../../../assets/css/windowing.css';
 
 @custom-variant dark (&:is(.dark *));
 
@@ -51,8 +52,8 @@ body {
 
 .glass {
     background: rgba(255, 255, 255, 0.78);
-    backdrop-filter: blur(25px) saturate(180%);
     -webkit-backdrop-filter: blur(25px) saturate(180%);
+    backdrop-filter: blur(25px) saturate(180%);
     border: 1px solid rgba(255, 255, 255, 0.4);
     box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
 }
@@ -72,8 +73,8 @@ body {
 
 .taskbar-glass {
     background: rgba(243, 243, 243, 0.92);
-    backdrop-filter: blur(30px);
     -webkit-backdrop-filter: blur(30px);
+    backdrop-filter: blur(30px);
 }
 
 .dark .taskbar-glass {
@@ -268,7 +269,7 @@ body {
 }
 
 .animate-window-open {
-    animation: windowOpen 0.2s ease-out forwards;
+    animation: windowOpen 0.2s ease-out;
 }
 
 @keyframes startMenuOpen {
@@ -318,8 +319,8 @@ body {
 @media (max-width: 1023px) {
     .glass {
         background: rgba(243, 243, 243, 0.94);
-        backdrop-filter: blur(15px) saturate(160%);
         -webkit-backdrop-filter: blur(15px) saturate(160%);
+        backdrop-filter: blur(15px) saturate(160%);
     }
     .dark .glass {
         background: rgba(28, 28, 28, 0.94);
@@ -382,8 +383,8 @@ body {
 @media (max-width: 640px) {
     .glass {
         background: rgba(243, 243, 243, 0.96);
-        backdrop-filter: blur(10px) saturate(150%);
         -webkit-backdrop-filter: blur(10px) saturate(150%);
+        backdrop-filter: blur(10px) saturate(150%);
     }
     .dark .glass {
         background: rgba(28, 28, 28, 0.96);

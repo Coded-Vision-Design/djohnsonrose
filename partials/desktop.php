@@ -75,50 +75,61 @@
     </div>
 
     <!-- Windows Layer -->
-    <div id="windows-layer" class="grow relative overflow-hidden pointer-events-none">
+    <div id="windows-layer" class="os-windows-layer grow relative">
         <template x-for="win in windows" :key="win.id">
             <div :id="'win-' + win.id"
-                 class="absolute flex flex-col pointer-events-auto rounded-lg win-shadow glass animate-window-open"
-                 :class="{ 
-                    'window-active': focusedWindowId === win.id,
-                    'hidden': win.minimized,
-                    'inset-0 w-full! h-full! translate-x-0! translate-y-0! rounded-none!': win.maximized,
-                    'overflow-hidden': win.maximized
-                 }"
-                 :style="win.maximized ? `z-index: ${win.z}` : `left: ${win.x}px; top: ${win.y}px; width: ${win.width}px; height: ${win.height}px; z-index: ${win.z};`"
-                 @mousedown="focusWindow(win.id)">
-                
+                 tabindex="-1"
+                 role="dialog"
+                 :aria-label="win.title"
+                 :data-state="win.state"
+                 class="os-window rounded-lg win-shadow glass animate-window-open"
+                 :class="{ 'window-active': focusedWindowId === win.id }"
+                 :style="{ left: win.x + 'px', top: win.y + 'px', width: win.width + 'px', height: win.height + 'px', zIndex: win.z }"
+                 x-init="$nextTick(() => { if (!$el.contains(document.activeElement)) $el.focus({ preventScroll: true }) })"
+                 @pointerdown.capture="focusWindow(win.id)">
+
                 <!-- Window Titlebar -->
-                <div :class="[win.app === 'edge' ? 'h-[44px] py-[6px]' : 'h-9', win.maximized ? '' : 'rounded-t-lg']"
-                     class="flex items-center justify-between px-3 select-none bg-white/10 dark:bg-black/10 cursor-default overflow-hidden"
-                     @mousedown.self="startDrag(win.id, $event)"
-                     @dblclick="toggleMaximize(win.id)">
-                    <div class="flex items-center space-x-2 pointer-events-none">
+                <div class="os-titlebar flex items-center justify-between px-3 select-none bg-white/10 dark:bg-black/10 cursor-default overflow-hidden"
+                     :class="win.app === 'edge' ? 'h-[44px] py-[6px]' : 'h-9'"
+                     @pointerdown.self="startDrag(win.id, $event)"
+                     @dblclick.self="titleBarToggle(win.id)">
+                    <button type="button" aria-label="Back" @click="toggleMinimize(win.id)"
+                            class="os-win-btn os-win-back items-center justify-center shrink-0 dark:text-white">
+                        <svg class="w-4 h-4 fill-current" viewBox="0 0 16 16" aria-hidden="true"><path d="M10.7 2.3 5 8l5.7 5.7 1-1L7 8l4.7-4.7z"/></svg>
+                    </button>
+                    <div class="flex items-center space-x-2 pointer-events-none min-w-0 grow">
                         <template x-if="win.app !== 'edge'">
-                            <span class="text-sm font-medium dark:text-white" x-text="win.title"></span>
+                            <span class="os-window-title text-sm font-medium dark:text-white truncate" x-text="win.title"></span>
                         </template>
                     </div>
-                    <div class="flex items-center h-full gap-[2px]">
-                        <button @click="toggleMinimize(win.id)" class="w-[46px] h-[32px] flex items-center justify-center transition-colors">
-                            <svg class="w-2.5 h-2.5 dark:fill-white opacity-70" viewBox="0 0 10 1"><rect width="10" height="1"/></svg>
+                    <div class="flex items-center h-full gap-[2px] shrink-0">
+                        <button type="button" aria-label="Minimise" title="Minimise" @click="toggleMinimize(win.id)"
+                                class="os-win-btn os-win-min w-[46px] h-[32px] flex items-center justify-center hover:bg-black/5 dark:hover:bg-white/10 transition-colors">
+                            <svg class="w-2.5 h-2.5 fill-black dark:fill-white opacity-70" viewBox="0 0 10 1" aria-hidden="true"><rect width="10" height="1"/></svg>
                         </button>
-                        <button @click="toggleMaximize(win.id)" class="w-[46px] h-[32px] flex items-center justify-center transition-colors">
-                            <template x-if="!win.maximized">
-                                <svg class="w-2.5 h-2.5 dark:fill-white opacity-70" viewBox="0 0 10 10"><path d="M0,0v10h10V0H0z M9,9H1V1h8V9z"/></svg>
+                        <button type="button"
+                                :aria-label="win.state === 'maximized' ? 'Restore' : 'Maximise'"
+                                :title="win.state === 'maximized' ? 'Restore' : 'Maximise'"
+                                @click="titleBarToggle(win.id)"
+                                @pointerenter="hoverMaximize(win.id, $event)"
+                                @pointerleave="leaveSnapFlyout()"
+                                class="os-win-btn os-win-max w-[46px] h-[32px] flex items-center justify-center hover:bg-black/5 dark:hover:bg-white/10 transition-colors">
+                            <template x-if="win.state !== 'maximized'">
+                                <svg class="w-2.5 h-2.5 fill-black dark:fill-white opacity-70" viewBox="0 0 10 10" aria-hidden="true"><path d="M0,0v10h10V0H0z M9,9H1V1h8V9z"/></svg>
                             </template>
-                            <template x-if="win.maximized">
-                                <img :src="window.portfolioConfig.imgPath + 'win11/minimize-max.webp'" class="w-3 h-3 dark:invert opacity-70">
+                            <template x-if="win.state === 'maximized'">
+                                <svg class="w-2.5 h-2.5 fill-black dark:fill-white opacity-70" viewBox="0 0 10 10" aria-hidden="true"><path d="M2,0v2H0v8h8V8h2V0H2z M7,9H1V3h6V9z M9,7H8V2H3V1h6V7z"/></svg>
                             </template>
                         </button>
-                        <button @click="closeWindow(win.id)" class="w-[46px] h-[32px] flex items-center justify-center hover:bg-[#c42b1c] hover:text-white transition-colors group">
-                            <svg class="w-2.5 h-2.5 opacity-70 group-hover:opacity-100" viewBox="0 0 10 10"><path d="M10,1.4L8.6,0L5,3.6L1.4,0L0,1.4L3.6,5L0,8.6L1.4,10L5,6.4l3.6,3.6l1.4-1.4L6.4,5L10,1.4z" fill="currentColor"/></svg>
+                        <button type="button" aria-label="Close" title="Close" @click="closeWindow(win.id)"
+                                class="os-win-btn w-[46px] h-[32px] flex items-center justify-center hover:bg-[#c42b1c] hover:text-white text-black dark:text-white transition-colors group">
+                            <svg class="w-2.5 h-2.5 opacity-70 group-hover:opacity-100 fill-current" viewBox="0 0 10 10" aria-hidden="true"><path d="M10,1.4L8.6,0L5,3.6L1.4,0L0,1.4L3.6,5L0,8.6L1.4,10L5,6.4l3.6,3.6l1.4-1.4L6.4,5L10,1.4z"/></svg>
                         </button>
                     </div>
                 </div>
 
                 <!-- Window Content -->
-                <div class="grow overflow-auto relative bg-white dark:bg-[#1c1c1c]"
-                     :class="win.maximized ? '' : 'rounded-b-lg'">
+                <div class="os-window-content bg-white dark:bg-[#1c1c1c]">
                     <div x-show="win.loading" class="absolute inset-0 flex items-center justify-center">
                         <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-win-blue"></div>
                     </div>
@@ -127,22 +138,13 @@
                     <div class="h-full" x-init="$watch('win.content', html => { $el.innerHTML = html })"></div>
                 </div>
 
-                <!-- Resize Handles (Invisible hit-test borders for Windows-level realism) -->
-                <div x-show="!win.maximized" class="absolute inset-[-4px] pointer-events-none z-50">
-                    <!-- Sides -->
-                    <div class="absolute top-2 bottom-2 left-0 w-2 cursor-ew-resize pointer-events-auto" @mousedown.stop="startResize(win.id, 'w', $event)"></div>
-                    <div class="absolute top-2 bottom-2 right-0 w-2 cursor-ew-resize pointer-events-auto" @mousedown.stop="startResize(win.id, 'e', $event)"></div>
-                    <div class="absolute top-0 left-2 right-2 h-2 cursor-ns-resize pointer-events-auto" @mousedown.stop="startResize(win.id, 'n', $event)"></div>
-                    <div class="absolute bottom-0 left-2 right-2 h-2 cursor-ns-resize pointer-events-auto" @mousedown.stop="startResize(win.id, 's', $event)"></div>
-                    
-                    <!-- Corners -->
-                    <div class="absolute top-0 left-0 w-3 h-3 cursor-nwse-resize pointer-events-auto" @mousedown.stop="startResize(win.id, 'nw', $event)"></div>
-                    <div class="absolute top-0 right-0 w-3 h-3 cursor-nesw-resize pointer-events-auto" @mousedown.stop="startResize(win.id, 'ne', $event)"></div>
-                    <div class="absolute bottom-0 left-0 w-3 h-3 cursor-nesw-resize pointer-events-auto" @mousedown.stop="startResize(win.id, 'sw', $event)"></div>
-                    <div class="absolute bottom-0 right-0 w-3 h-3 cursor-nwse-resize pointer-events-auto" @mousedown.stop="startResize(win.id, 'se', $event)"></div>
-                </div>
+                <template x-for="dir in resizeDirs(win)" :key="dir">
+                    <div class="os-resize" :data-dir="dir" @pointerdown.stop="startResize(win.id, dir, $event)"></div>
+                </template>
             </div>
         </template>
+
+        <?php include __DIR__ . '/snap-ui.php'; ?>
     </div>
 
     <!-- Start Menu Overlay -->

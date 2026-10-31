@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react'
-import { useOsStore, TASKBAR_HEIGHT, type Settings } from '../store/osStore'
+import { useOsStore, type Settings } from '../store/osStore'
 import { playSound } from '../lib/sounds'
 import { VolumeIcon } from './VolumeIcon'
 
@@ -64,7 +64,7 @@ export function QuickSettings() {
     <div
       ref={ref}
       className="fixed right-2 w-[360px] glass rounded-xl flex flex-col overflow-hidden shadow-2xl p-4 space-y-6 z-10000 animate-window-open"
-      style={{ bottom: TASKBAR_HEIGHT + 8 }}
+      style={{ bottom: 'calc(var(--os-taskbar-height) + 8px)' }}
     >
       {/* Quick Toggles — 3 cols, 6 cells */}
       <div className="grid grid-cols-3 gap-x-2 gap-y-4 px-1">

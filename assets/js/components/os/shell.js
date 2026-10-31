@@ -24,7 +24,7 @@ document.addEventListener('alpine:init', () => {
         startMenuView: 'pinned', // 'pinned' or 'allApps'
         quickSettingsOpen: false,
         contextMenu: { open: false, x: 0, y: 0, items: [] },
-        snapPreview: { show: false, x: 0, y: 0, w: 0, h: 0, opacity: 0 },
+        flyoutPreview: null,
         searchQuery: '',
         touchData: {
             startX: 0,
@@ -152,19 +152,20 @@ document.addEventListener('alpine:init', () => {
                 }, 3000);
             }
 
-            window.addEventListener('resize', () => {
-                Alpine.store('os').isMobile = window.innerWidth < 640;
-                Alpine.store('os').isTablet = window.innerWidth >= 640 && window.innerWidth < 1024;
-                Alpine.store('os').isDesktop = window.innerWidth >= 1024;
-                Alpine.store('os').windowWidth = window.innerWidth;
-                Alpine.store('os').windowHeight = window.innerHeight;
-
-                if (window.innerWidth < 1024) {
-                    this.windows.forEach(win => {
-                        win.maximized = true;
-                    });
-                }
+            // The usable desktop is measured from this layer, never from the viewport.
+            OsWindowing.watchDesktop(document.getElementById('windows-layer'), (desktop, mode) => {
+                Alpine.store('os').setDesktop(desktop, mode);
             });
+
+            // Dismisses Snap Assist and the flyout, as a click elsewhere does in Windows.
+            document.addEventListener('pointerdown', (e) => {
+                const store = Alpine.store('os');
+                if (store.snapAssist && !e.target.closest('[data-snap-assist]')) store.snapAssist = null;
+                if (store.snapFlyout && !e.target.closest('[data-snap-flyout]')) {
+                    store.snapFlyout = null;
+                    this.flyoutPreview = null;
+                }
+            }, true);
 
             this.$watch('settings.brightness', (val) => {
                 localStorage.setItem('settings.brightness', val);
@@ -191,6 +192,70 @@ document.addEventListener('alpine:init', () => {
         focusWindow(id) { Alpine.store('os').focusWindow(id); },
         toggleMinimize(id) { Alpine.store('os').toggleMinimize(id); },
         toggleMaximize(id) { Alpine.store('os').toggleMaximize(id); },
+
+        get snapPreviewRect() { return Alpine.store('os').snapPreview.rect ?? this.flyoutPreview; },
+        rectStyle(r) {
+            return { left: r.x + 'px', top: r.y + 'px', width: r.width + 'px', height: r.height + 'px' };
+        },
+        resizeDirs(win) { return OsWindowing.resizableEdges(win, Alpine.store('os').desktop); },
+        recentWindows() { return [...this.windows].sort((a, b) => b.z - a.z); },
+        appIcon(app) {
+            return window.portfolioConfig.imgPath + (window.portfolioConfig.apps[app]?.icon ?? 'favicon.webp');
+        },
+        assistWindows() {
+            return Alpine.store('os').snapAssist.candidates
+                .map(id => this.windows.find(w => w.id === id))
+                .filter(Boolean);
+        },
+        barZones() {
+            const { bar, target } = Alpine.store('os').snapPreview;
+            return bar.tiles.flatMap(tile => tile.zones.map(z => ({
+                key: tile.layout + ':' + z.zone,
+                active: target?.layout === tile.layout && target?.zone === z.zone,
+                x: z.x - bar.x,
+                y: z.y - bar.y,
+                width: z.width,
+                height: z.height
+            })));
+        },
+        previewZone(layoutId, zoneId) {
+            const frac = OsWindowing.getLayout(layoutId)?.zones.find(z => z.id === zoneId);
+            this.flyoutPreview = frac ? OsWindowing.fractionToRect(frac, Alpine.store('os').desktop) : null;
+        },
+        taskbarClick(appId) {
+            const store = Alpine.store('os');
+            const focused = this.windows.find(w => w.app === appId && w.id === store.focusedWindowId);
+            if (focused) store.toggleMinimize(focused.id);
+            else this.openApp(appId);
+        },
+        titleBarToggle(id) {
+            const store = Alpine.store('os');
+            this.cancelFlyoutHover();
+            if (store.windowMode === 'phone') return;
+            OsWindowing.animateGeometry(document.getElementById('win-' + id));
+            store.toggleMaximize(id);
+        },
+        hoverMaximize(id, e) {
+            clearTimeout(this.flyoutCloseTimer);
+            clearTimeout(this.flyoutOpenTimer);
+            if (e.pointerType !== 'mouse' || !OsWindowing.canHoverLayouts(Alpine.store('os').windowMode)) return;
+            this.flyoutOpenTimer = setTimeout(() => this.openSnapFlyout(id, e.target, false), 300);
+        },
+        leaveSnapFlyout() {
+            clearTimeout(this.flyoutOpenTimer);
+            clearTimeout(this.flyoutCloseTimer);
+            this.flyoutCloseTimer = setTimeout(() => {
+                Alpine.store('os').snapFlyout = null;
+                this.flyoutPreview = null;
+            }, 250);
+        },
+        holdSnapFlyout() { clearTimeout(this.flyoutCloseTimer); },
+        cancelFlyoutHover() { clearTimeout(this.flyoutOpenTimer); },
+        openSnapFlyout(id, button, fromKeyboard) {
+            const store = Alpine.store('os');
+            const model = OsWindowing.snapFlyoutModel(button.getBoundingClientRect(), store.desktop, store.windowMode);
+            store.snapFlyout = { windowId: id, model, fromKeyboard };
+        },
         playSound(s) { Alpine.store('os').playSound(s); },
         setWallpaper(url) { Alpine.store('os').setWallpaper(url); },
         showError(title, message, path = '') { Alpine.store('os').showError(title, message, path); },
@@ -243,6 +308,8 @@ document.addEventListener('alpine:init', () => {
         },
 
         handleTouchStart(e, action = null) {
+            // Long press and pinch belong to the desktop, not to an open app.
+            if (!action && e.target.closest('.os-window, .os-taskbar, .os-task-switcher')) return;
             if (e.touches.length === 1) {
                 this.touchData.startX = e.touches[0].clientX;
                 this.touchData.startY = e.touches[0].clientY;
@@ -420,7 +487,7 @@ document.addEventListener('alpine:init', () => {
                     { label: 'Taskbar settings', icon: `<img src="${imgPath}settings.webp" class="w-4 h-4">`, action: () => Alpine.store('os').openApp('settings') },
                     { label: 'Task Manager', icon: `<img src="${imgPath}taskmgr.webp" class="w-4 h-4">`, shortcut: 'Ctrl+Shift+Esc', action: () => Alpine.store('os').openApp('taskmanager') },
                     { separator: true },
-                    { label: 'Desktop', icon: `<img src="${imgPath}display.webp" class="w-4 h-4">`, action: () => { Alpine.store('os').windows.forEach(w => w.minimized = true); } }
+                    { label: 'Desktop', icon: `<img src="${imgPath}display.webp" class="w-4 h-4">`, action: () => { Alpine.store('os').Alpine.store('os').minimizeAll(); } }
                 ]
             };
         },
@@ -807,16 +874,12 @@ document.addEventListener('alpine:init', () => {
         },
 
         handleGlobalKeys(e) {
-            // Start Menu (Win key)
-            if (e.key === 'Meta' || e.key === 'Super') {
-                e.preventDefault();
-                this.startMenuOpen = !this.startMenuOpen;
-                if (!this.startMenuOpen) {
-                    this.startMenuView = 'pinned';
-                }
-                if (this.startMenuOpen) {
-                    Alpine.store('os').logEvent('Explorer', 'Information', 'Start Menu opened');
-                }
+            this.metaAlone = e.key === 'Meta' || e.key === 'Super';
+
+            if (e.key === 'Escape') {
+                Alpine.store('os').snapFlyout = null;
+                Alpine.store('os').snapAssist = null;
+                this.flyoutPreview = null;
             }
 
             // Search (Win + S)
@@ -835,198 +898,66 @@ document.addEventListener('alpine:init', () => {
                 this.openApp('taskmanager');
             }
 
-            // Snap Left (Win + Left)
-            if (e.metaKey && e.key === 'ArrowLeft') {
-                e.preventDefault();
-                const win = this.windows.find(w => w.id === this.focusedWindowId);
-                if (win) {
-                    win.maximized = false;
-                    win.x = 0;
-                    win.y = 0;
-                    win.width = window.innerWidth / 2;
-                    win.height = window.innerHeight - 48;
-                }
-            }
+            const shortcut = OsWindowing.shortcutFromEvent(e);
+            if (!shortcut) return;
 
-            // Snap Right (Win + Right)
-            if (e.metaKey && e.key === 'ArrowRight') {
+            const store = Alpine.store('os');
+            if (shortcut === 'layouts') {
+                const button = document.querySelector(`#win-${store.focusedWindowId} .os-win-max`);
+                if (!button || store.windowMode === 'phone') return;
                 e.preventDefault();
-                const win = this.windows.find(w => w.id === this.focusedWindowId);
-                if (win) {
-                    win.maximized = false;
-                    win.x = window.innerWidth / 2;
-                    win.y = 0;
-                    win.width = window.innerWidth / 2;
-                    win.height = window.innerHeight - 48;
-                }
+                this.openSnapFlyout(store.focusedWindowId, button, true);
+                return;
             }
+            if (store.runShortcut(shortcut)) e.preventDefault();
+        },
 
-            // Maximize (Win + Up)
-            if (e.metaKey && e.key === 'ArrowUp') {
-                e.preventDefault();
-                const win = this.windows.find(w => w.id === this.focusedWindowId);
-                if (win && !win.maximized) {
-                    this.toggleMaximize(win.id);
+        // Start menu (Win key alone). Waiting for keyup leaves Win+Left and the
+        // other combinations free, and is what Windows does.
+        handleGlobalKeyUp(e) {
+            if ((e.key === 'Meta' || e.key === 'Super') && this.metaAlone) {
+                this.startMenuOpen = !this.startMenuOpen;
+                if (!this.startMenuOpen) {
+                    this.startMenuView = 'pinned';
+                }
+                if (this.startMenuOpen) {
+                    Alpine.store('os').logEvent('Explorer', 'Information', 'Start Menu opened');
                 }
             }
         },
 
-        dragData: { id: null, startX: 0, startY: 0, initialX: 0, initialY: 0 },
+        windowGesture(id) {
+            const store = Alpine.store('os');
+            return {
+                element: document.getElementById('win-' + id),
+                getWindow: () => store.windows.find(w => w.id === id),
+                getDesktop: () => store.desktop,
+                getMode: () => store.windowMode
+            };
+        },
         startDrag(id, e) {
-            // Failsafe: Clear any existing window drag listeners
-            if (this._windowMoveHandler) {
-                window.removeEventListener('mousemove', this._windowMoveHandler);
-                window.removeEventListener('mouseup', this._windowUpHandler);
-            }
-
-            const win = this.windows.find(w => w.id === id);
-            if (!win) return;
-            
-            if (win.maximized) {
-                const ratio = e.clientX / window.innerWidth;
-                win.maximized = false;
-                win.width = 800;
-                win.height = 600;
-                win.x = e.clientX - (win.width * ratio);
-                win.y = 0;
-            }
-
-            this.focusWindow(id);
-            this.dragData = {
-                id,
-                startX: e.clientX,
-                startY: e.clientY,
-                initialX: win.x,
-                initialY: win.y
-            };
-
-            this._windowMoveHandler = (moveEvt) => this.doDrag(moveEvt);
-            this._windowUpHandler = () => {
-                this.endDrag();
-                window.removeEventListener('mousemove', this._windowMoveHandler);
-                window.removeEventListener('mouseup', this._windowUpHandler);
-                this._windowMoveHandler = null;
-                this._windowUpHandler = null;
-            };
-
-            window.addEventListener('mousemove', this._windowMoveHandler);
-            window.addEventListener('mouseup', this._windowUpHandler);
+            const store = Alpine.store('os');
+            OsWindowing.beginWindowDrag(e, {
+                ...this.windowGesture(id),
+                handle: e.currentTarget,
+                onDetach: (rect) => store.detachWindow(id, rect),
+                onPreview: (rect, bar, target) => { store.snapPreview = { rect, bar, target }; },
+                onMove: (x, y) => store.moveWindow(id, x, y),
+                onMaximize: () => store.toggleMaximize(id),
+                onSnap: (layout, zone) => store.snapWindow(id, layout, zone)
+            });
         },
-        doDrag(e) {
-            const win = this.windows.find(w => w.id === this.dragData.id);
-            if (win) {
-                win.x = this.dragData.initialX + (e.clientX - this.dragData.startX);
-                win.y = this.dragData.initialY + (e.clientY - this.dragData.startY);
-
-                // Snapping Logic
-                if (e.clientY < 10) {
-                    this.snapPreview = { show: true, x: 0, y: 0, w: window.innerWidth, h: window.innerHeight - 48, opacity: 0.5 };
-                } else if (e.clientX < 10) {
-                    this.snapPreview = { show: true, x: 0, y: 0, w: window.innerWidth / 2, h: window.innerHeight - 48, opacity: 0.5 };
-                } else if (e.clientX > window.innerWidth - 10) {
-                    this.snapPreview = { show: true, x: window.innerWidth / 2, y: 0, w: window.innerWidth / 2, h: window.innerHeight - 48, opacity: 0.5 };
-                } else {
-                    this.snapPreview.show = false;
-                }
-            }
-        },
-        endDrag() {
-            const win = this.windows.find(w => w.id === this.dragData.id);
-            if (win && this.snapPreview.show) {
-                win.x = this.snapPreview.x;
-                win.y = this.snapPreview.y;
-                win.width = this.snapPreview.w;
-                win.height = this.snapPreview.h;
-                if (win.width === window.innerWidth) {
-                    win.maximized = true;
-                }
-            }
-            this.snapPreview.show = false;
-        },
-
-        /* 
-           Window Chrome Resizing (Windows-style)
-           - Implementation: Window border hit-testing with drag-based resizing.
-           - Professional: Manual window resizing via resize handles.
-           - Realism: Uses ~6-8px resize hit-areas, cursor capture, and directional cursors (ew/ns/nwse).
-           - UX: Snap-aware resizing that integrates with Windows 11 snapping logic.
-        */
-        resizeData: { id: null, startX: 0, startY: 0, initialX: 0, initialY: 0, initialW: 0, initialH: 0, dir: '' },
         startResize(id, dir, e) {
-            const win = this.windows.find(w => w.id === id);
-            if (!win || win.maximized) return;
-            
-            this.resizeData = {
-                id,
-                startX: e.clientX,
-                startY: e.clientY,
-                initialX: win.x,
-                initialY: win.y,
-                initialW: win.width,
-                initialH: win.height,
-                dir: dir
-            };
-
-            // Cursor Capture: Force cursor on body to prevent flickering during fast movements
-            const originalCursor = document.body.style.cursor;
-            document.body.style.cursor = window.getComputedStyle(e.target).cursor;
-
-            const moveHandler = (moveEvt) => this.doResize(moveEvt);
-            const upHandler = () => {
-                document.body.style.cursor = originalCursor;
-                document.removeEventListener('mousemove', moveHandler);
-                document.removeEventListener('mouseup', upHandler);
-            };
-            document.addEventListener('mousemove', moveHandler);
-            document.addEventListener('mouseup', upHandler);
+            const store = Alpine.store('os');
+            OsWindowing.beginWindowResize(e, {
+                ...this.windowGesture(id),
+                handle: e.currentTarget,
+                dir,
+                getWindows: () => store.windows,
+                getElement: (windowId) => document.getElementById('win-' + windowId),
+                onCommit: (patches) => store.applyWindowPatches(patches)
+            });
         },
-        doResize(e) {
-            const win = this.windows.find(w => w.id === this.resizeData.id);
-            if (!win) return;
 
-            const dx = e.clientX - this.resizeData.startX;
-            const dy = e.clientY - this.resizeData.startY;
-            const dir = this.resizeData.dir;
-
-            let newX = this.resizeData.initialX;
-            let newY = this.resizeData.initialY;
-            let newW = this.resizeData.initialW;
-            let newH = this.resizeData.initialH;
-
-            // East/West
-            if (dir.includes('e')) {
-                newW = Math.max(300, this.resizeData.initialW + dx);
-            }
-            if (dir.includes('w')) {
-                const potentialW = this.resizeData.initialW - dx;
-                if (potentialW >= 300) {
-                    newW = potentialW;
-                    newX = this.resizeData.initialX + dx;
-                } else {
-                    newX = this.resizeData.initialX + (this.resizeData.initialW - 300);
-                    newW = 300;
-                }
-            }
-
-            // North/South
-            if (dir.includes('s')) {
-                newH = Math.max(200, this.resizeData.initialH + dy);
-            }
-            if (dir.includes('n')) {
-                const potentialH = this.resizeData.initialH - dy;
-                if (potentialH >= 200) {
-                    newH = potentialH;
-                    newY = this.resizeData.initialY + dy;
-                } else {
-                    newY = this.resizeData.initialY + (this.resizeData.initialH - 200);
-                    newH = 200;
-                }
-            }
-
-            win.x = newX;
-            win.y = newY;
-            win.width = newW;
-            win.height = newH;
-        }
     }));
 });

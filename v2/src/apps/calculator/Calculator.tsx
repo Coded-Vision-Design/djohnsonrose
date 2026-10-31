@@ -44,6 +44,8 @@ function reducer(state: CalcState, key: Key): CalcState {
   return press(state, key)
 }
 
+const NOT_CALCULATOR_KEYS = '.os-titlebar, [data-snap-flyout], input, textarea'
+
 export default function Calculator() {
   const [state, dispatch] = useReducer(reducer, initialState)
   const focusedId = useOsStore((s) => s.focusedWindowId)
@@ -56,6 +58,8 @@ export default function Calculator() {
   useEffect(() => {
     if (!isFocused) return
     const onKey = (e: KeyboardEvent) => {
+      // Window controls and text fields keep their own keys.
+      if ((e.target as Element).closest?.(NOT_CALCULATOR_KEYS)) return
       const key = keyboardToCalcKey(e.key)
       if (key) {
         e.preventDefault()

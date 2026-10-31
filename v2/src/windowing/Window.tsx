@@ -1,8 +1,9 @@
-import { useEffect, useRef } from 'react'
-import { useOsStore, type WinWindow, TASKBAR_HEIGHT } from '../store/osStore'
+import { useEffect, useRef, useMemo } from 'react'
+import { useOsStore, type WinWindow } from '../store/osStore'
 import { playSound } from '../lib/sounds'
-import { useDrag } from './useDrag'
-import { useResize, type ResizeDir } from './useResize'
+import { useWindowGestures } from './useWindowGestures'
+import { cancelSnapFlyoutHover, hoverMaximize, leaveSnapFlyout } from './snapFlyoutHover'
+import { resizableEdges } from '../../../assets/js/windowing/windowing.js'
 
 interface Props {
   win: WinWindow
@@ -10,18 +11,19 @@ interface Props {
 }
 
 // Matches partials/desktop.php window block. Title bar h-9 (h-[44px] for Edge,
-// which v1 special-cases). Min/maximize/close buttons w-[46px] h-[32px], close
-// gets the Win11 #c42b1c red. Resize handles in an inset[-4px] overlay.
+// which v1 special-cases). Min/maximise/close buttons are 46x32 with the Win11
+// #c42b1c close red. Geometry and device-class rules live in windowing.css.
 
 export function Window({ win, children }: Props) {
-  const focusedId = useOsStore((s) => s.focusedWindowId)
+  const isFocused = useOsStore((s) => s.focusedWindowId === win.id)
+  const desktop = useOsStore((s) => s.desktop)
   const focusWindow = useOsStore((s) => s.focusWindow)
   const closeWindow = useOsStore((s) => s.closeWindow)
   const toggleMinimize = useOsStore((s) => s.toggleMinimize)
   const toggleMaximize = useOsStore((s) => s.toggleMaximize)
 
-  const onDragStart = useDrag()
-  const onResizeStart = useResize()
+  const element = useRef<HTMLDivElement>(null)
+  const { startDrag, startResize, easeNextChange } = useWindowGestures(win.id, element)
   const playedOpen = useRef(false)
 
   useEffect(() => {
@@ -29,70 +31,69 @@ export function Window({ win, children }: Props) {
       playSound('open')
       playedOpen.current = true
     }
+    // Leave focus alone if the app has already taken it, such as a text field.
+    if (element.current && !element.current.contains(document.activeElement)) {
+      element.current.focus({ preventScroll: true })
+    }
   }, [])
 
-  const isFocused = focusedId === win.id
-  const isMaximized = win.maximized
-
-  if (win.minimized) return null
-
+  const isMaximized = win.state === 'maximized'
   const titleBarHeight = win.app === 'edge' ? 'h-[44px] py-[6px]' : 'h-9'
+  const edges = useMemo(() => resizableEdges(win, desktop), [win, desktop])
 
-  // Maximized: fill viewport up to the taskbar (taskbar height reserved at
-  // bottom). Restored: free-floating geometry from the store.
-  const style: React.CSSProperties = isMaximized
-    ? {
-        left: 0,
-        top: 0,
-        width: '100dvw',
-        height: `calc(100dvh - ${TASKBAR_HEIGHT}px)`,
-        zIndex: win.z,
-      }
-    : {
-        left: win.x,
-        top: win.y,
-        width: win.width,
-        height: win.height,
-        zIndex: win.z,
-      }
+  const onToggleMaximize = () => {
+    if (useOsStore.getState().windowMode === 'phone') return
+    easeNextChange()
+    toggleMaximize(win.id)
+  }
 
   return (
     <div
-      className={`absolute flex flex-col pointer-events-auto win-shadow glass animate-window-open overflow-hidden ${
+      id={`win-${win.id}`}
+      ref={element}
+      tabIndex={-1}
+      data-state={win.state}
+      className={`os-window win-shadow glass animate-window-open rounded-lg ${
         isFocused ? 'window-active' : ''
-      } ${isMaximized ? 'rounded-none!' : 'rounded-lg'}`}
-      style={style}
-      onMouseDown={() => focusWindow(win.id)}
+      }`}
+      style={{ left: win.x, top: win.y, width: win.width, height: win.height, zIndex: win.z }}
+      onPointerDownCapture={() => focusWindow(win.id)}
       role="dialog"
       aria-label={win.title}
     >
       {/* Title bar — Edge hides its title because it has its own tab strip */}
       <div
-        className={`${titleBarHeight} flex items-center justify-between px-3 select-none bg-white/10 dark:bg-black/10 cursor-default overflow-hidden ${
-          isMaximized ? '' : 'rounded-t-lg'
-        }`}
-        onMouseDown={(e) => {
-          // Only the title bar surface itself starts the drag — not its children.
-          if (e.target !== e.currentTarget) return
-          if (e.button !== 0) return
-          onDragStart(win.id, e)
+        className={`os-titlebar ${titleBarHeight} flex items-center justify-between px-3 select-none bg-white/10 dark:bg-black/10 cursor-default overflow-hidden`}
+        onPointerDown={(e) => {
+          // Only the title bar surface itself starts the drag, not its buttons.
+          if (e.target === e.currentTarget) startDrag(e)
         }}
-        onDoubleClick={() => toggleMaximize(win.id)}
+        onDoubleClick={(e) => {
+          if (e.target === e.currentTarget) onToggleMaximize()
+        }}
       >
-        <div className="flex items-center space-x-2 pointer-events-none min-w-0">
+        <button
+          type="button"
+          aria-label="Back"
+          onClick={() => toggleMinimize(win.id)}
+          className="os-win-btn os-win-back items-center justify-center shrink-0 dark:text-white"
+        >
+          <svg className="w-4 h-4 fill-current" viewBox="0 0 16 16" aria-hidden="true">
+            <path d="M10.7 2.3 5 8l5.7 5.7 1-1L7 8l4.7-4.7z" />
+          </svg>
+        </button>
+        <div className="flex items-center space-x-2 pointer-events-none min-w-0 grow">
           {win.app !== 'edge' && (
-            <span className="text-sm font-medium dark:text-white truncate">{win.title}</span>
+            <span className="os-window-title text-sm font-medium dark:text-white truncate">{win.title}</span>
           )}
         </div>
         <div className="flex items-center h-full gap-[2px] shrink-0">
           <button
             type="button"
-            aria-label="Minimize"
-            onClick={(e) => {
-              e.stopPropagation()
-              toggleMinimize(win.id)
-            }}
-            className="w-[46px] h-[32px] flex items-center justify-center hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
+            aria-label="Minimise"
+            title="Minimise"
+            onClick={() => toggleMinimize(win.id)}
+            className="os-win-btn os-win-min w-[46px] h-[32px] flex items-center justify-center hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
           >
             <svg className="w-2.5 h-2.5 fill-black dark:fill-white opacity-70" viewBox="0 0 10 1" aria-hidden="true">
               <rect width="10" height="1" />
@@ -100,12 +101,17 @@ export function Window({ win, children }: Props) {
           </button>
           <button
             type="button"
-            aria-label={isMaximized ? 'Restore' : 'Maximize'}
-            onClick={(e) => {
-              e.stopPropagation()
-              toggleMaximize(win.id)
+            aria-label={isMaximized ? 'Restore' : 'Maximise'}
+            title={isMaximized ? 'Restore' : 'Maximise'}
+            onClick={() => {
+              cancelSnapFlyoutHover()
+              onToggleMaximize()
             }}
-            className="w-[46px] h-[32px] flex items-center justify-center hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
+            onPointerEnter={(e) => {
+              if (e.pointerType === 'mouse') hoverMaximize(win.id, e.currentTarget)
+            }}
+            onPointerLeave={leaveSnapFlyout}
+            className="os-win-btn os-win-max w-[46px] h-[32px] flex items-center justify-center hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
           >
             {isMaximized ? (
               <svg className="w-2.5 h-2.5 fill-black dark:fill-white opacity-70" viewBox="0 0 10 10" aria-hidden="true">
@@ -120,11 +126,9 @@ export function Window({ win, children }: Props) {
           <button
             type="button"
             aria-label="Close"
-            onClick={(e) => {
-              e.stopPropagation()
-              closeWindow(win.id)
-            }}
-            className="w-[46px] h-[32px] flex items-center justify-center hover:bg-[#c42b1c] hover:text-white text-black dark:text-white transition-colors group"
+            title="Close"
+            onClick={() => closeWindow(win.id)}
+            className="os-win-btn w-[46px] h-[32px] flex items-center justify-center hover:bg-[#c42b1c] hover:text-white text-black dark:text-white transition-colors group"
           >
             <svg className="w-2.5 h-2.5 opacity-70 group-hover:opacity-100 fill-current" viewBox="0 0 10 10" aria-hidden="true">
               <path d="M10,1.4L8.6,0L5,3.6L1.4,0L0,1.4L3.6,5L0,8.6L1.4,10L5,6.4l3.6,3.6l1.4-1.4L6.4,5L10,1.4z" />
@@ -134,44 +138,11 @@ export function Window({ win, children }: Props) {
       </div>
 
       {/* Window content */}
-      <div
-        className={`grow overflow-auto relative bg-white dark:bg-[#1c1c1c] ${
-          isMaximized ? '' : 'rounded-b-lg'
-        }`}
-      >
-        {children}
-      </div>
+      <div className="os-window-content bg-white dark:bg-[#1c1c1c]">{children}</div>
 
-      {/* Resize handles — v1's inset[-4px] overlay with 8 hit zones */}
-      {!isMaximized && (
-        <div className="absolute inset-[-4px] pointer-events-none z-50">
-          {RESIZE_HANDLES.map((h) => (
-            <div
-              key={h.dir}
-              className={`absolute ${h.className} pointer-events-auto`}
-              style={{ cursor: h.cursor }}
-              onMouseDown={(e) => {
-                e.stopPropagation()
-                onResizeStart(win.id, h.dir, e)
-              }}
-            />
-          ))}
-        </div>
-      )}
+      {edges.map((dir) => (
+        <div key={dir} className="os-resize" data-dir={dir} onPointerDown={(e) => startResize(dir, e)} />
+      ))}
     </div>
   )
 }
-
-const RESIZE_HANDLES: { dir: ResizeDir; className: string; cursor: string }[] = [
-  // Edges, inset from the corners by 2 px each side so the corners get clean
-  // diagonal cursors (matches v1's top-2 / bottom-2 / left-2 / right-2 spacing).
-  { dir: 'w', className: 'top-2 bottom-2 left-0 w-2', cursor: 'ew-resize' },
-  { dir: 'e', className: 'top-2 bottom-2 right-0 w-2', cursor: 'ew-resize' },
-  { dir: 'n', className: 'top-0 left-2 right-2 h-2', cursor: 'ns-resize' },
-  { dir: 's', className: 'bottom-0 left-2 right-2 h-2', cursor: 'ns-resize' },
-  // Corners
-  { dir: 'nw', className: 'top-0 left-0 w-3 h-3', cursor: 'nwse-resize' },
-  { dir: 'ne', className: 'top-0 right-0 w-3 h-3', cursor: 'nesw-resize' },
-  { dir: 'sw', className: 'bottom-0 left-0 w-3 h-3', cursor: 'nesw-resize' },
-  { dir: 'se', className: 'bottom-0 right-0 w-3 h-3', cursor: 'nwse-resize' },
-]

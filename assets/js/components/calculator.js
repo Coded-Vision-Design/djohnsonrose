@@ -106,6 +106,8 @@ document.addEventListener('alpine:init', () => {
         },
         
         handleKeyboard(e) {
+            // Window controls and text fields keep their own keys.
+            if (e.target.closest?.('.os-titlebar, [data-snap-flyout], input, textarea')) return;
             if (!this.focusedWindowId || !this.windows.find(w => w.id === this.focusedWindowId && w.app === 'calculator')) return;
             if (e.key >= '0' && e.key <= '9') this.press(e.key);
             if (e.key === '.') this.press('.');

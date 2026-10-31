@@ -1,0 +1,501 @@
+/* assets/css/windowing.css
+   Window chrome and snapping styles, shared by both builds so that they look
+   the same. Imported by assets/css/input.css (v1) and v2/src/styles/globals.css
+   (v2). The page carries its device class in html[data-os-mode], which is set
+   by watchDesktop() in assets/js/windowing/windowing.js. */
+
+:root {
+  --os-taskbar-height: calc(48px + env(safe-area-inset-bottom, 0px));
+  --os-keyboard-inset: 0px;
+  --os-ease: cubic-bezier(0.1, 0.9, 0.2, 1);
+  --os-handle: 8px;
+  --os-snap-fill: rgba(255, 255, 255, 0.24);
+  --os-snap-edge: rgba(255, 255, 255, 0.6);
+  --os-flyout-bg: rgba(243, 243, 243, 0.92);
+  --os-flyout-edge: rgba(0, 0, 0, 0.1);
+  --os-flyout-text: #1b1b1b;
+  --os-zone: rgba(0, 0, 0, 0.14);
+  --os-zone-hover: #0078d4;
+}
+
+.dark {
+  --os-snap-fill: rgba(255, 255, 255, 0.14);
+  --os-snap-edge: rgba(255, 255, 255, 0.35);
+  --os-flyout-bg: rgba(38, 38, 38, 0.92);
+  --os-flyout-edge: rgba(255, 255, 255, 0.1);
+  --os-flyout-text: #f3f3f3;
+  --os-zone: rgba(255, 255, 255, 0.2);
+  --os-zone-hover: #60cdff;
+}
+
+/* The usable desktop. Isolating it keeps window z-indexes below the taskbar,
+   however high they climb. */
+.os-windows-layer {
+  isolation: isolate;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.os-taskbar {
+  height: var(--os-taskbar-height);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  box-sizing: border-box;
+  flex-shrink: 0;
+}
+
+/* Windows */
+
+.os-window {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  pointer-events: auto;
+}
+
+.os-window[data-state='snapped'],
+.os-window[data-state='maximized'] {
+  border-radius: 0;
+  border-color: transparent;
+}
+
+.os-window[data-state='maximized'] {
+  box-shadow: none;
+}
+
+/* Stays mounted so that the app keeps its state while hidden. */
+.os-window[data-state='minimized'] {
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.os-window[data-animating] {
+  transition:
+    left 0.2s var(--os-ease),
+    top 0.2s var(--os-ease),
+    width 0.2s var(--os-ease),
+    height 0.2s var(--os-ease);
+}
+
+.os-window[data-dragging] {
+  transition: none;
+  will-change: transform;
+  user-select: none;
+}
+
+.os-window:not(.window-active) .os-window-title {
+  opacity: 0.6;
+}
+
+.os-window-content {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+  position: relative;
+}
+
+.os-titlebar {
+  flex-shrink: 0;
+  touch-action: none;
+}
+
+.os-window:focus {
+  outline: none;
+}
+
+.os-titlebar {
+  border-radius: 8px 8px 0 0;
+}
+
+.os-window-content {
+  border-radius: 0 0 8px 8px;
+}
+
+.os-window[data-state='snapped'] .os-titlebar,
+.os-window[data-state='maximized'] .os-titlebar,
+.os-window[data-state='snapped'] .os-window-content,
+.os-window[data-state='maximized'] .os-window-content {
+  border-radius: 0;
+}
+
+.os-win-back {
+  display: none;
+}
+
+/* Taskbar groups. Open apps scroll sideways rather than push the tray away. */
+
+.os-taskbar-apps {
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.os-taskbar-apps::-webkit-scrollbar {
+  display: none;
+}
+
+.os-taskbar-apps > * {
+  flex-shrink: 0;
+}
+
+.os-taskbar-tray {
+  flex-shrink: 0;
+}
+
+html[data-os-mode='phone'] .os-taskbar-apps,
+html[data-os-mode='tablet'] .os-taskbar-apps {
+  flex: 1 1 auto;
+  justify-content: flex-start;
+}
+
+/* Resize handles: an invisible hit area straddling each edge. */
+
+.os-resize {
+  position: absolute;
+  z-index: 50;
+  touch-action: none;
+}
+
+.os-resize[data-dir='n'],
+.os-resize[data-dir='s'] {
+  left: var(--os-handle);
+  right: var(--os-handle);
+  height: var(--os-handle);
+  cursor: ns-resize;
+}
+
+.os-resize[data-dir='e'],
+.os-resize[data-dir='w'] {
+  top: var(--os-handle);
+  bottom: var(--os-handle);
+  width: var(--os-handle);
+  cursor: ew-resize;
+}
+
+.os-resize[data-dir='n'] { top: calc(var(--os-handle) / -2); }
+.os-resize[data-dir='s'] { bottom: calc(var(--os-handle) / -2); }
+.os-resize[data-dir='e'] { right: calc(var(--os-handle) / -2); }
+.os-resize[data-dir='w'] { left: calc(var(--os-handle) / -2); }
+
+.os-resize[data-dir='ne'],
+.os-resize[data-dir='nw'],
+.os-resize[data-dir='se'],
+.os-resize[data-dir='sw'] {
+  width: calc(var(--os-handle) * 1.5);
+  height: calc(var(--os-handle) * 1.5);
+}
+
+.os-resize[data-dir='nw'] { top: calc(var(--os-handle) / -2); left: calc(var(--os-handle) / -2); cursor: nwse-resize; }
+.os-resize[data-dir='se'] { bottom: calc(var(--os-handle) / -2); right: calc(var(--os-handle) / -2); cursor: nwse-resize; }
+.os-resize[data-dir='ne'] { top: calc(var(--os-handle) / -2); right: calc(var(--os-handle) / -2); cursor: nesw-resize; }
+.os-resize[data-dir='sw'] { bottom: calc(var(--os-handle) / -2); left: calc(var(--os-handle) / -2); cursor: nesw-resize; }
+
+/* Snap preview, bar, flyout and assist all sit above every window. */
+
+.os-snap-preview,
+.os-snap-bar,
+.os-snap-flyout,
+.os-snap-assist {
+  position: absolute;
+  z-index: 1000000;
+}
+
+.os-snap-preview {
+  pointer-events: none;
+  box-sizing: border-box;
+  border-radius: 8px;
+  background: var(--os-snap-fill);
+  border: 1px solid var(--os-snap-edge);
+  -webkit-backdrop-filter: blur(20px) saturate(140%);
+  backdrop-filter: blur(20px) saturate(140%);
+  transition:
+    left 0.16s var(--os-ease),
+    top 0.16s var(--os-ease),
+    width 0.16s var(--os-ease),
+    height 0.16s var(--os-ease);
+  animation: os-pop 0.12s ease-out;
+}
+
+.os-snap-bar,
+.os-snap-flyout {
+  box-sizing: border-box;
+  border-radius: 8px;
+  color: var(--os-flyout-text);
+  background: var(--os-flyout-bg);
+  border: 1px solid var(--os-flyout-edge);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.28);
+  -webkit-backdrop-filter: blur(30px) saturate(150%);
+  backdrop-filter: blur(30px) saturate(150%);
+  animation: os-pop 0.12s ease-out;
+}
+
+.os-snap-bar {
+  pointer-events: none;
+}
+
+.os-snap-flyout {
+  pointer-events: auto;
+}
+
+.os-snap-tile {
+  position: absolute;
+}
+
+.os-snap-zone {
+  position: absolute;
+  padding: 0;
+  border: 0;
+  border-radius: 3px;
+  background: var(--os-zone);
+  cursor: pointer;
+  transition: background-color 0.08s linear;
+}
+
+.os-snap-zone:hover,
+.os-snap-zone:focus-visible,
+.os-snap-zone[data-active] {
+  background: var(--os-zone-hover);
+  outline: none;
+}
+
+.os-snap-assist {
+  pointer-events: auto;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px;
+  overflow: auto;
+  color: var(--os-flyout-text);
+  background: var(--os-flyout-bg);
+  border: 1px solid var(--os-flyout-edge);
+  -webkit-backdrop-filter: blur(30px) saturate(150%);
+  backdrop-filter: blur(30px) saturate(150%);
+  animation: os-pop 0.14s ease-out;
+}
+
+.os-snap-assist h2 {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.os-snap-assist-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 8px;
+}
+
+.os-snap-assist-item,
+.os-task-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 56px;
+  padding: 8px 12px;
+  border: 1px solid var(--os-flyout-edge);
+  border-radius: 8px;
+  color: inherit;
+  background: var(--os-zone);
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.os-snap-assist-item:hover,
+.os-snap-assist-item:focus-visible {
+  border-color: var(--os-zone-hover);
+  outline: none;
+}
+
+.os-snap-assist-item img,
+.os-task-card img {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.os-snap-assist-item span,
+.os-task-card span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@keyframes os-pop {
+  from { opacity: 0; transform: scale(0.98); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+/* Task switcher, for phones. */
+
+.os-task-switcher {
+  position: absolute;
+  inset: 0;
+  z-index: 1000000;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: calc(env(safe-area-inset-top, 0px) + 16px) 16px 16px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  pointer-events: auto;
+  color: var(--os-flyout-text);
+  background: var(--os-flyout-bg);
+  -webkit-backdrop-filter: blur(30px) saturate(150%);
+  backdrop-filter: blur(30px) saturate(150%);
+}
+
+.os-task-switcher-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 44px;
+}
+
+.os-task-switcher-head h2 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.os-task-switcher-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 10px;
+}
+
+.os-task-row {
+  display: flex;
+  min-width: 0;
+  gap: 6px;
+}
+
+.os-task-card {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 64px;
+}
+
+.os-task-close,
+.os-task-clear {
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 8px;
+  color: inherit;
+  background: transparent;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.os-task-empty {
+  margin: 24px 0;
+  text-align: center;
+  opacity: 0.7;
+}
+
+.os-task-button {
+  display: none;
+}
+
+/* Tablets: touch-sized chrome and handles. */
+
+html[data-os-mode='tablet'] {
+  --os-handle: 20px;
+}
+
+html[data-os-mode='tablet'] .os-titlebar {
+  height: 44px;
+  min-height: 44px;
+}
+
+html[data-os-mode='tablet'] .os-win-btn {
+  width: 48px;
+  height: 40px;
+}
+
+/* Phones: one full-screen app at a time, inside the usable desktop. The window
+   keeps its real state, so rotating to a wider layout puts it back. */
+
+html[data-os-mode='phone'] .os-window {
+  background: #f3f3f3;
+  left: 0 !important;
+  top: 0 !important;
+  right: 0 !important;
+  bottom: max(0px, calc(var(--os-keyboard-inset) - var(--os-taskbar-height))) !important;
+  width: auto !important;
+  height: auto !important;
+  border-radius: 0 !important;
+  border-width: 0 !important;
+  box-shadow: none !important;
+  transform: none !important;
+  animation: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+html[data-os-mode='phone'].dark .os-window,
+html[data-os-mode='phone'] .dark .os-window {
+  background: #202020;
+}
+
+html[data-os-mode='phone'] .os-titlebar {
+  height: calc(48px + env(safe-area-inset-top, 0px));
+  min-height: calc(48px + env(safe-area-inset-top, 0px));
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-left: 0;
+  padding-right: 0;
+  touch-action: auto;
+}
+
+html[data-os-mode='phone'] .os-win-back {
+  display: flex;
+}
+
+html[data-os-mode='phone'] .os-win-btn {
+  width: 48px;
+  height: 48px;
+}
+
+html[data-os-mode='phone'] .os-win-min,
+html[data-os-mode='phone'] .os-win-max,
+html[data-os-mode='phone'] .os-resize {
+  display: none;
+}
+
+html[data-os-mode='phone'] .os-task-button {
+  display: flex;
+}
+
+html[data-os-mode='phone'] .os-tray-optional {
+  display: none;
+}
+
+html[data-os-mode='phone'] .os-taskbar button {
+  min-width: 44px;
+  min-height: 44px;
+}
+
+/* Hidden while the on-screen keyboard is up, so an app gets the room. */
+html[data-os-keyboard][data-os-mode='phone'] .os-taskbar {
+  visibility: hidden;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .os-window[data-animating],
+  .os-snap-preview,
+  .os-snap-zone {
+    transition: none;
+  }
+
+  .os-snap-preview,
+  .os-snap-bar,
+  .os-snap-flyout,
+  .os-snap-assist {
+    animation: none;
+  }
+}

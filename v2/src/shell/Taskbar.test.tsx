@@ -23,7 +23,7 @@ const resetStore = () => {
     windows: [],
     focusedWindowId: null,
     nextWindowZ: 100,
-    snapPreview: { show: false, x: 0, y: 0, w: 0, h: 0 },
+    snapPreview: { rect: null, bar: null, target: null },
     eventLogs: [],
     startMenuOpen: false,
     quickSettingsOpen: false,

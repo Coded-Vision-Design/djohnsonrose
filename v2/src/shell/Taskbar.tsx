@@ -1,5 +1,5 @@
 import { useMemo, useState, useEffect, useRef } from 'react'
-import { useOsStore, TASKBAR_HEIGHT } from '../store/osStore'
+import { useOsStore } from '../store/osStore'
 import { getApp } from '../apps/registry'
 import { playSound } from '../lib/sounds'
 import { VolumeIcon } from './VolumeIcon'
@@ -20,7 +20,7 @@ function AppButton({ appId }: { appId: string }) {
   const windowsForApp = windows.filter((w) => w.app === appId)
   const isOpen = windowsForApp.length > 0
   const isFocused = isOpen && windowsForApp.some((w) => w.id === focusedId)
-  const allMinimized = isOpen && windowsForApp.every((w) => w.minimized)
+  const allMinimized = isOpen && windowsForApp.every((w) => w.state === 'minimized')
 
   let indicatorClass = ''
   if (isOpen) {
@@ -77,6 +77,9 @@ export function Taskbar() {
   const toggleStartMenu = useOsStore((s) => s.toggleStartMenu)
   const toggleQuickSettings = useOsStore((s) => s.toggleQuickSettings)
   const toggleWidgets = useOsStore((s) => s.toggleWidgets)
+  const toggleTaskSwitcher = useOsStore((s) => s.toggleTaskSwitcher)
+  const isDesktop = useOsStore((s) => s.isDesktop)
+  const isMobile = useOsStore((s) => s.isMobile)
   const closeAllPopups = useOsStore((s) => s.closeAllPopups)
   const minimizeAll = useOsStore((s) => s.minimizeAll)
   const openApp = useOsStore((s) => s.openApp)
@@ -107,11 +110,10 @@ export function Taskbar() {
 
   return (
     <div
-      className="absolute left-0 right-0 bottom-0 taskbar-glass flex items-center justify-between px-2 z-9999 border-t border-white/20"
-      style={{ height: TASKBAR_HEIGHT }}
+      className="os-taskbar absolute left-0 right-0 bottom-0 taskbar-glass flex items-center justify-between px-2 z-9999 border-t border-white/20"
     >
       {/* Left — weather widget toggle (v1 puts this in a w-48 container) */}
-      <div className="flex items-center w-48 overflow-hidden">
+      <div className="flex items-center w-48 overflow-hidden" hidden={!isDesktop}>
         <button
           type="button"
           data-popup-toggle="widgets"
@@ -134,7 +136,7 @@ export function Taskbar() {
       </div>
 
       {/* Centre — start, search, task view, divider, pinned/running */}
-      <div className="flex items-center space-x-1">
+      <div className="os-taskbar-apps flex items-center space-x-1">
         <button
           type="button"
           data-popup-toggle="start"
@@ -159,6 +161,7 @@ export function Taskbar() {
           onClick={() => {
             if (!startMenuOpen) toggleStartMenu()
           }}
+          hidden={!isDesktop}
           className="w-10 h-10 flex items-center justify-center rounded-sm hover:bg-white/10 transition-colors"
           title="Search"
         >
@@ -170,6 +173,7 @@ export function Taskbar() {
         <button
           type="button"
           onClick={() => openApp('taskmanager')}
+          hidden={isMobile}
           className="w-10 h-10 flex items-center justify-center rounded-sm hover:bg-white/10 transition-colors"
           title="Task view"
         >
@@ -178,7 +182,20 @@ export function Taskbar() {
           </svg>
         </button>
 
-        <div className="w-px h-6 bg-white/10 mx-1" />
+        <button
+          type="button"
+          className="os-task-button w-10 h-10 items-center justify-center rounded-sm hover:bg-white/10 relative text-black dark:text-white"
+          onClick={toggleTaskSwitcher}
+          aria-label={`Open apps: ${windows.length}`}
+          title="Open apps"
+        >
+          <svg className="w-5 h-5 fill-current opacity-80" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M4 7h11v13H4V7zm2 2v9h7V9H6zm11-5H7v2h10v11h2V4h-2z" />
+          </svg>
+          <span className="absolute top-0.5 right-0.5 text-[9px] font-semibold">{windows.length || ''}</span>
+        </button>
+
+        <div className="w-px h-6 bg-white/10 mx-1 shrink-0" />
 
         {openAppIds.map((id) => (
           <AppButton key={id} appId={id} />
@@ -188,7 +205,7 @@ export function Taskbar() {
       {/* Right — tray group */}
       <div
         ref={trayRef}
-        className="flex items-center space-x-1 px-2 text-black dark:text-white relative"
+        className="os-taskbar-tray flex items-center space-x-1 px-2 text-black dark:text-white relative"
       >
         {/* Cross-version flip */}
         <a
@@ -273,7 +290,7 @@ export function Taskbar() {
         <button
           type="button"
           onClick={() => setHiddenIconsOpen((v) => !v)}
-          className={`p-1 rounded hover:bg-white/10 transition-colors ${
+          className={`os-tray-optional p-1 rounded hover:bg-white/10 transition-colors ${
             hiddenIconsOpen ? 'bg-white/10' : ''
           }`}
           title="Show hidden icons"
@@ -340,7 +357,9 @@ export function Taskbar() {
           title="Date and time"
         >
           <div>{clock.time}</div>
-          <div className="text-[10px] opacity-70">{clock.date}</div>
+          <div className="text-[10px] opacity-70" hidden={!isDesktop}>
+            {clock.date}
+          </div>
         </button>
 
         {/* Desktop peek */}
