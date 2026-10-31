@@ -113,6 +113,7 @@ document.addEventListener('alpine:init', () => {
         philosophy: "Technique over brute force. Whether managing >8000 devices at UEA or competing at the highest levels of Brazilian Jiu-Jitsu, I prioritize precision, efficient troubleshooting, and clear communication of complex technical concepts.",
         experience: [],
         certs: [],
+        education: [],
         skills: { frameworks: [], tools: [], operations: [], apis: [] },
         wallpapers: [
             { id: 'Bloom', url: 'https://images.unsplash.com/photo-1620641788421-7a1c342ea42e?q=80&w=1974&auto=format&fit=crop' },
@@ -134,6 +135,7 @@ document.addEventListener('alpine:init', () => {
                 this.experience = data.experience;
                 this.certs = data.certifications;
                 this.skills = data.skills;
+                this.education = data.education || [];
             } catch (e) {
                 console.error('Failed to load portfolio data for settings:', e);
             }

@@ -128,10 +128,11 @@ document.addEventListener('alpine:init', () => {
             uac: window.portfolioConfig.basePath + 'assets/sounds/Windows User Account Control.wav'
         },
         // Injected from filesystem.js
-        fileSystem: JSON.parse(localStorage.getItem('os.fileSystem')) || window.osFileSystem || {},
+        fileSystem: window.loadFileSystem(),
 
         saveFileSystem() {
             localStorage.setItem('os.fileSystem', JSON.stringify(this.fileSystem));
+            localStorage.setItem('os.fileSystem.version', window.osFileSystemVersion);
         },
 
         playSound(soundType) {

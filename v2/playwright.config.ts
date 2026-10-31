@@ -2,7 +2,8 @@ import { defineConfig, devices } from '@playwright/test'
 
 // Playwright assumes a Vite dev server is already running on :5173 with PHP
 // on :8765 (the /api and /assets proxies need that). We don't start servers
-// from the config — the npm script runs them, fails fast if missing.
+// from the config. The npm script runs them and fails fast if missing. Set
+// V2_ORIGIN when something else is using :5173.
 export default defineConfig({
   testDir: './e2e',
   fullyParallel: false,
@@ -12,7 +13,7 @@ export default defineConfig({
   timeout: 30_000,
   expect: { timeout: 5_000 },
   use: {
-    baseURL: 'http://localhost:5173',
+    baseURL: process.env.V2_ORIGIN ?? 'http://localhost:5173',
     trace: 'retain-on-failure',
     video: 'retain-on-failure',
     // Disable animations so the boot screen + sign-in animation tests are

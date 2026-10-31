@@ -24,8 +24,9 @@
     <div x-show="searchQuery.length > 0" class="grow overflow-y-auto px-8 custom-scrollbar">
         <h3 class="text-[11px] font-bold text-gray-500 uppercase mb-3 tracking-wider">Top Results</h3>
         <div class="space-y-1">
-            <template x-for="item in searchResults" :key="item.name">
-                <div @click="openItem(item, item.fullPath); searchQuery = ''; startMenuOpen = false" 
+            <template x-for="item in searchResults" :key="item.fullPath + item.name">
+                <div @click="openItem(item, item.fullPath); searchQuery = ''; startMenuOpen = false"
+                     :data-search-app="item.type === 'app' ? item.app : null"
                      draggable="true"
                      @dragstart="$event.dataTransfer.setData('application/json', JSON.stringify({item: item, fromPath: item.fullPath}))"
                      class="flex items-center p-2 rounded-sm hover:bg-win-blue hover:text-white cursor-pointer group transition-colors">
@@ -39,7 +40,7 @@
                     </div>
                     <div class="min-w-0 grow text-black dark:text-white group-hover:text-white">
                         <div class="text-xs font-medium truncate" x-text="item.name"></div>
-                        <div class="text-[10px] opacity-60 truncate" x-text="item.type || 'File'"></div>
+                        <div class="text-[10px] opacity-60 truncate" x-text="item.type === 'app' ? 'App' : (item.type || 'File')"></div>
                     </div>
                 </div>
             </template>
@@ -54,45 +55,13 @@
         </div>
         
         <div class="grid gap-y-6 gap-x-4 grid-cols-4 sm:grid-cols-6">
-            <!-- App Helper Macro would be nice, but we'll do them manually -->
-            <template x-for="app in [
-                { id: 'edge', name: 'Chrome', icon: window.portfolioConfig.imgPath + 'chrome.webp' },
-                { id: 'vscode', name: 'VS Code', icon: window.portfolioConfig.imgPath + 'vscode.webp' },
-                { id: 'word', name: 'Word', icon: window.portfolioConfig.imgPath + 'word.webp' },
-                { id: 'excel', name: 'Excel', icon: window.portfolioConfig.imgPath + 'excel.webp' },
-                { id: 'powerpoint', name: 'PowerPoint', icon: window.portfolioConfig.imgPath + 'powerpoint.webp' },
-                { id: 'outlook', name: 'Outlook', icon: window.portfolioConfig.imgPath + 'outlook.webp' },
-                { id: 'photoshop', name: 'Photoshop', icon: window.portfolioConfig.imgPath + 'photoshop.webp' },
-                { id: 'flstudio', name: 'FL Studio 24', icon: window.portfolioConfig.imgPath + 'fl studio.webp' },
-                { id: 'docker', name: 'Docker', icon: window.portfolioConfig.imgPath + 'docker.webp' },
-                { id: 'explorer', name: 'Explorer', icon: window.portfolioConfig.imgPath + 'explorer.webp' },
-                { id: 'notepad', name: 'Notepad++', icon: window.portfolioConfig.imgPath + 'notepad++.webp' },
-            { id: 'putty', name: 'PuTTY', icon: window.portfolioConfig.imgPath + 'putty.webp' },
-            { id: 'filezilla', name: 'FileZilla', icon: window.portfolioConfig.imgPath + 'filezilla.webp' },
-            { id: 'terminal', name: 'Terminal', icon: window.portfolioConfig.imgPath + 'terminal.webp' },
-            { id: 'database', name: 'SQL Server Management Studio', icon: window.portfolioConfig.imgPath + 'mssql.webp' },
-            { id: 'settings', name: 'Settings', icon: window.portfolioConfig.imgPath + 'settings.webp' },
-                { id: 'taskmanager', name: 'Task Manager', icon: window.portfolioConfig.imgPath + 'taskmanager.webp' },
-                { id: 'eventviewer', name: 'Event Viewer', icon: window.portfolioConfig.imgPath + 'eventviewer.webp' }
-            ].filter(a => !searchQuery || a.name.toLowerCase().includes(searchQuery.toLowerCase()))">
-                <div @click="openApp(app.id)" 
+            <template x-for="app in startPinnedApps" :key="app.id">
+                <div @click="openApp(app.id)"
+                     :data-pinned-app="app.id"
                      :title="app.name"
                      class="flex flex-col items-center group cursor-pointer transition-all active:scale-95 w-full min-w-0">
-                    <div class="w-10 h-10 rounded-sm flex items-center justify-center text-2xl group-hover:scale-110 transition-transform bg-white/5 dark:bg-white/5 group-hover:bg-white/10 shrink-0 overflow-hidden" 
-                         :class="app.id === 'terminal' ? 'bg-black dark:bg-black text-white!' : ''">
-                        <template x-if="app.icon.includes('.')">
-                            <img :src="app.icon" class="w-7 h-7 object-contain">
-                        </template>
-                        <template x-if="!app.icon.includes('.')">
-                            <div class="w-full h-full flex items-center justify-center">
-                                <template x-if="app.id === 'pdfreader'">
-                                    <div class="w-5 h-7 bg-red-600 rounded-xs flex items-center justify-center text-[7px] font-bold text-white uppercase">PDF</div>
-                                </template>
-                                <template x-if="app.id !== 'pdfreader'">
-                                    <span x-text="app.id === 'terminal' ? '⌨️' : app.icon"></span>
-                                </template>
-                            </div>
-                        </template>
+                    <div class="w-10 h-10 rounded-sm flex items-center justify-center text-2xl group-hover:scale-110 transition-transform bg-white/5 dark:bg-white/5 group-hover:bg-white/10 shrink-0 overflow-hidden">
+                        <img :src="app.icon" alt="" class="w-7 h-7 object-contain">
                     </div>
                     <span class="text-[11px] mt-2 dark:text-white text-center truncate w-full px-0.5" x-text="app.name"></span>
                 </div>
@@ -181,14 +150,9 @@
                     <div class="text-xs font-bold text-win-blue ml-4 mb-2" x-text="group.letter"></div>
                     <div class="space-y-0.5">
                         <template x-for="app in group.apps" :key="app.id">
-                            <div @click="openApp(app.id)" class="flex items-center p-2 rounded-sm hover:bg-white/10 cursor-pointer group transition-colors">
+                            <div @click="openApp(app.id)" :data-all-app="app.id" class="flex items-center p-2 rounded-sm hover:bg-white/10 cursor-pointer group transition-colors">
                                 <div class="w-8 h-8 rounded-sm flex items-center justify-center mr-3 group-hover:scale-110 transition-transform overflow-hidden shrink-0">
-                                    <template x-if="app.icon.includes('.')">
-                                        <img :src="app.icon" class="w-6 h-6 object-contain">
-                                    </template>
-                                    <template x-if="!app.icon.includes('.')">
-                                        <span x-text="app.icon" class="text-lg"></span>
-                                    </template>
+                                    <img :src="app.icon" alt="" class="w-6 h-6 object-contain">
                                 </div>
                                 <span class="text-[11px] font-medium dark:text-white" x-text="app.name"></span>
                             </div>

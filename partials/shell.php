@@ -110,6 +110,7 @@
         window.portfolioConfig = {
             apps: <?php echo js_value((object)array_column($appManifest['apps'], null, 'id')); ?>,
             pinned: <?php echo js_value($appManifest['pinned']); ?>,
+            startPinned: <?php echo js_value($appManifest['startPinned']); ?>,
             email: <?php echo js_value($config['email']); ?>,
             appToOpen: <?php echo js_value($appToOpen ?? ''); ?>,
             basePath: <?php echo js_value(BASE_PATH); ?>,

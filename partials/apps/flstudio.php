@@ -241,7 +241,7 @@
                                     <template x-for="step in 16">
                                         <div class="w-6 h-full border-r border-b border-white/5 cursor-pointer hover:bg-white/5"
                                              @click="pianoRollChannel.note = note; pianoRollChannel.steps[step-1] = 1; playChannelSound(pianoRollChannel); hintText = 'Set note ' + Math.round(note) + 'Hz at step ' + step">
-                                            <div x-show="pianoRollChannel.note === note && pianoRollChannel.steps[step-1] === 1" class="w-full h-full bg-[#00ff00]/60 border border-[#00ff00]"></div>
+                                            <div x-show="pianoRollChannel?.note === note && pianoRollChannel.steps[step-1] === 1" class="w-full h-full bg-[#00ff00]/60 border border-[#00ff00]"></div>
                                         </div>
                                     </template>
                                 </div>

@@ -1,5 +1,10 @@
 {
   "pinned": ["edge", "explorer", "outlook", "vscode", "flstudio"],
+  "startPinned": [
+    "edge", "vscode", "word", "excel", "powerpoint", "outlook",
+    "photoshop", "flstudio", "docker", "explorer", "notepad", "putty",
+    "filezilla", "terminal", "database", "settings", "taskmanager", "eventviewer"
+  ],
   "apps": [
     { "id": "edge", "title": "Chrome", "icon": "chrome.webp", "size": { "w": 1024, "h": 720 } },
     { "id": "vscode", "title": "VS Code", "icon": "vscode.webp", "size": { "w": 1100, "h": 720 } },
@@ -20,9 +25,9 @@
     { "id": "taskmanager", "title": "Task Manager", "icon": "taskmanager.webp", "size": { "w": 900, "h": 640 } },
     { "id": "eventviewer", "title": "Event Viewer", "icon": "eventviewer.webp", "size": { "w": 980, "h": 640 } },
     { "id": "calculator", "title": "Calculator", "icon": "calculator.webp", "size": { "w": 320, "h": 480 } },
-    { "id": "paint", "title": "Paint", "icon": "win11/image.webp", "size": { "w": 900, "h": 650 } },
+    { "id": "paint", "title": "Paint", "icon": "paint.webp", "size": { "w": 900, "h": 650 } },
     { "id": "photos", "title": "Photos", "icon": "win11/pictures.webp", "size": { "w": 900, "h": 640 } },
-    { "id": "video", "title": "Movies & TV", "icon": "win11/videos.webp", "size": { "w": 900, "h": 600 } },
+    { "id": "video", "title": "Movies & TV", "icon": "movies.webp", "size": { "w": 900, "h": 600 } },
     { "id": "pdfreader", "title": "PDF Reader", "icon": "pdf.webp", "size": { "w": 900, "h": 720 } },
     { "id": "admin", "title": "Admin Console", "icon": "mssql.webp", "size": { "w": 1180, "h": 760 } },
     { "id": "references", "title": "References", "icon": "notepad++.webp", "size": { "w": 820, "h": 560 } },

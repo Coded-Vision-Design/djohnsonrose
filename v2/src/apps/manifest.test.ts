@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import appPhp from '../../../api/app.php?raw'
-import { appManifest, getManifestEntry, pinnedApps } from './manifest'
+import { appManifest, getManifestEntry, pinnedApps, startPinnedApps } from './manifest'
 import { apps, getApp } from './registry'
 import { useOsStore } from '../store/osStore'
 
@@ -42,6 +42,19 @@ describe('shared app manifest (data/apps.json)', () => {
   it('only pins real apps', () => {
     expect(pinnedApps.length).toBeGreaterThan(0)
     for (const id of pinnedApps) expect(appManifest[id], id).toBeDefined()
+  })
+
+  it('only pins real apps to Start', () => {
+    expect(startPinnedApps.length).toBeGreaterThan(0)
+    for (const id of startPinnedApps) expect(appManifest[id], id).toBeDefined()
+  })
+
+  it('does not pin an app to Start twice', () => {
+    expect(new Set(startPinnedApps).size).toBe(startPinnedApps.length)
+  })
+
+  it('keeps Admin Console out of the Start pins', () => {
+    expect(startPinnedApps).not.toContain('admin')
   })
 
   it('does not treat object built-ins as apps', () => {

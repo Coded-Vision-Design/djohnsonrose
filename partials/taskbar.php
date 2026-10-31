@@ -47,73 +47,13 @@
         <template x-for="appId in [...new Set([...$store.os.pinnedApps, ...windows.map(w => w.app)])]" :key="appId">
             <button @click="taskbarClick(appId)" 
                     @contextmenu.prevent.stop="showAppContextMenu($event, appId)"
+                    :data-taskbar-app="appId"
+                    :title="appTitle(appId)"
                     class="w-10 h-10 flex items-center justify-center rounded-sm hover:bg-white/10 transition-all relative group"
                     :class="{ 'bg-white/10 shadow-inner': windows.some(w => w.app === appId && focusedWindowId === w.id) }">
                 
-                <div class="w-7 h-7 rounded-sm flex items-center justify-center bg-white/10 text-[10px] font-bold text-gray-700 dark:text-white overflow-hidden transition-transform group-hover:scale-110">
-                    <template x-if="appId === 'vscode'">
-                        <img :src="window.portfolioConfig.imgPath + 'vscode.webp'" class="w-full h-full object-contain">
-                    </template>
-                    <template x-if="appId === 'edge'">
-                        <img :src="window.portfolioConfig.imgPath + 'chrome.webp'" class="w-full h-full object-contain">
-                    </template>
-                    <template x-if="appId === 'terminal'">
-                        <img :src="window.portfolioConfig.imgPath + 'terminal.webp'" class="w-full h-full object-contain">
-                    </template>
-                    <template x-if="appId === 'explorer'">
-                        <img :src="window.portfolioConfig.imgPath + 'explorer.webp'" class="w-full h-full object-contain p-0.5">
-                    </template>
-                    <template x-if="appId === 'pdfreader'">
-                        <img :src="window.portfolioConfig.imgPath + 'pdf.webp'" class="w-full h-full object-contain p-0.5">
-                    </template>
-                    <template x-if="appId === 'word'">
-                        <img :src="window.portfolioConfig.imgPath + 'word.webp'" class="w-full h-full object-contain">
-                    </template>
-                    <template x-if="appId === 'excel'">
-                        <img :src="window.portfolioConfig.imgPath + 'excel.webp'" class="w-full h-full object-contain">
-                    </template>
-                    <template x-if="appId === 'powerpoint'">
-                        <img :src="window.portfolioConfig.imgPath + 'powerpoint.webp'" class="w-full h-full object-contain">
-                    </template>
-                    <template x-if="appId === 'notepad' || appId === 'notepad++'">
-                        <img :src="window.portfolioConfig.imgPath + 'notepad++.webp'" class="w-full h-full object-contain">
-                    </template>
-                    <template x-if="appId === 'settings'">
-                        <img :src="window.portfolioConfig.imgPath + 'settings.webp'" class="w-full h-full object-contain">
-                    </template>
-                    <template x-if="appId === 'taskmanager'">
-                        <img :src="window.portfolioConfig.imgPath + 'taskmanager.webp'" class="w-full h-full object-contain">
-                    </template>
-                    <template x-if="appId === 'outlook'">
-                        <img :src="window.portfolioConfig.imgPath + 'outlook.webp'" class="w-full h-full object-contain">
-                    </template>
-                    <template x-if="appId === 'eventviewer'">
-                        <img :src="window.portfolioConfig.imgPath + 'eventviewer.webp'" class="w-full h-full object-contain">
-                    </template>
-                    <template x-if="appId === 'photoshop'">
-                        <img :src="window.portfolioConfig.imgPath + 'photoshop.webp'" class="w-full h-full object-contain">
-                    </template>
-                    <template x-if="appId === 'putty'">
-                        <img :src="window.portfolioConfig.imgPath + 'putty.webp'" class="w-full h-full object-contain">
-                    </template>
-                    <template x-if="appId === 'filezilla'">
-                        <img :src="window.portfolioConfig.imgPath + 'filezilla.webp'" class="w-full h-full object-contain">
-                    </template>
-                    <template x-if="appId === 'calculator'">
-                        <img :src="window.portfolioConfig.imgPath + 'calculator.webp'" class="w-full h-full object-contain">
-                    </template>
-                    <template x-if="appId === 'database'">
-                        <img :src="window.portfolioConfig.imgPath + 'mssql.webp'" class="w-full h-full object-contain">
-                    </template>
-                    <template x-if="appId === 'flstudio'">
-                        <img :src="window.portfolioConfig.imgPath + 'fl studio.webp'" class="w-full h-full object-contain">
-                    </template>
-                    <template x-if="appId === 'docker'">
-                        <img :src="window.portfolioConfig.imgPath + 'docker.webp'" class="w-full h-full object-contain">
-                    </template>
-                    <template x-if="!['vscode', 'edge', 'terminal', 'explorer', 'pdfreader', 'word', 'excel', 'powerpoint', 'notepad', 'notepad++', 'settings', 'taskmanager', 'outlook', 'eventviewer', 'photoshop', 'filezilla', 'calculator', 'putty', 'database', 'flstudio', 'docker'].includes(appId)">
-                        <span x-text="appId.substring(0,2).toUpperCase()"></span>
-                    </template>
+                <div class="w-7 h-7 rounded-sm flex items-center justify-center overflow-hidden transition-transform group-hover:scale-110">
+                    <img :src="appIcon(appId)" alt="" class="w-full h-full object-contain">
                 </div>
 
                 <!-- Active Indicator -->

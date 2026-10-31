@@ -25,7 +25,7 @@ function app_from_path(string $path, array $appIds): ?string {
 /** The shared app list. See data/apps.json. */
 function load_app_manifest(): array {
     $manifest = json_decode((string)@file_get_contents(__DIR__ . '/../data/apps.json'), true);
-    return is_array($manifest) ? $manifest : ['apps' => [], 'pinned' => []];
+    return is_array($manifest) ? $manifest : ['apps' => [], 'pinned' => [], 'startPinned' => []];
 }
 
 /** Encodes a value for a script block. It cannot break out of the block. */
