@@ -207,6 +207,8 @@ jobs:
         run: |
           cd v2
           npm ci --prefer-offline --no-audit
+          # A direct push skips pull request checks, so nothing failing ships.
+          npm test
           npm run build
 
       - name: Verify build output
@@ -346,19 +348,24 @@ jobs:
             fi
             URL="${DOMAIN}"
           else
-            URL="https://${SUBDOMAIN}.codedvisiondesign.co.uk"
+            # Some sites have their own domain, so only short names get the suffix.
+            case "$SUBDOMAIN" in
+              *.*) URL="https://${SUBDOMAIN}" ;;
+              *) URL="https://${SUBDOMAIN}.codedvisiondesign.co.uk" ;;
+            esac
           fi
 
-          echo "Checking ${URL} ..."
-          sleep 3
-
-          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" -L --max-time 15 "${URL}" || echo "000")
-
-          if [ "$HTTP_CODE" = "200" ] || [ "$HTTP_CODE" = "301" ] || [ "$HTTP_CODE" = "302" ]; then
-            echo "Health check passed: HTTP ${HTTP_CODE}"
-          else
-            echo "::warning::Health check returned HTTP ${HTTP_CODE} — site may still be propagating"
-          fi
+          # A green deploy has to mean the site works: both builds and the API.
+          for path in / /v2/ /api/news.php; do
+            echo "Checking ${URL}${path} ..."
+            HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" -L --max-time 15 \
+              --retry 5 --retry-delay 5 --retry-all-errors "${URL}${path}" || echo "000")
+            if [ "$HTTP_CODE" != "200" ]; then
+              echo "::error::${URL}${path} returned HTTP ${HTTP_CODE}"
+              exit 1
+            fi
+          done
+          echo "Health check passed"
 
       # ── 11. Cleanup ────────────────────────────────────────────────────────
       - name: Cleanup SSH

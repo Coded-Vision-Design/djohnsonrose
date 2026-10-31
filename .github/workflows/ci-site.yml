@@ -1,0 +1,115 @@
+name: Site checks
+
+# Checks specific to this repo. The org-wide `verify` gate (ci-deps-check.yml)
+# only installs and builds the repo root, and is overwritten from a shared
+# template, so anything repo-specific belongs here instead. To make these
+# required, add their names to scripts/branch-protection-overrides.json in
+# cdv-vps-ops as well as to branch protection, or the seeder will drop them.
+#
+# Tests are safe to install without scripts, and nothing here needs a secret.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: site-checks-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  site-tests:
+    name: site-tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: v2/package-lock.json
+
+      - name: Install v2
+        working-directory: v2
+        run: npm ci --ignore-scripts --no-audit --no-fund
+
+      - name: Unit tests
+        working-directory: v2
+        run: npm test
+
+      - name: Type check and build
+        working-directory: v2
+        run: npm run build
+
+      - name: PHP tests
+        run: |
+          php tests/php/contact_test.php
+          php tests/php/security_test.php
+
+  browser-tests:
+    name: browser-tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: v2/package-lock.json
+
+      - name: Install v2 and Chromium
+        working-directory: v2
+        run: |
+          npm ci --ignore-scripts --no-audit --no-fund
+          npx playwright install --with-deps chromium
+
+      - name: Build v2
+        working-directory: v2
+        run: npm run build
+
+      # The security tests need .htaccess to be honoured, which rules out PHP's
+      # built-in server. This runs v1 and the production v2 build as the host does.
+      - name: Serve the site with Apache and PHP
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq apache2 libapache2-mod-php php-mbstring php-mysql
+          sudo a2enmod rewrite headers
+          sudo rsync -a --exclude node_modules --exclude .git ./ /var/www/site/
+          sudo cp .github/ci/apache-site.conf /etc/apache2/sites-available/site.conf
+          sudo a2dissite 000-default
+          sudo a2ensite site
+          sudo systemctl restart apache2
+          curl --fail --silent --show-error --output /dev/null --retry 5 --retry-connrefused http://127.0.0.1:8799/
+
+      # v2's window tests read its store, which only exists in dev builds. Vite
+      # proxies shared assets to the PHP server, so that needs to run as well.
+      - name: Start the dev servers
+        run: |
+          nohup php -S localhost:8765 dev-server.php > /tmp/php.log 2>&1 &
+          (cd v2 && nohup npx vite --port 5173 --strictPort > /tmp/vite.log 2>&1 &)
+          curl --fail --silent --show-error --output /dev/null --retry 15 --retry-delay 1 --retry-connrefused http://localhost:5173/v2/
+          curl --fail --silent --show-error --output /dev/null --retry 15 --retry-delay 1 --retry-connrefused http://localhost:8765/
+
+      - name: Browser tests
+        working-directory: v2
+        env:
+          V1_URL: http://127.0.0.1:8799/
+          SECURE_URL: http://127.0.0.1:8799
+        run: npx playwright test --workers=2 --retries=1 --reporter=line
+
+      - name: Keep failure traces
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-results
+          path: v2/test-results
+          retention-days: 7
+          if-no-files-found: ignore
