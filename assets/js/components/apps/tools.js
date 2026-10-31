@@ -99,8 +99,10 @@ document.addEventListener('alpine:init', () => {
 
         linkify(text) {
             if (!text) return '';
+            // Escaped first, as this goes through x-html.
+            const safe = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
             const urlPattern = /(\b(https?|ftp|file):\/\/[-A-Z0-9+&@#\/%?=~_|!:,.;]*[-A-Z0-9+&@#\/%=~_|])/ig;
-            return text.replace(urlPattern, '<a href="$1" target="_blank" onclick="event.stopPropagation()" class="text-blue-500 hover:underline cursor-pointer">$1</a>');
+            return safe.replace(urlPattern, '<a href="$1" target="_blank" rel="noopener" class="text-blue-500 hover:underline cursor-pointer">$1</a>');
         }
     }));
 

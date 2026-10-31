@@ -63,18 +63,16 @@
       ]
     }
     </script>
-    <!-- HTMX -->
-    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
     <!-- Window manager core, shared with v2. Runs before Alpine, as both are deferred. -->
-    <script type="module">
+    <script type="module" nonce="<?php echo $cspNonce; ?>">
         import * as windowing from '<?php echo BASE_PATH; ?>assets/js/windowing/windowing.js?v=<?php echo @filemtime(__DIR__ . '/../assets/js/windowing/windowing.js') ?: time(); ?>';
         window.OsWindowing = windowing;
     </script>
     <!-- Alpine.js -->
-    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script defer src="<?php echo BASE_PATH; ?>assets/js/alpine/alpine-3.17.5.min.js"></script>
     
     <!-- Google Tag Manager (Conditional) -->
-    <script>
+    <script nonce="<?php echo $cspNonce; ?>">
         window.initGTM = function() {
             if (window.gtmInitialized) return;
             window.gtmInitialized = true;
@@ -107,18 +105,15 @@
     $cssVer  = @filemtime($cssPath) ?: time();
     ?>
     <link rel="stylesheet" href="<?php echo BASE_PATH; ?>assets/css/app.css?v=<?php echo $cssVer; ?>">
-    <?php
-    // The list of apps is shared with v2. See data/apps.json.
-    $appManifest = json_decode((string)@file_get_contents(__DIR__ . '/../data/apps.json'), true) ?: [];
-    ?>
-    <script>
+    <?php $appManifest = load_app_manifest(); // Shared with v2. See data/apps.json. ?>
+    <script nonce="<?php echo $cspNonce; ?>">
         window.portfolioConfig = {
-            apps: <?php echo json_encode(array_column($appManifest['apps'] ?? [], null, 'id'), JSON_HEX_TAG | JSON_HEX_AMP); ?>,
-            pinned: <?php echo json_encode($appManifest['pinned'] ?? [], JSON_HEX_TAG | JSON_HEX_AMP); ?>,
-            email: '<?php echo $config["email"]; ?>',
-            appToOpen: '<?php echo $appToOpen ?? ""; ?>',
-            basePath: '<?php echo BASE_PATH; ?>',
-            imgPath: '<?php echo IMG_PATH; ?>'
+            apps: <?php echo js_value((object)array_column($appManifest['apps'], null, 'id')); ?>,
+            pinned: <?php echo js_value($appManifest['pinned']); ?>,
+            email: <?php echo js_value($config['email']); ?>,
+            appToOpen: <?php echo js_value($appToOpen ?? ''); ?>,
+            basePath: <?php echo js_value(BASE_PATH); ?>,
+            imgPath: <?php echo js_value(IMG_PATH); ?>
         };
     </script>
     <style type="text/css">
@@ -366,10 +361,5 @@
         echo '<script src="' . BASE_PATH . 'assets/js/components/' . $component . '.js?v=' . time() . '"></script>' . "\n    ";
     }
     ?>
-    <script>
-        document.body.addEventListener('htmx:afterSwap', function(evt) {
-            // Re-initialize any needed scripts after HTMX swaps
-        });
-    </script>
 </body>
 </html>

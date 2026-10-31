@@ -1,0 +1,6 @@
+# Copied into v2/dist by the build. v1 sets its policy in index.php, as it needs
+# a nonce. v2 has no inline scripts and nothing that evaluates code, so this
+# policy can be stricter. Styles still need 'unsafe-inline' for style attributes.
+<IfModule mod_headers.c>
+    Header always set Content-Security-Policy "default-src 'self'; script-src 'self' https://accounts.google.com/gsi/client; style-src 'self' 'unsafe-inline' https://accounts.google.com/gsi/style; img-src 'self' data: blob: https:; font-src 'self' data:; media-src 'self' blob: https://cdn.freesound.org; connect-src 'self' https://accounts.google.com/gsi/ https://cdn.freesound.org; frame-src 'self' https://accounts.google.com/gsi/; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'"
+</IfModule>

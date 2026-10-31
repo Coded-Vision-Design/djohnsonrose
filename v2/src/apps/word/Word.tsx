@@ -40,11 +40,16 @@ export default function Word() {
   const print = () => {
     const w = window.open('', '_blank', 'width=900,height=1000')
     if (!w) return
+    // The site's own styles. The desktop's fixed height would clip the page.
+    const styles = [...document.querySelectorAll('link[rel="stylesheet"], style')]
+      .map((node) => node.outerHTML)
+      .join('')
     w.document.write(`
       <html>
         <head>
           <title>CV - DeVanté Johnson-Rose</title>
-          <script src="https://cdn.tailwindcss.com"></` + `script>
+          ${styles}
+          <style>html, body { height: auto; overflow: visible; }</style>
         </head>
         <body>${editorRef.current?.innerHTML ?? ''}</body>
       </html>

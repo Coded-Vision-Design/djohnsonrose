@@ -17,7 +17,7 @@ Two parallel builds of the same OS ship from the same repo and the same `assets/
 
 | Track | Stack | URL |
 |---|---|---|
-| **v1** | PHP 8 · HTMX · Alpine.js · Tailwind | `/` |
+| **v1** | PHP 8 · Alpine.js · Tailwind | `/` |
 | **v2** | React 19 · TypeScript · Vite · Zustand · Tailwind | `/v2/` |
 
 A toggle in each taskbar flips between the two builds so visitors (and recruiters) can compare the same product written two different ways.
@@ -38,7 +38,7 @@ Portfolios that link to other portfolios are forgettable. This one **is** the wo
 
 **Frontend (v2)** — React 19.2 · TypeScript 6 · Vite 8 · React Router 6 · Tailwind 3.4 · [Zustand 5 with `persist`](v2/src/store/osStore.ts) · Chart.js 4 / react‑chartjs‑2
 
-**Frontend (v1)** — Alpine.js · HTMX · Tailwind 3 · vanilla JS modules
+**Frontend (v1)** — Alpine.js · Tailwind 4 · vanilla JS modules
 
 **Backend** — PHP 8 (no framework) · MySQL · PDO with prepared statements · HMAC‑SHA256 session cookies (no JWT lib) · Google OAuth (Identity Services + `tokeninfo` verification)
 

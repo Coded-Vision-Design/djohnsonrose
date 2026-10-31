@@ -5,7 +5,7 @@
   "scripts": {
     "build:css": "tailwindcss -i assets/css/input.css -o assets/css/app.css --minify",
     "watch:css": "tailwindcss -i assets/css/input.css -o assets/css/app.css --watch",
-    "test:php": "php tests/php/contact_test.php"
+    "test:php": "php tests/php/contact_test.php && php tests/php/security_test.php"
   },
   "devDependencies": {
     "@tailwindcss/cli": "^4.3.3",

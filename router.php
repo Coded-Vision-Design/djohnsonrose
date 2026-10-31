@@ -16,10 +16,7 @@ if ($path === '/' || $path === '/login') {
 }
 
 // Handle deep links for apps
-$appToOpen = null;
-if (strpos($path, '/app/') === 0) {
-    $appToOpen = str_replace('/app/', '', $path);
-}
+$appToOpen = app_from_path($path, array_column(load_app_manifest()['apps'], 'id'));
 
 return [
     'route' => $route,

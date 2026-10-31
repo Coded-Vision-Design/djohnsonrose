@@ -118,7 +118,7 @@
                       x-init="$el.focus()"></textarea>
         </template>
         <template x-if="!isEditing">
-            <div @click="isEditing = true"
+            <div @click="if (!$event.target.closest('a')) isEditing = true"
                  class="w-full h-full font-mono text-sm leading-relaxed whitespace-pre-wrap break-all cursor-text min-h-[200px]"
                  x-html="linkify(content) || '<span class=\'opacity-20\'>Click to start typing...</span>'"></div>
         </template>

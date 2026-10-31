@@ -1,5 +1,19 @@
 RewriteEngine On
 
+# ---- Security headers ----
+# The Content-Security-Policy is set per response instead: by index.php for v1,
+# which needs a nonce, and by v2/public/.htaccess for v2. HSTS leaves out
+# includeSubDomains, as this file also answers for the parent domain's path.
+<IfModule mod_headers.c>
+    Header always set Strict-Transport-Security "max-age=31536000"
+    Header always set X-Content-Type-Options "nosniff"
+    Header always set X-Frame-Options "SAMEORIGIN"
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+    Header always set Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=(), usb=()"
+    Header always unset X-Powered-By
+    Header unset X-Powered-By
+</IfModule>
+
 # Explicit MIME + access rules for the easter-egg video files in /data/.
 # Hostinger's default Apache config returns 403 for unrecognised binary
 # extensions in non-root dirs; without these the recycle-bin clip 403s.
@@ -25,6 +39,12 @@ AddType video/ogg .ogv
 <FilesMatch "(\.env|\.env\..*|composer\.(json|lock)|package(-lock)?\.json|tsconfig.*\.json|vite\.config\..*|vitest\.config\..*|playwright\.config\..*)$">
     Require all denied
 </FilesMatch>
+
+# The site is also reachable at johnson-rose.co.uk/devante/, where deep links
+# and cookies behave differently. Send it to the one canonical address, before
+# the HTTPS rule so that it takes a single redirect.
+RewriteCond %{HTTP_HOST} ^(www\.)?johnson-rose\.co\.uk$ [NC]
+RewriteRule ^(.*)$ https://devante.johnson-rose.co.uk/$1 [R=301,L]
 
 # Force HTTPS in production (skip on localhost dev hosts).
 RewriteCond %{HTTPS} off

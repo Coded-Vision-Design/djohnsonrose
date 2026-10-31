@@ -18,6 +18,8 @@ if ($isHtmx) {
         }
     }
 } else {
-    // Full shell render
+    // Full shell render. Headers must go first, as the shell starts output.
+    $cspNonce = csp_nonce();
+    header('Content-Security-Policy: ' . v1_content_security_policy($cspNonce));
     include __DIR__ . '/partials/shell.php';
 }

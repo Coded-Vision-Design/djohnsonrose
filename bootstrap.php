@@ -1,6 +1,9 @@
 <?php
 // bootstrap.php
 $config = require_once __DIR__ . '/config.php';
+require_once __DIR__ . '/lib/security.php';
+
+header_remove('X-Powered-By');
 
 // Helper to check if request is HTMX
 function isHtmx() {
@@ -24,11 +27,7 @@ function getBasePath() {
 
 // Helper to get request path
 function getRequestPath() {
-    $uri = $_SERVER['REQUEST_URI'];
-    $basePath = getBasePath();
-    $path = str_replace($basePath, '', $uri);
-    $path = parse_url($path, PHP_URL_PATH);
-    return '/' . ltrim($path, '/');
+    return request_path($_SERVER['REQUEST_URI'], getBasePath());
 }
 
 define('BASE_PATH', getBasePath());

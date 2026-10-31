@@ -6,7 +6,7 @@ const APP_LOAD_ERROR = `
         <p class="font-semibold">This app could not be opened.</p>
         <p class="text-xs opacity-70">Reload the page to try again.</p>
         <div class="flex gap-2">
-            <button onclick="location.reload()" class="min-h-[44px] px-4 rounded-sm bg-win-blue text-white text-xs font-semibold">Reload</button>
+            <button @click="window.location.reload()" class="min-h-[44px] px-4 rounded-sm bg-win-blue text-white text-xs font-semibold">Reload</button>
             <button @click="closeWindow(win.id)" class="min-h-[44px] px-4 rounded-sm border border-gray-300 dark:border-white/20 text-xs">Close</button>
         </div>
     </div>`;
