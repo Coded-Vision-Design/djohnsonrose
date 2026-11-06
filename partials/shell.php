@@ -70,7 +70,8 @@
         import * as fileOps from '<?php echo BASE_PATH; ?>assets/js/windowing/file-ops.js?v=<?php echo @filemtime(__DIR__ . '/../assets/js/windowing/file-ops.js'); ?>';
         import * as textOps from '<?php echo BASE_PATH; ?>assets/js/windowing/text-ops.js?v=<?php echo @filemtime(__DIR__ . '/../assets/js/windowing/text-ops.js'); ?>';
         import * as flStudio from '<?php echo BASE_PATH; ?>assets/js/windowing/fl-studio.js?v=<?php echo @filemtime(__DIR__ . '/../assets/js/windowing/fl-studio.js'); ?>';
-        window.OsWindowing = { ...windowing, ...shellCore, ...fileOps, ...textOps };
+        import * as calculator from '<?php echo BASE_PATH; ?>assets/js/windowing/calculator.js?v=<?php echo @filemtime(__DIR__ . '/../assets/js/windowing/calculator.js'); ?>';
+        window.OsWindowing = { ...windowing, ...shellCore, ...fileOps, ...textOps, ...calculator };
         window.FlStudio = flStudio;
     </script>
     <!-- Alpine.js -->
