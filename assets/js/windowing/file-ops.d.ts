@@ -106,6 +106,8 @@ export function writeTextFile<T extends OsEntry>(
 ): OsFiles<T>
 
 export function appForFile(name: string): 'flstudio' | 'notepad'
+/** A picture for the entry, never an emoji. */
+export function entryIcon(entry: { name: string; type: string; icon?: string }, imgPath: string): string
 export function entryType(entry: Pick<OsEntry, 'name' | 'type'> & Partial<OsEntry>): string
 export function entrySize(entry: Pick<OsEntry, 'name' | 'type'> & Partial<OsEntry>): number
 export function entryDate(entry: Pick<OsEntry, 'name' | 'type'> & Partial<OsEntry>): Date

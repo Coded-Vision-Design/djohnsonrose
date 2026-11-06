@@ -41,6 +41,7 @@ import {
   type QuickToggle,
 } from '../../../assets/js/windowing/shell-ui.js'
 import { filesystem, type FileSystem, type FsEntry } from '../data/filesystem'
+import { forgetReferences } from '../../../assets/js/windowing/references.js'
 
 const prefersDark = () => !!window.matchMedia?.('(prefers-color-scheme: dark)').matches
 
@@ -51,7 +52,8 @@ const animateOut = (id: number, kind: 'close' | 'minimise') =>
 // The file system is saved on its own, and only when it changes: it is far too
 // big to go through persist below, which writes on every state change.
 const FILES_KEY = 'react.fileSystem'
-const FILES_VERSION = 1
+// Bump this when data/filesystem.json changes, so that saved copies pick it up.
+const FILES_VERSION = 2
 
 function savedFiles(): FileSystem {
   try {
@@ -442,6 +444,8 @@ export const useOsStore = create<OsState>()(
       },
       logout: () => {
         get().logEvent('Security', 'Information', 'User DeVante logged out')
+        // Letters opened in References must not outlast the visitor's session.
+        forgetReferences(sessionStorage)
         set({
           loggedIn: false,
           windows: [],

@@ -296,6 +296,10 @@ document.addEventListener('alpine:init', () => {
                 if (appHandle === 'settings' && extraData.currentTab) {
                     existing.currentTab = extraData.currentTab;
                 }
+                if (appHandle === 'edge' && extraData.initialUrl) {
+                    existing.initialUrl = extraData.initialUrl;
+                    existing.urlRevision = (existing.urlRevision ?? 0) + 1;
+                }
                 
                 this.focusWindow(existing.id);
                 if (existing.state === 'minimized') this.toggleMinimize(existing.id);

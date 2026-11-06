@@ -20,33 +20,14 @@ document.addEventListener('alpine:init', () => {
         },
         updateStats() {
             const osStore = Alpine.store('os');
+            const imgPath = window.portfolioConfig.imgPath;
             this.processes = osStore.windows.map(win => {
-                let icon = '⚙️';
-                const imgPath = window.portfolioConfig.imgPath;
-                if (win.app === 'vscode') icon = `<img src="${imgPath}vscode.webp" class="w-4 h-4 object-contain">`;
-                else if (win.app === 'edge') icon = `<img src="${imgPath}chrome.webp" class="w-4 h-4 object-contain">`;
-                else if (win.app === 'outlook') icon = `<img src="${imgPath}outlook.webp" class="w-4 h-4 object-contain">`;
-                else if (win.app === 'word') icon = `<img src="${imgPath}word.webp" class="w-4 h-4 object-contain">`;
-                else if (win.app === 'pdfreader') icon = `<img src="${imgPath}pdf.webp" class="w-4 h-4 object-contain">`;
-                else if (win.app === 'explorer') icon = `<img src="${imgPath}explorer.webp" class="w-4 h-4 object-contain">`;
-                else if (win.app === 'terminal') icon = `<img src="${imgPath}terminal.webp" class="w-4 h-4 object-contain">`;
-                else if (win.app === 'settings') icon = `<img src="${imgPath}settings.webp" class="w-4 h-4 object-contain">`;
-                else if (win.app === 'taskmanager') icon = `<img src="${imgPath}taskmanager.webp" class="w-4 h-4 object-contain">`;
-                else if (win.app === 'excel') icon = `<img src="${imgPath}excel.webp" class="w-4 h-4 object-contain">`;
-                else if (win.app === 'powerpoint') icon = `<img src="${imgPath}powerpoint.webp" class="w-4 h-4 object-contain">`;
-                else if (win.app === 'photoshop') icon = `<img src="${imgPath}photoshop.webp" class="w-4 h-4 object-contain">`;
-                else if (win.app === 'filezilla') icon = `<img src="${imgPath}filezilla.webp" class="w-4 h-4 object-contain">`;
-                else if (win.app === 'calculator') icon = `<img src="${imgPath}calculator.webp" class="w-4 h-4 object-contain">`;
-                else if (win.app === 'database') icon = `<img src="${imgPath}mssql.webp" class="w-4 h-4 object-contain">`;
-                else if (win.app === 'putty') icon = `<img src="${imgPath}putty.webp" class="w-4 h-4 object-contain">`;
-                else if (win.app === 'flstudio') icon = `<img src="${imgPath}fl studio.webp" class="w-4 h-4 object-contain">`;
-                else if (win.app === 'references') icon = `<img src="${imgPath}notepad++.webp" class="w-4 h-4 object-contain">`;
-                else if (win.app === 'admin') icon = `<img src="${imgPath}mssql.webp" class="w-4 h-4 object-contain">`;
-
+                // Each app's own picture from data/apps.json, as in v2.
+                const icon = imgPath + (window.portfolioConfig.apps[win.app]?.icon ?? 'win11/taskmgr.webp');
                 return {
                     id: win.id,
                     name: win.title,
-                    icon: icon,
+                    icon,
                     cpu: Math.floor(Math.random() * 5) + (win.id === osStore.focusedWindowId ? 2 : 0),
                     ram: Math.floor(Math.random() * 100) + 150,
                     network: Math.random() > 0.7 ? (Math.random() * 2).toFixed(1) : 0,

@@ -59,7 +59,7 @@
 
         <!-- Empty Recycle Bin -->
         <template x-if="isRecycle">
-            <button type="button" @click="emptyBin()" :disabled="currentFiles.length === 0" title="Empty Recycle Bin" class="px-3 py-1.5 rounded-sm text-xs font-medium bg-red-500 text-white hover:bg-red-600 disabled:opacity-40 disabled:cursor-not-allowed">🗑 Empty</button>
+            <button type="button" @click="emptyBin()" :disabled="currentFiles.length === 0" title="Empty Recycle Bin" class="px-3 py-1.5 rounded-sm text-xs font-medium bg-red-500 text-white hover:bg-red-600 disabled:opacity-40 disabled:cursor-not-allowed"><img src="<?php echo IMG_PATH; ?>win11/delete.webp" alt="" class="w-3.5 h-3.5 inline-block mr-1 align-[-2px] brightness-0 invert">Empty</button>
         </template>
     </div>
 
@@ -86,12 +86,7 @@
                                 }"
                                 class="w-full text-left py-1.5 rounded-sm hover:bg-gray-100 dark:hover:bg-white/5 flex items-center group transition-colors">
                             <span class="mr-3 text-base group-hover:scale-110 transition-transform flex items-center justify-center w-5 h-5 shrink-0">
-                                <template x-if="(item.icon || '').includes('.')">
-                                    <img :src="item.icon" alt="" class="w-full h-full object-contain">
-                                </template>
-                                <template x-if="!(item.icon || '').includes('.')">
-                                    <span x-text="item.icon || '📁'"></span>
-                                </template>
+                                <img :src="OsWindowing.entryIcon({ name: item.label, type: 'folder', icon: item.icon }, portfolioConfig.imgPath)" alt="" class="w-full h-full object-contain">
                             </span>
                             <span class="truncate" x-text="item.label"></span>
                         </button>
@@ -158,11 +153,8 @@
                                 <template x-if="file.type === 'image'">
                                     <img :src="file.url" alt="" class="w-full h-full object-cover" loading="lazy">
                                 </template>
-                                <template x-if="file.type !== 'image' && (file.icon || '').includes('.')">
-                                    <img :src="file.icon" alt="" class="w-10 h-10 object-contain">
-                                </template>
-                                <template x-if="file.type !== 'image' && !(file.icon || '').includes('.')">
-                                    <div class="text-4xl drop-shadow-xs" x-text="file.icon || '📁'"></div>
+                                <template x-if="file.type !== 'image'">
+                                    <img :src="OsWindowing.entryIcon(file, portfolioConfig.imgPath)" alt="" class="w-10 h-10 object-contain">
                                 </template>
                                 <template x-if="file.status">
                                     <div class="absolute bottom-0 right-0 bg-white/80 dark:bg-black/80 rounded-full w-5 h-5 flex items-center justify-center text-[10px] shadow-xs border border-black/5 dark:border-white/10" x-text="file.status"></div>
@@ -216,11 +208,8 @@
                                         <template x-if="file.type === 'image'">
                                             <img :src="file.url" alt="" class="w-5 h-5 object-cover rounded-sm">
                                         </template>
-                                        <template x-if="file.type !== 'image' && (file.icon || '').includes('.')">
-                                            <img :src="file.icon" alt="" class="w-5 h-5 object-contain">
-                                        </template>
-                                        <template x-if="file.type !== 'image' && !(file.icon || '').includes('.')">
-                                            <span class="text-sm" x-text="file.icon || '📁'"></span>
+                                        <template x-if="file.type !== 'image'">
+                                            <img :src="OsWindowing.entryIcon(file, portfolioConfig.imgPath)" alt="" class="w-5 h-5 object-contain">
                                         </template>
                                     </span>
                                     <template x-if="renamingName === file.name">
@@ -261,11 +250,8 @@
                                 <template x-if="selectedFile.type === 'image'">
                                     <img :src="selectedFile.url" alt="" class="w-full h-full object-cover rounded-sm">
                                 </template>
-                                <template x-if="selectedFile.type !== 'image' && (selectedFile.icon || '').includes('.')">
-                                    <img :src="selectedFile.icon" alt="" class="w-16 h-16 object-contain">
-                                </template>
-                                <template x-if="selectedFile.type !== 'image' && !(selectedFile.icon || '').includes('.')">
-                                    <div class="text-5xl" x-text="selectedFile.icon || '📁'"></div>
+                                <template x-if="selectedFile.type !== 'image'">
+                                    <img :src="OsWindowing.entryIcon(selectedFile, portfolioConfig.imgPath)" alt="" class="w-16 h-16 object-contain">
                                 </template>
                             </div>
                             <div class="mt-3 text-center font-semibold text-sm break-all" x-text="selectedFile.name"></div>
@@ -293,7 +279,7 @@
             </div>
             <template x-if="selectedFile">
                 <div class="flex items-center space-x-1">
-                    <span>📁</span>
+                    <img :src="OsWindowing.entryIcon(selectedFile, portfolioConfig.imgPath)" alt="" class="w-3.5 h-3.5 object-contain">
                     <span x-text="`1 item selected · ${OsWindowing.formatSize(OsWindowing.entrySize(selectedFile))}`"></span>
                 </div>
             </template>

@@ -297,57 +297,64 @@ document.addEventListener('alpine:init', () => {
         }
     }));
 
-    // FileZilla App Logic
-    Alpine.data('filezillaApp', () => ({
-        host: '',
-        user: '',
+    // FileZilla. The site details and both listings come from data/devtools.json,
+    // and the connection log from assets/js/windowing/devtools.js, shared with v2.
+    Alpine.data('filezillaApp', (site = {}) => ({
+        host: site.host ?? '',
+        user: site.user ?? '',
         pass: '',
-        port: '',
+        port: String(site.port ?? 22),
         isConnected: false,
         isConnecting: false,
         logs: [
-            { type: 'status', text: 'Disconnected from server' }
+            { type: 'status', text: 'Status: Disconnected from server' }
         ],
-        localPath: 'C:\\Users\\DeVante',
-        remotePath: '/',
-        
+        localPath: site.localPath ?? '',
+        remotePath: site.remotePath ?? '/',
+        local: site.local ?? [],
+        remote: site.remote ?? [],
+        _timer: null,
+
+        size(file) {
+            return OsWindowing.transferSize(file);
+        },
+
         connect() {
-            if (!this.host) return;
+            if (!this.host || this.isConnecting) return;
             this.isConnecting = true;
-            this.logs.push({ type: 'command', text: `Command: open sftp://${this.user}@${this.host}:${this.port || 22}` });
-            
-            setTimeout(() => {
-                this.logs.push({ type: 'status', text: 'Status: Connecting to ' + this.host + '...' });
-                setTimeout(() => {
-                    this.logs.push({ type: 'status', text: 'Status: Using username "' + this.user + '".' });
-                    this.logs.push({ type: 'status', text: 'Status: Connected to ' + this.host });
-                    this.logs.push({ type: 'command', text: 'Command: remote path is "/"' });
-                    this.logs.push({ type: 'status', text: 'Status: Listing directory /...' });
-                    this.logs.push({ type: 'status', text: 'Status: Directory listing of "/" successful' });
-                    this.isConnecting = false;
-                    this.isConnected = true;
-                }, 1000);
-            }, 500);
+            const steps = OsWindowing.quickconnectLog(this.host, this.user, this.port, this.remotePath);
+            this._timer = setInterval(() => {
+                this.logs.push(steps.shift());
+                if (steps.length) return;
+                clearInterval(this._timer);
+                this.isConnecting = false;
+                this.isConnected = true;
+            }, 250);
         },
 
         disconnect() {
             this.isConnected = false;
             this.logs.push({ type: 'status', text: 'Status: Disconnected from server' });
+        },
+
+        destroy() {
+            clearInterval(this._timer);
         }
     }));
 
     // Password-protected references vault. Fetches /data/references.enc.json
-    // and decrypts it client-side with Web Crypto. Same blob the v2 React
-    // component uses.
+    // and decrypts it in the browser through assets/js/windowing/references.js,
+    // shared with v2. The opened letters are forgotten on Lock and on sign-out.
     Alpine.data('referencesVault', () => ({
         envelope: null,
         loadError: null,
         password: '',
         busy: false,
         error: null,
-        refs: null,
+        refs: OsWindowing.savedReferences(sessionStorage),
         selected: 0,
 
+        // Alpine calls this once by itself; the partial must not call it again.
         async init() {
             try {
                 const r = await fetch(window.portfolioConfig.basePath + 'data/references.enc.json', { credentials: 'same-origin' });
@@ -356,17 +363,10 @@ document.addEventListener('alpine:init', () => {
             } catch (e) {
                 this.loadError = e.message;
             }
-            try {
-                const cached = sessionStorage.getItem('references.session');
-                if (cached) this.refs = JSON.parse(cached);
-            } catch (_) { /* ignore */ }
         },
 
-        _b64ToBytes(b64) {
-            const raw = atob(b64);
-            const out = new Uint8Array(raw.length);
-            for (let i = 0; i < raw.length; i++) out[i] = raw.charCodeAt(i);
-            return out;
+        get current() {
+            return this.refs?.[this.selected] ?? this.refs?.[0] ?? null;
         },
 
         async unlock() {
@@ -374,23 +374,10 @@ document.addEventListener('alpine:init', () => {
             this.busy = true;
             this.error = null;
             try {
-                const salt = this._b64ToBytes(this.envelope.salt);
-                const iv = this._b64ToBytes(this.envelope.iv);
-                const ciphertext = this._b64ToBytes(this.envelope.ciphertext);
-                const keyMaterial = await crypto.subtle.importKey(
-                    'raw', new TextEncoder().encode(this.password),
-                    { name: 'PBKDF2' }, false, ['deriveKey']
-                );
-                const key = await crypto.subtle.deriveKey(
-                    { name: 'PBKDF2', salt, iterations: this.envelope.iterations, hash: 'SHA-256' },
-                    keyMaterial,
-                    { name: 'AES-GCM', length: 256 }, false, ['decrypt']
-                );
-                const plaintext = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, ciphertext);
-                const decoded = new TextDecoder().decode(plaintext);
-                this.refs = JSON.parse(decoded);
+                const { references, text } = await OsWindowing.decryptReferences(this.envelope, this.password);
+                this.refs = references;
                 this.selected = 0;
-                sessionStorage.setItem('references.session', decoded);
+                OsWindowing.saveReferences(sessionStorage, text);
                 this.password = '';
             } catch (_) {
                 this.error = 'Incorrect password.';
@@ -400,7 +387,7 @@ document.addEventListener('alpine:init', () => {
         },
 
         lock() {
-            sessionStorage.removeItem('references.session');
+            OsWindowing.forgetReferences(sessionStorage);
             this.refs = null;
             this.selected = 0;
         },

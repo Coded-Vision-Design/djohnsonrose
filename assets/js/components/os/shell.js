@@ -295,26 +295,10 @@ document.addEventListener('alpine:init', () => {
                 const res = await fetch(`${window.portfolioConfig.basePath}api/weather.php`);
                 if (!res.ok) throw new Error(`HTTP ${res.status}`);
                 const data = await res.json();
-                if (!data.current_weather) throw new Error('No weather');
-                this.weather.status = 'ready';
-                this.weather.temp = Math.round(data.current_weather.temperature);
-                this.weather.city = data.city || 'London';
-                const code = data.current_weather.weathercode;
-                // Windows 11 Weather Codes Mapping
-                const conditions = {
-                    0: { label: 'Clear', icon: '☀️' },
-                    1: { label: 'Mainly clear', icon: '🌤️' },
-                    2: { label: 'Partly cloudy', icon: '⛅' },
-                    3: { label: 'Overcast', icon: '☁️' },
-                    45: { label: 'Foggy', icon: '🌫️' },
-                    51: { label: 'Drizzle', icon: '🌦️' },
-                    61: { label: 'Rain', icon: '🌧️' },
-                    71: { label: 'Snow', icon: '❄️' },
-                    95: { label: 'Thunderstorm', icon: '⛈️' }
-                };
-                const condition = conditions[code] || { label: 'Cloudy', icon: '☁️' };
-                this.weather.condition = condition.label;
-                this.weather.icon = condition.icon;
+                // The codes are read in assets/js/windowing/weather.js, shared with v2.
+                const weather = OsWindowing.weatherFromApi(data);
+                if (!weather) throw new Error('No weather');
+                Object.assign(this.weather, weather, { status: 'ready' });
             } catch (e) {
                 // Widgets says so, rather than showing NaN. A later refresh can still succeed.
                 if (this.weather.status !== 'ready') {
@@ -617,6 +601,8 @@ document.addEventListener('alpine:init', () => {
 
         logout() {
             Alpine.store('os').logEvent('Security', 'Information', 'User DeVante logged out');
+            // Letters opened in References must not outlast the visitor's session.
+            OsWindowing.forgetReferences(sessionStorage);
             this.loggedIn = false;
             localStorage.removeItem('auth.loggedIn');
             Alpine.store('os').windows = [];

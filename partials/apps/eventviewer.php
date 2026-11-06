@@ -3,7 +3,7 @@
     <!-- Header -->
     <div class="h-9 bg-white dark:bg-[#2b2b2b] border-b border-gray-300 dark:border-gray-800 flex items-center px-2 sm:px-4 shrink-0 justify-between">
         <div class="flex items-center space-x-2 min-w-0 mr-2">
-            <img :src="window.portfolioConfig.imgPath + 'eventviewer.webp'" class="w-4 h-4 object-contain shrink-0">
+            <img :src="window.portfolioConfig.imgPath + 'eventviewer.webp'" alt="" class="w-4 h-4 object-contain shrink-0">
             <span class="text-[10px] sm:text-xs font-semibold truncate">Event Viewer (Local)</span>
         </div>
         <div class="flex items-center shrink-0">

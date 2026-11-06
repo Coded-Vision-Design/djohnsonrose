@@ -1,13 +1,16 @@
-<!-- partials/apps/database.php — 1:1 with v2/src/apps/database/Database.tsx.
-     Real SQL-ish editor; the parser + executor live in window.PortfolioSQL
-     (assets/js/components/apps/database-sql.js). -->
+<!-- partials/apps/database.php, the same as v2/src/apps/database/Database.tsx.
+     The parser and executor are shared with v2 in assets/js/windowing/sql.js. -->
 <div class="h-full flex flex-col bg-[#f0f0f0] dark:bg-[#1c1c1c] text-black dark:text-white select-none overflow-hidden"
      style="font-family: 'Segoe UI', sans-serif;"
-     x-data="databaseApp()" x-init="init()">
+     x-data="databaseApp()" data-ssms>
 
     <!-- SSMS toolbar -->
-    <div class="h-9 bg-white dark:bg-[#2b2b2b] border-b border-gray-300 dark:border-gray-800 flex items-center px-2 space-x-1 shrink-0">
-        <button type="button" class="p-1.5 rounded-sm hover:bg-gray-100 dark:hover:bg-white/5 flex items-center space-x-1">
+    <div class="h-9 bg-white dark:bg-[#2b2b2b] border-b border-gray-300 dark:border-gray-800 flex items-center px-2 space-x-1 shrink-0 overflow-x-auto scrollbar-none">
+        <button type="button" @click="explorerOpen = !explorerOpen" :aria-expanded="explorerOpen" aria-label="Object Explorer" title="Object Explorer"
+                class="p-1.5 rounded-sm hover:bg-gray-100 dark:hover:bg-white/5 flex items-center shrink-0">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+        </button>
+        <button type="button" class="p-1.5 rounded-sm hover:bg-gray-100 dark:hover:bg-white/5 flex items-center space-x-1 shrink-0">
             <span class="text-[10px] font-semibold">New Query</span>
         </button>
         <div class="w-px h-6 bg-gray-300 dark:bg-gray-700 mx-1"></div>
@@ -42,12 +45,13 @@
     </div>
 
     <!-- Workspace -->
-    <div class="grow flex min-h-0">
-        <!-- Object Explorer -->
-        <div class="w-64 border-r border-gray-300 dark:border-gray-800 flex flex-col bg-[#f0f0f0] dark:bg-[#252526] shrink-0 overflow-hidden">
+    <div class="grow flex min-h-0 relative">
+        <!-- Object Explorer: beside the query on wide screens, over it on phones -->
+        <div x-show="explorerOpen" x-cloak
+             class="w-64 max-w-[85%] border-r border-gray-300 dark:border-gray-800 flex flex-col bg-[#f0f0f0] dark:bg-[#252526] shrink-0 overflow-hidden absolute md:static inset-y-0 left-0 z-30 shadow-xl md:shadow-none">
             <div class="p-2 bg-gray-200 dark:bg-[#333333] text-[11px] font-semibold border-b border-gray-300 dark:border-gray-800 flex items-center justify-between">
                 <span>Object Explorer</span>
-                <button type="button" class="opacity-60">✕</button>
+                <button type="button" class="opacity-60 hover:opacity-100 px-1" aria-label="Close Object Explorer" @click="explorerOpen = false">✕</button>
             </div>
             <div class="grow overflow-y-auto p-2 text-[11px]">
                 <div class="flex items-center space-x-1 cursor-default">

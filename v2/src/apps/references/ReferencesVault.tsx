@@ -1,74 +1,20 @@
 import { useCallback, useEffect, useState } from 'react'
+import {
+  decryptReferences,
+  forgetReferences,
+  saveReferences,
+  savedReferences,
+  type Reference,
+  type ReferencesEnvelope as Envelope,
+} from '../../../../assets/js/windowing/references.js'
 
-// Password-protected references vault.
+// Password-protected references vault, the same as v1's.
 //
-// On mount: fetches /data/references.enc.json (envelope { salt, iv, ciphertext, iterations }).
-// On submit: derives an AES-256-GCM key from the password via PBKDF2 with the
-// same parameters used by scripts/encrypt-references.mjs, then decrypts the
-// payload. AES-GCM tag-mismatch === wrong password (we surface that as a
-// generic "Incorrect password" message).
-
-interface Envelope {
-  v: number
-  alg: 'AES-256-GCM'
-  kdf: 'PBKDF2-SHA256'
-  iterations: number
-  salt: string
-  iv: string
-  ciphertext: string
-}
-
-interface Reference {
-  from: string
-  role?: string
-  company?: string
-  body: string
-}
-
-function b64ToBytes(b64: string): Uint8Array {
-  const raw = atob(b64)
-  const out = new Uint8Array(raw.length)
-  for (let i = 0; i < raw.length; i++) out[i] = raw.charCodeAt(i)
-  return out
-}
-
-async function decryptEnvelope(envelope: Envelope, password: string): Promise<string> {
-  // Web Crypto wants concrete BufferSource types; TS 5.8+ flags the generic
-  // Uint8Array<ArrayBufferLike> view we get from b64ToBytes. Casting at the
-  // call sites keeps the body readable without sprinkling helpers everywhere.
-  const salt = b64ToBytes(envelope.salt) as BufferSource
-  const iv = b64ToBytes(envelope.iv) as BufferSource
-  const ciphertext = b64ToBytes(envelope.ciphertext) as BufferSource
-
-  const keyMaterial = await crypto.subtle.importKey(
-    'raw',
-    new TextEncoder().encode(password) as BufferSource,
-    { name: 'PBKDF2' },
-    false,
-    ['deriveKey'],
-  )
-  const key = await crypto.subtle.deriveKey(
-    { name: 'PBKDF2', salt, iterations: envelope.iterations, hash: 'SHA-256' },
-    keyMaterial,
-    { name: 'AES-GCM', length: 256 },
-    false,
-    ['decrypt'],
-  )
-  const plaintext = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, ciphertext)
-  return new TextDecoder().decode(plaintext)
-}
-
-const SESSION_KEY = 'references.session'
-
-/** The letters, if the visitor has already unlocked them this session. */
-function unlockedRefs() {
-  try {
-    const cached = sessionStorage.getItem(SESSION_KEY)
-    return cached ? (JSON.parse(cached) as Reference[]) : null
-  } catch {
-    return null
-  }
-}
+// On mount: fetches /data/references.enc.json. On submit, the shared
+// assets/js/windowing/references.js derives the key from the password and
+// decrypts the letters in the browser; a wrong password fails the GCM tag
+// check, which is shown as "Incorrect password". The opened letters are kept
+// for the session, and forgotten on Lock and when the visitor signs out.
 
 export default function ReferencesVault() {
   const [envelope, setEnvelope] = useState<Envelope | null>(null)
@@ -76,7 +22,7 @@ export default function ReferencesVault() {
   const [password, setPassword] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [refs, setRefs] = useState<Reference[] | null>(unlockedRefs)
+  const [refs, setRefs] = useState<Reference[] | null>(() => savedReferences(sessionStorage))
   const [selected, setSelected] = useState(0)
 
   useEffect(() => {
@@ -103,11 +49,10 @@ export default function ReferencesVault() {
     setBusy(true)
     setError(null)
     try {
-      const plaintext = await decryptEnvelope(envelope, password)
-      const parsed = JSON.parse(plaintext) as Reference[]
-      setRefs(parsed)
+      const { references, text } = await decryptReferences(envelope, password)
+      setRefs(references)
       setSelected(0)
-      sessionStorage.setItem(SESSION_KEY, plaintext)
+      saveReferences(sessionStorage, text)
       setPassword('')
     } catch {
       setError('Incorrect password.')
@@ -117,19 +62,19 @@ export default function ReferencesVault() {
   }, [envelope, password])
 
   const lock = () => {
-    sessionStorage.removeItem(SESSION_KEY)
+    forgetReferences(sessionStorage)
     setRefs(null)
     setSelected(0)
   }
 
   if (refs) {
-    const current = refs[selected]
+    const current = refs[selected] ?? refs[0]
     return (
       <div className="h-full flex flex-col bg-white dark:bg-[#1c1c1c] text-black dark:text-white">
         <header className="h-9 bg-[#2b579a] text-white flex items-center justify-between px-3 text-[11px] shrink-0">
           <div className="flex items-center gap-2">
             <span aria-hidden>🔓</span>
-            <span className="font-medium">References — Unlocked</span>
+            <span className="font-medium">References - Unlocked</span>
             <span className="opacity-70">· {refs.length} item{refs.length === 1 ? '' : 's'}</span>
           </div>
           <button
@@ -140,8 +85,13 @@ export default function ReferencesVault() {
             Lock
           </button>
         </header>
-        <div className="grow flex min-h-0">
-          <aside className="w-56 border-r border-gray-200 dark:border-gray-800 overflow-y-auto shrink-0">
+        {!current ? (
+          <p className="grow flex items-center justify-center p-6 text-sm opacity-70" data-references-empty>
+            There are no references in the vault yet.
+          </p>
+        ) : (
+        <div className="grow flex flex-col sm:flex-row min-h-0">
+          <aside className="w-full sm:w-56 max-h-40 sm:max-h-none border-b sm:border-b-0 sm:border-r border-gray-200 dark:border-gray-800 overflow-y-auto shrink-0">
             {refs.map((r, i) => (
               <button
                 key={i}
@@ -166,6 +116,7 @@ export default function ReferencesVault() {
             <pre className="text-sm whitespace-pre-wrap font-sans leading-relaxed">{current.body}</pre>
           </article>
         </div>
+        )}
       </div>
     )
   }
@@ -176,7 +127,7 @@ export default function ReferencesVault() {
         <div className="w-14 h-14 rounded-full bg-white/10 mx-auto flex items-center justify-center text-2xl mb-4">
           🔒
         </div>
-        <h1 className="text-lg font-semibold mb-1">References — Encrypted</h1>
+        <h1 className="text-lg font-semibold mb-1">References - Encrypted</h1>
         <p className="text-[11px] opacity-80 mb-6 leading-relaxed">
           Reference letters are stored encrypted in the browser bundle and only
           decrypt locally once a recruiter enters the shared password. Nothing

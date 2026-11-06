@@ -91,7 +91,15 @@
         import * as officeApps from '<?php echo BASE_PATH; ?>assets/js/windowing/office.js?v=<?php echo @filemtime(__DIR__ . '/../assets/js/windowing/office.js'); ?>';
         import * as drawing from '<?php echo BASE_PATH; ?>assets/js/windowing/drawing.js?v=<?php echo @filemtime(__DIR__ . '/../assets/js/windowing/drawing.js'); ?>';
         import * as shellUi from '<?php echo BASE_PATH; ?>assets/js/windowing/shell-ui.js?v=<?php echo @filemtime(__DIR__ . '/../assets/js/windowing/shell-ui.js'); ?>';
-        window.OsWindowing = { ...windowing, ...shellCore, ...fileOps, ...textOps, ...shellUi };
+        import * as calculator from '<?php echo BASE_PATH; ?>assets/js/windowing/calculator.js?v=<?php echo @filemtime(__DIR__ . '/../assets/js/windowing/calculator.js'); ?>';
+        import * as terminal from '<?php echo BASE_PATH; ?>assets/js/windowing/terminal.js?v=<?php echo @filemtime(__DIR__ . '/../assets/js/windowing/terminal.js'); ?>';
+        import * as browser from '<?php echo BASE_PATH; ?>assets/js/windowing/browser.js?v=<?php echo @filemtime(__DIR__ . '/../assets/js/windowing/browser.js'); ?>';
+        import * as media from '<?php echo BASE_PATH; ?>assets/js/windowing/media.js?v=<?php echo @filemtime(__DIR__ . '/../assets/js/windowing/media.js'); ?>';
+        import * as sql from '<?php echo BASE_PATH; ?>assets/js/windowing/sql.js?v=<?php echo @filemtime(__DIR__ . '/../assets/js/windowing/sql.js'); ?>';
+        import * as devtools from '<?php echo BASE_PATH; ?>assets/js/windowing/devtools.js?v=<?php echo @filemtime(__DIR__ . '/../assets/js/windowing/devtools.js'); ?>';
+        import * as references from '<?php echo BASE_PATH; ?>assets/js/windowing/references.js?v=<?php echo @filemtime(__DIR__ . '/../assets/js/windowing/references.js'); ?>';
+        import * as weather from '<?php echo BASE_PATH; ?>assets/js/windowing/weather.js?v=<?php echo @filemtime(__DIR__ . '/../assets/js/windowing/weather.js'); ?>';
+        window.OsWindowing = { ...shellUi, ...calculator, ...terminal, ...browser, ...media, ...sql, ...devtools, ...references, ...weather };
         window.FlStudio = flStudio;
         window.OfficeApps = officeApps;
         window.Drawing = drawing;
@@ -389,7 +397,6 @@
         'explorer',
         'photos',
         'edge',
-        'apps/database-sql',
         'apps/office',
         'apps/dev',
         'apps/media',

@@ -1,4 +1,6 @@
 // assets/js/components/apps/media.js
+// The player's clock and seek bar, and the PDF check, are shared with v2 in
+// assets/js/windowing/media.js.
 document.addEventListener('alpine:init', () => {
     // Video App Logic
     Alpine.data('videoApp', () => ({
@@ -9,58 +11,62 @@ document.addEventListener('alpine:init', () => {
         volume: 1,
         videoUrl: '',
         videoName: '',
+        seeking: false,
 
         init() {
             this.updateFromStore();
             this.$watch('$store.os.windows', () => this.updateFromStore(), { deep: true });
-
-            this.$nextTick(() => {
-                const player = this.$refs.videoPlayer;
-                if (player) {
-                    player.load(); // Ensure video is loaded
-                    player.onloadedmetadata = () => {
-                        this.duration = player.duration;
-                    };
-                }
-            });
         },
 
         updateFromStore() {
             const win = Alpine.store('os').windows.find(w => w.app === 'video');
-            if (win) {
-                if (win.videoUrl) this.videoUrl = win.videoUrl;
-                this.videoName = win.title;
-            }
+            const url = win?.videoUrl || OsWindowing.DEFAULT_VIDEO;
+            const src = /^(https?:)?\//.test(url) ? url : window.portfolioConfig.basePath + url;
+            if (src !== this.videoUrl) this.videoUrl = src;
+            this.videoName = win?.title || OsWindowing.mediaName(url);
         },
 
         togglePlay() {
             const player = this.$refs.videoPlayer;
-            if (player.paused) {
-                player.play();
-                this.playing = true;
-            } else {
-                player.pause();
-                this.playing = false;
-            }
+            if (player.paused) player.play().catch(() => { this.playing = false; });
+            else player.pause();
         },
 
         updateProgress() {
             const player = this.$refs.videoPlayer;
             this.currentTime = player.currentTime;
-            this.progress = (this.currentTime / this.duration) * 100;
+            this.progress = OsWindowing.progressPercent(player.currentTime, player.duration);
         },
 
         seek(e) {
             const player = this.$refs.videoPlayer;
-            const rect = e.target.closest('.relative.h-1').getBoundingClientRect();
-            const pos = (e.clientX - rect.left) / rect.width;
-            player.currentTime = pos * this.duration;
+            player.currentTime = OsWindowing.seekTime(e.clientX, e.currentTarget.getBoundingClientRect(), player.duration);
+            this.updateProgress();
+        },
+
+        startSeek(e) {
+            this.seeking = true;
+            e.currentTarget.setPointerCapture?.(e.pointerId);
+            this.seek(e);
+        },
+
+        moveSeek(e) {
+            if (this.seeking) this.seek(e);
+        },
+
+        endSeek() {
+            this.seeking = false;
+        },
+
+        skip(seconds) {
+            const player = this.$refs.videoPlayer;
+            if (!Number.isFinite(player.duration)) return;
+            player.currentTime = Math.min(player.duration, Math.max(0, player.currentTime + seconds));
+            this.updateProgress();
         },
 
         formatTime(seconds) {
-            const mins = Math.floor(seconds / 60);
-            const secs = Math.floor(seconds % 60);
-            return `${mins}:${secs.toString().padStart(2, '0')}`;
+            return OsWindowing.formatMediaTime(seconds);
         },
 
         toggleFullscreen() {
@@ -75,27 +81,23 @@ document.addEventListener('alpine:init', () => {
     Alpine.data('pdfReaderApp', () => ({
         pdfUrl: '',
         fileName: '',
+        // Phones often cannot show a PDF in a frame, so they get an open and download prompt.
+        canShowPdf: OsWindowing.canShowPdf(navigator),
+
         init() {
-            // Force immediate check
             this.updateFromStore();
-            
-            // Watch for focus changes or property updates on windows
-            this.$watch('$store.os.windows', () => {
-                this.updateFromStore();
-            }, { deep: true });
+            this.$watch('$store.os.windows', () => this.updateFromStore(), { deep: true });
         },
+
+        get openLabel() {
+            return OsWindowing.pdfOpenLabel(this.pdfUrl);
+        },
+
         updateFromStore() {
-            // Find the active pdfreader window
             const win = Alpine.store('os').windows.find(w => w.app === 'pdfreader');
-            if (win) {
-                // Priority: window data > fallback
-                this.pdfUrl = win.pdfUrl || (window.portfolioConfig.basePath + 'data/cv.pdf');
-                this.fileName = win.title;
-            } else if (!this.pdfUrl) {
-                // Hard fallback for initialization
-                this.pdfUrl = window.portfolioConfig.basePath + 'data/cv.pdf';
-                this.fileName = 'CV - DeVanté Johnson-Rose.pdf';
-            }
+            const url = win?.pdfUrl || OsWindowing.DEFAULT_PDF;
+            this.pdfUrl = /^(https?:)?\//.test(url) ? url : window.portfolioConfig.basePath + url;
+            this.fileName = win?.title || 'CV - DeVanté Johnson-Rose.pdf';
         }
     }));
 });

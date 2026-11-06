@@ -192,6 +192,7 @@ export default function AdminConsole() {
   const [me, setMe] = useState<MeResponse | null>(null)
   const [stats, setStats] = useState<StatsPayload | null>(null)
   const [authError, setAuthError] = useState<string | null>(null)
+  const [statsError, setStatsError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [tab, setTab] = useState<'dashboard' | 'enquiries'>('dashboard')
   const [selectedEnquiry, setSelectedEnquiry] = useState<EnquiryRow | null>(null)
@@ -199,16 +200,22 @@ export default function AdminConsole() {
 
   const refreshMe = useCallback(() => fetchMe().then(setMe), [])
 
-  const showStats = useCallback((result: StatsResult) => {
-    if (result.status === 'signed-out') {
-      setMe({ authenticated: false })
-      setStats(null)
-    } else if (result.status === 'failed') {
-      setAuthError(result.message)
-    } else {
-      setStats(result.stats)
-    }
-  }, [])
+  const showStats = useCallback(
+    (result: StatsResult) => {
+      if (result.status === 'signed-out') {
+        // The session expired. Ask the server again, so the sign-in button
+        // comes back with its client id rather than a false "not configured".
+        setStats(null)
+        void refreshMe()
+      } else if (result.status === 'failed') {
+        setStatsError(result.message)
+      } else {
+        setStatsError(null)
+        setStats(result.stats)
+      }
+    },
+    [refreshMe],
+  )
 
   const loadStats = useCallback(async () => {
     setBusy(true)
@@ -322,7 +329,8 @@ export default function AdminConsole() {
     <Dashboard
       me={me}
       stats={stats}
-      busy={busy || (Boolean(me?.authenticated) && !stats && !authError)}
+      busy={busy || (Boolean(me?.authenticated) && !stats && !statsError)}
+      error={statsError}
       tab={tab}
       onTab={setTab}
       onRefresh={loadStats}
@@ -337,6 +345,8 @@ interface DashboardProps {
   me: MeResponse
   stats: StatsPayload | null
   busy: boolean
+  /** Why the stats could not be loaded, if they could not. */
+  error: string | null
   tab: 'dashboard' | 'enquiries'
   onTab: (t: 'dashboard' | 'enquiries') => void
   onRefresh: () => void
@@ -349,6 +359,7 @@ function Dashboard({
   me,
   stats,
   busy,
+  error,
   tab,
   onTab,
   onRefresh,
@@ -479,6 +490,11 @@ function Dashboard({
       </header>
 
       <div className="grow overflow-auto p-4 md:p-6 space-y-6">
+        {error && (
+          <div role="alert" data-stats-error className="rounded-lg border border-red-300 bg-red-50 text-red-800 dark:border-red-800 dark:bg-red-950/40 dark:text-red-200 px-4 py-3 text-sm">
+            Could not load the stats: {error}
+          </div>
+        )}
         {busy && !stats && (
           <div className="flex items-center justify-center py-20">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-win-blue" />

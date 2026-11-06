@@ -13,6 +13,7 @@ import {
   entryProperties,
   explorerSidebar,
   entryDate,
+  entryIcon,
   entrySize,
   entryType,
   fileMenuHandlers,
@@ -350,6 +351,26 @@ describe('entryProperties', () => {
   it('says where a deleted file came from', () => {
     const file = { name: 'a.txt', type: 'file', originalPath: DESKTOP }
     expect(rows(file, RECYCLE_BIN)['Original location']).toBe(DESKTOP)
+  })
+})
+
+describe('entryIcon', () => {
+  it('keeps an icon that is already a picture', () => {
+    expect(entryIcon({ name: 'a.txt', type: 'file', icon: '/img/notepad++.webp' }, '/img/')).toBe('/img/notepad++.webp')
+  })
+
+  it('swaps an emoji, or no icon at all, for a Windows picture', () => {
+    expect(entryIcon({ name: 'Downloads', type: 'folder', icon: '📁' }, '/img/')).toBe('/img/win11/folder.webp')
+    expect(entryIcon({ name: 'Downloads', type: 'folder' }, '/img/')).toBe('/img/win11/folder.webp')
+    expect(entryIcon({ name: 'x.webp', type: 'image', icon: '🖼️' }, '/img/')).toBe('/img/win11/image.webp')
+    expect(entryIcon({ name: 'clip.mp4', type: 'video', icon: '🎬' }, '/img/')).toBe('/img/movies.webp')
+    expect(entryIcon({ name: 'Windows Error.wav', type: 'file', icon: '🎵' }, '/img/')).toBe('/img/win11/music.webp')
+    expect(entryIcon({ name: 'pscp.exe', type: 'file', icon: '⚙️' }, '/img/')).toBe('/img/win11/settings.webp')
+    expect(entryIcon({ name: 'dark.theme', type: 'file', icon: '🎨' }, '/img/')).toBe('/img/win11/personalize.webp')
+  })
+
+  it('falls back to a text document for anything else', () => {
+    expect(entryIcon({ name: 'notes', type: 'file', icon: '?' }, '/img/')).toBe('/img/notepad++.webp')
   })
 })
 

@@ -6,19 +6,26 @@
 const CHART_JS_SRC = 'https://cdn.jsdelivr.net/npm/chart.js@4.4.6/dist/chart.umd.min.js';
 const GIS_SRC = 'https://accounts.google.com/gsi/client';
 
+// One promise per script, so a second caller waits for the same load rather
+// than seeing the tag already in the page and going on before it has run.
+const scriptLoads = new Map();
+
 function loadScriptOnce(src) {
-    if (document.querySelector(`script[src="${src}"]`)) {
-        return Promise.resolve();
+    if (!scriptLoads.has(src)) {
+        const load = new Promise((resolve, reject) => {
+            const s = document.createElement('script');
+            s.src = src;
+            s.async = true;
+            s.defer = true;
+            s.onload = resolve;
+            s.onerror = () => reject(new Error('Failed to load ' + src));
+            document.head.appendChild(s);
+        });
+        // A failed load can be tried again next time.
+        load.catch(() => scriptLoads.delete(src));
+        scriptLoads.set(src, load);
     }
-    return new Promise((resolve, reject) => {
-        const s = document.createElement('script');
-        s.src = src;
-        s.async = true;
-        s.defer = true;
-        s.onload = resolve;
-        s.onerror = () => reject(new Error('Failed to load ' + src));
-        document.head.appendChild(s);
-    });
+    return scriptLoads.get(src);
 }
 
 const SOURCE_COLOURS = { php: '#0078d4', react: '#61dafb', unknown: '#888888' };
@@ -46,6 +53,7 @@ document.addEventListener('alpine:init', () => {
         me: null,
         stats: null,
         authError: null,
+        statsError: null,
         busy: false,
         tab: 'dashboard',
         selectedEnquiry: null,
@@ -53,14 +61,18 @@ document.addEventListener('alpine:init', () => {
         _gisReady: false,
         _buttonRendered: false,
 
-        async init() {
-            // Don't block the partial render — fire and forget.
-            this.refreshMe();
-            // Eagerly load Chart.js + GIS in parallel; both are needed.
+        // Alpine calls this once by itself; the partial must not call it again.
+        init() {
+            // Load Chart.js and Google sign-in in parallel; both are needed.
             this._libsReady = Promise.all([
                 loadScriptOnce(CHART_JS_SRC),
                 loadScriptOnce(GIS_SRC),
             ]).catch((e) => { this.authError = e.message; });
+            this.refreshMe();
+            // The charts' canvases are rebuilt when the Dashboard tab comes back.
+            this.$watch('tab', (tab) => {
+                if (tab === 'dashboard') this.$nextTick(() => this._renderCharts());
+            });
         },
 
         async refreshMe() {
@@ -74,6 +86,8 @@ document.addEventListener('alpine:init', () => {
             if (this.me && this.me.authenticated) {
                 this.loadStats();
             } else {
+                // The sign-in screen is drawn afresh, so its button is too.
+                this._buttonRendered = false;
                 this._renderGoogleButton();
             }
         },
@@ -126,16 +140,20 @@ document.addEventListener('alpine:init', () => {
             try {
                 const r = await fetch(window.portfolioConfig.basePath + 'api/stats.php', { credentials: 'same-origin' });
                 if (r.status === 401) {
-                    this.me = { authenticated: false };
+                    // The session expired. Ask the server again, so the sign-in
+                    // button comes back rather than a false "not configured".
+                    this._destroyCharts();
                     this.stats = null;
+                    this.refreshMe();
                     return;
                 }
                 if (!r.ok) throw new Error(`Stats request failed (${r.status})`);
                 this.stats = await r.json();
+                this.statsError = null;
                 await this._libsReady;
                 this.$nextTick(() => this._renderCharts());
             } catch (e) {
-                this.authError = e.message;
+                this.statsError = e.message;
             } finally {
                 this.busy = false;
             }

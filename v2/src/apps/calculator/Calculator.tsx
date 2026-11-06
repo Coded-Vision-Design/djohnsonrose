@@ -1,74 +1,42 @@
 import { useEffect, useReducer } from 'react'
 import { useOsStore } from '../../store/osStore'
-import { press, initialState, keyboardToCalcKey, type CalcState, type Key } from './calc'
+import { useCurrentWindow } from '../../windowing/WindowContext'
+import {
+  CALC_BUTTONS,
+  CALC_START,
+  calcKeyFromEvent,
+  calcPress,
+  type CalcButton,
+} from '../../../../assets/js/windowing/calculator.js'
 
-interface Button {
-  label: React.ReactNode
-  val: Key
-  className: string
+// The sums are worked out in assets/js/windowing/calculator.js, shared with v1.
+
+const KEY_CLASS: Record<CalcButton['kind'], string> = {
+  fn: 'bg-gray-100 dark:bg-white/5',
+  op: 'bg-gray-100 dark:bg-white/5 text-xl',
+  num: 'bg-white dark:bg-white/10 text-lg font-bold shadow-xs',
+  sign: 'bg-white dark:bg-white/10 font-bold shadow-xs',
+  equals: 'bg-win-blue text-white text-xl hover:bg-blue-600! shadow-xs',
 }
-
-const NUM_BTN =
-  'bg-white dark:bg-white/10 text-lg font-bold shadow-xs'
-const OP_BTN = 'bg-gray-100 dark:bg-white/5'
-const OP_BTN_LG = 'bg-gray-100 dark:bg-white/5 text-xl'
-
-const BUTTONS: Button[] = [
-  { label: '%', val: '%', className: OP_BTN },
-  { label: 'CE', val: 'CE', className: OP_BTN },
-  { label: 'C', val: 'C', className: OP_BTN },
-  { label: '⌫', val: 'back', className: OP_BTN },
-  { label: <span><sup>1</sup>⁄<sub>x</sub></span>, val: 'inv', className: OP_BTN },
-  { label: 'x²', val: 'sq', className: OP_BTN },
-  { label: <span><sup>2</sup>√x</span>, val: 'sqrt', className: OP_BTN },
-  { label: '÷', val: '/', className: OP_BTN_LG },
-  { label: '7', val: '7', className: NUM_BTN },
-  { label: '8', val: '8', className: NUM_BTN },
-  { label: '9', val: '9', className: NUM_BTN },
-  { label: '×', val: '*', className: OP_BTN_LG },
-  { label: '4', val: '4', className: NUM_BTN },
-  { label: '5', val: '5', className: NUM_BTN },
-  { label: '6', val: '6', className: NUM_BTN },
-  { label: '−', val: '-', className: OP_BTN_LG },
-  { label: '1', val: '1', className: NUM_BTN },
-  { label: '2', val: '2', className: NUM_BTN },
-  { label: '3', val: '3', className: NUM_BTN },
-  { label: '+', val: '+', className: OP_BTN_LG },
-  { label: <span><sup>+</sup>⁄<sub>−</sub></span>, val: 'pm', className: NUM_BTN },
-  { label: '0', val: '0', className: NUM_BTN },
-  { label: '.', val: '.', className: NUM_BTN },
-  { label: '=', val: '=', className: 'bg-win-blue text-white text-xl hover:bg-blue-600! shadow-xs' },
-]
-
-function reducer(state: CalcState, key: Key): CalcState {
-  return press(state, key)
-}
-
-const NOT_CALCULATOR_KEYS = '.os-titlebar, [data-snap-flyout], input, textarea'
 
 export default function Calculator() {
-  const [state, dispatch] = useReducer(reducer, initialState)
+  const [state, dispatch] = useReducer(calcPress, CALC_START)
+  const windowId = useCurrentWindow().id
   const focusedId = useOsStore((s) => s.focusedWindowId)
-  const focusedApp = useOsStore((s) =>
-    s.windows.find((w) => w.id === s.focusedWindowId)?.app,
-  )
-  const isFocused = focusedApp === 'calculator'
 
-  // Keyboard support — only when the calculator window owns focus.
+  // Keyboard support, only while this Calculator window has focus.
   useEffect(() => {
-    if (!isFocused) return
+    if (focusedId !== windowId) return
     const onKey = (e: KeyboardEvent) => {
-      // Window controls and text fields keep their own keys.
-      if ((e.target as Element).closest?.(NOT_CALCULATOR_KEYS)) return
-      const key = keyboardToCalcKey(e.key)
-      if (key) {
-        e.preventDefault()
-        dispatch(key)
-      }
+      const key = calcKeyFromEvent(e, windowId, useOsStore.getState().focusedWindowId)
+      if (!key) return
+      // Enter would otherwise also press whichever key was clicked last.
+      e.preventDefault()
+      dispatch(key)
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [isFocused, focusedId])
+  }, [focusedId, windowId])
 
   const displaySize =
     state.display.length > 15
@@ -109,7 +77,11 @@ export default function Calculator() {
         <div className="text-xs text-gray-500 dark:text-gray-400 mb-1 h-5 overflow-hidden text-right break-all">
           {state.expression}
         </div>
-        <div className={`${displaySize} font-semibold overflow-hidden text-right w-full`}>
+        <div
+          data-calc-display
+          aria-live="polite"
+          className={`${displaySize} font-semibold overflow-hidden text-right w-full`}
+        >
           {state.display}
         </div>
       </div>
@@ -129,15 +101,16 @@ export default function Calculator() {
 
       {/* Keypad */}
       <div className="grow grid grid-cols-4 gap-0.5 p-1 pb-2">
-        {BUTTONS.map((btn, i) => (
+        {CALC_BUTTONS.map((btn) => (
           <button
-            key={`${btn.val}-${i}`}
+            key={btn.val}
             type="button"
+            aria-label={btn.name}
             onClick={() => dispatch(btn.val)}
-            className={`${btn.className} h-full flex items-center justify-center text-sm rounded-sm transition-all hover:bg-gray-200 dark:hover:bg-white/10 border border-transparent active:scale-95 active:bg-gray-300 dark:active:bg-white/20`}
-          >
-            {btn.label}
-          </button>
+            className={`${KEY_CLASS[btn.kind]} h-full flex items-center justify-center text-sm rounded-sm transition-all hover:bg-gray-200 dark:hover:bg-white/10 border border-transparent active:scale-95 active:bg-gray-300 dark:active:bg-white/20`}
+            // Fixed labels from the shared key list, such as <sup>1</sup>&frasl;<sub>x</sub>.
+            dangerouslySetInnerHTML={{ __html: btn.label }}
+          />
         ))}
       </div>
     </div>
