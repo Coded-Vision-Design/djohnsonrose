@@ -296,6 +296,10 @@ The site degrades gracefully if optional services (Google APIs, OAuth, SMTP) are
 - **Recycle bin restore** — items seeded into the static filesystem can be sent to the bin and restored back to their original path. The store keeps a `restoredSeeds` set so seeded items survive a refresh.
 - **CV stays private** — the printable CV is hosted only on the production server. It is gitignored and is not part of the public repo.
 
+### House rules: the deliberate exception
+
+The Coded Vision Design website rules ask for a sticky header at the top of every page. The desktop at `/` and `/v2/` deliberately does not have one: the site imitates Windows 11, so its only bar is the taskbar at the bottom, and the desktop fills the whole screen with no page to scroll. Every other rule (responsive layout, no horizontal scrolling, accessibility, British English, performance) still applies to the desktop, and the `/cv` page follows all of the rules in full, sticky header included.
+
 ---
 
 ## License
