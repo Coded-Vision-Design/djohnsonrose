@@ -80,6 +80,14 @@ check('csp: no unpkg, now that Alpine is self-hosted', !str_contains($policy, 'u
 check('csp: no wildcard script host', !preg_match('/script-src[^;]*\shttps:(\s|;|$)/', $policy));
 check('csp: a nonce cannot inject a directive', !str_contains(v1_content_security_policy('a;b'), 'a;b'));
 
+// page_content_security_policy, for the plain pages (privacy, 404)
+$page = page_content_security_policy('abc123');
+check('page csp: no scripts at all', !str_contains($page, 'script-src') && str_contains($page, "default-src 'none'"));
+check('page csp: styles only by nonce', str_contains($page, "style-src 'nonce-abc123'") && !str_contains($page, 'unsafe-inline'));
+check('page csp: no forms, plugins or base tag', str_contains($page, "form-action 'none'") && str_contains($page, "base-uri 'none'"));
+check('page csp: only this site may frame it', str_contains($page, "frame-ancestors 'self'"));
+check('page csp: a nonce cannot inject a directive', !str_contains(page_content_security_policy('a;b'), 'a;b'));
+
 $manifest = load_app_manifest();
 $manifestIds = array_column($manifest['apps'], 'id');
 check('manifest: has apps', count($manifestIds) > 0);

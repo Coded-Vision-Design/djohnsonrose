@@ -24,15 +24,21 @@ I'll acknowledge receipt within 5 working days and aim to ship a fix within 30 d
 
 - Issues that require local-only credentials (e.g. a Hostinger SSH key)
 - Third-party services (Google APIs, Hostinger, Cloudflare)
-- Denial-of-service via the public origin server — please don't probe with traffic
+- Denial of service against the public origin server: please don't probe it with traffic
 - Anything that's already obvious from reading the source (the repo is public; that's the point)
 
 ## Hardening already in place
 
-- Admin endpoints (`/api/admin_*.php`, `/api/database_query.php`, `/api/stats.php`) require an HMAC‑signed session cookie issued only after Google id_token verification against an email allowlist
-- Sensitive files are denied at the Apache layer (`.env`, `config.php`, `bootstrap.php`, `data/cv.*`, etc.) — see [`.htaccess`](.htaccess), [`data/.htaccess`](data/.htaccess), [`partials/.htaccess`](partials/.htaccess)
-- The SSMS‑styled SQL viewer is locked to an explicit table allowlist; user-supplied SQL is never executed
-- Telemetry (`/api/log.php`) is fire-and-forget and gated by cookie consent in both v1 and v2
-- All MySQL access uses PDO with prepared statements
+- Admin data (`/api/stats.php`) requires an HMAC-signed session cookie, issued by `/api/admin_auth.php` only after Google id_token verification against an email allowlist (compared without regard to case). Sign-in is limited to 5 attempts per 15 minutes per IP address. Signing out (`POST /api/admin_logout.php`, from this site only) revokes every earlier cookie for that admin, not just the one in the browser
+- Server code and configuration are denied at the Apache layer: `.env` and other dotfiles, `config.php`, `bootstrap.php`, `router.php`, `dev-server.php`, package manifests, and everything in `lib/`, `partials/` and `pages/`. See [`.htaccess`](.htaccess), [`lib/.htaccess`](lib/.htaccess), [`partials/.htaccess`](partials/.htaccess) and [`pages/.htaccess`](pages/.htaccess)
+- `/data/` is denied by default ([`data/.htaccess`](data/.htaccess)), except the files the apps load in the browser, which are public on purpose:
+  - `data/cv.pdf` and `data/cv.php`: the CV, including its contact details
+  - `data/portfolio.json` and `data/client_wins.json`: portfolio content
+  - `data/references.enc.json`: references, encrypted with a passphrase
+  - the video clips (`.mp4`, `.webm`), which the root `.htaccess` allows anywhere
+- Telemetry (`/api/log.php`) is gated by cookie consent in both builds. It accepts only same-origin POSTs of up to 8 KB, is rate limited per IP address, stores a shortened IP address and no location, and deletes records after 90 days. The details are on the site's [privacy notice](https://devante.johnson-rose.co.uk/privacy)
+- The SSMS-styled SQL viewer (`/api/cv_data.php`) serves a fixed set of tables flattened from `data/portfolio.json`; visitor SQL is never run on the server
+- All MySQL access uses PDO with prepared statements. Tables are created by `php lib/migrate.php`, never by a request
+- Unknown URLs return a real 404
 
 Thanks for helping keep this project safe.

@@ -73,7 +73,7 @@ Portfolios that link to other portfolios are forgettable. This one **is** the wo
               ┌──────────────────┐
               │   /api/*.php     │  log · stats · admin_auth ·
               │                  │  admin_logout · admin_me ·
-              │   shared API     │  database_query · send_email ·
+              │   shared API     │  cv_data · send_email ·
               │                  │  news · weather · app
               └────────┬─────────┘
                        ▼
@@ -90,31 +90,24 @@ Both tracks talk to the **same** PHP API. The React build is just a static SPA m
 
 ### 1. HMAC‑signed admin session — no JWT library
 
-The admin dashboard is gated by Google OAuth. To avoid pulling a JWT dep, I sign a tiny JSON payload with `hash_hmac('sha256', ...)` and store it in a `HttpOnly`, `SameSite=Lax`, `Secure` cookie. Verification is constant‑time via `hash_equals`. ([bootstrap.php:49-103](bootstrap.php#L49-L103))
+The admin dashboard is gated by Google OAuth. To avoid pulling a JWT dep, I sign a tiny JSON payload with `hash_hmac('sha256', ...)` and store it in a `HttpOnly`, `SameSite=Lax`, `Secure` cookie. Verification is constant‑time via `hash_equals`. Signing out moves a per-admin counter on, so every earlier cookie stops working at once. ([lib/admin_session.php](lib/admin_session.php))
 
 ```php
-function issueAdminSession($email, $secret, $ttlSeconds = 86400) {
-    $payload = json_encode(['email' => $email, 'exp' => time() + $ttlSeconds]);
-    $encoded = b64UrlEncode($payload);
-    $sig     = b64UrlEncode(hash_hmac('sha256', $encoded, $secret, true));
-    setcookie(adminCookieName(), $encoded . '.' . $sig, [
-        'expires'  => time() + $ttlSeconds,
-        'path'     => '/',
-        'httponly' => true,
-        'samesite' => 'Lax',
-        'secure'   => !in_array(strtok($_SERVER['HTTP_HOST'] ?? '', ':'), ['localhost', '127.0.0.1'], true),
-    ]);
+function admin_session_encode(string $email, int $generation, string $secret, int $now, int $ttl): string {
+    $payload = admin_b64_encode(json_encode([
+        'email' => strtolower(trim($email)),
+        'gen' => $generation,
+        'iat' => $now,
+        'exp' => $now + $ttl,
+    ]));
+    return $payload . '.' . admin_b64_encode(hash_hmac('sha256', $payload, $secret, true));
 }
 
-function requireAdmin($config) {
-    $email = currentAdminEmail($config['admin_session_secret'] ?? '');
-    if (!$email || !in_array($email, $config['admin_emails'] ?? [], true)) {
-        http_response_code(401);
-        header('Content-Type: application/json');
-        echo json_encode(['error' => 'Admin auth required']);
-        exit;
-    }
-    return $email;
+function admin_session_current($cookie, string $secret, array $admins, string $dir, int $now): ?string {
+    $payload = admin_session_decode($cookie, $secret, $now);
+    if ($payload === null || !admin_email_allowed($payload['email'], $admins)) return null;
+    if ($payload['gen'] !== admin_session_generation($dir, $payload['email'])) return null;
+    return $payload['email'];
 }
 ```
 
@@ -122,26 +115,17 @@ Google id_tokens are verified server‑side via Google's `tokeninfo` endpoint, w
 
 ### 2. Defence‑in‑depth SQL viewer
 
-The SSMS‑styled app lets visitors read a few demo tables. The first version naively eval'd the SELECT — a textbook injection footgun. The hardened version cookie‑gates the endpoint, extracts the requested table name from the inbound query, allowlists it, and only ever runs a parameter‑free `SELECT * FROM \`<table>\` ORDER BY 1 DESC LIMIT 500`. ([api/database_query.php](api/database_query.php))
+The SSMS‑styled app lets visitors query a few demo tables. The first version naively eval'd the SELECT, a textbook injection footgun. The current version never runs visitor SQL on the server at all: the visitor picks one of a fixed set of tables, the server flattens it from `data/portfolio.json`, and the WHERE and ORDER BY run in the browser. ([api/cv_data.php](api/cv_data.php))
 
 ```php
-requireAdmin($config);
+$table = strtolower(request_string($_GET, 'table') ?? '');
+$allowed = ['experience', 'projects', 'certifications', 'education', 'skills', 'achievements', 'interests'];
 
-$allowedTables = ['projects', 'experience', 'certifications', 'email_logs', 'event_logs'];
-
-if (preg_match('/\[([a-zA-Z0-9_]+)\](?:\s*$|\s*;?\s*$)/', $query, $m)) {
-    $table = strtolower($m[1]);
-} elseif (preg_match('/from\s+`?([a-zA-Z0-9_]+)`?/i', $query, $m)) {
-    $table = strtolower($m[1]);
-}
-
-if (!$table || !in_array($table, $allowedTables, true)) {
+if (!in_array($table, $allowed, true)) {
     http_response_code(400);
-    echo json_encode(['error' => 'Only SELECT queries against an allowlisted table are permitted.']);
+    echo json_encode(['error' => 'Unknown table. Try one of: ' . implode(', ', $allowed)]);
     exit;
 }
-
-$stmt = $pdo->query("SELECT * FROM `{$table}` ORDER BY 1 DESC LIMIT 500");
 ```
 
 Error responses are intentionally generic; details only land in `error_log` when `APP_DEBUG=true`. The same pattern is applied to [`api/send_email.php`](api/send_email.php).

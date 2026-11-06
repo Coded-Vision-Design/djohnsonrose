@@ -2,6 +2,8 @@
 // bootstrap.php
 $config = require_once __DIR__ . '/config.php';
 require_once __DIR__ . '/lib/security.php';
+require_once __DIR__ . '/lib/state.php';
+require_once __DIR__ . '/lib/admin_session.php';
 
 header_remove('X-Powered-By');
 
@@ -34,57 +36,46 @@ define('BASE_PATH', getBasePath());
 define('IMG_PATH', BASE_PATH . 'assets/img/');
 
 // ---- Admin session helpers ----
-// HMAC-signed cookie format: base64url(payload).base64url(sig)
-// payload is JSON { email, exp } where exp is a unix timestamp.
+// The cookie format and its checks live in lib/admin_session.php. Every check
+// goes through currentAdminEmail(), which also honours sign-outs.
 function adminCookieName() { return 'admin_session'; }
 
-function b64UrlEncode($data) {
-    return rtrim(strtr(base64_encode($data), '+/', '-_'), '=');
-}
-function b64UrlDecode($data) {
-    return base64_decode(strtr($data, '-_', '+/'));
-}
-
-function issueAdminSession($email, $secret, $ttlSeconds = 86400) {
-    $payload = json_encode(['email' => $email, 'exp' => time() + $ttlSeconds]);
-    $encoded = b64UrlEncode($payload);
-    $sig = b64UrlEncode(hash_hmac('sha256', $encoded, $secret, true));
-    $cookie = $encoded . '.' . $sig;
+function adminCookieOptions(int $expires): array {
     $host = $_SERVER['HTTP_HOST'] ?? '';
-    $secure = !in_array(strtok($host, ':'), ['localhost', '127.0.0.1'], true);
-    setcookie(adminCookieName(), $cookie, [
-        'expires'  => time() + $ttlSeconds,
+    $host = is_string($host) ? strtok($host, ':') : '';
+    return [
+        'expires'  => $expires,
         'path'     => '/',
         'httponly' => true,
-        'secure'   => $secure,
+        'secure'   => !in_array($host, ['localhost', '127.0.0.1'], true),
         'samesite' => 'Lax',
-    ]);
+    ];
+}
+
+function issueAdminSession($email, $config, $ttlSeconds = 86400) {
+    $now = time();
+    $generation = admin_session_generation(state_dir($config), $email);
+    $cookie = admin_session_encode($email, $generation, $config['admin_session_secret'] ?? '', $now, $ttlSeconds);
+    setcookie(adminCookieName(), $cookie, adminCookieOptions($now + $ttlSeconds));
     return $cookie;
 }
 
 function clearAdminSession() {
-    $host = $_SERVER['HTTP_HOST'] ?? '';
-    $secure = !in_array(strtok($host, ':'), ['localhost', '127.0.0.1'], true);
-    setcookie(adminCookieName(), '', [
-        'expires'  => time() - 3600,
-        'path'     => '/',
-        'httponly' => true,
-        'secure'   => $secure,
-        'samesite' => 'Lax',
-    ]);
+    setcookie(adminCookieName(), '', adminCookieOptions(time() - 3600));
 }
 
-function currentAdminEmail($secret) {
-    if (empty($secret)) return null;
-    $cookie = $_COOKIE[adminCookieName()] ?? '';
-    if (!$cookie || strpos($cookie, '.') === false) return null;
-    list($encoded, $sig) = explode('.', $cookie, 2);
-    $expected = b64UrlEncode(hash_hmac('sha256', $encoded, $secret, true));
-    if (!hash_equals($expected, $sig)) return null;
-    $payload = json_decode(b64UrlDecode($encoded), true);
-    if (!is_array($payload)) return null;
-    if (($payload['exp'] ?? 0) < time()) return null;
-    return is_string($payload['email'] ?? null) ? $payload['email'] : null;
+/**
+ * The signed-in admin's email, or null when the cookie is missing, forged,
+ * expired, signed out, not on the allowlist, or not even a string.
+ */
+function currentAdminEmail($config) {
+    return admin_session_current(
+        $_COOKIE[adminCookieName()] ?? null,
+        $config['admin_session_secret'] ?? '',
+        $config['admin_emails'] ?? [],
+        state_dir($config),
+        time()
+    );
 }
 
 /**
@@ -92,8 +83,8 @@ function currentAdminEmail($secret) {
  * or the cookie's email isn't on the allowlist. Returns the verified email.
  */
 function requireAdmin($config) {
-    $email = currentAdminEmail($config['admin_session_secret'] ?? '');
-    if (!$email || !in_array($email, $config['admin_emails'] ?? [], true)) {
+    $email = currentAdminEmail($config);
+    if ($email === null) {
         http_response_code(401);
         header('Content-Type: application/json');
         echo json_encode(['error' => 'Admin auth required']);

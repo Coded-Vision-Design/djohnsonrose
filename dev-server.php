@@ -23,4 +23,8 @@ $file = __DIR__ . $decoded;
 if ($decoded !== '/' && file_exists($file) && !is_dir($file)) {
     return false;
 }
+// Apache rewrites to /index.php, so that is the script name there. PHP's
+// server would otherwise name the nearest real folder (/pages/x gives
+// /pages/), which shifts the base path and the route with it.
+$_SERVER['SCRIPT_NAME'] = '/index.php';
 require __DIR__ . '/index.php';

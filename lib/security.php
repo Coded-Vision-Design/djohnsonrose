@@ -86,3 +86,13 @@ function v1_content_security_policy(string $nonce): string {
     }
     return implode('; ', $parts);
 }
+
+/**
+ * The policy for the plain server-rendered pages (privacy, 404). They have no
+ * JavaScript at all, so nothing but their own styles and images may load.
+ */
+function page_content_security_policy(string $nonce): string {
+    $nonce = preg_replace('/[^A-Za-z0-9+\/=]/', '', $nonce);
+    return "default-src 'none'; style-src 'nonce-{$nonce}'; img-src 'self'; "
+        . "base-uri 'none'; form-action 'none'; frame-ancestors 'self'";
+}

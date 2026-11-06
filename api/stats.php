@@ -6,6 +6,7 @@
 // doesn't need to munge anything before passing to react-chartjs-2.
 
 require_once __DIR__ . '/../bootstrap.php';
+require_once __DIR__ . '/../lib/db.php';
 
 header('Content-Type: application/json');
 header('Cache-Control: no-store');
@@ -13,14 +14,7 @@ header('Cache-Control: no-store');
 requireAdmin($config);
 
 try {
-    $dbConfig = $config['db'];
-    $dsn = "mysql:host={$dbConfig['host']};dbname={$dbConfig['name']};charset=utf8mb4";
-    $pdo = new PDO($dsn, $dbConfig['user'], $dbConfig['pass'], [
-        PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
-        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-        PDO::ATTR_EMULATE_PREPARES   => false,
-    ]);
-
+    $pdo = db_connect($config);
     $pdo->exec("SET SESSION sql_mode = ''");
 
     // --- v1 vs v2 split (lifetime + last 30 days) --------------------------
@@ -48,6 +42,8 @@ try {
     ")->fetchAll();
 
     // --- Device / OS / browser ---------------------------------------------
+    // api/log.php reads these from the user agent when it stores an event
+    // (lib/telemetry.php), so they are names such as iOS and Safari.
     $osBreakdown = $pdo->query("
         SELECT COALESCE(NULLIF(os, ''), 'Unknown') AS os, COUNT(*) AS total
         FROM event_logs
@@ -64,16 +60,6 @@ try {
         GROUP BY browser
         ORDER BY total DESC
         LIMIT 8
-    ")->fetchAll();
-
-    // --- Country / city ----------------------------------------------------
-    $countryBreakdown = $pdo->query("
-        SELECT COALESCE(NULLIF(country, ''), 'Unknown') AS country, COUNT(*) AS total
-        FROM event_logs
-        WHERE created_at >= NOW() - INTERVAL 60 DAY
-        GROUP BY country
-        ORDER BY total DESC
-        LIMIT 10
     ")->fetchAll();
 
     // --- Sessions per day (last 14d) ---------------------------------------
@@ -136,7 +122,9 @@ try {
         'per_app'           => $perApp,
         'os'                => $osBreakdown,
         'browser'           => $browserBreakdown,
-        'country'           => $countryBreakdown,
+        // Location is no longer looked up or stored (see /privacy). The key
+        // stays so both consoles keep their shape; they show it as empty.
+        'country'           => [],
         'per_day'           => $perDay,
         'screen_time'       => $screenTime,
         'enquiries'         => $enquiries,
