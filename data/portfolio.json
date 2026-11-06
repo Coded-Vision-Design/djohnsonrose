@@ -207,7 +207,7 @@
         {
             "id": 5,
             "title": "BJJ Havering",
-            "description": "Modern martial arts academy platform specialising in No-Gi grappling. Features enrollment systems, world-class coach profiles, and community blogs.",
+            "description": "Modern martial arts academy platform specialising in No-Gi grappling. Features enrolment systems, world-class coach profiles, and community blogs.",
             "tags": [
                 "Tailwind",
                 "Alpine.js",

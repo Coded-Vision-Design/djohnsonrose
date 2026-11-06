@@ -57,6 +57,12 @@ describe('shared app manifest (data/apps.json)', () => {
     expect(startPinnedApps).not.toContain('admin')
   })
 
+  it('pins twelve apps to Start, the CV among them', () => {
+    expect(startPinnedApps).toHaveLength(12)
+    // PDF Reader opens the CV, so the CV is one tap from Start.
+    expect(startPinnedApps).toContain('pdfreader')
+  })
+
   it('does not treat object built-ins as apps', () => {
     expect(getManifestEntry('constructor')).toBeUndefined()
     expect(getManifestEntry('does-not-exist')).toBeUndefined()

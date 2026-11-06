@@ -1,9 +1,8 @@
 {
   "pinned": ["edge", "explorer", "outlook", "vscode", "flstudio"],
   "startPinned": [
-    "edge", "vscode", "word", "excel", "powerpoint", "outlook",
-    "photoshop", "flstudio", "docker", "explorer", "notepad", "putty",
-    "filezilla", "terminal", "database", "settings", "taskmanager", "eventviewer"
+    "edge", "explorer", "pdfreader", "vscode", "outlook", "word",
+    "excel", "powerpoint", "terminal", "database", "notepad", "settings"
   ],
   "apps": [
     { "id": "edge", "title": "Chrome", "icon": "chrome.webp", "size": { "w": 1024, "h": 720 } },
