@@ -1,8 +1,13 @@
 ###############################################################################
-# CodedVisionDesign — Rollback Workflow
+# CodedVisionDesign - Rollback Workflow
 # ──────────────────────────────────────
 # Restores a previous release snapshot from the server.
-# Works with both Hostinger and VPS — reads "server" from deploy-config.json.
+# Works with both Hostinger and VPS - reads "server" from deploy-config.json.
+#
+# deploy.yml keeps snapshots in ~/deploy-releases/<site key>, outside the web
+# root. Older runs kept them in <deploy_path>/.releases, so both places are
+# listed and searched, newer location first. A restore never touches .env:
+# snapshots leave it out, and the live copy is kept as it is.
 ###############################################################################
 
 name: Rollback Deployment
@@ -37,98 +42,219 @@ jobs:
   rollback-snapshot:
     name: Rollback (Server Snapshot)
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     if: github.event.inputs.mode == 'server-snapshot'
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
       - name: Read config
         id: config
         run: |
-          DEPLOY_PATH=$(jq -r '.deploy_path' deploy-config.json)
-          SUBDOMAIN=$(jq -r '.subdomain' deploy-config.json)
+          DEPLOY_PATH=$(jq -r '.deploy_path // empty' deploy-config.json)
+          SUBDOMAIN=$(jq -r '.subdomain // empty' deploy-config.json)
           SERVER=$(jq -r '.server // "hostinger"' deploy-config.json)
-          echo "deploy_path=${DEPLOY_PATH}" >> $GITHUB_OUTPUT
-          echo "subdomain=${SUBDOMAIN}" >> $GITHUB_OUTPUT
-          echo "server=${SERVER}" >> $GITHUB_OUTPUT
 
+          # Same checks and snapshot location as deploy.yml.
+          if ! [[ "$DEPLOY_PATH" =~ ^/[A-Za-z0-9._/-]+$ ]] || [[ "$DEPLOY_PATH" == *..* ]]; then
+            echo "::error::deploy_path must be an absolute path of letters, digits, '.', '_', '-' and '/'"
+            exit 1
+          fi
+          if [[ "$SUBDOMAIN" =~ ^[A-Za-z0-9][A-Za-z0-9.-]*$ ]]; then
+            SITE_KEY="$SUBDOMAIN"
+          else
+            SITE_KEY=$(printf '%s' "${DEPLOY_PATH#/}" | tr '/' '_')
+          fi
+
+          {
+            echo "deploy_path=${DEPLOY_PATH}"
+            echo "site_key=${SITE_KEY}"
+            echo "server=${SERVER}"
+          } >> "$GITHUB_OUTPUT"
+
+      # The name becomes part of a path on the server, so it must be a plain
+      # folder name as listed: no slashes and no leading dot.
+      - name: Check the snapshot name
+        if: github.event.inputs.snapshot_name != ''
+        env:
+          SNAPSHOT_NAME: ${{ github.event.inputs.snapshot_name }}
+        run: |
+          if ! [[ "$SNAPSHOT_NAME" =~ ^[A-Za-z0-9][A-Za-z0-9._-]*$ ]]; then
+            echo "::error::snapshot_name must be a snapshot folder name exactly as listed, for example 20260101_120000_abc1234_pre"
+            exit 1
+          fi
+
+      # With the *_KNOWN_HOSTS secret set, the server's host key is pinned and
+      # checked strictly. Without it, any key is accepted as before, and the
+      # run shows a warning until the secret is added.
       - name: Setup SSH
+        env:
+          SERVER: ${{ steps.config.outputs.server }}
+          HOSTINGER_SSH_KEY: ${{ secrets.HOSTINGER_SSH_KEY }}
+          HOSTINGER_SSH_HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
+          HOSTINGER_SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
+          HOSTINGER_SSH_PORT: ${{ secrets.HOSTINGER_SSH_PORT }}
+          HOSTINGER_KNOWN_HOSTS: ${{ secrets.HOSTINGER_KNOWN_HOSTS }}
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+          VPS_SSH_HOST: ${{ secrets.VPS_SSH_HOST }}
+          VPS_SSH_USER: ${{ secrets.VPS_SSH_USER }}
+          VPS_SSH_PORT: ${{ secrets.VPS_SSH_PORT }}
+          VPS_KNOWN_HOSTS: ${{ secrets.VPS_KNOWN_HOSTS }}
         run: |
           mkdir -p ~/.ssh
           chmod 700 ~/.ssh
-          SERVER="${{ steps.config.outputs.server }}"
           if [ "$SERVER" = "vps" ]; then
-            echo "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/deploy_key
-            SSH_HOST="${{ secrets.VPS_SSH_HOST }}"
-            SSH_USER="${{ secrets.VPS_SSH_USER }}"
-            SSH_PORT="${{ secrets.VPS_SSH_PORT }}"
-            SSH_PORT="${SSH_PORT:-22}"
+            SSH_KEY="$VPS_SSH_KEY"
+            SSH_HOST="$VPS_SSH_HOST"
+            SSH_USER="$VPS_SSH_USER"
+            SSH_PORT="${VPS_SSH_PORT:-22}"
+            KNOWN_HOSTS="$VPS_KNOWN_HOSTS"
+            KNOWN_HOSTS_SECRET="VPS_KNOWN_HOSTS"
           else
-            echo "${{ secrets.HOSTINGER_SSH_KEY }}" > ~/.ssh/deploy_key
-            SSH_HOST="${{ secrets.HOSTINGER_SSH_HOST }}"
-            SSH_USER="${{ secrets.HOSTINGER_SSH_USER }}"
-            SSH_PORT="${{ secrets.HOSTINGER_SSH_PORT }}"
-            SSH_PORT="${SSH_PORT:-65002}"
+            SSH_KEY="$HOSTINGER_SSH_KEY"
+            SSH_HOST="$HOSTINGER_SSH_HOST"
+            SSH_USER="$HOSTINGER_SSH_USER"
+            SSH_PORT="${HOSTINGER_SSH_PORT:-65002}"
+            KNOWN_HOSTS="$HOSTINGER_KNOWN_HOSTS"
+            KNOWN_HOSTS_SECRET="HOSTINGER_KNOWN_HOSTS"
           fi
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
-          cat >> ~/.ssh/config << EOF
-          Host deployserver
-            HostName ${SSH_HOST}
-            User ${SSH_USER}
-            Port ${SSH_PORT}
-            IdentityFile ~/.ssh/deploy_key
-            StrictHostKeyChecking no
-          EOF
+          if [ -n "$KNOWN_HOSTS" ]; then
+            printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts_deploy
+            chmod 600 ~/.ssh/known_hosts_deploy
+            PINNED="yes"
+          else
+            echo "::warning title=SSH host key not checked::${KNOWN_HOSTS_SECRET} is not set, so this rollback trusts any host key the server presents. Add the server's known_hosts line(s) as that secret to turn on strict checking."
+            PINNED="no"
+          fi
+          {
+            echo "Host deployserver"
+            echo "  HostName ${SSH_HOST}"
+            echo "  User ${SSH_USER}"
+            echo "  Port ${SSH_PORT}"
+            echo "  IdentityFile ~/.ssh/deploy_key"
+            if [ "$PINNED" = "yes" ]; then
+              echo "  UserKnownHostsFile ~/.ssh/known_hosts_deploy"
+              echo "  StrictHostKeyChecking yes"
+            else
+              echo "  StrictHostKeyChecking no"
+            fi
+          } > ~/.ssh/config
+          chmod 600 ~/.ssh/config
 
       - name: List snapshots (if no name given)
         if: github.event.inputs.snapshot_name == ''
+        env:
+          DEPLOY_PATH: ${{ steps.config.outputs.deploy_path }}
+          SITE_KEY: ${{ steps.config.outputs.site_key }}
         run: |
-          echo "### Available Snapshots" >> $GITHUB_STEP_SUMMARY
-          echo '```' >> $GITHUB_STEP_SUMMARY
-          ssh deployserver "ls -lt ${{ steps.config.outputs.deploy_path }}/.releases/ 2>/dev/null" >> $GITHUB_STEP_SUMMARY || echo "No snapshots found" >> $GITHUB_STEP_SUMMARY
-          echo '```' >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "Copy a snapshot name and re-run with it filled in." >> $GITHUB_STEP_SUMMARY
+          {
+            echo "### Available Snapshots"
+            echo '```'
+            {
+              printf 'DEPLOY_PATH=%q\nSITE_KEY=%q\n' "$DEPLOY_PATH" "$SITE_KEY"
+              cat <<'REMOTE'
+          list() {
+            echo "$1"
+            if [ -d "$2" ] && [ -n "$(ls -A "$2")" ]; then
+              ls -1t "$2" | sed 's/^/  /'
+            else
+              echo "  (none)"
+            fi
+          }
+          list "Snapshots (outside the web root):" "$HOME/deploy-releases/$SITE_KEY"
+          list "Older snapshots (inside the web root, from before the move):" "$DEPLOY_PATH/.releases"
+          REMOTE
+            } | ssh deployserver sh -s || echo "No snapshots found"
+            echo '```'
+            echo ""
+            echo "Copy a snapshot name and re-run with it filled in."
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Restore snapshot
         if: github.event.inputs.snapshot_name != ''
+        env:
+          DEPLOY_PATH: ${{ steps.config.outputs.deploy_path }}
+          SITE_KEY: ${{ steps.config.outputs.site_key }}
+          SNAPSHOT_NAME: ${{ github.event.inputs.snapshot_name }}
         run: |
-          DEPLOY_PATH="${{ steps.config.outputs.deploy_path }}"
-          SNAPSHOT="${{ github.event.inputs.snapshot_name }}"
-          RELEASES_DIR="${DEPLOY_PATH}/.releases"
+          # The values were checked above and travel as shell assignments
+          # ahead of the script.
+          {
+            printf 'DEPLOY_PATH=%q\nSITE_KEY=%q\nSNAPSHOT_NAME=%q\n' "$DEPLOY_PATH" "$SITE_KEY" "$SNAPSHOT_NAME"
+            cat <<'REMOTE'
+          set -eu
+          RELEASES_DIR="$HOME/deploy-releases/$SITE_KEY"
+          OLD_RELEASES_DIR="$DEPLOY_PATH/.releases"
+          if [ -d "$RELEASES_DIR/$SNAPSHOT_NAME" ]; then
+            SNAP_DIR="$RELEASES_DIR/$SNAPSHOT_NAME"
+          elif [ -d "$OLD_RELEASES_DIR/$SNAPSHOT_NAME" ]; then
+            SNAP_DIR="$OLD_RELEASES_DIR/$SNAPSHOT_NAME"
+          else
+            echo "ERROR: Snapshot '$SNAPSHOT_NAME' not found"
+            ls -1t "$RELEASES_DIR" "$OLD_RELEASES_DIR" 2>/dev/null || true
+            exit 1
+          fi
+          # rsync --delete from an empty folder would empty the live site.
+          if [ -z "$(ls -A "$SNAP_DIR")" ]; then
+            echo "ERROR: Snapshot '$SNAPSHOT_NAME' is empty"
+            exit 1
+          fi
 
-          ssh deployserver << SCRIPT
-            SNAP_DIR="${RELEASES_DIR}/${SNAPSHOT}"
-            if [ ! -d "\${SNAP_DIR}" ]; then
-              echo "ERROR: Snapshot '${SNAPSHOT}' not found"
-              ls -lt "${RELEASES_DIR}/" 2>/dev/null
-              exit 1
-            fi
-            TIMESTAMP=\$(date +%Y%m%d_%H%M%S)
-            mkdir -p "${RELEASES_DIR}/\${TIMESTAMP}_pre_rollback"
-            chmod 700 "${RELEASES_DIR}"
-            [ -e "${RELEASES_DIR}/.htaccess" ] || printf '%s\n' '# Deploy snapshots are rollback copies, never meant to be served.' 'Require all denied' > "${RELEASES_DIR}/.htaccess"
-            rsync -a --exclude='.releases' --exclude='vendor' --exclude='node_modules' "${DEPLOY_PATH}/" "${RELEASES_DIR}/\${TIMESTAMP}_pre_rollback/"
-            rsync -a --delete --exclude='.releases' --exclude='vendor' --exclude='node_modules' "\${SNAP_DIR}/" "${DEPLOY_PATH}/"
-            echo "Restored snapshot: ${SNAPSHOT}"
-          SCRIPT
+          # Keep a copy of the live site first, outside public_html and without .env.
+          mkdir -p "$RELEASES_DIR"
+          chmod 700 "$HOME/deploy-releases" "$RELEASES_DIR"
+          REAL_RELEASES=$(cd "$RELEASES_DIR" && pwd -P)
+          REAL_DEPLOY=$(cd "$DEPLOY_PATH" && pwd -P)
+          case "$REAL_RELEASES/" in
+            */public_html/*|"$REAL_DEPLOY"/*) echo "ERROR: $REAL_RELEASES is inside the web root"; exit 1 ;;
+          esac
+          PRE="$RELEASES_DIR/$(date +%Y%m%d_%H%M%S)_pre_rollback"
+          mkdir -p "$PRE"
+          rsync -a --exclude='.releases' --exclude='.git' --exclude='vendor' --exclude='node_modules' \
+            --exclude='.env' --exclude='.env.*' "$DEPLOY_PATH/" "$PRE/"
+          echo "Live site saved: $PRE"
+
+          # Excluded paths are neither copied nor deleted, so the live .env stays
+          # as it is even when an older snapshot holds a copy of one.
+          rsync -a --delete --exclude='.releases' --exclude='.git' --exclude='vendor' --exclude='node_modules' \
+            --exclude='.env' --exclude='.env.*' "$SNAP_DIR/" "$DEPLOY_PATH/"
+          echo "Restored snapshot: $SNAPSHOT_NAME (from $SNAP_DIR)"
+          REMOTE
+          } | ssh deployserver sh -s
 
       - name: Cleanup
         if: always()
-        run: rm -rf ~/.ssh/deploy_key
+        run: rm -f ~/.ssh/deploy_key
 
   # ── Rollback by redeploying a Git commit ─────────────────────────────────
   rollback-commit:
     name: Redeploy Git Commit
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     if: github.event.inputs.mode == 'git-commit' && github.event.inputs.commit_sha != ''
-    # Override the workflow-level read-only default — this job dispatches
+    # Override the workflow-level read-only default. This job dispatches
     # deploy.yml, which requires actions: write on the GITHUB_TOKEN.
     permissions:
       contents: read
       actions: write
     steps:
+      - name: Check the commit
+        env:
+          COMMIT_SHA: ${{ github.event.inputs.commit_sha }}
+        run: |
+          if ! [[ "$COMMIT_SHA" =~ ^[0-9a-fA-F]{7,40}$ ]]; then
+            echo "::error::commit_sha must be a commit SHA (7 to 40 hex characters)"
+            exit 1
+          fi
+
+      # The SHA reaches the script through the environment, never as code.
       - name: Trigger deploy workflow
-        uses: actions/github-script@v9
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        env:
+          COMMIT_SHA: ${{ github.event.inputs.commit_sha }}
         with:
           script: |
             await github.rest.actions.createWorkflowDispatch({
@@ -137,6 +263,6 @@ jobs:
               workflow_id: 'deploy.yml',
               ref: 'main',
               inputs: {
-                rollback_commit: '${{ github.event.inputs.commit_sha }}'
+                rollback_commit: process.env.COMMIT_SHA
               }
             });
