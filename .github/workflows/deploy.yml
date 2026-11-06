@@ -1,12 +1,13 @@
 ###############################################################################
-# CodedVisionDesign — Universal Deployment Pipeline
+# CodedVisionDesign - Universal Deployment Pipeline
 # ──────────────────────────────────────────────────
 # Drop this workflow + deploy-config.json into any client repo.
 # On push to main it will:
 #   1. Read deploy-config.json
 #   2. Auto-detect project type (React/Vite/Next → build then deploy | PHP/HTML → deploy)
-#   3. Upload via SSH (rsync) to either Hostinger or VPS
-#   4. Keep N previous releases for instant rollback
+#   3. Build in a job that holds no secrets and pass the result on as an artifact
+#   4. Upload that artifact via SSH (rsync) to either Hostinger or VPS
+#   5. Keep N previous releases for rollback, outside the web root
 #
 # ┌─────────────────────────────────────────────────────────────┐
 # │ WHERE DO SSH DETAILS GO?                                    │
@@ -15,16 +16,19 @@
 # │ setup.sh sets them automatically at the org level.          │
 # │                                                             │
 # │ HOSTINGER (org-level, shared by all repos):                 │
-# │   HOSTINGER_SSH_HOST  — IP or hostname from hPanel          │
-# │   HOSTINGER_SSH_USER  — u372385223                          │
-# │   HOSTINGER_SSH_KEY   — private SSH key                     │
-# │   HOSTINGER_SSH_PORT  — 65002                               │
+# │   HOSTINGER_SSH_HOST  - IP or hostname from hPanel          │
+# │   HOSTINGER_SSH_USER  - u372385223                          │
+# │   HOSTINGER_SSH_KEY   - private SSH key                     │
+# │   HOSTINGER_SSH_PORT  - 65002                               │
+# │   HOSTINGER_KNOWN_HOSTS - server's known_hosts line(s),     │
+# │                         optional but recommended            │
 # │                                                             │
 # │ VPS (repo-level, only on earthecho repo):                   │
-# │   VPS_SSH_HOST  — your VPS IP                               │
-# │   VPS_SSH_USER  — e.g. root or deploy                       │
-# │   VPS_SSH_KEY   — private SSH key for the VPS               │
-# │   VPS_SSH_PORT  — 22 (or custom)                            │
+# │   VPS_SSH_HOST  - your VPS IP                               │
+# │   VPS_SSH_USER  - e.g. root or deploy                       │
+# │   VPS_SSH_KEY   - private SSH key for the VPS               │
+# │   VPS_SSH_PORT  - 22 (or custom)                            │
+# │   VPS_KNOWN_HOSTS - server's known_hosts line(s), optional  │
 # └─────────────────────────────────────────────────────────────┘
 ###############################################################################
 
@@ -44,24 +48,42 @@ concurrency:
   group: deploy-${{ github.repository }}
   cancel-in-progress: false
 
-# Least-privilege default for the whole workflow. The deploy job only reads
-# the repo and ships over SSH — it never writes back via the GITHUB_TOKEN.
+# Least-privilege default for the whole workflow. Neither job writes back via
+# the GITHUB_TOKEN: the build job hands its output over as an artifact and the
+# deploy job ships it over SSH.
 permissions:
   contents: read
 
 jobs:
-  deploy:
-    name: Build & Deploy
+  # The build runs package code (Tailwind, Vite, Vitest), so it gets no secrets
+  # at all and installs packages with --ignore-scripts. Only the deploy job can
+  # read the SSH key, and it runs no package code: it unpacks the artifact and
+  # ships it.
+  build:
+    name: Build
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    outputs:
+      type: ${{ steps.detect.outputs.type }}
 
     steps:
       # ── 1. Checkout ────────────────────────────────────────────────────────
+      - name: Check the requested commit
+        if: github.event.inputs.rollback_commit != ''
+        env:
+          ROLLBACK_COMMIT: ${{ github.event.inputs.rollback_commit }}
+        run: |
+          if ! [[ "$ROLLBACK_COMMIT" =~ ^[0-9a-fA-F]{7,40}$ ]]; then
+            echo "::error::rollback_commit must be a commit SHA (7 to 40 hex characters)"
+            exit 1
+          fi
+
       - name: Checkout repository
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ github.event.inputs.rollback_commit || github.sha }}
           fetch-depth: 0
+          persist-credentials: false
 
       # ── 2. Read config ─────────────────────────────────────────────────────
       - name: Read deploy-config.json
@@ -72,45 +94,20 @@ jobs:
             exit 1
           fi
 
-          SUBDOMAIN=$(jq -r '.subdomain' deploy-config.json)
-          DEPLOY_PATH=$(jq -r '.deploy_path' deploy-config.json)
-          PROJECT_TYPE=$(jq -r '.project_type // "auto"' deploy-config.json)
-          BUILD_CMD=$(jq -r '.build_command // "npm run build"' deploy-config.json)
-          BUILD_OUTPUT=$(jq -r '.build_output // "build"' deploy-config.json)
-          NODE_VERSION=$(jq -r '.node_version // "18"' deploy-config.json)
-          KEEP_RELEASES=$(jq -r '.keep_releases // 5' deploy-config.json)
-          SERVER=$(jq -r '.server // "hostinger"' deploy-config.json)
-
-          # Build exclude args for rsync
-          EXCLUDES=""
-          for pattern in $(jq -r '.exclude_patterns[]? // empty' deploy-config.json); do
-            EXCLUDES="${EXCLUDES} --exclude=${pattern}"
-          done
-
-          echo "subdomain=${SUBDOMAIN}" >> $GITHUB_OUTPUT
-          echo "deploy_path=${DEPLOY_PATH}" >> $GITHUB_OUTPUT
-          echo "project_type=${PROJECT_TYPE}" >> $GITHUB_OUTPUT
-          echo "build_cmd=${BUILD_CMD}" >> $GITHUB_OUTPUT
-          echo "build_output=${BUILD_OUTPUT}" >> $GITHUB_OUTPUT
-          echo "node_version=${NODE_VERSION}" >> $GITHUB_OUTPUT
-          echo "keep_releases=${KEEP_RELEASES}" >> $GITHUB_OUTPUT
-          echo "excludes=${EXCLUDES}" >> $GITHUB_OUTPUT
-          echo "server=${SERVER}" >> $GITHUB_OUTPUT
-
-          echo "### Config Loaded" >> $GITHUB_STEP_SUMMARY
-          echo "| Key | Value |" >> $GITHUB_STEP_SUMMARY
-          echo "|-----|-------|" >> $GITHUB_STEP_SUMMARY
-          echo "| Server | \`${SERVER}\` |" >> $GITHUB_STEP_SUMMARY
-          echo "| Subdomain | \`${SUBDOMAIN}\` |" >> $GITHUB_STEP_SUMMARY
-          echo "| Deploy Path | \`${DEPLOY_PATH}\` |" >> $GITHUB_STEP_SUMMARY
-          echo "| Project Type | \`${PROJECT_TYPE}\` |" >> $GITHUB_STEP_SUMMARY
+          {
+            echo "project_type=$(jq -r '.project_type // "auto"' deploy-config.json)"
+            echo "build_cmd=$(jq -r '.build_command // "npm run build"' deploy-config.json)"
+            echo "build_output=$(jq -r '.build_output // "build"' deploy-config.json)"
+            echo "node_version=$(jq -r '.node_version // "18"' deploy-config.json)"
+          } >> "$GITHUB_OUTPUT"
 
       # ── 3. Auto-detect project type ────────────────────────────────────────
       - name: Detect project type
         id: detect
+        env:
+          TYPE: ${{ steps.config.outputs.project_type }}
+          BUILD_OUTPUT: ${{ steps.config.outputs.build_output }}
         run: |
-          TYPE="${{ steps.config.outputs.project_type }}"
-
           if [ "$TYPE" = "auto" ]; then
             if [ -f "package.json" ]; then
               if jq -e '.dependencies.react // .devDependencies.react // .dependencies.next // .devDependencies.next // .dependencies.vue // .devDependencies.vue // .dependencies.svelte // .devDependencies.svelte' package.json > /dev/null 2>&1; then
@@ -123,7 +120,7 @@ jobs:
                 TYPE="node-static"
                 echo "Detected: Node.js project without build step"
               fi
-            elif [ -f "composer.json" ] || ls *.php 1> /dev/null 2>&1; then
+            elif [ -f "composer.json" ] || ls ./*.php 1> /dev/null 2>&1; then
               TYPE="php"
               echo "Detected: PHP project"
             elif [ -f "index.html" ] || [ -f "index.htm" ]; then
@@ -135,19 +132,20 @@ jobs:
             fi
           fi
 
-          echo "type=${TYPE}" >> $GITHUB_OUTPUT
-
           if [ "$TYPE" = "node-build" ]; then
-            DEPLOY_SOURCE="${{ steps.config.outputs.build_output }}"
+            DEPLOY_SOURCE="$BUILD_OUTPUT"
           else
             DEPLOY_SOURCE="."
           fi
-          echo "deploy_source=${DEPLOY_SOURCE}" >> $GITHUB_OUTPUT
+          {
+            echo "type=${TYPE}"
+            echo "deploy_source=${DEPLOY_SOURCE}"
+          } >> "$GITHUB_OUTPUT"
 
       # ── 4. Setup Node (only for node projects or the v2 sub-app) ───────────
       - name: Setup Node.js
         if: startsWith(steps.detect.outputs.type, 'node') || hashFiles('v2/package.json') != ''
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: ${{ steps.config.outputs.node_version }}
           cache: "npm"
@@ -158,14 +156,15 @@ jobs:
       # ── 5. Install & Build (only for node-build projects) ──────────────────
       - name: Install dependencies
         if: steps.detect.outputs.type == 'node-build'
-        run: npm ci --prefer-offline --no-audit
+        run: npm ci --prefer-offline --no-audit --ignore-scripts
 
       - name: Build project
         if: steps.detect.outputs.type == 'node-build'
-        run: ${{ steps.config.outputs.build_cmd }}
         env:
           CI: true
           NODE_ENV: production
+          BUILD_CMD: ${{ steps.config.outputs.build_cmd }}
+        run: bash -c "$BUILD_CMD"
 
       # ── 5a. Build v1 Tailwind CSS (assets/css/app.css) ─────────────────────
       # Replaces the cdn.tailwindcss.com runtime build that Tailwind itself
@@ -174,12 +173,12 @@ jobs:
       - name: Build v1 Tailwind CSS
         if: hashFiles('package.json') != ''
         run: |
-          npm ci --prefer-offline --no-audit
+          npm ci --prefer-offline --no-audit --ignore-scripts
           npm run build:css
 
       # Sanity-check the compiled bundle. Catches the silent breakage
-      # mode where a dep bump (e.g. Tailwind 3→4) produces an empty/
-      # incompatible CSS file — the v1 desktop layout depends on these
+      # mode where a dep bump (e.g. Tailwind 3→4) produces an empty or
+      # incompatible CSS file. The v1 desktop layout depends on these
       # arbitrary utility classes, and there is no other test that
       # exercises them at build time.
       - name: Verify Tailwind output contains critical utilities
@@ -206,20 +205,22 @@ jobs:
         if: hashFiles('v2/package.json') != ''
         run: |
           cd v2
-          npm ci --prefer-offline --no-audit
+          npm ci --prefer-offline --no-audit --ignore-scripts
           # A direct push skips pull request checks, so nothing failing ships.
           npm test
           npm run build
 
       - name: Verify build output
+        id: verify
         if: steps.detect.outputs.type == 'node-build'
+        env:
+          BUILD_DIR: ${{ steps.config.outputs.build_output }}
         run: |
-          BUILD_DIR="${{ steps.config.outputs.build_output }}"
           if [ ! -d "$BUILD_DIR" ]; then
             for alt in dist build out .next/static; do
               if [ -d "$alt" ]; then
                 echo "Build output found at '${alt}' instead of '${BUILD_DIR}'"
-                echo "deploy_source=${alt}" >> $GITHUB_OUTPUT
+                echo "deploy_source=${alt}" >> "$GITHUB_OUTPUT"
                 BUILD_DIR="$alt"
                 break
               fi
@@ -233,119 +234,311 @@ jobs:
           FILE_COUNT=$(find "$BUILD_DIR" -type f | wc -l)
           echo "Build output: ${FILE_COUNT} files in ${BUILD_DIR}"
 
-      # ── 6. Setup SSH (picks Hostinger or VPS secrets automatically) ────────
+      # ── 6. Package what will ship ──────────────────────────────────────────
+      # The deploy job applies the same exclude list again on upload, where it
+      # also stops rsync --delete removing server-only files such as .env.
+      # A tarball keeps hidden files (.htaccess) and file modes intact, which
+      # the artifact zip on its own does not.
+      - name: Package the release
+        env:
+          TYPE: ${{ steps.detect.outputs.type }}
+          DEPLOY_SOURCE: ${{ steps.verify.outputs.deploy_source || steps.detect.outputs.deploy_source }}
+        run: |
+          STAGE="${RUNNER_TEMP}/release"
+          rm -rf "$STAGE"
+          mkdir -p "$STAGE/site"
+
+          # One pattern per line, so the shell never expands globs like .env.*
+          EXCLUDES=()
+          if [ "$TYPE" != "node-build" ]; then
+            while IFS= read -r pattern; do
+              if [ -n "$pattern" ]; then EXCLUDES+=("--exclude=${pattern}"); fi
+            done < <(jq -r '.exclude_patterns[]? // empty' deploy-config.json)
+          fi
+
+          rsync -a "${EXCLUDES[@]}" --exclude='.releases' "${DEPLOY_SOURCE}/" "$STAGE/site/"
+          tar -C "$STAGE" -cf "${RUNNER_TEMP}/release.tar" site
+          echo "Packaged $(find "$STAGE/site" -type f | wc -l) files ($(du -sh "$STAGE/site" | cut -f1))"
+
+      - name: Upload the release
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: release
+          path: ${{ runner.temp }}/release.tar
+          if-no-files-found: error
+          retention-days: 1
+          overwrite: true
+
+  deploy:
+    name: Deploy
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      # The checkout is only read (deploy-config.json). The files that ship
+      # come from the build job's artifact.
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.inputs.rollback_commit || github.sha }}
+          persist-credentials: false
+
+      - name: Read deploy-config.json
+        id: config
+        env:
+          PROJECT_TYPE: ${{ needs.build.outputs.type }}
+        run: |
+          DEPLOY_PATH=$(jq -r '.deploy_path // empty' deploy-config.json)
+          SUBDOMAIN=$(jq -r '.subdomain // empty' deploy-config.json)
+          KEEP_RELEASES=$(jq -r '.keep_releases // 5' deploy-config.json)
+          SERVER=$(jq -r '.server // "hostinger"' deploy-config.json)
+
+          # These values end up in commands on the server, so only plain
+          # absolute paths and names are accepted.
+          if ! [[ "$DEPLOY_PATH" =~ ^/[A-Za-z0-9._/-]+$ ]] || [[ "$DEPLOY_PATH" == *..* ]]; then
+            echo "::error::deploy_path must be an absolute path of letters, digits, '.', '_', '-' and '/'"
+            exit 1
+          fi
+          # Snapshots live in ~/deploy-releases/<site key>, outside every web root.
+          if [[ "$SUBDOMAIN" =~ ^[A-Za-z0-9][A-Za-z0-9.-]*$ ]]; then
+            SITE_KEY="$SUBDOMAIN"
+          else
+            SITE_KEY=$(printf '%s' "${DEPLOY_PATH#/}" | tr '/' '_')
+          fi
+          if ! [[ "$KEEP_RELEASES" =~ ^[0-9]+$ ]]; then
+            KEEP_RELEASES=5
+          elif [ "$KEEP_RELEASES" -lt 1 ]; then
+            KEEP_RELEASES=1
+          fi
+
+          {
+            echo "subdomain=${SUBDOMAIN}"
+            echo "deploy_path=${DEPLOY_PATH}"
+            echo "site_key=${SITE_KEY}"
+            echo "keep_releases=${KEEP_RELEASES}"
+            echo "server=${SERVER}"
+          } >> "$GITHUB_OUTPUT"
+
+          {
+            echo "### Config Loaded"
+            echo "| Key | Value |"
+            echo "|-----|-------|"
+            echo "| Server | \`${SERVER}\` |"
+            echo "| Subdomain | \`${SUBDOMAIN}\` |"
+            echo "| Deploy Path | \`${DEPLOY_PATH}\` |"
+            echo "| Project Type | \`${PROJECT_TYPE}\` |"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Download the release
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: release
+          path: ${{ runner.temp }}/release
+
+      # The archive comes from a job that ran package code, so it may only
+      # unpack plain files and folders under site/, before any key is written.
+      # An empty release, or one without an index page, is refused, because
+      # rsync --delete would strip the live site down to whatever arrived.
+      - name: Unpack and check the release
+        env:
+          TYPE: ${{ needs.build.outputs.type }}
+        run: |
+          cd "${RUNNER_TEMP}/release"
+          if tar -tf release.tar | grep -qvE '^site(/|$)' || tar -tf release.tar | grep -qE '(^|/)\.\.(/|$)'; then
+            echo "::error::The release archive has entries outside site/"
+            exit 1
+          fi
+          tar -xf release.tar
+          if [ -n "$(find site ! -type f ! -type d -print -quit)" ]; then
+            echo "::error::The release contains links or special files"
+            exit 1
+          fi
+          if [ -z "$(ls -A site)" ]; then
+            echo "::error::The release is empty"
+            exit 1
+          fi
+          if [ "$TYPE" != "node-build" ] && [ ! -f site/index.php ] && [ ! -f site/index.html ] && [ ! -f site/index.htm ]; then
+            echo "::error::The release has no index.php or index.html"
+            exit 1
+          fi
+          echo "Release OK: $(find site -type f | wc -l) files"
+
+      # ── 7. Setup SSH (picks Hostinger or VPS secrets automatically) ────────
+      # With the *_KNOWN_HOSTS secret set, the server's host key is pinned and
+      # checked strictly. Without it, any key is accepted as before, and the
+      # run shows a warning until the secret is added.
       - name: Configure SSH
+        env:
+          SERVER: ${{ steps.config.outputs.server }}
+          HOSTINGER_SSH_KEY: ${{ secrets.HOSTINGER_SSH_KEY }}
+          HOSTINGER_SSH_HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
+          HOSTINGER_SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
+          HOSTINGER_SSH_PORT: ${{ secrets.HOSTINGER_SSH_PORT }}
+          HOSTINGER_KNOWN_HOSTS: ${{ secrets.HOSTINGER_KNOWN_HOSTS }}
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+          VPS_SSH_HOST: ${{ secrets.VPS_SSH_HOST }}
+          VPS_SSH_USER: ${{ secrets.VPS_SSH_USER }}
+          VPS_SSH_PORT: ${{ secrets.VPS_SSH_PORT }}
+          VPS_KNOWN_HOSTS: ${{ secrets.VPS_KNOWN_HOSTS }}
         run: |
           mkdir -p ~/.ssh
           chmod 700 ~/.ssh
 
-          SERVER="${{ steps.config.outputs.server }}"
-
           if [ "$SERVER" = "vps" ]; then
             # ── VPS: uses repo-level secrets ──
-            echo "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/deploy_key
-            SSH_HOST="${{ secrets.VPS_SSH_HOST }}"
-            SSH_USER="${{ secrets.VPS_SSH_USER }}"
-            SSH_PORT="${{ secrets.VPS_SSH_PORT }}"
-            SSH_PORT="${SSH_PORT:-22}"
+            SSH_KEY="$VPS_SSH_KEY"
+            SSH_HOST="$VPS_SSH_HOST"
+            SSH_USER="$VPS_SSH_USER"
+            SSH_PORT="${VPS_SSH_PORT:-22}"
+            KNOWN_HOSTS="$VPS_KNOWN_HOSTS"
+            KNOWN_HOSTS_SECRET="VPS_KNOWN_HOSTS"
           else
             # ── Hostinger: uses org-level secrets ──
-            echo "${{ secrets.HOSTINGER_SSH_KEY }}" > ~/.ssh/deploy_key
-            SSH_HOST="${{ secrets.HOSTINGER_SSH_HOST }}"
-            SSH_USER="${{ secrets.HOSTINGER_SSH_USER }}"
-            SSH_PORT="${{ secrets.HOSTINGER_SSH_PORT }}"
-            SSH_PORT="${SSH_PORT:-65002}"
+            SSH_KEY="$HOSTINGER_SSH_KEY"
+            SSH_HOST="$HOSTINGER_SSH_HOST"
+            SSH_USER="$HOSTINGER_SSH_USER"
+            SSH_PORT="${HOSTINGER_SSH_PORT:-65002}"
+            KNOWN_HOSTS="$HOSTINGER_KNOWN_HOSTS"
+            KNOWN_HOSTS_SECRET="HOSTINGER_KNOWN_HOSTS"
           fi
 
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
 
-          cat >> ~/.ssh/config << EOF
-          Host deployserver
-            HostName ${SSH_HOST}
-            User ${SSH_USER}
-            Port ${SSH_PORT}
-            IdentityFile ~/.ssh/deploy_key
-            StrictHostKeyChecking no
-            ServerAliveInterval 60
-            ServerAliveCountMax 3
-          EOF
-
-          echo "SSH configured for ${SERVER} → ${SSH_HOST}:${SSH_PORT} as ${SSH_USER}"
-
-      # ── 7. Pre-deploy: Create release snapshot on server ───────────────────
-      - name: Create rollback snapshot
-        run: |
-          DEPLOY_PATH="${{ steps.config.outputs.deploy_path }}"
-          KEEP="${{ steps.config.outputs.keep_releases }}"
-          TIMESTAMP=$(date +%Y%m%d_%H%M%S)
-          COMMIT_SHORT=$(echo "${{ github.sha }}" | cut -c1-7)
-          RELEASES_DIR="${DEPLOY_PATH}/.releases"
-
-          ssh deployserver << SCRIPT
-            mkdir -p "${RELEASES_DIR}"
-            chmod 700 "${RELEASES_DIR}"
-            [ -e "${RELEASES_DIR}/.htaccess" ] || printf '%s\n' '# Deploy snapshots are rollback copies, never meant to be served.' 'Require all denied' > "${RELEASES_DIR}/.htaccess"
-            if [ -d "${DEPLOY_PATH}" ] && [ "\$(ls -A ${DEPLOY_PATH} 2>/dev/null | grep -v .releases | head -1)" ]; then
-              SNAPSHOT="${RELEASES_DIR}/${TIMESTAMP}_${COMMIT_SHORT}_pre"
-              mkdir -p "\${SNAPSHOT}"
-              rsync -a --exclude='.releases' --exclude='.git' --exclude='vendor' --exclude='node_modules' "${DEPLOY_PATH}/" "\${SNAPSHOT}/"
-              echo "Snapshot saved: \${SNAPSHOT}"
-            fi
-            cd "${RELEASES_DIR}" 2>/dev/null && \
-              ls -dt */ 2>/dev/null | tail -n +$((KEEP + 1)) | xargs rm -rf 2>/dev/null || true
-          SCRIPT
-
-      # ── 8. Deploy via rsync ────────────────────────────────────────────────
-      - name: Deploy files
-        run: |
-          DEPLOY_PATH="${{ steps.config.outputs.deploy_path }}"
-          DEPLOY_SOURCE="${{ steps.detect.outputs.deploy_source }}"
-          EXCLUDES="${{ steps.config.outputs.excludes }}"
-          TYPE="${{ steps.detect.outputs.type }}"
-
-          ssh deployserver "mkdir -p ${DEPLOY_PATH}"
-
-          RSYNC_OPTS="-avz --delete --checksum"
-
-          if [ "$TYPE" != "node-build" ]; then
-            RSYNC_CMD="rsync ${RSYNC_OPTS} ${EXCLUDES} --exclude='.releases' ./ deployserver:${DEPLOY_PATH}/"
+          if [ -n "$KNOWN_HOSTS" ]; then
+            printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts_deploy
+            chmod 600 ~/.ssh/known_hosts_deploy
+            PINNED="yes"
           else
-            RSYNC_CMD="rsync ${RSYNC_OPTS} --exclude='.releases' ${DEPLOY_SOURCE}/ deployserver:${DEPLOY_PATH}/"
+            echo "::warning title=SSH host key not checked::${KNOWN_HOSTS_SECRET} is not set, so this deploy trusts any host key the server presents. Add the server's known_hosts line(s) as that secret to turn on strict checking."
+            PINNED="no"
           fi
 
-          echo "Running: ${RSYNC_CMD}"
-          eval ${RSYNC_CMD}
+          {
+            echo "Host deployserver"
+            echo "  HostName ${SSH_HOST}"
+            echo "  User ${SSH_USER}"
+            echo "  Port ${SSH_PORT}"
+            echo "  IdentityFile ~/.ssh/deploy_key"
+            if [ "$PINNED" = "yes" ]; then
+              echo "  UserKnownHostsFile ~/.ssh/known_hosts_deploy"
+              echo "  StrictHostKeyChecking yes"
+            else
+              echo "  StrictHostKeyChecking no"
+            fi
+            echo "  ServerAliveInterval 60"
+            echo "  ServerAliveCountMax 3"
+          } > ~/.ssh/config
+          chmod 600 ~/.ssh/config
 
-          echo "### Deployed Successfully" >> $GITHUB_STEP_SUMMARY
-          echo "| | |" >> $GITHUB_STEP_SUMMARY
-          echo "|--|--|" >> $GITHUB_STEP_SUMMARY
-          echo "| Commit | \`${{ github.sha }}\` |" >> $GITHUB_STEP_SUMMARY
-          echo "| Server | \`${{ steps.config.outputs.server }}\` |" >> $GITHUB_STEP_SUMMARY
-          echo "| Target | \`${DEPLOY_PATH}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "SSH configured for ${SERVER} → ${SSH_HOST}:${SSH_PORT} as ${SSH_USER} (host key pinned: ${PINNED})"
 
-      # ── 9. Post-deploy commands ────────────────────────────────────────────
+      # ── 8. Pre-deploy: Create release snapshot on server ───────────────────
+      # Snapshots go to ~/deploy-releases/<site key>, outside public_html, and
+      # leave out .env so no copy of a secret sits next to the site. Older runs
+      # kept them in <deploy_path>/.releases; that folder is left untouched
+      # (rollback.yml can still restore from it) until it is removed by hand.
+      - name: Create rollback snapshot
+        env:
+          DEPLOY_PATH: ${{ steps.config.outputs.deploy_path }}
+          SITE_KEY: ${{ steps.config.outputs.site_key }}
+          KEEP: ${{ steps.config.outputs.keep_releases }}
+          COMMIT_SHA: ${{ github.sha }}
+        run: |
+          SNAPSHOT_NAME="$(date +%Y%m%d_%H%M%S)_${COMMIT_SHA:0:7}_pre"
+          # The values were checked in "Read deploy-config.json" and travel
+          # as shell assignments ahead of the script.
+          {
+            printf 'DEPLOY_PATH=%q\nSITE_KEY=%q\nSNAPSHOT_NAME=%q\nKEEP=%q\n' \
+              "$DEPLOY_PATH" "$SITE_KEY" "$SNAPSHOT_NAME" "$KEEP"
+            cat <<'REMOTE'
+          set -eu
+          RELEASES_DIR="$HOME/deploy-releases/$SITE_KEY"
+          mkdir -p "$RELEASES_DIR"
+          chmod 700 "$HOME/deploy-releases" "$RELEASES_DIR"
+          REAL_RELEASES=$(cd "$RELEASES_DIR" && pwd -P)
+          case "$REAL_RELEASES/" in
+            */public_html/*) echo "::error::$REAL_RELEASES is inside public_html"; exit 1 ;;
+          esac
+          if [ -d "$DEPLOY_PATH" ]; then
+            REAL_DEPLOY=$(cd "$DEPLOY_PATH" && pwd -P)
+            case "$REAL_RELEASES/" in
+              "$REAL_DEPLOY"/*) echo "::error::$REAL_RELEASES is inside the deploy path"; exit 1 ;;
+            esac
+            if [ -n "$(ls -A "$DEPLOY_PATH" | grep -vxF '.releases' | head -n 1)" ]; then
+              SNAPSHOT="$RELEASES_DIR/$SNAPSHOT_NAME"
+              mkdir -p "$SNAPSHOT"
+              rsync -a --exclude='.releases' --exclude='.git' --exclude='vendor' --exclude='node_modules' \
+                --exclude='.env' --exclude='.env.*' "$DEPLOY_PATH/" "$SNAPSHOT/"
+              echo "Snapshot saved: $SNAPSHOT"
+            fi
+          fi
+          cd "$RELEASES_DIR"
+          ls -1dt -- */ 2>/dev/null | tail -n "+$((KEEP + 1))" | while IFS= read -r old; do
+            rm -rf -- "$old"
+          done
+          REMOTE
+          } | ssh deployserver sh -s
+
+      # ── 9. Deploy via rsync ────────────────────────────────────────────────
+      - name: Deploy files
+        env:
+          DEPLOY_PATH: ${{ steps.config.outputs.deploy_path }}
+          TYPE: ${{ needs.build.outputs.type }}
+          SERVER: ${{ steps.config.outputs.server }}
+          COMMIT_SHA: ${{ github.sha }}
+        run: |
+          SITE_DIR="${RUNNER_TEMP}/release/site"
+          printf 'mkdir -p %q\n' "$DEPLOY_PATH" | ssh deployserver sh -s
+
+          # Excluded paths are neither sent nor deleted on the server, which is
+          # what keeps .env and other server-only files in place.
+          EXCLUDES=()
+          if [ "$TYPE" != "node-build" ]; then
+            while IFS= read -r pattern; do
+              if [ -n "$pattern" ]; then EXCLUDES+=("--exclude=${pattern}"); fi
+            done < <(jq -r '.exclude_patterns[]? // empty' deploy-config.json)
+          fi
+
+          # .releases is where older runs kept snapshots inside the web root.
+          RSYNC_CMD=(rsync -avz --delete --checksum "${EXCLUDES[@]}" --exclude='.releases' "${SITE_DIR}/" "deployserver:${DEPLOY_PATH}/")
+          echo "Running: ${RSYNC_CMD[*]}"
+          "${RSYNC_CMD[@]}"
+
+          {
+            echo "### Deployed Successfully"
+            echo "| | |"
+            echo "|--|--|"
+            echo "| Commit | \`${COMMIT_SHA}\` |"
+            echo "| Server | \`${SERVER}\` |"
+            echo "| Target | \`${DEPLOY_PATH}\` |"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      # ── 10. Post-deploy commands ───────────────────────────────────────────
       - name: Run post-deploy commands
+        env:
+          DEPLOY_PATH: ${{ steps.config.outputs.deploy_path }}
         run: |
-          COMMANDS=$(jq -r '.post_deploy_commands[]? // empty' deploy-config.json)
-          if [ -n "$COMMANDS" ]; then
-            echo "$COMMANDS" | while IFS= read -r cmd; do
-              echo "Running: ${cmd}"
-              ssh deployserver "cd ${{ steps.config.outputs.deploy_path }} && ${cmd}"
-            done
-          fi
+          jq -r '.post_deploy_commands[]? // empty' deploy-config.json | while IFS= read -r cmd; do
+            if [ -z "$cmd" ]; then continue; fi
+            echo "Running: ${cmd}"
+            # ssh reads the command from this pipe, not from the list above.
+            printf 'cd %q && %s\n' "$DEPLOY_PATH" "$cmd" | ssh deployserver sh -s
+          done
 
-      # ── 10. Health check ───────────────────────────────────────────────────
+      # ── 11. Health check ───────────────────────────────────────────────────
       - name: Verify deployment
+        env:
+          SUBDOMAIN: ${{ steps.config.outputs.subdomain }}
+          SERVER: ${{ steps.config.outputs.server }}
         run: |
-          SUBDOMAIN="${{ steps.config.outputs.subdomain }}"
-          SERVER="${{ steps.config.outputs.server }}"
-
           # Build the URL to check
           if [ "$SERVER" = "vps" ]; then
             # VPS sites likely have their own domain
             DOMAIN=$(jq -r '.health_check_url // empty' deploy-config.json)
             if [ -z "$DOMAIN" ]; then
-              echo "No health_check_url in config — skipping health check for VPS"
+              echo "No health_check_url in config, skipping health check for VPS"
               exit 0
             fi
             URL="${DOMAIN}"
@@ -369,7 +562,7 @@ jobs:
           done
           echo "Health check passed"
 
-      # ── 11. Cleanup ────────────────────────────────────────────────────────
+      # ── 12. Cleanup ────────────────────────────────────────────────────────
       - name: Cleanup SSH
         if: always()
-        run: rm -rf ~/.ssh/deploy_key
+        run: rm -f ~/.ssh/deploy_key
