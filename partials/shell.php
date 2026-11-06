@@ -349,8 +349,11 @@
         'apps/admin',
         'flstudio'
     ];
+    // Versioned by file time like the stylesheet, so browsers keep each script
+    // until it changes instead of fetching all of them on every visit.
     foreach ($components as $component) {
-        echo '<script src="' . BASE_PATH . 'assets/js/components/' . $component . '.js?v=' . time() . '"></script>' . "\n    ";
+        $version = @filemtime(__DIR__ . '/../assets/js/components/' . $component . '.js');
+        echo '<script src="' . BASE_PATH . 'assets/js/components/' . $component . '.js?v=' . $version . '"></script>' . "\n    ";
     }
     ?>
 </body>

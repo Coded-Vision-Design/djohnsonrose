@@ -1,3 +1,4 @@
+import { statSync } from 'node:fs'
 import { test, expect, type Page } from '@playwright/test'
 
 // What a visitor downloads, run for real in both builds. The rules the source
@@ -49,3 +50,13 @@ for (const build of BUILDS) {
     })
   })
 }
+
+test('v1 versions its scripts by file time, so they stay cached between visits', async ({ request }) => {
+  const html = await (await request.get(BUILDS[0].url)).text()
+  const scripts = [...html.matchAll(/assets\/js\/components\/([\w/-]+)\.js\?v=(\d+)/g)]
+  expect(scripts.length).toBeGreaterThanOrEqual(17)
+  for (const [, name, version] of scripts) {
+    const mtime = Math.floor(statSync(new URL(`../../assets/js/components/${name}.js`, import.meta.url)).mtimeMs / 1000)
+    expect(Number(version), name).toBe(mtime)
+  }
+})

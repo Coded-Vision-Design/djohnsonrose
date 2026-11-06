@@ -8,6 +8,9 @@ import lockScreenTsx from '../shell/LockScreen.tsx?raw'
 import indexHtml from '../../index.html?raw'
 import { useOsStore } from '../store/osStore'
 
+// A file the build only copies is globbed rather than imported.
+const raw = (files: Record<string, unknown>) => Object.values(files)[0] as string | undefined
+const assetsHtaccess = raw(import.meta.glob('../../public/assets/.htaccess', { query: '?raw', import: 'default', eager: true }))
 const images = new Set(Object.keys(import.meta.glob('../../../assets/img/**/*')).map((p) => p.replace('../../../', '/')))
 
 const WALLPAPER = 'wallpaper-bloom.webp'
@@ -35,5 +38,18 @@ describe('default wallpaper', () => {
     expect(v1).toMatch(/^#[0-9a-f]{6}$/)
     expect(desktopTsx).toContain(`bg-[${v1}]`)
     expect(lockScreenTsx).toContain(`bg-[${v1}]`)
+  })
+})
+
+describe('caching', () => {
+  it('versions every v1 script by its file time, not the request time', () => {
+    const loop = shellPhp.match(/foreach \(\$components as \$component\) \{([\s\S]*?)\}/)?.[1] ?? ''
+    expect(loop).toContain("assets/js/components/'")
+    expect(loop).toContain('filemtime(')
+    expect(loop).not.toMatch(/'\?v=' \. time\(\)/)
+  })
+
+  it("marks v2's hashed files immutable for a year", () => {
+    expect(assetsHtaccess).toMatch(/Header set Cache-Control "public, max-age=31536000, immutable"/)
   })
 })
