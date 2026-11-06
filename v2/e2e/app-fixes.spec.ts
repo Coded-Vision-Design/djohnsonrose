@@ -215,6 +215,13 @@ for (const build of BUILDS) {
       expect((await popup).url()).toBe('https://earthecho.co.uk/')
       await expect(chrome(page).getByRole('link', { name: 'Open earthecho.co.uk in a new tab' })).toBeVisible()
     })
+
+    test('another Visit Site file reaches a Chrome window that is already open', async ({ page }) => {
+      await call(page, 'openApp', 'edge')
+      await expect(chrome(page).locator('[data-project-title]').first()).toBeVisible({ timeout: 15_000 })
+      await openWith(page, build, 'edge', 'Visit Site.url', { initialUrl: 'https://ramstaxis.co.uk/' })
+      await expect(chrome(page).getByRole('link', { name: 'Open ramstaxis.co.uk in a new tab' })).toBeVisible()
+    })
   })
 }
 
