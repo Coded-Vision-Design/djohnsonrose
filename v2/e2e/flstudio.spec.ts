@@ -72,10 +72,25 @@ for (const build of BUILDS) {
       const app = await openFl(page)
       await app.locator('[data-fl-view="mixer"]').click()
       await app.getByRole('button', { name: 'Mute Kick' }).click()
+      // Every frame from the moment play is pressed: the first kick must not leak either.
+      const loudest = page.evaluate(
+        () =>
+          new Promise<number>((resolve) => {
+            const meter = document.querySelector('[data-fl-meter="c1"]')!
+            const end = performance.now() + 2000
+            let max = 0
+            const read = () => {
+              max = Math.max(max, Number(getComputedStyle(meter).getPropertyValue('--level')) || 0)
+              if (performance.now() < end) requestAnimationFrame(read)
+              else resolve(max)
+            }
+            requestAnimationFrame(read)
+          }),
+      )
       await app.locator('[data-fl-play]').click()
       await expect.poll(() => level(page, 'c3'), { timeout: 5000 }).toBeGreaterThan(0.01)
-      // Below -60 dB: the fader glides to silence rather than jumping, as real ones do.
-      expect(await level(page, 'c1')).toBeLessThan(0.002)
+      // Below -60 dB.
+      expect(await loudest).toBeLessThan(0.002)
       await app.locator('[data-fl-stop]').click()
     })
 

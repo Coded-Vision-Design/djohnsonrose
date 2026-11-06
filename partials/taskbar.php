@@ -162,11 +162,11 @@
             </div>
         </button>
 
-        <!-- Switch to React v2 -->
+        <!-- Switch to React v2. A fixed width, as in v2, so the label never moves the centred icons. -->
         <a href="/v2/"
            data-tray-item="build"
            title="Switch to the React (v2) build"
-           class="hidden md:flex items-center px-2 py-1 mr-1 rounded-sm text-xs font-medium border border-win-blue/30 bg-win-blue/10 text-win-blue hover:bg-win-blue hover:text-white transition-colors">
+           class="hidden md:flex items-center justify-center w-24 whitespace-nowrap overflow-hidden px-2 py-1 mr-1 rounded-sm text-xs font-medium border border-win-blue/30 bg-win-blue/10 text-win-blue hover:bg-win-blue hover:text-white transition-colors">
             ⚛ React v2
         </a>
 

@@ -922,6 +922,9 @@ export function createEngine(source, { onChange } = {}) {
     nextStep = resumeStep;
     nextTime = ctx.currentTime + 0.05;
     queue = [];
+    // Exact, not a glide: nothing is sounding yet, and a channel muted while
+    // stopped must not leak its first note while its fader falls.
+    mixer.apply(source().project, false);
     tick();
     timer = setInterval(tick, TICK_MS);
     notify();

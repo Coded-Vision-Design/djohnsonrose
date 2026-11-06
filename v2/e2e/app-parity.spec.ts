@@ -452,6 +452,31 @@ test.describe('right-click menus in both builds', () => {
     },
   }
 
+  // Each build's switch names the other build, so its label differs. With a
+  // wide font, as on Linux without Segoe UI, a label-sized switch made one tray
+  // wider and moved the centred taskbar icons.
+  test('taskbar icons sit in the same place whatever the font', async ({ browser }) => {
+    const [v1, v2] = await inBothBuilds(
+      browser,
+      async (page) => {
+        await page.evaluate(() => document.fonts.ready)
+        return page.evaluate(() => ({
+          tray: Math.round(document.querySelector('.os-taskbar-tray')!.getBoundingClientRect().width),
+          edge: Math.round(document.querySelector('[data-taskbar-app="edge"]')!.getBoundingClientRect().x),
+        }))
+      },
+      {
+        script: () =>
+          document.addEventListener('DOMContentLoaded', () => {
+            const style = document.createElement('style')
+            style.textContent = '* { font-family: Verdana, "DejaVu Sans", sans-serif !important }'
+            document.head.append(style)
+          }),
+      },
+    )
+    expect(v1).toEqual(v2)
+  })
+
   for (const [name, open] of Object.entries(targets)) {
     test(`${name} menu matches, with an image on every item`, async ({ browser }) => {
       test.setTimeout(60_000)

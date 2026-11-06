@@ -421,12 +421,12 @@ export function Taskbar() {
           </div>
         </button>
 
-        {/* Cross-version flip */}
+        {/* Cross-version flip. A fixed width, as in v1, so the label never moves the centred icons. */}
         <a
           data-tray-item="build"
           href="/"
           title="Switch to the original PHP (v1) build"
-          className="hidden md:flex items-center px-2 py-1 mr-1 rounded-sm text-xs font-medium border border-win-blue/30 bg-win-blue/10 text-win-blue hover:bg-win-blue hover:text-white transition-colors"
+          className="hidden md:flex items-center justify-center w-24 whitespace-nowrap overflow-hidden px-2 py-1 mr-1 rounded-sm text-xs font-medium border border-win-blue/30 bg-win-blue/10 text-win-blue hover:bg-win-blue hover:text-white transition-colors"
         >
           🐘 PHP v1
         </a>
