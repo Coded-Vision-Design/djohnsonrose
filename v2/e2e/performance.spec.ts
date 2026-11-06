@@ -48,6 +48,18 @@ for (const build of BUILDS) {
       await boot(page, build.url)
       await expect(desktop(page, build)).toHaveCSS('background-color', FALLBACK)
     })
+
+    test('can load Selawik for systems without Segoe UI', async ({ page }) => {
+      await boot(page, build.url)
+      const family = await page.evaluate(() => getComputedStyle(document.body).fontFamily)
+      expect(family).toMatch(/^"Segoe UI Variable", "Segoe UI", Selawik,/)
+      // check() also passes for a face that failed, so count the faces that really loaded.
+      const loaded = await page.evaluate(async () => {
+        await document.fonts.load('16px Selawik').catch(() => [])
+        return [...document.fonts].filter((f) => f.family.replace(/"/g, '') === 'Selawik' && f.status === 'loaded').length
+      })
+      expect(loaded).toBeGreaterThan(0)
+    })
   })
 }
 

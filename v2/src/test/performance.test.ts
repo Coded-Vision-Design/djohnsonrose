@@ -8,10 +8,22 @@ import lockScreenTsx from '../shell/LockScreen.tsx?raw'
 import indexHtml from '../../index.html?raw'
 import { useOsStore } from '../store/osStore'
 
+// Vitest hands back CSS imported with ?raw as an empty string, so stylesheets are read from disk.
+const { readFileSync } = (
+  globalThis as unknown as {
+    process: { getBuiltinModule(id: 'node:fs'): { readFileSync(path: URL, encoding: 'utf8'): string } }
+  }
+).process.getBuiltinModule('node:fs')
+const css = (path: string) => readFileSync(new URL(path, import.meta.url), 'utf8')
+const inputCss = css('../../../assets/css/input.css')
+const globalsCss = css('../styles/globals.css')
+const fontsCss = css('../../../assets/css/fonts.css')
+
 // A file the build only copies is globbed rather than imported.
 const raw = (files: Record<string, unknown>) => Object.values(files)[0] as string | undefined
 const assetsHtaccess = raw(import.meta.glob('../../public/assets/.htaccess', { query: '?raw', import: 'default', eager: true }))
 const images = new Set(Object.keys(import.meta.glob('../../../assets/img/**/*')).map((p) => p.replace('../../../', '/')))
+const fonts = new Set(Object.keys(import.meta.glob('../../../assets/fonts/**/*')).map((p) => p.replace('../../../', '/')))
 
 const WALLPAPER = 'wallpaper-bloom.webp'
 
@@ -38,6 +50,35 @@ describe('default wallpaper', () => {
     expect(v1).toMatch(/^#[0-9a-f]{6}$/)
     expect(desktopTsx).toContain(`bg-[${v1}]`)
     expect(lockScreenTsx).toContain(`bg-[${v1}]`)
+  })
+})
+
+describe('self-hosted Selawik', () => {
+  it('is declared once in a stylesheet both builds import', () => {
+    expect(inputCss).toContain("@import './fonts.css';")
+    expect(globalsCss).toContain("@import '../../../assets/css/fonts.css';")
+  })
+
+  it('swaps in when ready and points at woff2 files that exist', () => {
+    const faces = fontsCss.match(/@font-face \{[^}]*\}/g) ?? []
+    expect(faces.length).toBeGreaterThanOrEqual(4)
+    for (const face of faces) {
+      expect(face).toContain("font-family: 'Selawik';")
+      expect(face).toContain('font-display: swap;')
+      // From the site root: v2's build does not rebase relative URLs in this shared file.
+      const url = face.match(/url\('\/assets\/fonts\/([^']+)'\) format\('woff2'\)/)?.[1]
+      expect(fonts.has(`/assets/fonts/${url}`), `missing ${url}`).toBe(true)
+    }
+  })
+
+  it('ships its licence', () => {
+    expect(fonts.has('/assets/fonts/selawik/LICENSE.txt')).toBe(true)
+  })
+
+  it('comes after Segoe UI Variable and Segoe UI in the same stack in both builds', () => {
+    const stack = (css: string) => css.match(/body \{\s*font-family: ([^;]+);/)?.[1]
+    expect(stack(inputCss)).toBe("'Segoe UI Variable', 'Segoe UI', Selawik, Tahoma, Geneva, Verdana, sans-serif")
+    expect(stack(globalsCss)).toBe(stack(inputCss))
   })
 })
 
