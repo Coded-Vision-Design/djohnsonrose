@@ -3,6 +3,7 @@ import { useOsStore } from '../store/osStore'
 import { playSound } from '../lib/sounds'
 import { cssUrl } from '../../../assets/js/windowing/shell-core.js'
 import profile from '../../../data/profile.json'
+import { whenDesktopReady } from './signIn'
 
 const formatLockTime = (d: Date) =>
   d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })
@@ -13,8 +14,8 @@ const formatLockDate = (d: Date) =>
 // Mirrors partials/login.php: profile, name and role in the middle, an account
 // picker at the bottom left (the owner signs in, "Recruiter" opens /cv) and the
 // clock at the bottom right, or at the top on phones. The role comes from
-// data/profile.json, as on /cv. The 3000ms sign-in animation matches v1's
-// shell.js login() exactly.
+// data/profile.json, as on /cv. Signing in waits for the desktop as v1's
+// shell.js login() does.
 export function LockScreen() {
   const login = useOsStore((s) => s.login)
   const wallpaper = useOsStore((s) => s.settings.wallpaper)
@@ -30,7 +31,8 @@ export function LockScreen() {
     if (signingIn) return
     setSigningIn(true)
     playSound('startup')
-    window.setTimeout(login, 3000)
+    // Until the desktop is ready, not a fixed time. See signIn.ts.
+    void whenDesktopReady().then(login)
   }
 
   return (

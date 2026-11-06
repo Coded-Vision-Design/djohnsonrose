@@ -3,18 +3,26 @@
     <!-- Sidebar -->
     <div :class="isMobile ? 'w-full border-b flex overflow-x-auto p-2 space-x-2 shrink-0' : 'w-64 border-r p-4 space-y-2'" class="border-gray-300 dark:border-gray-700">
         <div class="flex items-center space-x-3 p-3 mb-6" x-show="!isMobile">
-            <img :src="user.avatar" class="w-12 h-12 rounded-full">
+            <img alt="" :src="user.avatar" class="w-12 h-12 rounded-full">
             <div>
                 <div class="font-semibold text-sm" x-text="user.name"></div>
-                <div class="text-[10px] text-gray-500">Local Account</div>
+                <div class="text-xs text-gray-500 dark:text-gray-400">Local Account</div>
             </div>
         </div>
-        <template x-for="item in nav">
-            <button @click="currentTab = item.id" 
-                    :class="{'bg-white dark:bg-white/10 shadow-xs': currentTab === item.id, 'px-4 py-2 rounded-full whitespace-nowrap text-[10px]': isMobile, 'w-full text-left px-3 py-2 rounded-md text-xs': !isMobile}"
-                    class="font-medium flex items-center transition-all border border-transparent"
-                    :class="isMobile && currentTab === item.id ? 'border-win-blue text-win-blue' : ''">
-                <span :class="isMobile ? 'mr-1 text-sm' : 'mr-3 text-lg'" x-text="item.icon"></span>
+        <template x-for="item in nav" :key="item.id">
+            <button type="button"
+                    @click="currentTab = item.id"
+                    :data-settings-nav="item.id"
+                    :aria-current="currentTab === item.id ? 'page' : null"
+                    class="font-medium flex items-center transition-all border text-xs"
+                    :class="{
+                        'bg-white dark:bg-white/10 shadow-xs': currentTab === item.id,
+                        'px-4 py-2 rounded-full whitespace-nowrap': isMobile,
+                        'w-full text-left px-3 py-2 rounded-md': !isMobile,
+                        'border-win-blue text-win-blue': isMobile && currentTab === item.id,
+                        'border-transparent': !(isMobile && currentTab === item.id)
+                    }">
+                <img alt="" :src="window.portfolioConfig.imgPath + item.icon" class="object-contain shrink-0" :class="isMobile ? 'w-4 h-4 mr-1' : 'w-5 h-5 mr-3'">
                 <span x-text="item.label"></span>
             </button>
         </template>
@@ -47,7 +55,7 @@
                         <div class="text-xs text-gray-500">Enable or disable UI sound effects</div>
                     </div>
                 </div>
-                <button @click="toggleSound()" 
+                <button type="button" data-setting-toggle="sound" aria-label="System Sounds" :aria-pressed="Alpine.store('os').settings.sound ? 'true' : 'false'" @click="toggleSound()" 
                         :class="Alpine.store('os').settings.sound ? 'bg-win-blue' : 'bg-gray-400'"
                         class="w-12 h-6 rounded-full relative transition-colors">
                     <div :class="Alpine.store('os').settings.sound ? 'translate-x-7' : 'translate-x-1'" 
@@ -63,7 +71,7 @@
                         <div class="text-xs text-gray-500">Switch between light and dark themes</div>
                     </div>
                 </div>
-                <button @click="toggleTheme()"
+                <button type="button" data-setting-toggle="theme" aria-label="Dark Mode" :aria-pressed="Alpine.store('os').settings.theme === 'dark' ? 'true' : 'false'" @click="toggleTheme()"
                         :class="Alpine.store('os').settings.theme === 'dark' ? 'bg-win-blue' : 'bg-gray-400'"
                         class="w-12 h-6 rounded-full relative transition-colors">
                     <div :class="Alpine.store('os').settings.theme === 'dark' ? 'translate-x-7' : 'translate-x-1'"
@@ -77,10 +85,12 @@
                     <span class="text-2xl mr-4">🍪</span>
                     <div>
                         <div class="font-medium">Telemetry &amp; cookies</div>
-                        <div class="text-xs text-gray-500" x-text="Alpine.store('os').cookieConsent ? 'Accepted: anonymous app-usage events are sent to /api/log.php.' : 'Declined: no telemetry is being collected.'"></div>
+                        <div class="text-xs text-gray-500 dark:text-gray-400" x-text="Alpine.store('os').cookieConsent ? 'Accepted: the site records which apps you open and a shortened IP address.' : 'Declined: nothing is recorded.'"></div>
                     </div>
                 </div>
-                <button @click="Alpine.store('os').setCookieConsent(!Alpine.store('os').cookieConsent)"
+                <button type="button" data-setting-toggle="consent" aria-label="Telemetry and cookies"
+                        :aria-pressed="Alpine.store('os').cookieConsent ? 'true' : 'false'"
+                        @click="Alpine.store('os').setCookieConsent(!Alpine.store('os').cookieConsent)"
                         :class="Alpine.store('os').cookieConsent ? 'bg-win-blue' : 'bg-gray-400'"
                         class="w-12 h-6 rounded-full relative transition-colors">
                     <div :class="Alpine.store('os').cookieConsent ? 'translate-x-7' : 'translate-x-1'"
@@ -102,14 +112,14 @@
                     <h2 class="text-xl font-semibold mb-1">Background</h2>
                     <p class="text-xs text-gray-500 mb-4">Select a picture to preview, then click Save to apply it.</p>
                     <div class="flex items-center space-x-4">
-                        <button @click="saveWallpaper()" 
+                        <button type="button" @click="saveWallpaper()"
                                 :disabled="!selectedWallpaper || selectedWallpaper === Alpine.store('os').settings.wallpaper"
                                 class="bg-win-blue text-white px-6 py-1.5 rounded-sm text-xs font-medium hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all">
                             Save Changes
                         </button>
-                        <button @click="selectedWallpaper = Alpine.store('os').settings.wallpaper"
+                        <button type="button" @click="resetWallpaper()"
                                 x-show="selectedWallpaper && selectedWallpaper !== Alpine.store('os').settings.wallpaper"
-                                class="text-xs hover:underline opacity-60">
+                                class="text-xs hover:underline opacity-70">
                             Reset
                         </button>
                     </div>
@@ -118,12 +128,15 @@
 
             <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
                 <template x-for="wp in wallpapers" :key="wp.id">
-                    <div @click="setWallpaper(wp.url)" 
+                    <button type="button" @click="setWallpaper(wp.url)"
+                         :data-wallpaper="wp.id"
+                         :title="wp.id"
+                         :aria-label="wp.id"
                          class="cursor-pointer group relative rounded-md overflow-hidden aspect-square border-2 transition-all hover:scale-105"
                          :class="(selectedWallpaper || Alpine.store('os').settings.wallpaper) === wp.url ? 'border-win-blue ring-2 ring-win-blue/20 shadow-lg' : 'border-transparent hover:border-gray-400'">
                         <div class="absolute inset-0 bg-cover bg-center" :style="'background-image: ' + OsWindowing.cssUrl(wp.url) + '; background-color: #333;'"></div>
                         <div class="absolute inset-0 bg-black/20 group-hover:bg-transparent transition-colors"></div>
-                    </div>
+                    </button>
                 </template>
             </div>
         </div>
@@ -136,7 +149,7 @@
                         <!-- Icon / Logo -->
                         <div class="flex items-center justify-center w-12 h-12 rounded-full border border-win-blue bg-white dark:bg-win-dark text-win-blue shadow-sm shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 overflow-hidden">
                             <template x-if="job.logo">
-                                <img :src="window.portfolioConfig.basePath + job.logo" class="w-8 h-8 object-contain">
+                                <img alt="" :src="window.portfolioConfig.basePath + job.logo" class="w-8 h-8 object-contain">
                             </template>
                             <template x-if="!job.logo">
                                 <span class="text-sm font-bold" x-text="job.id"></span>
@@ -146,7 +159,7 @@
                         <div class="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] glass p-6 rounded-lg border border-gray-200 dark:border-white/10 shadow-xs transition-all hover:border-win-blue/50">
                             <div class="flex items-center justify-between space-x-2 mb-1">
                                 <div class="font-bold dark:text-white text-base" x-text="job.role"></div>
-                                <time class="font-mono text-[10px] text-win-blue font-bold whitespace-nowrap bg-win-blue/10 px-2 py-0.5 rounded-sm" x-text="job.period"></time>
+                                <time class="font-mono text-xs text-win-blue font-bold whitespace-nowrap bg-win-blue/10 px-2 py-0.5 rounded-sm" x-text="job.period"></time>
                             </div>
                             <div class="text-win-blue text-xs font-semibold mb-3">
                                 <span x-text="job.company"></span><template x-if="job.location"><span class="opacity-70" x-text="' · ' + job.location"></span></template>
@@ -186,7 +199,7 @@
                         <template x-for="cert in certs" :key="cert.id">
                             <div class="p-4 bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-lg flex flex-col justify-between transition-all hover:shadow-md hover:border-win-blue/30 group">
                                 <div class="font-bold text-xs mb-1 group-hover:text-win-blue transition-colors" x-text="cert.name"></div>
-                                <div class="text-[10px] text-gray-500 uppercase tracking-widest" x-text="cert.issuer"></div>
+                                <div class="text-xs text-gray-500 uppercase tracking-widest" x-text="cert.issuer"></div>
                             </div>
                         </template>
                     </div>
@@ -198,7 +211,7 @@
         <div x-show="currentTab === 'about'" class="space-y-6" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 translate-y-4" x-transition:enter-end="opacity-100 translate-y-0">
             <div class="p-6 glass rounded-lg border border-gray-200 dark:border-white/10">
                 <div class="flex items-center space-x-4 mb-6">
-                    <img :src="user.avatar" class="w-20 h-20 rounded-full border-4 border-win-blue/20">
+                    <img alt="" :src="user.avatar" class="w-20 h-20 rounded-full border-4 border-win-blue/20">
                     <div>
                         <h2 class="text-2xl font-bold" x-text="user.name"></h2>
                         <p class="text-sm text-win-blue font-medium">Applications Support Engineer · Full-Stack Developer</p>
@@ -224,7 +237,7 @@
                     <div class="font-bold text-xs uppercase text-gray-400 mb-4 tracking-wider">Frameworks & Technologies</div>
                     <div class="flex flex-wrap gap-2">
                         <template x-for="tech in skills.frameworks">
-                            <span class="px-2 py-1 bg-win-blue/10 border border-win-blue/20 rounded-sm text-[10px] font-medium" x-text="tech"></span>
+                            <span class="px-2 py-1 bg-win-blue/10 border border-win-blue/20 rounded-sm text-xs font-medium" x-text="tech"></span>
                         </template>
                     </div>
                 </div>
@@ -232,7 +245,7 @@
                     <div class="font-bold text-xs uppercase text-gray-400 mb-4 tracking-wider">Tools & Infrastructure</div>
                     <div class="flex flex-wrap gap-2">
                         <template x-for="tool in skills.tools">
-                            <span class="px-2 py-1 bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-sm text-[10px] font-medium" x-text="tool"></span>
+                            <span class="px-2 py-1 bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-sm text-xs font-medium" x-text="tool"></span>
                         </template>
                     </div>
                 </div>
@@ -240,7 +253,7 @@
                     <div class="font-bold text-xs uppercase text-gray-400 mb-4 tracking-wider">Operations & Management</div>
                     <div class="flex flex-wrap gap-2">
                         <template x-for="op in skills.operations">
-                            <span class="px-2 py-1 bg-win-blue/10 border border-win-blue/20 rounded-sm text-[10px] font-medium" x-text="op"></span>
+                            <span class="px-2 py-1 bg-win-blue/10 border border-win-blue/20 rounded-sm text-xs font-medium" x-text="op"></span>
                         </template>
                     </div>
                 </div>
@@ -248,7 +261,7 @@
                     <div class="font-bold text-xs uppercase text-gray-400 mb-4 tracking-wider">API Integration</div>
                     <div class="flex flex-wrap gap-2">
                         <template x-for="api in skills.apis">
-                            <span class="px-2 py-1 bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-sm text-[10px] font-medium" x-text="api"></span>
+                            <span class="px-2 py-1 bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-sm text-xs font-medium" x-text="api"></span>
                         </template>
                     </div>
                 </div>
@@ -269,8 +282,8 @@
                 <div class="p-6 glass rounded-lg border border-gray-200 dark:border-white/10">
                     <div class="font-bold text-xs uppercase text-gray-400 mb-4 tracking-wider">Interests & Human Profile</div>
                     <div class="flex flex-wrap gap-2">
-                        <template x-for="interest in ['Technology', 'Fitness', 'MMA', 'IOT', 'Automation', 'Virtualisation', 'Photography', 'Athletics', 'Rugby', 'Brazilian Jiu-Jitsu']">
-                            <span class="px-2 py-1 bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-sm text-[10px] font-medium" x-text="interest"></span>
+                        <template x-for="interest in interests" :key="interest">
+                            <span class="px-2 py-1 bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-sm text-xs font-medium" x-text="interest"></span>
                         </template>
                     </div>
                 </div>
@@ -280,27 +293,27 @@
                 <div class="font-bold text-lg mb-4 text-win-blue">Home Lab specifications</div>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div class="space-y-1">
-                        <div class="text-[10px] uppercase text-gray-500">Device name</div>
+                        <div class="text-xs uppercase text-gray-500">Device name</div>
                         <div class="text-sm dark:text-white font-medium">DEVANTE-HOMELAB</div>
                     </div>
                     <div class="space-y-1">
-                        <div class="text-[10px] uppercase text-gray-500">Processor</div>
+                        <div class="text-xs uppercase text-gray-500">Processor</div>
                         <div class="text-sm dark:text-white font-medium">AMD Ryzen 7 9800X3D (8-Core, 16-Thread)</div>
                     </div>
                     <div class="space-y-1">
-                        <div class="text-[10px] uppercase text-gray-500">Installed RAM</div>
+                        <div class="text-xs uppercase text-gray-500">Installed RAM</div>
                         <div class="text-sm dark:text-white font-medium">128 GB DDR5 6000MHz</div>
                     </div>
                     <div class="space-y-1">
-                        <div class="text-[10px] uppercase text-gray-500">Graphics Card</div>
+                        <div class="text-xs uppercase text-gray-500">Graphics Card</div>
                         <div class="text-sm dark:text-white font-medium">NVIDIA GeForce RTX 5070 Ti</div>
                     </div>
                     <div class="space-y-1">
-                        <div class="text-[10px] uppercase text-gray-500">Storage</div>
+                        <div class="text-xs uppercase text-gray-500">Storage</div>
                         <div class="text-sm dark:text-white font-medium">4TB NVMe PCIe Gen 5 SSD</div>
                     </div>
                     <div class="space-y-1">
-                        <div class="text-[10px] uppercase text-gray-500">System type</div>
+                        <div class="text-xs uppercase text-gray-500">System type</div>
                         <div class="text-sm dark:text-white font-medium">64-bit Full-Stack Home Lab Architecture</div>
                     </div>
                 </div>

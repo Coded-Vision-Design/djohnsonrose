@@ -1,4 +1,6 @@
 // assets/js/components/os/shell.js
+const PC_NAME = 'DeVanté\'s PC';
+
 document.addEventListener('alpine:init', () => {
     // Edits a name in place. Enter or clicking away keeps it, and Escape cancels.
     Alpine.data('renameInput', (name) => ({
@@ -45,7 +47,9 @@ document.addEventListener('alpine:init', () => {
             temp: '--',
             condition: 'Loading...',
             icon: '☁️',
-            city: 'London'
+            city: 'London',
+            // 'loading', 'ready' or 'error', as in v2's store.
+            status: 'loading'
         },
         widgetsOpen: false,
         startMenuOpen: false,
@@ -104,60 +108,19 @@ document.addEventListener('alpine:init', () => {
             const renaming = Alpine.store('os').renaming;
             return renaming?.path === OsWindowing.DESKTOP && renaming.name === icon.name;
         },
+        // Where every desktop icon goes, the PC first. Shared with v2 (layoutDesktopIcons
+        // in shell-ui.js), and worked out again whenever the desktop changes size.
+        get desktopLayout() {
+            const icons = Alpine.store('os').fileSystem['C:\\Users\\DeVante\\Desktop'] || [];
+            const { width, height } = Alpine.store('os').desktop;
+            return OsWindowing.layoutDesktopIcons([PC_NAME, ...icons.map(icon => icon.name)], this.desktopIconPositions, { width, height });
+        },
+        get pcPosition() { return this.desktopLayout[PC_NAME]; },
         get desktopIcons() {
-            const icons = (Alpine.store('os').fileSystem['C:\\Users\\DeVante\\Desktop'] || []);
-            const taskbarHeight = 48;
-            const iconHeight = 110;
-            const iconWidth = 110;
-            const startTop = 16;
-            const startLeft = 16;
-            const availableHeight = Alpine.store('os').windowHeight - taskbarHeight - 32;
-            const maxPerCol = Math.max(1, Math.floor(availableHeight / iconHeight));
-
-            // Tracking occupied slots to prevent overlaps
-            const occupiedSlots = new Set();
-            
-            // 1. Mark 'DeVanté's PC' (it's hardcoded at 0,0)
-            occupiedSlots.add("0,0");
-
-            // 2. Mark manually positioned icons as occupied
-            icons.forEach(icon => {
-                const pos = this.desktopIconPositions[icon.name];
-                if (pos) {
-                    const col = Math.round((pos.x - startLeft) / iconWidth);
-                    const row = Math.round((pos.y - startTop) / iconHeight);
-                    occupiedSlots.add(`${col},${row}`);
-                }
-            });
-
-            // Helper to find the next truly empty slot
-            let nextAvailableSlotIndex = 0;
-            const findNextEmptySlot = () => {
-                while (true) {
-                    const col = Math.floor(nextAvailableSlotIndex / maxPerCol);
-                    const row = nextAvailableSlotIndex % maxPerCol;
-                    if (!occupiedSlots.has(`${col},${row}`)) {
-                        occupiedSlots.add(`${col},${row}`);
-                        return { col, row };
-                    }
-                    nextAvailableSlotIndex++;
-                }
-            };
-
+            const icons = Alpine.store('os').fileSystem['C:\\Users\\DeVante\\Desktop'] || [];
+            const layout = this.desktopLayout;
             return icons.map((icon) => {
-                const pos = this.desktopIconPositions[icon.name];
-                let defaultX, defaultY;
-
-                if (pos) {
-                    defaultX = pos.x;
-                    defaultY = pos.y;
-                } else {
-                    const slot = findNextEmptySlot();
-                    defaultX = startLeft + (slot.col * iconWidth);
-                    defaultY = startTop + (slot.row * iconHeight);
-                }
-
-                let iconData = { ...icon, defaultX, defaultY };
+                const iconData = { ...icon, defaultX: layout[icon.name].x, defaultY: layout[icon.name].y };
                 if (icon.name === 'Recycle Bin') {
                     iconData.icon = this.recycleBinIcon;
                 }
@@ -195,10 +158,10 @@ document.addEventListener('alpine:init', () => {
                 Alpine.store('os').contextMenu.open = false;
             }, true);
 
+            // Boot lasts until the lock screen's pictures are ready, not a fixed time.
             if (this.isBooting) {
-                setTimeout(() => {
-                    this.isBooting = false;
-                }, 3000);
+                OsWindowing.whenAssetsReady([this.settings.wallpaper, this.user.avatar], { minMs: OsWindowing.BOOT_MIN_MS })
+                    .then(() => { this.isBooting = false; });
             }
 
             // The usable desktop is measured from this layer, never from the viewport.
@@ -263,6 +226,11 @@ document.addEventListener('alpine:init', () => {
         get startPinnedApps() {
             return window.portfolioConfig.startPinned.map(id => this.manifestApp(id));
         },
+        // When a Recommended item was last opened. Reading the clock keeps it current.
+        recentLabel(key) {
+            const now = this.clock.time && new Date();
+            return OsWindowing.relativeTime(Alpine.store('os').recent[key] ?? null, now || new Date()) ?? 'Recently added';
+        },
         assistWindows() {
             return Alpine.store('os').snapAssist.candidates
                 .map(id => this.windows.find(w => w.id === id))
@@ -325,45 +293,53 @@ document.addEventListener('alpine:init', () => {
         async fetchWeather() {
             try {
                 const res = await fetch(`${window.portfolioConfig.basePath}api/weather.php`);
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
                 const data = await res.json();
-                if (data.current_weather) {
-                    this.weather.temp = Math.round(data.current_weather.temperature);
-                    this.weather.city = data.city || 'London';
-                    const code = data.current_weather.weathercode;
-                    // Windows 11 Weather Codes Mapping
-                    const conditions = {
-                        0: { label: 'Clear', icon: '☀️' },
-                        1: { label: 'Mainly clear', icon: '🌤️' },
-                        2: { label: 'Partly cloudy', icon: '⛅' },
-                        3: { label: 'Overcast', icon: '☁️' },
-                        45: { label: 'Foggy', icon: '🌫️' },
-                        51: { label: 'Drizzle', icon: '🌦️' },
-                        61: { label: 'Rain', icon: '🌧️' },
-                        71: { label: 'Snow', icon: '❄️' },
-                        95: { label: 'Thunderstorm', icon: '⛈️' }
-                    };
-                    const condition = conditions[code] || { label: 'Cloudy', icon: '☁️' };
-                    this.weather.condition = condition.label;
-                    this.weather.icon = condition.icon;
-                }
+                if (!data.current_weather) throw new Error('No weather');
+                this.weather.status = 'ready';
+                this.weather.temp = Math.round(data.current_weather.temperature);
+                this.weather.city = data.city || 'London';
+                const code = data.current_weather.weathercode;
+                // Windows 11 Weather Codes Mapping
+                const conditions = {
+                    0: { label: 'Clear', icon: '☀️' },
+                    1: { label: 'Mainly clear', icon: '🌤️' },
+                    2: { label: 'Partly cloudy', icon: '⛅' },
+                    3: { label: 'Overcast', icon: '☁️' },
+                    45: { label: 'Foggy', icon: '🌫️' },
+                    51: { label: 'Drizzle', icon: '🌦️' },
+                    61: { label: 'Rain', icon: '🌧️' },
+                    71: { label: 'Snow', icon: '❄️' },
+                    95: { label: 'Thunderstorm', icon: '⛈️' }
+                };
+                const condition = conditions[code] || { label: 'Cloudy', icon: '☁️' };
+                this.weather.condition = condition.label;
+                this.weather.icon = condition.icon;
             } catch (e) {
-                console.warn('Weather fetch failed');
+                // Widgets says so, rather than showing NaN. A later refresh can still succeed.
+                if (this.weather.status !== 'ready') {
+                    Object.assign(this.weather, { status: 'error', temp: '--', condition: 'Weather unavailable', icon: '☁️' });
+                }
             }
         },
 
         async toggleWidgets() {
             this.widgetsOpen = !this.widgetsOpen;
-            if (this.widgetsOpen && Alpine.store('os').news.length === 0) {
-                console.log('Fetching news stories...');
+            if (this.widgetsOpen) {
+                this.startMenuOpen = false;
+                this.quickSettingsOpen = false;
+            }
+            const os = Alpine.store('os');
+            if (this.widgetsOpen && os.news.length === 0) {
+                os.newsStatus = 'loading';
                 try {
                     const res = await fetch(`${window.portfolioConfig.basePath}api/news.php?t=${Date.now()}`);
+                    if (!res.ok) throw new Error(`HTTP ${res.status}`);
                     const data = await res.json();
-                    console.log('News data received:', data);
-                    if (data && data.news) {
-                        Alpine.store('os').news = data.news;
-                    }
+                    os.news = Array.isArray(data?.news) ? data.news : [];
+                    os.newsStatus = os.news.length ? 'ready' : 'error';
                 } catch (e) {
-                    console.error('News fetch failed:', e);
+                    os.newsStatus = 'error';
                 }
             }
         },
@@ -504,9 +480,7 @@ document.addEventListener('alpine:init', () => {
             const isPinned = this.pinnedApps.includes(appHandle);
             const win = this.windows.find(w => w.app === appHandle);
             this.openMenu('taskbarApp', e, {
-                pin: () => {
-                    os.pinnedApps = isPinned ? os.pinnedApps.filter(a => a !== appHandle) : [...os.pinnedApps, appHandle];
-                },
+                pin: () => os.togglePinned(appHandle),
                 taskManager: () => os.openApp('taskmanager'),
                 close: () => this.closeWindow(win.id),
                 classic: () => this.showClassicDesktopContextMenu(e)
@@ -606,12 +580,18 @@ document.addEventListener('alpine:init', () => {
             this.clock.date = OsWindowing.clockDate(now);
         },
 
+        // The pictures the desktop shows first: the wallpaper and the taskbar.
+        desktopAssets() {
+            return [this.settings.wallpaper, window.portfolioConfig.imgPath + 'startmenu.webp', ...this.pinnedApps.map(app => this.appIcon(app))];
+        },
+
         login() {
             if (this.loggingIn) return;
             this.loggingIn = true;
             this.playSound('startup');
 
-            setTimeout(() => {
+            // Signing in lasts until the desktop is ready, not a fixed time. See v2's LockScreen.
+            OsWindowing.whenAssetsReady(this.desktopAssets(), { minMs: OsWindowing.SIGN_IN_MIN_MS }).then(() => {
                 this.loggedIn = true;
                 this.loggingIn = false;
                 localStorage.setItem('auth.loginTime', Date.now());
@@ -626,12 +606,13 @@ document.addEventListener('alpine:init', () => {
 
                 Alpine.store('os').logEvent('Security', 'Information', `User DeVante logged in successfully (Session: ${sessionID})`);
                 localStorage.setItem('auth.loggedIn', 'true');
+                // The cookie banner shows from here (loggedIn), not after a reload.
                 this.openSharedFile();
 
                 if (window.location.pathname !== window.portfolioConfig.basePath + 'desktop') {
                     window.history.pushState({}, '', window.portfolioConfig.basePath + 'desktop');
                 }
-            }, 3000);
+            });
         },
 
         logout() {
@@ -653,33 +634,11 @@ document.addEventListener('alpine:init', () => {
             localStorage.setItem('settings.sound', this.settings.sound);
         },
 
+        // What each toggle changes is shared with v2: see quickTogglePatch in shell-ui.js.
         toggleQuickSetting(id) {
-            this.playSound('click');
-            this.settings[id] = !this.settings[id];
-            localStorage.setItem('settings.' + id, this.settings[id]);
-
-            if (id === 'airplane') {
-                if (this.settings.airplane) {
-                    this.settings.wifi = false;
-                    this.settings.bluetooth = false;
-                } else {
-                    this.settings.wifi = true;
-                    this.settings.bluetooth = true;
-                }
-                localStorage.setItem('settings.wifi', this.settings.wifi);
-                localStorage.setItem('settings.bluetooth', this.settings.bluetooth);
-            } else if (id === 'batterySaver') {
-                if (this.settings.batterySaver) {
-                    this.settings.brightness = Math.min(this.settings.brightness, 50);
-                } else {
-                    this.settings.brightness = 100;
-                }
-            } else if (id === 'wifi' || id === 'bluetooth') {
-                if (this.settings[id]) {
-                    this.settings.airplane = false;
-                    localStorage.setItem('settings.airplane', false);
-                }
-            }
+            const patch = OsWindowing.quickTogglePatch(this.settings, id);
+            Object.assign(this.settings, patch);
+            for (const [key, value] of Object.entries(patch)) localStorage.setItem('settings.' + key, value);
         },
 
         desktopIconPositions: JSON.parse(localStorage.getItem('os.iconPositions') || '{}'),
@@ -697,7 +656,6 @@ document.addEventListener('alpine:init', () => {
         clearDesktopPositions() {
             this.desktopIconPositions = {};
             localStorage.removeItem('os.iconPositions');
-            this.playSound('click');
         },
         draggedIcon: null,
         isDragging: false,
@@ -797,24 +755,21 @@ document.addEventListener('alpine:init', () => {
         handleGlobalKeys(e) {
             this.metaAlone = e.key === 'Meta' || e.key === 'Super';
 
-            if (e.key === 'Escape') {
+            // The shell's own keys, shared with v2: see shellKeyFromEvent in shell-ui.js.
+            // Ctrl+S is not one of them, so that it stays with the app.
+            const shellKey = OsWindowing.shellKeyFromEvent(e);
+            if (shellKey === 'dismiss') {
                 Alpine.store('os').snapFlyout = null;
                 Alpine.store('os').snapAssist = null;
                 this.flyoutPreview = null;
-            }
-
-            // Search (Win + S)
-            if ((e.metaKey || e.ctrlKey) && e.key === 's') {
+                this.closePopups();
+            } else if (shellKey === 'search') {
                 e.preventDefault();
+                this.widgetsOpen = false;
+                this.quickSettingsOpen = false;
                 this.startMenuOpen = true;
-                this.$nextTick(() => {
-                    const searchInput = document.querySelector('input[x-model="searchQuery"]');
-                    if (searchInput) searchInput.focus();
-                });
-            }
-
-            // Task Manager (Ctrl + Shift + Esc)
-            if (e.ctrlKey && e.shiftKey && e.key === 'Escape') {
+                this.$nextTick(() => document.querySelector('[data-start-menu] input[type="text"]')?.focus());
+            } else if (shellKey === 'taskManager') {
                 e.preventDefault();
                 this.openApp('taskmanager');
             }
@@ -831,6 +786,26 @@ document.addEventListener('alpine:init', () => {
                 return;
             }
             if (store.runShortcut(shortcut)) e.preventDefault();
+        },
+
+        // Phone windows keep clear of the cookie bar while it shows. Alpine would call
+        // a function returned straight from x-init, so the stop function stays here.
+        reserveConsentSpace(el) {
+            this.stopConsentSpace = OsWindowing.reserveBottomSpace(el);
+        },
+
+        // Esc closes Start, Quick Settings and Widgets, and gives focus back to
+        // the button that opened them if it was inside one.
+        closePopups() {
+            const inside = document.activeElement?.closest?.('[data-start-menu], [data-quick-settings], [data-widgets]');
+            const opener = inside?.matches('[data-start-menu]') ? '[data-start-button]'
+                : inside?.matches('[data-quick-settings]') ? '[data-tray-item="status"]'
+                : inside ? '[data-widgets-toggle]' : null;
+            this.startMenuOpen = false;
+            this.startMenuView = 'pinned';
+            this.quickSettingsOpen = false;
+            this.widgetsOpen = false;
+            if (opener) document.querySelector(opener)?.focus();
         },
 
         // Start menu (Win key alone). Waiting for keyup leaves Win+Left and the

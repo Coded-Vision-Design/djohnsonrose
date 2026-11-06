@@ -102,7 +102,7 @@ export function ContextMenu() {
               <span className="context-menu-label">{item.label}</span>
             </span>
             {item.shortcut && (
-              <span data-menu-shortcut="" className="text-[10px] opacity-50 ml-4 font-mono">
+              <span data-menu-shortcut="" className="text-xs opacity-50 ml-4 font-mono">
                 {item.shortcut}
               </span>
             )}

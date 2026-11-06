@@ -102,18 +102,21 @@ document.addEventListener('alpine:init', () => {
             name: 'DeVanté Johnson-Rose',
             avatar: window.portfolioConfig.imgPath + 'profile.webp'
         },
+        // Windows 11 icons, the same as v2's Settings.tsx.
         nav: [
-            { id: 'system', label: 'System', icon: '💻' },
-            { id: 'personalisation', label: 'Personalisation', icon: '🎨' },
-            { id: 'experience', label: 'Experience', icon: '🏢' },
-            { id: 'qualifications', label: 'Qualifications', icon: '🎓' },
-            { id: 'about', label: 'About', icon: 'ℹ️' }
+            { id: 'system', label: 'System', icon: 'win11/display.webp' },
+            { id: 'personalisation', label: 'Personalisation', icon: 'win11/personalize.webp' },
+            { id: 'experience', label: 'Experience', icon: 'win11/documents.webp' },
+            { id: 'qualifications', label: 'Qualifications', icon: 'win11/star.svg' },
+            { id: 'about', label: 'About', icon: 'win11/thispc.webp' }
         ],
-        summary: "An ambitious, self-motivated IT Systems Administrator with a proven track record in supporting Microsoft and Apple systems. Expert in root cause analysis, ITIL processes, and high-pressure problem solving. Senior Desktop Developer specialising in SCCM, JAMF, and enterprise-scale deployments.",
-        philosophy: "Technique over brute force. Whether managing >8000 devices at UEA or competing at the highest levels of Brazilian Jiu-Jitsu, I prioritize precision, efficient troubleshooting, and clear communication of complex technical concepts.",
+        // Replaced by data/portfolio.json, as in v2, once it loads.
+        summary: 'Applications Support Engineer and Full-Stack Developer with enterprise infrastructure experience across finance, education, and global technology.',
+        philosophy: 'Technique over brute force. I prioritise precision, efficient troubleshooting, and clear communication of complex technical concepts.',
         experience: [],
         certs: [],
         education: [],
+        interests: [],
         skills: { frameworks: [], tools: [], operations: [], apis: [] },
         wallpapers: [
             { id: 'Bloom', url: 'https://images.unsplash.com/photo-1620641788421-7a1c342ea42e?q=80&w=1974&auto=format&fit=crop' },
@@ -136,6 +139,9 @@ document.addEventListener('alpine:init', () => {
                 this.certs = data.certifications;
                 this.skills = data.skills;
                 this.education = data.education || [];
+                this.interests = data.interests || [];
+                if (data.summary) this.summary = data.summary;
+                if (data.philosophy) this.philosophy = data.philosophy;
             } catch (e) {
                 console.error('Failed to load portfolio data for settings:', e);
             }
@@ -155,6 +161,11 @@ document.addEventListener('alpine:init', () => {
             if (!this.selectedWallpaper) return;
             Alpine.store('os').setWallpaper(this.selectedWallpaper);
             Alpine.store('os').logEvent('Settings', 'Information', 'Desktop wallpaper saved');
+        },
+        // Reset drops the preview on the desktop as well as in Settings.
+        resetWallpaper() {
+            this.selectedWallpaper = Alpine.store('os').settings.wallpaper;
+            Alpine.store('os').previewWallpaper = null;
         },
         toggleTheme() {
             const newTheme = Alpine.store('os').settings.theme === 'dark' ? 'light' : 'dark';

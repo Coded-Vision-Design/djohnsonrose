@@ -15,15 +15,18 @@ import { CookieBanner } from './CookieBanner'
 import { DesktopIcons } from './DesktopIcons'
 import { ContextMenu } from './ContextMenu'
 import { useWindowShortcuts } from '../windowing/useWindowShortcuts'
+import { useShellKeys } from './useShellKeys'
 import { keepFileLongPress, watchDesktop } from '../../../assets/js/windowing/windowing.js'
+import { focusAfterClose } from '../../../assets/js/windowing/shell-ui.js'
 import { cssUrl, fingerGap, pinchZoom } from '../../../assets/js/windowing/shell-core.js'
 import { getApp } from '../apps/registry'
 import { useClock } from '../lib/useClock'
 import { useWeather } from '../lib/useWeather'
 
+// The dots take the text colour, so that they show on light and dark windows.
 function WindowLoader() {
   return (
-    <div className="h-full flex items-center justify-center">
+    <div role="status" aria-label="Loading" className="h-full flex items-center justify-center text-black/70 dark:text-white/80">
       <div className="win-loader">
         <span className="dot" />
         <span className="dot" />
@@ -61,12 +64,26 @@ const LONG_PRESS_MS = 600
 
 export function Desktop() {
   const windows = useOsStore((s) => s.windows)
-  const wallpaper = useOsStore((s) => s.settings.wallpaper)
+  // Settings previews a wallpaper here before it is saved, as v1 does.
+  const wallpaper = useOsStore((s) => s.previewWallpaper ?? s.settings.wallpaper)
 
   // Ambient services running while desktop is mounted.
   useClock()
   useWeather()
   useWindowShortcuts()
+  useShellKeys()
+
+  // When a window closes with focus inside it, focus moves to the window now on
+  // top, or back to the app's taskbar button. v1's store.js does the same.
+  const shown = useRef(windows)
+  useEffect(() => {
+    const gone = shown.current.filter((w) => !windows.some((open) => open.id === w.id))
+    shown.current = windows
+    if (gone.length === 0) return
+    const active = document.activeElement
+    if (active && active !== document.body) return
+    focusAfterClose(useOsStore.getState().focusedWindowId, gone[0].app)
+  }, [windows])
 
   // The usable desktop is measured from this layer, never from the viewport.
   const windowsLayer = useRef<HTMLDivElement>(null)

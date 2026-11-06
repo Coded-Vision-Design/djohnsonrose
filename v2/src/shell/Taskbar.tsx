@@ -1,7 +1,6 @@
 import { useMemo, useState, useEffect, useRef, type MouseEvent as ReactMouseEvent } from 'react'
 import { useOsStore } from '../store/osStore'
 import { getApp } from '../apps/registry'
-import { playSound } from '../lib/sounds'
 import { VolumeIcon } from './VolumeIcon'
 import { showClassicDesktopMenu, showMenu, type MenuPoint } from './menus'
 
@@ -197,18 +196,19 @@ export function Taskbar() {
         <button
           type="button"
           data-popup-toggle="widgets"
+          data-widgets-toggle=""
           onClick={toggleWidgets}
           className="px-2 py-1.5 rounded-sm hover:bg-white/10 cursor-pointer flex items-center space-x-2 transition-colors group"
           title="Widgets"
         >
-          <span className="text-xl filter drop-shadow-xs group-hover:scale-110 transition-transform">
+          <span className="text-xl filter drop-shadow-xs group-hover:scale-110 transition-transform" aria-hidden="true">
             {weather.icon}
           </span>
           <div className="flex flex-col leading-tight text-left">
-            <span className="text-[11px] text-black dark:text-white font-semibold">
+            <span className="text-xs text-black dark:text-white font-semibold">
               {weather.temp}°C
             </span>
-            <span className="text-[9px] text-black dark:text-white opacity-60 truncate">
+            <span className="text-xs text-black dark:text-white opacity-70 truncate">
               {weather.condition}
             </span>
           </div>
@@ -220,10 +220,8 @@ export function Taskbar() {
         <button
           type="button"
           data-popup-toggle="start"
-          onClick={() => {
-            playSound('click')
-            toggleStartMenu()
-          }}
+          data-start-button=""
+          onClick={toggleStartMenu}
           className={`w-10 h-10 flex items-center justify-center rounded hover:bg-white/10 transition-colors group ${
             startMenuOpen ? 'bg-white/10' : ''
           }`}
@@ -272,7 +270,7 @@ export function Taskbar() {
           <svg className="w-5 h-5 fill-current opacity-80" viewBox="0 0 24 24" aria-hidden="true">
             <path d="M4 7h11v13H4V7zm2 2v9h7V9H6zm11-5H7v2h10v11h2V4h-2z" />
           </svg>
-          <span className="absolute top-0.5 right-0.5 text-[9px] font-semibold">{windows.length || ''}</span>
+          <span className="absolute top-0.5 right-0.5 text-xs leading-none font-semibold">{windows.length || ''}</span>
         </button>
 
         <div className="w-px h-6 bg-white/10 mx-1 shrink-0" />
@@ -386,10 +384,7 @@ export function Taskbar() {
           type="button"
           data-popup-toggle="quick-settings"
           data-tray-item="status"
-          onClick={() => {
-            playSound('click')
-            toggleQuickSettings()
-          }}
+          onClick={toggleQuickSettings}
           className={`tray-group hover:bg-white/10 flex flex-row items-center space-x-2 ${
             quickSettingsOpen ? 'bg-white/20' : ''
           }`}
@@ -431,7 +426,7 @@ export function Taskbar() {
           data-tray-item="build"
           href="/"
           title="Switch to the original PHP (v1) build"
-          className="hidden md:flex items-center px-2 py-1 mr-1 rounded-sm text-[10px] font-medium border border-win-blue/30 bg-win-blue/10 text-win-blue hover:bg-win-blue hover:text-white transition-colors"
+          className="hidden md:flex items-center px-2 py-1 mr-1 rounded-sm text-xs font-medium border border-win-blue/30 bg-win-blue/10 text-win-blue hover:bg-win-blue hover:text-white transition-colors"
         >
           🐘 PHP v1
         </a>
@@ -445,7 +440,7 @@ export function Taskbar() {
           title="Date and time"
         >
           <div>{clock.time}</div>
-          <div className="text-[10px] opacity-70" hidden={!isDesktop}>
+          <div className="text-xs opacity-80" hidden={!isDesktop}>
             {clock.date}
           </div>
         </button>

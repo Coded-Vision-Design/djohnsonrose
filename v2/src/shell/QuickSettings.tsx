@@ -1,16 +1,15 @@
 import { useEffect, useRef } from 'react'
-import { useOsStore, type Settings } from '../store/osStore'
-import { playSound } from '../lib/sounds'
+import { useOsStore } from '../store/osStore'
 import { VolumeIcon } from './VolumeIcon'
+import type { QuickToggle } from '../../../assets/js/windowing/shell-ui.js'
 
-// 1:1 port of partials/quick-settings.php — 360px panel above the tray
+// 1:1 port of partials/quick-settings.php: 360px panel above the tray
 // with 6 toggles (3-col grid), Brightness + Volume sliders, and a
-// bottom-info row.
-
-type ToggleKey = 'wifi' | 'bluetooth' | 'airplane' | 'batterySaver' | 'nightLight' | 'accessibility'
+// bottom-info row. What each toggle changes is shared with v1
+// (quickTogglePatch), and ThemeBridge puts the display ones on screen.
 
 interface ToggleDef {
-  id: ToggleKey
+  id: QuickToggle
   label: string
   activeLabel: string
   icon: string
@@ -33,6 +32,7 @@ export function QuickSettings() {
   const settings = useOsStore((s) => s.settings)
   const battery = useOsStore((s) => s.battery)
   const updateSetting = useOsStore((s) => s.updateSetting)
+  const toggleQuickSetting = useOsStore((s) => s.toggleQuickSetting)
   const openApp = useOsStore((s) => s.openApp)
   const ref = useRef<HTMLDivElement>(null)
 
@@ -54,29 +54,29 @@ export function QuickSettings() {
 
   if (!open) return null
 
-  const toggle = (id: ToggleKey) => {
-    updateSetting(id, !settings[id as keyof Settings])
-    playSound('click')
-  }
-
   const brightnessProgress = ((settings.brightness - 30) / 70) * 100
 
   return (
     <div
       ref={ref}
-      className="fixed right-2 w-[360px] glass rounded-xl flex flex-col overflow-hidden shadow-2xl p-4 space-y-6 z-10000 animate-window-open"
+      data-quick-settings=""
+      role="dialog"
+      aria-label="Quick settings"
+      className="fixed right-2 w-[360px] max-w-[calc(100%-1rem)] glass rounded-xl flex flex-col overflow-hidden shadow-2xl p-4 space-y-6 z-10000 animate-window-open"
       style={{ bottom: 'calc(var(--os-taskbar-height) + 8px)' }}
     >
-      {/* Quick Toggles — 3 cols, 6 cells */}
+      {/* Quick Toggles: 3 cols, 6 cells */}
       <div className="grid grid-cols-3 gap-x-2 gap-y-4 px-1">
         {TOGGLES.map((t) => {
-          const active = settings[t.id as keyof Settings] as boolean
+          const active = settings[t.id]
           const isHighlightActive = active && !t.noHighlight
           return (
             <div key={t.id} className="quick-settings-btn">
               <button
                 type="button"
-                onClick={() => toggle(t.id)}
+                data-quick-toggle={t.id}
+                onClick={() => toggleQuickSetting(t.id)}
+                aria-label={t.label}
                 aria-pressed={active}
                 className={`quick-settings-toggle ${isHighlightActive ? 'active' : ''} ${
                   t.noHighlight ? 'no-highlight' : ''
@@ -90,7 +90,7 @@ export function QuickSettings() {
                   }`}
                 />
               </button>
-              <span className="text-[11px] text-center dark:text-white mt-1 opacity-90 truncate w-full px-1">
+              <span className="text-xs text-center dark:text-white mt-1 truncate w-full px-1">
                 {active ? t.activeLabel : t.label}
               </span>
             </div>
@@ -108,12 +108,13 @@ export function QuickSettings() {
               alt=""
               className="w-4 h-4 opacity-70 dark:invert"
             />
-            <span className="text-[10px] opacity-60 dark:text-white uppercase font-bold tracking-wider">
+            <span className="text-xs opacity-70 dark:text-white uppercase font-bold tracking-wider">
               Brightness
             </span>
           </div>
           <input
             type="range"
+            aria-label="Brightness"
             min={30}
             max={100}
             value={settings.brightness}
@@ -130,20 +131,17 @@ export function QuickSettings() {
         <div className="flex flex-col space-y-2">
           <div className="flex items-center space-x-2">
             <VolumeIcon className="w-4 h-4 opacity-70" />
-            <span className="text-[10px] opacity-60 dark:text-white uppercase font-bold tracking-wider">
+            <span className="text-xs opacity-70 dark:text-white uppercase font-bold tracking-wider">
               Volume
             </span>
           </div>
           <input
             type="range"
+            aria-label="Volume"
             min={0}
             max={100}
             value={settings.volume}
-            onChange={(e) => {
-              const v = Number(e.target.value)
-              updateSetting('volume', v)
-              if (v > 0) playSound('click')
-            }}
+            onChange={(e) => updateSetting('volume', Number(e.target.value))}
             className="win-slider w-full"
             style={
               {
@@ -154,9 +152,9 @@ export function QuickSettings() {
         </div>
       </div>
 
-      {/* Bottom info — battery + personalise/all-settings shortcuts */}
+      {/* Bottom info: battery + personalise/all-settings shortcuts */}
       <div className="pt-4 border-t border-black/5 dark:border-white/10 flex items-center justify-between px-1">
-        <div data-quick-battery="" className="flex items-center space-x-2 text-[11px] dark:text-white font-medium">
+        <div data-quick-battery="" className="flex items-center space-x-2 text-xs dark:text-white font-medium">
           <img
             src={`/assets/img/win11/${battery.charging ? 'energy' : 'battery'}.svg`}
             alt=""
@@ -168,10 +166,11 @@ export function QuickSettings() {
           <button
             type="button"
             onClick={() => {
-              openApp('settings')
+              openApp('settings', 'Settings', { extra: { currentTab: 'personalisation' } })
               close()
             }}
             title="Personalise"
+            aria-label="Personalise"
             className="p-2 rounded-sm hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
           >
             <img src="/assets/img/win11/edit.svg" alt="" className="w-4 h-4 opacity-70 dark:invert" />
@@ -183,6 +182,7 @@ export function QuickSettings() {
               close()
             }}
             title="All settings"
+            aria-label="All settings"
             className="p-2 rounded-sm hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
           >
             <img src="/assets/img/win11/settings.svg" alt="" className="w-4 h-4 opacity-70 dark:invert" />

@@ -50,6 +50,10 @@ export function Shell({ initialApp }: ShellProps) {
   }, [loggedIn, initialApp, openApp])
 
   if (isBooting) return <BootScreen />
-  if (!loggedIn) return <LockScreen />
-  return <Desktop />
+  // The skip link in App.tsx lands here, as on v1's <main> in partials/shell.php.
+  return (
+    <main id="main-content" tabIndex={-1} className="outline-hidden">
+      {loggedIn ? <Desktop /> : <LockScreen />}
+    </main>
+  )
 }

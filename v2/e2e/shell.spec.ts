@@ -20,11 +20,11 @@ test.describe('boot + login', () => {
   test('boot screen → lock screen → desktop with profile photo', async ({ page }) => {
     await page.goto('/v2/')
 
-    // Boot screen has the "Portfolio OS" tagline + a 5-dot loader.
-    await expect(page.getByText('Portfolio OS')).toBeVisible()
+    // Boot screen has v1's Windows logo and a 5-dot loader.
+    await expect(page.locator('[data-boot-screen] img[src*="startmenu.webp"]')).toBeVisible()
 
-    // After 3 s the lock screen takes over. The clock in the corner has the
-    // long date format ("Monday, January 1") — that's not on the boot screen.
+    // Once its pictures are ready the lock screen takes over. The clock in the
+    // corner has the long date format, which is not on the boot screen.
     await expect(page.getByRole('button', { name: 'Sign In' })).toBeVisible({
       timeout: 6_000,
     })
@@ -37,7 +37,7 @@ test.describe('boot + login', () => {
     await expect(avatar).toBeVisible()
     await expect(avatar).toHaveAttribute('src', '/assets/img/profile.webp')
 
-    // Click Sign In → 3-second "Signing in…" state, then desktop.
+    // Click Sign In: "Signing in…" until the desktop is ready, then the desktop.
     await page.getByRole('button', { name: 'Sign In' }).click()
     await expect(page.getByText('Signing in…')).toBeVisible()
 
