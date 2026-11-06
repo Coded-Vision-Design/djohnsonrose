@@ -46,7 +46,7 @@ ob_start();
             <li>the date and time</li>
         </ul>
         <p>The site does not store your full IP address, your location, your internet provider or your browser's full identifying string, and it never looks up where an IP address is.</p>
-        <p>To stop abuse, the server counts how often each address sends records or tries to sign in to the Admin Console. While it counts, it keeps a scrambled, one-way form (a hash) of your full IP address. That is never stored with your records.</p>
+        <p>To stop abuse, the server counts how often each address sends records, sends messages or tries to sign in to the Admin Console. While it counts, it keeps a scrambled, one-way form (a hash) of your full IP address. That is never stored with your records.</p>
 
         <h2 id="retention">How long records are kept</h2>
         <p>Records are deleted automatically once they are <?php echo $days; ?> days old. The clean-up runs at most once a day, so a record can last up to a day longer.</p>
