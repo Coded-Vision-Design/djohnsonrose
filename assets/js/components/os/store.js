@@ -129,14 +129,14 @@ document.addEventListener('alpine:init', () => {
             accessibility: localStorage.getItem('settings.accessibility') === 'true'
         },
         sounds: {
-            startup: window.portfolioConfig.basePath + 'assets/sounds/Windows Logon.wav',
-            click: window.portfolioConfig.basePath + 'assets/sounds/click.wav',
-            error: window.portfolioConfig.basePath + 'assets/sounds/Windows Error.wav',
-            minimize: window.portfolioConfig.basePath + 'assets/sounds/Windows Minimize.wav',
-            open: window.portfolioConfig.basePath + 'assets/sounds/Windows Restore.wav',
-            notify: window.portfolioConfig.basePath + 'assets/sounds/Windows Notify.wav',
-            recycle: window.portfolioConfig.basePath + 'assets/sounds/Windows Recycle.wav',
-            uac: window.portfolioConfig.basePath + 'assets/sounds/Windows User Account Control.wav'
+            startup: window.portfolioConfig.basePath + 'assets/sounds/Windows Logon.m4a',
+            click: window.portfolioConfig.basePath + 'assets/sounds/click.m4a',
+            error: window.portfolioConfig.basePath + 'assets/sounds/Windows Error.m4a',
+            minimize: window.portfolioConfig.basePath + 'assets/sounds/Windows Minimize.m4a',
+            open: window.portfolioConfig.basePath + 'assets/sounds/Windows Restore.m4a',
+            notify: window.portfolioConfig.basePath + 'assets/sounds/Windows Notify.m4a',
+            recycle: window.portfolioConfig.basePath + 'assets/sounds/Windows Recycle.m4a',
+            uac: window.portfolioConfig.basePath + 'assets/sounds/Windows User Account Control.m4a'
         },
         // Injected from filesystem.js
         fileSystem: window.loadFileSystem(),
@@ -209,7 +209,7 @@ document.addEventListener('alpine:init', () => {
             if (this.settings.theme === 'dark') {
                 const fileName = soundPath.split('/').pop();
                 // Only these three have official dark mode variants in the dm folder
-                const dmVariants = ['Windows Background.wav', 'Windows Notify.wav', 'Windows User Account Control.wav'];
+                const dmVariants = ['Windows Background.m4a', 'Windows Notify.m4a', 'Windows User Account Control.m4a'];
                 if (dmVariants.includes(fileName)) {
                     soundPath = soundPath.replace('assets/sounds/', 'assets/sounds/dm/');
                 }

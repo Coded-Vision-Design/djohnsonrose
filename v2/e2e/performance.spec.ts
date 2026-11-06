@@ -60,6 +60,31 @@ for (const build of BUILDS) {
       })
       expect(loaded).toBeGreaterThan(0)
     })
+
+    test('plays sounds from small AAC files', async ({ page }) => {
+      await page.addInitScript(() => {
+        const played: string[] = []
+        ;(window as unknown as { __played: string[] }).__played = played
+        const Real = window.Audio
+        window.Audio = function (src?: string) {
+          played.push(src ?? '')
+          const audio = new Real(src)
+          audio.play = () => Promise.resolve()
+          return audio
+        } as unknown as typeof Audio
+      })
+      await boot(page, build.url)
+      await page.locator('button:has(img[src$="startmenu.webp"])').first().click()
+      const played = await page.evaluate(() => (window as unknown as { __played: string[] }).__played)
+      expect(played.at(-1)).toMatch(/\/assets\/sounds\/click\.m4a$/)
+      for (const name of ['click', 'Windows Logon']) {
+        const res = await page.request.get(new URL(`/assets/sounds/${name}.m4a`, page.url()).href)
+        expect(res.ok(), name).toBe(true)
+        const body = await res.body()
+        expect(body.subarray(4, 8).toString('latin1'), name).toBe('ftyp')
+        expect(body.length, name).toBeLessThan(40_000)
+      }
+    })
   })
 }
 
