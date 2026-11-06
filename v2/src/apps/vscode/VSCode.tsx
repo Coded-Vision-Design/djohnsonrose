@@ -1,10 +1,16 @@
 import { useEffect, useRef, useState } from 'react'
+import {
+  VSCODE_TERMINAL_START,
+  vscodeBuildLog,
+  type BuildLine,
+} from '../../../../assets/js/windowing/devtools.js'
+import { projectTags } from '../../../../assets/js/windowing/browser.js'
 
 interface Project {
   id: number
   title: string
   description: string
-  tags: string[]
+  tags?: string[]
   url: string
   thumbnail: string
   thumbnail_mobile?: string
@@ -12,19 +18,20 @@ interface Project {
   featured?: boolean
 }
 
-// 1:1 port of partials/apps/vscode.php — VS Code chrome with activity bar,
-// projects sidebar, tabbed editor (filename + Terminal), breadcrumb,
-// project hero with Build + Visit Website buttons, terminal sub-view,
-// win-blue status bar.
+// The same VS Code as v1's partials/apps/vscode.php: activity bar, projects
+// sidebar (a picker on phones), tabbed editor, project hero with Build and
+// Visit Website, terminal and status bar. Picking a project shows it; only
+// Build switches to the terminal.
 export default function VSCode() {
   const [projects, setProjects] = useState<Project[]>([])
   const [activeFile, setActiveFile] = useState<string>('')
   const [activeTab, setActiveTab] = useState<'editor' | 'terminal'>('editor')
   const [explorerOpen, setExplorerOpen] = useState(true)
   const [isBuilding, setIsBuilding] = useState(false)
-  const [terminalOutput, setTerminalOutput] = useState<
-    { type: 'command' | 'info' | 'success' | 'error'; text: string }[]
-  >([])
+  const [terminalOutput, setTerminalOutput] = useState<BuildLine[]>(VSCODE_TERMINAL_START)
+
+  const featured = projects.filter((p) => p.featured)
+  const others = projects.filter((p) => !p.featured)
 
   useEffect(() => {
     let cancelled = false
@@ -33,7 +40,8 @@ export default function VSCode() {
       .then((d) => {
         if (cancelled) return
         setProjects(d.projects)
-        if (d.projects[0]) setActiveFile(d.projects[0].title)
+        const first = d.projects.find((p) => p.featured) ?? d.projects[0]
+        if (first) setActiveFile(first.title)
       })
       .catch(() => {})
     return () => {
@@ -66,16 +74,8 @@ export default function VSCode() {
     }
     setIsBuilding(true)
     setActiveTab('terminal')
-    const lines = [
-      { type: 'command' as const, text: '> npm run build' },
-      { type: 'info' as const, text: 'vite v8.0.13 building for production...' },
-      { type: 'info' as const, text: '✓ 248 modules transformed.' },
-      { type: 'info' as const, text: 'rendering chunks (1/1)...' },
-      { type: 'success' as const, text: '✓ built in 1.84s' },
-      { type: 'success' as const, text: `→ Deployed ${active?.title ?? 'project'} to staging` },
-    ]
+    const lines = vscodeBuildLog(active?.title)
     let i = 0
-    setTerminalOutput([])
     buildTimerRef.current = window.setInterval(() => {
       if (i >= lines.length) {
         if (buildTimerRef.current != null) {
@@ -162,7 +162,10 @@ export default function VSCode() {
                     <button
                       key={p.id}
                       type="button"
-                      onClick={() => setActiveFile(p.title)}
+                      onClick={() => {
+                        setActiveFile(p.title)
+                        setActiveTab('editor')
+                      }}
                       className={`w-full text-left flex items-center px-2 py-1 text-xs hover:bg-[#37373d] ${
                         activeFile === p.title ? 'bg-[#37373d]' : ''
                       }`}
@@ -182,7 +185,10 @@ export default function VSCode() {
                     <button
                       key={p.id}
                       type="button"
-                      onClick={() => setActiveFile(p.title)}
+                      onClick={() => {
+                        setActiveFile(p.title)
+                        setActiveTab('editor')
+                      }}
                       className={`w-full text-left flex items-center px-2 py-1 text-xs hover:bg-[#37373d] ${
                         activeFile === p.title ? 'bg-[#37373d]' : ''
                       }`}
@@ -199,6 +205,41 @@ export default function VSCode() {
 
       {/* Main editor */}
       <div className="grow flex flex-col min-w-0 bg-[#1e1e1e]">
+        {/* Phones have no room for the sidebar, so they pick a project here */}
+        <div className="md:hidden px-3 py-2 bg-[#252526] border-b border-[#333333] shrink-0">
+          <label className="flex items-center gap-2 text-[11px]">
+            <span className="uppercase tracking-wider font-bold opacity-70">Project</span>
+            <select
+              value={activeFile}
+              onChange={(e) => {
+                setActiveFile(e.target.value)
+                setActiveTab('editor')
+              }}
+              aria-label="Project"
+              className="grow min-w-0 bg-[#3c3c3c] text-[#cccccc] border border-[#3c3c3c] rounded-sm px-2 py-1.5 text-xs outline-hidden focus:border-win-blue"
+            >
+              {featured.length > 0 && (
+                <optgroup label="Featured">
+                  {featured.map((p) => (
+                    <option key={p.id} value={p.title}>
+                      {p.title}
+                    </option>
+                  ))}
+                </optgroup>
+              )}
+              {others.length > 0 && (
+                <optgroup label="Other work">
+                  {others.map((p) => (
+                    <option key={p.id} value={p.title}>
+                      {p.title}
+                    </option>
+                  ))}
+                </optgroup>
+              )}
+            </select>
+          </label>
+        </div>
+
         {/* Tabs */}
         <div className="h-9 bg-[#252526] flex items-center overflow-x-auto shrink-0">
           <button
@@ -230,55 +271,61 @@ export default function VSCode() {
 
         <div className="grow flex flex-col min-h-0 overflow-hidden">
           {activeTab === 'editor' && (
-            <div className="grow overflow-auto bg-[#1e1e1e] p-4">
+            <div className="grow overflow-auto bg-[#1e1e1e] p-3 sm:p-4">
               <div className="flex h-full">
                 {/* Line numbers */}
-                <div className="w-10 shrink-0 text-right pr-4 text-[#858585] font-mono text-xs leading-6 select-none border-r border-[#333333]">
+                <div
+                  className="w-10 shrink-0 text-right pr-4 text-[#858585] font-mono text-xs leading-6 select-none border-r border-[#333333] hidden sm:block"
+                  aria-hidden="true"
+                >
                   {Array.from({ length: 50 }).map((_, i) => (
                     <div key={i}>{i + 1}</div>
                   ))}
                 </div>
                 {/* Project hero */}
-                <div className="grow font-mono text-xs leading-6 h-full px-4">
+                <div className="grow font-mono text-xs leading-6 h-full sm:px-4 min-w-0">
                   {active && (
                     <div className="flex flex-col h-full animate-window-open">
-                      <div className="flex items-center justify-between mb-6">
-                        <div>
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
+                        <div className="min-w-0">
                           <h2 className="text-2xl font-bold text-white mb-2">{active.title}</h2>
                           <p className="text-gray-400 text-sm max-w-2xl">{active.description}</p>
                         </div>
-                        <div className="flex space-x-3">
+                        <div className="flex gap-3 shrink-0">
                           <button
                             type="button"
                             onClick={runBuild}
-                            disabled={isBuilding}
-                            className="bg-[#333333] hover:bg-[#444444] text-white px-4 py-2 rounded-md font-medium transition-colors flex items-center text-sm border border-white/10 disabled:opacity-60"
+                            className="bg-[#333333] hover:bg-[#444444] text-white px-4 py-2 rounded-md font-medium transition-colors flex items-center text-sm border border-white/10"
                           >
-                            <span className={`mr-2 ${isBuilding ? 'animate-spin inline-block' : ''}`}>🔨</span>
+                            <span className={`mr-2 ${isBuilding ? 'animate-spin' : ''}`} aria-hidden="true">
+                              🔨
+                            </span>
                             <span>{isBuilding ? 'Building...' : 'Build'}</span>
                           </button>
-                          <button
-                            type="button"
-                            onClick={() => window.open(active.url, '_blank', 'noopener')}
+                          <a
+                            href={active.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
                             className="bg-win-blue hover:bg-blue-600 text-white px-6 py-2 rounded-md font-medium transition-colors flex items-center text-sm"
                           >
                             <span>Visit Website</span>
                             <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                             </svg>
-                          </button>
+                          </a>
                         </div>
                       </div>
 
                       <div className="grow relative group overflow-hidden rounded-xl border border-white/10 bg-black/40 flex items-center justify-center min-h-0">
                         <img
                           src={`/${active.thumbnail}`}
-                          alt={active.title}
+                          alt={`Screenshot of ${active.title}`}
+                          loading="lazy"
                           className="max-w-full max-h-full w-auto h-auto object-contain transition-transform duration-700 group-hover:scale-105"
                         />
                         <div className="absolute inset-0 bg-linear-to-t from-black/80 via-transparent to-transparent flex flex-col justify-end p-8 opacity-0 group-hover:opacity-100 transition-opacity">
                           <div className="flex flex-wrap gap-2">
-                            {active.tags.map((t) => (
+                            {projectTags(active).map((t) => (
                               <span
                                 key={t}
                                 className="px-3 py-1 bg-white/10 backdrop-blur-md rounded-full text-[10px] uppercase tracking-wider"

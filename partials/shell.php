@@ -74,7 +74,9 @@
         import * as terminal from '<?php echo BASE_PATH; ?>assets/js/windowing/terminal.js?v=<?php echo @filemtime(__DIR__ . '/../assets/js/windowing/terminal.js'); ?>';
         import * as browser from '<?php echo BASE_PATH; ?>assets/js/windowing/browser.js?v=<?php echo @filemtime(__DIR__ . '/../assets/js/windowing/browser.js'); ?>';
         import * as media from '<?php echo BASE_PATH; ?>assets/js/windowing/media.js?v=<?php echo @filemtime(__DIR__ . '/../assets/js/windowing/media.js'); ?>';
-        window.OsWindowing = { ...windowing, ...shellCore, ...fileOps, ...textOps, ...calculator, ...terminal, ...browser, ...media };
+        import * as sql from '<?php echo BASE_PATH; ?>assets/js/windowing/sql.js?v=<?php echo @filemtime(__DIR__ . '/../assets/js/windowing/sql.js'); ?>';
+        import * as devtools from '<?php echo BASE_PATH; ?>assets/js/windowing/devtools.js?v=<?php echo @filemtime(__DIR__ . '/../assets/js/windowing/devtools.js'); ?>';
+        window.OsWindowing = { ...windowing, ...shellCore, ...fileOps, ...textOps, ...calculator, ...terminal, ...browser, ...media, ...sql, ...devtools };
         window.FlStudio = flStudio;
     </script>
     <!-- Alpine.js -->
@@ -341,7 +343,6 @@
         'explorer',
         'photos',
         'edge',
-        'apps/database-sql',
         'apps/office',
         'apps/dev',
         'apps/media',

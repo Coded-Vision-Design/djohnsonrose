@@ -1,5 +1,11 @@
 <!-- partials/apps/vscode.php -->
-<div class="h-full flex bg-[#1e1e1e] text-[#cccccc] font-sans overflow-hidden select-none" x-data="vscodeApp()">
+<?php
+$projects = load_shared_data('portfolio')['projects'] ?? [];
+$featured = array_values(array_filter($projects, fn($p) => !empty($p['featured'])));
+$other = array_values(array_filter($projects, fn($p) => empty($p['featured'])));
+$firstProject = ($featured[0] ?? $projects[0] ?? ['title' => ''])['title'];
+?>
+<div class="h-full flex bg-[#1e1e1e] text-[#cccccc] font-sans overflow-hidden select-none" x-data="vscodeApp(<?php echo htmlspecialchars(js_value($firstProject), ENT_QUOTES, 'UTF-8'); ?>)">
     <!-- Activity Bar -->
     <div class="w-12 flex flex-col items-center py-4 space-y-4 bg-[#333333] shrink-0">
         <div class="p-2 text-white opacity-100 border-l-2 border-white cursor-pointer"><svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2L2 7v10l10 5 10-5V7L12 2zm0 2.8L19.2 7.5 12 11.1 4.8 7.5 12 4.8zm-7.2 5.1l6.2 3.1v6.2l-6.2-3.1v-6.2zm8.2 9.3v-6.2l6.2-3.1v6.2l-6.2 3.1z"/></svg></div>
@@ -22,13 +28,6 @@
                     Projects
                 </div>
                 <div class="ml-4 space-y-0.5" x-show="explorerOpen">
-                    <?php
-                    $projectsJson = file_get_contents(__DIR__ . '/../../data/portfolio.json');
-                    $portfolioData = json_decode($projectsJson, true);
-                    $projects = $portfolioData['projects'];
-                    $featured = array_values(array_filter($projects, fn($p) => !empty($p['featured'])));
-                    $other = array_values(array_filter($projects, fn($p) => empty($p['featured'])));
-                    ?>
                     <?php if (!empty($featured)): ?>
                         <div class="px-2 pt-1 pb-0.5 text-[9px] uppercase tracking-wider opacity-50">★ Featured</div>
                         <?php foreach ($featured as $p): ?>
@@ -58,6 +57,30 @@
 
     <!-- Main Editor -->
     <div class="grow flex flex-col min-w-0 bg-[#1e1e1e]">
+        <!-- Phones have no room for the sidebar, so they pick a project here -->
+        <div class="md:hidden px-3 py-2 bg-[#252526] border-b border-[#333333] shrink-0">
+            <label class="flex items-center gap-2 text-[11px]">
+                <span class="uppercase tracking-wider font-bold opacity-70">Project</span>
+                <select x-model="activeFile" aria-label="Project"
+                        class="grow min-w-0 bg-[#3c3c3c] text-[#cccccc] border border-[#3c3c3c] rounded-sm px-2 py-1.5 text-xs outline-hidden focus:border-win-blue">
+                    <?php if (!empty($featured)): ?>
+                        <optgroup label="Featured">
+                            <?php foreach ($featured as $p): ?>
+                                <option value="<?php echo htmlspecialchars($p['title'], ENT_QUOTES); ?>"><?php echo htmlspecialchars($p['title']); ?></option>
+                            <?php endforeach; ?>
+                        </optgroup>
+                    <?php endif; ?>
+                    <?php if (!empty($other)): ?>
+                        <optgroup label="Other work">
+                            <?php foreach ($other as $p): ?>
+                                <option value="<?php echo htmlspecialchars($p['title'], ENT_QUOTES); ?>"><?php echo htmlspecialchars($p['title']); ?></option>
+                            <?php endforeach; ?>
+                        </optgroup>
+                    <?php endif; ?>
+                </select>
+            </label>
+        </div>
+
         <!-- Tabs -->
         <div class="h-9 bg-[#252526] flex items-center overflow-x-auto scrollbar-none shrink-0">
             <div @click="activeTab = 'editor'"
@@ -82,45 +105,45 @@
         <!-- Editor/Terminal Content -->
         <div class="grow flex flex-col min-h-0 overflow-hidden">
             <!-- Editor View -->
-            <div x-show="activeTab === 'editor'" class="grow overflow-auto custom-scrollbar bg-[#1e1e1e] p-4">
+            <div x-show="activeTab === 'editor'" class="grow overflow-auto custom-scrollbar bg-[#1e1e1e] p-3 sm:p-4">
                 <div class="flex h-full">
                     <!-- Line Numbers -->
-                    <div class="w-10 shrink-0 text-right pr-4 text-[#858585] font-mono text-xs leading-6 select-none border-r border-[#333333]">
+                    <div class="w-10 shrink-0 text-right pr-4 text-[#858585] font-mono text-xs leading-6 select-none border-r border-[#333333] hidden sm:block" aria-hidden="true">
                         <?php for($i=1; $i<=50; $i++) echo $i . "<br>"; ?>
                     </div>
                     <!-- Code Area -->
-                    <div class="grow font-mono text-xs leading-6 h-full px-4">
+                    <div class="grow font-mono text-xs leading-6 h-full sm:px-4 min-w-0">
                         <!-- Project View -->
                         <div class="h-full flex flex-col">
                             <?php foreach ($projects as $p): ?>
                                 <div x-show="activeFile === <?php echo htmlspecialchars(json_encode($p['title']), ENT_QUOTES); ?>" class="flex flex-col h-full animate-window-open">
-                                    <div class="flex items-center justify-between mb-6">
-                                        <div>
+                                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
+                                        <div class="min-w-0">
                                             <h2 class="text-2xl font-bold text-white mb-2"><?php echo htmlspecialchars($p['title']); ?></h2>
                                             <p class="text-gray-400 text-sm max-w-2xl"><?php echo htmlspecialchars($p['description']); ?></p>
                                         </div>
-                                        <div class="flex space-x-3">
-                                            <button @click="runBuild()" 
+                                        <div class="flex gap-3 shrink-0">
+                                            <button type="button" @click="runBuild()"
                                                     class="bg-[#333333] hover:bg-[#444444] text-white px-4 py-2 rounded-md font-medium transition-colors flex items-center text-sm border border-white/10">
-                                                <span class="mr-2" :class="isBuilding ? 'animate-spin' : ''">🔨</span>
+                                                <span class="mr-2" :class="isBuilding ? 'animate-spin' : ''" aria-hidden="true">🔨</span>
                                                 <span x-text="isBuilding ? 'Building...' : 'Build'"></span>
                                             </button>
-                                            <button @click="window.open('<?php echo $p['url']; ?>', '_blank')" 
-                                                    class="bg-win-blue hover:bg-blue-600 text-white px-6 py-2 rounded-md font-medium transition-colors flex items-center text-sm">
+                                            <a href="<?php echo htmlspecialchars($p['url'], ENT_QUOTES); ?>" target="_blank" rel="noopener noreferrer"
+                                               class="bg-win-blue hover:bg-blue-600 text-white px-6 py-2 rounded-md font-medium transition-colors flex items-center text-sm">
                                                 <span>Visit Website</span>
-                                                <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
-                                            </button>
+                                                <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+                                            </a>
                                         </div>
                                     </div>
-                                    
+
                                     <div class="grow relative group overflow-hidden rounded-xl border border-white/10 bg-black/40 flex items-center justify-center min-h-0">
-                                        <img src="<?php echo $p['thumbnail']; ?>"
+                                        <img src="<?php echo htmlspecialchars(BASE_PATH . $p['thumbnail'], ENT_QUOTES); ?>" loading="lazy"
                                              class="max-w-full max-h-full w-auto h-auto object-contain transition-transform duration-700 group-hover:scale-105"
-                                             alt="<?php echo htmlspecialchars($p['title'], ENT_QUOTES); ?>">
+                                             alt="<?php echo htmlspecialchars('Screenshot of ' . $p['title'], ENT_QUOTES); ?>">
                                         <div class="absolute inset-0 bg-linear-to-t from-black/80 via-transparent to-transparent flex flex-col justify-end p-8 opacity-0 group-hover:opacity-100 transition-opacity">
                                             <div class="flex flex-wrap gap-2">
-                                                <?php foreach ($p['tags'] as $t): ?>
-                                                    <span class="px-3 py-1 bg-white/10 backdrop-blur-md rounded-full text-[10px] uppercase tracking-wider"><?php echo $t; ?></span>
+                                                <?php foreach (($p['tags'] ?? []) as $t): ?>
+                                                    <span class="px-3 py-1 bg-white/10 backdrop-blur-md rounded-full text-[10px] uppercase tracking-wider"><?php echo htmlspecialchars($t); ?></span>
                                                 <?php endforeach; ?>
                                             </div>
                                         </div>
@@ -145,7 +168,7 @@
                         <button @click="terminalOutput = []" class="text-gray-400 hover:text-white p-1">🗑️</button>
                     </div>
                 </div>
-                <div id="vscode-terminal" class="grow p-4 font-mono text-[12px] overflow-y-auto custom-scrollbar">
+                <div data-vscode-terminal class="grow p-4 font-mono text-[12px] overflow-y-auto custom-scrollbar">
                     <template x-for="line in terminalOutput">
                         <div class="mb-1">
                             <span :class="{

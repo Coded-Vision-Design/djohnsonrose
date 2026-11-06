@@ -297,42 +297,48 @@ document.addEventListener('alpine:init', () => {
         }
     }));
 
-    // FileZilla App Logic
-    Alpine.data('filezillaApp', () => ({
-        host: '',
-        user: '',
+    // FileZilla. The site details and both listings come from data/devtools.json,
+    // and the connection log from assets/js/windowing/devtools.js, shared with v2.
+    Alpine.data('filezillaApp', (site = {}) => ({
+        host: site.host ?? '',
+        user: site.user ?? '',
         pass: '',
-        port: '',
+        port: String(site.port ?? 22),
         isConnected: false,
         isConnecting: false,
         logs: [
-            { type: 'status', text: 'Disconnected from server' }
+            { type: 'status', text: 'Status: Disconnected from server' }
         ],
-        localPath: 'C:\\Users\\DeVante',
-        remotePath: '/',
-        
+        localPath: site.localPath ?? '',
+        remotePath: site.remotePath ?? '/',
+        local: site.local ?? [],
+        remote: site.remote ?? [],
+        _timer: null,
+
+        size(file) {
+            return OsWindowing.transferSize(file);
+        },
+
         connect() {
-            if (!this.host) return;
+            if (!this.host || this.isConnecting) return;
             this.isConnecting = true;
-            this.logs.push({ type: 'command', text: `Command: open sftp://${this.user}@${this.host}:${this.port || 22}` });
-            
-            setTimeout(() => {
-                this.logs.push({ type: 'status', text: 'Status: Connecting to ' + this.host + '...' });
-                setTimeout(() => {
-                    this.logs.push({ type: 'status', text: 'Status: Using username "' + this.user + '".' });
-                    this.logs.push({ type: 'status', text: 'Status: Connected to ' + this.host });
-                    this.logs.push({ type: 'command', text: 'Command: remote path is "/"' });
-                    this.logs.push({ type: 'status', text: 'Status: Listing directory /...' });
-                    this.logs.push({ type: 'status', text: 'Status: Directory listing of "/" successful' });
-                    this.isConnecting = false;
-                    this.isConnected = true;
-                }, 1000);
-            }, 500);
+            const steps = OsWindowing.quickconnectLog(this.host, this.user, this.port, this.remotePath);
+            this._timer = setInterval(() => {
+                this.logs.push(steps.shift());
+                if (steps.length) return;
+                clearInterval(this._timer);
+                this.isConnecting = false;
+                this.isConnected = true;
+            }, 250);
         },
 
         disconnect() {
             this.isConnected = false;
             this.logs.push({ type: 'status', text: 'Status: Disconnected from server' });
+        },
+
+        destroy() {
+            clearInterval(this._timer);
         }
     }));
 

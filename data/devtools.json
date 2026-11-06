@@ -1,0 +1,105 @@
+{
+  "docker": {
+    "engine": "Docker Engine 28.5.1",
+    "containers": [
+      {
+        "id": "a4f1b9c7d8e2",
+        "name": "portfolio-php",
+        "image": "php:8.4-apache",
+        "status": "running",
+        "statusLabel": "Up 2 hours",
+        "ports": "8765:80",
+        "created": "2 hours ago",
+        "logs": ["Apache/2.4.65 (Debian) PHP/8.4.13 configured", "resuming normal operations", "GET /api/app.php?name=explorer 200"]
+      },
+      {
+        "id": "b7c2e1d3f0a4",
+        "name": "portfolio-react",
+        "image": "node:24-alpine",
+        "status": "running",
+        "statusLabel": "Up 1 hour",
+        "ports": "5173:5173",
+        "created": "1 hour ago",
+        "logs": ["VITE v8.3.5 ready in 614 ms", "Local:   http://localhost:5173/v2/", "Network: use --host to expose"]
+      },
+      {
+        "id": "d0e3a8c1b5f7",
+        "name": "mariadb-portfolio",
+        "image": "mariadb:11.4",
+        "status": "running",
+        "statusLabel": "Up 5 hours",
+        "ports": "3306:3306",
+        "created": "5 hours ago",
+        "logs": ["InnoDB: Buffer pool(s) load completed", "mariadbd: ready for connections."]
+      },
+      {
+        "id": "e4f5d2a9b1c8",
+        "name": "redis-cache",
+        "image": "redis:8-alpine",
+        "status": "running",
+        "statusLabel": "Up 5 hours",
+        "ports": "6379:6379",
+        "created": "5 hours ago",
+        "logs": ["Ready to accept connections tcp"]
+      },
+      {
+        "id": "f1a6b3c2d7e4",
+        "name": "nginx-proxy",
+        "image": "nginx:1.29-alpine",
+        "status": "exited",
+        "statusLabel": "Exited (0) 3 days ago",
+        "ports": "",
+        "created": "3 days ago",
+        "logs": ["gracefully shutting down", "exiting with code 0"]
+      },
+      {
+        "id": "9c0a4b7e2d6f",
+        "name": "postgres-staging",
+        "image": "postgres:16-alpine",
+        "status": "exited",
+        "statusLabel": "Exited (1) 1 week ago",
+        "ports": "",
+        "created": "1 week ago",
+        "logs": ["could not open file \"/var/lib/postgresql/data\": Permission denied"]
+      }
+    ],
+    "images": [
+      { "name": "php", "tag": "8.4-apache", "id": "3f1c2a9d8b7e", "created": "2 weeks ago", "size": "512 MB" },
+      { "name": "node", "tag": "24-alpine", "id": "7b2e4c1a9f3d", "created": "3 weeks ago", "size": "163 MB" },
+      { "name": "mariadb", "tag": "11.4", "id": "c8d1e5b2a7f4", "created": "1 month ago", "size": "402 MB" },
+      { "name": "redis", "tag": "8-alpine", "id": "e2a9f7c4b1d6", "created": "1 month ago", "size": "61 MB" },
+      { "name": "nginx", "tag": "1.29-alpine", "id": "1d6b3e8a2c9f", "created": "1 month ago", "size": "52 MB" },
+      { "name": "postgres", "tag": "16-alpine", "id": "5a4c7d2e9b1f", "created": "2 months ago", "size": "276 MB" }
+    ],
+    "volumes": [
+      { "name": "mariadb_data", "driver": "local", "mountpoint": "/var/lib/docker/volumes/mariadb_data/_data" },
+      { "name": "redis_data", "driver": "local", "mountpoint": "/var/lib/docker/volumes/redis_data/_data" },
+      { "name": "postgres_data", "driver": "local", "mountpoint": "/var/lib/docker/volumes/postgres_data/_data" }
+    ]
+  },
+  "filezilla": {
+    "host": "johnson-rose.co.uk",
+    "user": "devante",
+    "port": 22,
+    "localPath": "C:\\Program Files\\XAMPP\\htdocs\\djohnsonrose",
+    "remotePath": "/home/devante/public_html",
+    "local": [
+      { "name": "assets", "type": "dir", "size": 0, "kind": "File folder", "modified": "06/11/2026 19:37" },
+      { "name": "data", "type": "dir", "size": 0, "kind": "File folder", "modified": "06/11/2026 19:37" },
+      { "name": "partials", "type": "dir", "size": 0, "kind": "File folder", "modified": "06/11/2026 19:37" },
+      { "name": "v2", "type": "dir", "size": 0, "kind": "File folder", "modified": "06/11/2026 20:09" },
+      { "name": ".htaccess", "type": "file", "size": 4210, "kind": "HTACCESS File", "modified": "06/11/2026 19:37" },
+      { "name": "index.php", "type": "file", "size": 1830, "kind": "PHP File", "modified": "06/11/2026 19:37" },
+      { "name": "router.php", "type": "file", "size": 1475, "kind": "PHP File", "modified": "06/11/2026 19:37" }
+    ],
+    "remote": [
+      { "name": "assets", "type": "dir", "size": 0, "permissions": "drwxr-xr-x", "modified": "05/11/2026 09:01" },
+      { "name": "data", "type": "dir", "size": 0, "permissions": "drwxr-xr-x", "modified": "05/11/2026 09:01" },
+      { "name": "partials", "type": "dir", "size": 0, "permissions": "drwxr-xr-x", "modified": "05/11/2026 09:01" },
+      { "name": "v2", "type": "dir", "size": 0, "permissions": "drwxr-xr-x", "modified": "05/11/2026 09:02" },
+      { "name": ".htaccess", "type": "file", "size": 4210, "permissions": "-rw-r--r--", "modified": "05/11/2026 09:01" },
+      { "name": "index.php", "type": "file", "size": 1830, "permissions": "-rw-r--r--", "modified": "05/11/2026 09:01" },
+      { "name": "router.php", "type": "file", "size": 1475, "permissions": "-rw-r--r--", "modified": "05/11/2026 09:01" }
+    ]
+  }
+}

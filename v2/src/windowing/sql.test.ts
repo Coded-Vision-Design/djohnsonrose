@@ -1,5 +1,17 @@
 import { describe, expect, it } from 'vitest'
-import { type Row, execute, parse, ParseError } from './sql'
+import {
+  SQL_COLUMNS,
+  SQL_EXAMPLES,
+  SQL_TABLES,
+  SqlParseError as ParseError,
+  executeSql as execute,
+  latestQuery,
+  parseSql as parse,
+  sqlElapsedLabel,
+  type Row,
+} from '../../../assets/js/windowing/sql.js'
+
+// The SELECT engine both builds' SQL Server Management Studio run.
 
 const sampleExperience: Row[] = [
   { id: 12, role: 'Applications Support Engineer', company: 'Killik & Co', period: 'Apr 2025 - Present', location: 'Ipswich', highlights: 'AI tooling and PowerShell automation. SQL via MSSMS.' },
@@ -99,5 +111,69 @@ describe('sql executor', () => {
       'Killik & Co',
       'UEA',
     ])
+  })
+})
+
+describe('LIKE patterns', () => {
+  const rows: Row[] = [
+    { id: 1, name: 'C*' },
+    { id: 2, name: 'Cobol' },
+    { id: 3, name: 'C++' },
+    { id: 4, name: 'a.b' },
+    { id: 5, name: 'axb' },
+  ]
+  const names = (sql: string) => execute(parse(sql), rows).map((r) => r.name)
+
+  it('treats * as a plain character, not a wildcard', () => {
+    expect(names("SELECT name FROM skills WHERE name LIKE 'C*'")).toEqual(['C*'])
+    expect(names("SELECT name FROM skills WHERE name LIKE 'C*%'")).toEqual(['C*'])
+  })
+
+  it('keeps every other regular expression character plain', () => {
+    expect(names("SELECT name FROM skills WHERE name LIKE 'C++'")).toEqual(['C++'])
+    expect(names("SELECT name FROM skills WHERE name LIKE 'a.b'")).toEqual(['a.b'])
+  })
+
+  it('still takes % and _ as SQL wildcards', () => {
+    expect(names("SELECT name FROM skills WHERE name LIKE 'C%'")).toEqual(['C*', 'Cobol', 'C++'])
+    expect(names("SELECT name FROM skills WHERE name LIKE 'a_b'")).toEqual(['a.b', 'axb'])
+  })
+})
+
+describe('latestQuery', () => {
+  it('only the newest query may show its result', () => {
+    const queries = latestQuery()
+    const first = queries.start()
+    const second = queries.start()
+    expect(queries.isLatest(first)).toBe(false)
+    expect(queries.isLatest(second)).toBe(true)
+  })
+
+  it('each runner counts on its own', () => {
+    const a = latestQuery()
+    const b = latestQuery()
+    const ticket = a.start()
+    b.start()
+    b.start()
+    expect(a.isLatest(ticket)).toBe(true)
+  })
+})
+
+describe('tables and labels', () => {
+  it('lists the columns of every table', () => {
+    for (const table of SQL_TABLES) expect(SQL_COLUMNS[table.id]?.length).toBeGreaterThan(0)
+  })
+
+  it('every example parses and names a known table', () => {
+    for (const example of SQL_EXAMPLES) {
+      const ast = parse(example.sql)
+      expect(SQL_TABLES.some((t) => t.id === ast.table)).toBe(true)
+    }
+  })
+
+  it('formats the elapsed time like SSMS', () => {
+    expect(sqlElapsedLabel(null)).toBe('00:00:00')
+    expect(sqlElapsedLabel(12.5)).toBe('00:00:00.013')
+    expect(sqlElapsedLabel(2400)).toBe('00:00:02')
   })
 })
