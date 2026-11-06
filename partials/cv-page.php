@@ -61,10 +61,11 @@ $downloadIcon = '<svg aria-hidden="true" focusable="false" viewBox="0 0 16 16"><
 $windowsIcon = '<svg aria-hidden="true" focusable="false" viewBox="0 0 16 16"><path d="M1 1h6.5v6.5H1V1Zm7.5 0H15v6.5H8.5V1ZM1 8.5h6.5V15H1V8.5Zm7.5 0H15V15H8.5V8.5Z" fill="currentColor"/></svg>';
 
 // No scripts at all: the JSON-LD block is data, which a policy does not block.
+// connect-src lets audit tools such as Lighthouse read robots.txt from the page.
 $nonce = csp_nonce();
 if (!headers_sent()) {
     header('Content-Type: text/html; charset=utf-8');
-    header("Content-Security-Policy: default-src 'none'; img-src 'self'; style-src 'nonce-{$nonce}'; base-uri 'none'; form-action 'none'; frame-ancestors 'self'");
+    header("Content-Security-Policy: default-src 'none'; img-src 'self'; style-src 'nonce-{$nonce}'; connect-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'self'");
 }
 ?>
 <!DOCTYPE html>
