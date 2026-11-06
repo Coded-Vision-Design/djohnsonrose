@@ -1,0 +1,1157 @@
+/* Word, Excel, PowerPoint and PuTTY, shared by both builds. Both render the
+   same markup with these classes, so the two look identical. Sizing that
+   depends on the window (fitting the page or the slide) is worked out in
+   assets/js/windowing/office.js and handed over as --office-zoom. */
+
+/* The CV that Word shows is server-rendered HTML styled with Tailwind classes.
+   v1's build already reads it; this lets v2's build find them too. */
+@source '../../data/cv.php';
+
+.office-app {
+    --office-accent: #2b579a;
+    --office-accent-deep: #1e3e6d;
+    --office-chrome: #fff;
+    --office-ribbon: #f9fafb;
+    --office-line: #d1d5db;
+    --office-soft-line: #f3f4f6;
+    --office-hover: #e5e7eb;
+    --office-muted: #9ca3af;
+    --office-canvas: #e6e6e6;
+    container: office / inline-size;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-width: 0;
+    overflow: hidden;
+    background: #f3f3f3;
+    color: #000;
+    font: 11px/1.4 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+.office-app[data-office-app='excel'] {
+    --office-accent: #107c41;
+    --office-accent-deep: #0b5a2f;
+}
+
+.office-app[data-office-app='powerpoint'] {
+    --office-accent: #b7472a;
+    --office-accent-deep: #8f3720;
+}
+
+.dark .office-app {
+    --office-chrome: #2b2b2b;
+    --office-ribbon: #2d2d2d;
+    --office-line: #3f3f46;
+    --office-soft-line: #333;
+    --office-hover: rgb(255 255 255 / 0.1);
+    --office-muted: #8a8a8a;
+    --office-canvas: #202020;
+    background: #1c1c1c;
+    color: #fff;
+}
+
+/* Resets carry no weight, so every rule below wins over them. */
+:where(.office-app) :where(button, select, input) {
+    font: inherit;
+    color: inherit;
+}
+
+:where(.office-app) :where(button) {
+    background: none;
+    border: 0;
+    padding: 0;
+    cursor: default;
+}
+
+.office-app button:focus-visible,
+.office-app select:focus-visible,
+.office-app input:focus-visible {
+    outline: 2px solid #0078d4;
+    outline-offset: 1px;
+}
+
+.office-icon {
+    width: 12px;
+    height: 12px;
+    flex: none;
+    fill: currentColor;
+}
+
+.office-icon[data-stroke] {
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+/* ---- Title bar, tabs and status bar --------------------------------------- */
+
+.office-titlebar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex: none;
+    height: 32px;
+    padding: 0 12px;
+    background: var(--office-accent);
+    color: #fff;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.office-titlebar img {
+    width: 16px;
+    height: 16px;
+    flex: none;
+}
+
+/* Excel's and PowerPoint's icons share their bar's colour, so they show in white. */
+.office-app:is([data-office-app='excel'], [data-office-app='powerpoint']) .office-titlebar img {
+    filter: brightness(0) invert(1);
+}
+
+.office-titlebar-name {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.office-titlebar-side {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    min-width: 0;
+}
+
+.office-qat {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 2px 8px;
+    border-radius: 2px;
+    background: rgb(255 255 255 / 0.1);
+}
+
+.office-qat button {
+    display: flex;
+    color: rgb(255 255 255 / 0.8);
+}
+
+.office-qat button:hover:not(:disabled) {
+    color: #fff;
+}
+
+.office-qat button:disabled {
+    opacity: 0.5;
+}
+
+.office-user {
+    color: rgb(255 255 255 / 0.8);
+    font-weight: 400;
+}
+
+.office-tabs {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex: none;
+    padding: 4px 16px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    background: var(--office-chrome);
+    border-bottom: 1px solid var(--office-soft-line);
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.office-tab {
+    padding: 2px 8px;
+    border-radius: 2px;
+}
+
+.office-tab:hover {
+    background: var(--office-hover);
+}
+
+.office-tab[data-active] {
+    color: var(--office-accent);
+    font-weight: 700;
+    box-shadow: inset 0 -2px var(--office-accent);
+    border-radius: 0;
+}
+
+.dark .office-tab[data-active] {
+    color: #fff;
+}
+
+.office-status {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    flex: none;
+    height: 24px;
+    padding: 0 16px;
+    overflow: hidden;
+    background: var(--office-accent);
+    color: #fff;
+    font-size: 10px;
+    white-space: nowrap;
+}
+
+.office-status-group {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    min-width: 0;
+}
+
+.office-status button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    border-radius: 2px;
+}
+
+.office-status button:hover:not(:disabled) {
+    background: rgb(255 255 255 / 0.15);
+}
+
+.office-status button:disabled {
+    opacity: 0.4;
+}
+
+.office-status .office-icon {
+    width: 14px;
+    height: 14px;
+}
+
+@container office (max-width: 560px) {
+    .office-optional {
+        display: none;
+    }
+
+    .office-tabs {
+        gap: 4px;
+        padding-inline: 8px;
+    }
+
+    .office-status {
+        padding-inline: 8px;
+        gap: 8px;
+    }
+
+    .office-status-group {
+        gap: 8px;
+    }
+}
+
+/* ---- Word ------------------------------------------------------------------ */
+
+.word-ribbon {
+    display: flex;
+    align-items: stretch;
+    gap: 12px;
+    flex: none;
+    padding: 8px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    background: var(--office-ribbon);
+    border-bottom: 1px solid var(--office-line);
+    box-shadow: 0 1px 2px rgb(0 0 0 / 0.05);
+}
+
+.word-group {
+    display: flex;
+    flex: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    gap: 4px;
+    padding-right: 12px;
+    border-right: 1px solid var(--office-line);
+}
+
+.word-group-body {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.word-group-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.word-group-row {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+}
+
+.word-group-label {
+    color: var(--office-muted);
+    font-size: 8px;
+    text-transform: uppercase;
+}
+
+.word-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    min-width: 24px;
+    height: 24px;
+    padding: 0 4px;
+    border-radius: 2px;
+    font-size: 9px;
+}
+
+.word-btn:hover:not(:disabled) {
+    background: var(--office-hover);
+}
+
+.word-btn:disabled {
+    opacity: 0.45;
+}
+
+.word-btn[aria-pressed='true'] {
+    background: rgb(0 120 212 / 0.2);
+    box-shadow: 0 0 0 1px #0078d4;
+}
+
+.word-btn .office-icon {
+    color: #6b7280;
+}
+
+.dark .word-btn .office-icon {
+    color: #d1d5db;
+}
+
+.word-btn-large {
+    flex-direction: column;
+    gap: 2px;
+    height: auto;
+    padding: 4px;
+}
+
+.word-btn-large .office-icon {
+    width: 20px;
+    height: 20px;
+    color: #4b5563;
+}
+
+.word-btn-small {
+    justify-content: flex-start;
+    height: 18px;
+}
+
+.word-btn-letter {
+    font-size: 12px;
+    line-height: 1;
+}
+
+.word-btn-colour {
+    flex-direction: column;
+    gap: 1px;
+    font-weight: 700;
+}
+
+.word-btn-colour::after {
+    content: '';
+    width: 12px;
+    height: 2px;
+    background: #dc2626;
+}
+
+.word-divider {
+    width: 1px;
+    height: 16px;
+    margin: 0 4px;
+    background: var(--office-line);
+}
+
+.word-select {
+    height: 20px;
+    padding: 0 2px;
+    border: 1px solid var(--office-line);
+    border-radius: 2px;
+    background: #fff;
+    font-size: 10px;
+    outline: none;
+}
+
+.dark .word-select {
+    background: rgb(0 0 0 / 0.2);
+}
+
+.word-select-font {
+    width: 96px;
+}
+
+.word-select-size {
+    width: 42px;
+}
+
+.word-style {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: flex-start;
+    width: 64px;
+    height: 40px;
+    padding: 4px;
+    border: 1px solid var(--office-line);
+    background: #fff;
+    font-size: 10px;
+    text-align: left;
+}
+
+.dark .word-style {
+    background: rgb(0 0 0 / 0.2);
+}
+
+.word-style:hover {
+    background: var(--office-hover);
+}
+
+.word-style[data-current] {
+    border: 2px solid var(--office-accent);
+}
+
+.word-style b {
+    font-weight: 700;
+    line-height: 1;
+}
+
+.word-style-title b {
+    color: var(--office-accent);
+    font-size: 18px;
+}
+
+.dark .word-style-title b {
+    color: #8ab4f0;
+}
+
+.word-style small {
+    font-size: 8px;
+    opacity: 0.7;
+}
+
+/* Print stays in reach while the rest of a narrow ribbon scrolls. */
+.word-print {
+    position: sticky;
+    right: 0;
+    display: flex;
+    align-items: center;
+    flex: none;
+    margin-left: auto;
+    padding-left: 8px;
+    background: var(--office-ribbon);
+}
+
+.word-print button {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 16px;
+    border-radius: 2px;
+    background: var(--office-accent);
+    color: #fff;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.word-print button:hover {
+    background: var(--office-accent-deep);
+}
+
+.word-area {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: auto;
+    padding: 48px;
+    background: var(--office-canvas);
+}
+
+/* A page is always a page: it keeps its width and shrinks to fit a narrow
+   window, so the CV never reflows into a column a few letters wide. */
+.word-page {
+    width: 816px;
+    min-height: 1056px;
+    margin: 0 auto;
+    padding: 64px;
+    background: #fff;
+    color: #000;
+    box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.25);
+    font: 16px/1.5 Calibri, Carlito, 'Segoe UI', sans-serif;
+    outline: none;
+    zoom: var(--office-zoom, 1);
+    user-select: text;
+    -webkit-user-select: text;
+}
+
+.word-zoom {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.word-zoom-track {
+    position: relative;
+    width: 80px;
+    height: 4px;
+    border-radius: 9999px;
+    background: rgb(255 255 255 / 0.2);
+}
+
+.word-zoom-track::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: var(--office-zoom-at, 50%);
+    width: 8px;
+    height: 8px;
+    border-radius: 9999px;
+    background: #fff;
+    transform: translate(-50%, -50%);
+}
+
+.word-zoom-value {
+    min-width: 30px;
+    text-align: right;
+}
+
+@container office (max-width: 560px) {
+    .word-area {
+        padding: 12px;
+    }
+
+    .word-zoom-track {
+        width: 40px;
+    }
+}
+
+/* ---- Excel ------------------------------------------------------------------ */
+
+.excel-formula {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: none;
+    padding: 4px 12px;
+    background: var(--office-chrome);
+    border-bottom: 1px solid var(--office-line);
+    font-size: 12px;
+}
+
+.excel-namebox {
+    flex: none;
+    width: 64px;
+    padding: 3px 8px;
+    border: 1px solid var(--office-line);
+    border-radius: 2px;
+    background: #fff;
+}
+
+.dark .excel-namebox {
+    background: rgb(0 0 0 / 0.2);
+}
+
+.excel-fx {
+    flex: none;
+    opacity: 0.5;
+    font-family: 'Cambria Math', 'Times New Roman', serif;
+    font-style: italic;
+}
+
+.excel-formula input {
+    flex: 1;
+    min-width: 0;
+    padding: 3px 8px;
+    border: 1px solid var(--office-line);
+    border-radius: 2px;
+    background: transparent;
+    outline: none;
+}
+
+.excel-sheet {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: auto;
+    background: #fff;
+}
+
+.dark .excel-sheet {
+    background: #1c1c1c;
+}
+
+.excel-grid {
+    border-collapse: separate;
+    border-spacing: 0;
+    min-width: 100%;
+    font-size: 11px;
+    table-layout: fixed;
+}
+
+.excel-grid th {
+    padding: 3px 8px;
+    background: #f3f3f3;
+    border-right: 1px solid var(--office-line);
+    border-bottom: 1px solid var(--office-line);
+    color: #4b5563;
+    font-weight: 400;
+}
+
+/* Column letters stay at the top and row numbers at the left while the sheet scrolls. */
+.excel-grid thead th {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+}
+
+.excel-grid .excel-rowhead {
+    position: sticky;
+    left: 0;
+    z-index: 1;
+    width: 40px;
+    min-width: 40px;
+    padding: 3px 4px;
+    color: #6b7280;
+    text-align: center;
+}
+
+.excel-grid thead .excel-rowhead {
+    z-index: 2;
+}
+
+.dark .excel-grid th,
+.dark .excel-grid .excel-rowhead {
+    background: #1c1c1c;
+    color: #9ca3af;
+}
+
+.excel-grid td {
+    width: 140px;
+    min-width: 140px;
+    max-width: 140px;
+    height: 22px;
+    padding: 3px 8px;
+    overflow: hidden;
+    border-right: 1px solid #e5e7eb;
+    border-bottom: 1px solid #e5e7eb;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    cursor: cell;
+}
+
+.dark .excel-grid td {
+    border-color: #2f2f2f;
+}
+
+.excel-grid td[data-header] {
+    background: #e7f2eb;
+    color: #0b5a2f;
+    font-weight: 700;
+}
+
+.dark .excel-grid td[data-header] {
+    background: rgb(16 124 65 / 0.2);
+    color: #9fd8b5;
+}
+
+.excel-grid td[aria-selected='true'] {
+    outline: 2px solid var(--office-accent);
+    outline-offset: -2px;
+}
+
+/* ---- PowerPoint --------------------------------------------------------------- */
+
+.ppt-body {
+    display: flex;
+    flex: 1 1 auto;
+    min-height: 0;
+}
+
+.ppt-thumbs {
+    display: flex;
+    flex: none;
+    flex-direction: column;
+    gap: 8px;
+    width: 160px;
+    padding: 8px;
+    overflow-y: auto;
+    background: var(--office-chrome);
+    border-right: 1px solid var(--office-line);
+}
+
+.ppt-thumb {
+    position: relative;
+    display: flex;
+    flex: none;
+    flex-direction: column;
+    justify-content: flex-start;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    overflow: hidden;
+    border: 1px solid var(--office-line);
+    border-radius: 4px;
+    background: #374151;
+    color: #fff;
+    font-size: 10px;
+    text-align: left;
+}
+
+.ppt-thumb img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.ppt-thumb::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: rgb(0 0 0 / 0.4);
+}
+
+.ppt-thumb span {
+    position: relative;
+    z-index: 1;
+    display: block;
+    padding: 2px 4px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.ppt-thumb[aria-current='true'] {
+    border-color: var(--office-accent);
+    box-shadow: 0 0 0 2px rgb(183 71 42 / 0.3);
+}
+
+.ppt-stage {
+    display: flex;
+    flex: 1 1 auto;
+    align-items: center;
+    justify-content: center;
+    min-width: 0;
+    min-height: 0;
+    padding: 32px;
+    overflow: hidden;
+    background: #f3f4f6;
+}
+
+.dark .ppt-stage {
+    background: #0f0f0f;
+}
+
+.ppt-message {
+    opacity: 0.6;
+    font-size: 13px;
+}
+
+/* A slide is drawn at 960 by 540 and shrunk to fit, as PowerPoint does, so
+   its title wraps the same way at every size. */
+.ppt-slide {
+    position: relative;
+    flex: none;
+    width: 960px;
+    height: 540px;
+    overflow: hidden;
+    border-radius: 8px;
+    background: #1f2937;
+    box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.25);
+    color: #fff;
+    zoom: var(--office-zoom, 1);
+}
+
+.ppt-slide > img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.ppt-slide::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to bottom, rgb(0 0 0 / 0) 0%, rgb(0 0 0 / 0.3) 50%, rgb(0 0 0 / 0.8) 100%);
+}
+
+.ppt-slide-body {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 1;
+    padding: 40px;
+}
+
+.ppt-slide-count {
+    margin-bottom: 8px;
+    font-size: 13px;
+    letter-spacing: 0.1em;
+    opacity: 0.8;
+    text-transform: uppercase;
+}
+
+.ppt-slide-title {
+    margin: 0 0 8px;
+    font-size: 44px;
+    font-weight: 700;
+    line-height: 1.1;
+}
+
+.ppt-slide-text {
+    max-width: 760px;
+    margin: 0;
+    font-size: 17px;
+    line-height: 1.45;
+    opacity: 0.9;
+}
+
+.ppt-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 16px;
+}
+
+.ppt-tag {
+    padding: 2px 10px;
+    border-radius: 2px;
+    background: rgb(255 255 255 / 0.2);
+    font-size: 13px;
+    font-weight: 500;
+}
+
+@container office (max-width: 640px) {
+    .ppt-body {
+        flex-direction: column;
+    }
+
+    .ppt-thumbs {
+        order: 2;
+        flex-direction: row;
+        width: auto;
+        overflow-x: auto;
+        overflow-y: hidden;
+        border-top: 1px solid var(--office-line);
+        border-right: 0;
+    }
+
+    .ppt-thumb {
+        width: 112px;
+    }
+
+    .ppt-stage {
+        padding: 12px;
+    }
+}
+
+/* ---- PuTTY -------------------------------------------------------------------- */
+
+/* The classic Windows dialog PuTTY still draws: beige face, navy caption,
+   bevelled buttons and a white category tree. */
+.putty-app {
+    container: putty / inline-size;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-width: 0;
+    overflow: hidden;
+    background: #ece9d8;
+    color: #000;
+    font: 12px/1.35 Tahoma, 'Segoe UI', Geneva, Verdana, sans-serif;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+:where(.putty-app) :where(button, input) {
+    font: inherit;
+    color: inherit;
+}
+
+.putty-app button:focus-visible,
+.putty-app input:focus-visible,
+.putty-app [tabindex]:focus-visible {
+    outline: 1px dotted #000;
+    outline-offset: -3px;
+}
+
+.putty-titlebar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: none;
+    height: 24px;
+    padding: 0 8px;
+    background: #0a246a;
+    color: #fff;
+    white-space: nowrap;
+}
+
+.putty-titlebar img {
+    width: 12px;
+    height: 12px;
+}
+
+.putty-body {
+    display: flex;
+    flex: 1 1 auto;
+    min-height: 0;
+}
+
+.putty-tree {
+    flex: none;
+    width: 192px;
+    padding: 8px;
+    overflow-y: auto;
+    background: #fff;
+    border-right: 1px solid #9ca3af;
+    font-size: 11px;
+}
+
+.putty-tree-label {
+    margin-bottom: 4px;
+    font-size: 10px;
+    font-weight: 700;
+}
+
+.putty-tree ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.putty-tree-group + .putty-tree-group {
+    margin-top: 8px;
+}
+
+.putty-tree [role='treeitem'] {
+    padding: 0 4px;
+}
+
+.putty-tree-parent {
+    font-weight: 700;
+}
+
+.putty-tree-child {
+    margin-left: 4px;
+}
+
+.putty-tree [role='treeitem']:hover {
+    background: #f3f4f6;
+}
+
+.putty-tree [role='treeitem'][aria-selected='true'] {
+    background: #316ac5;
+    color: #fff;
+}
+
+.putty-panel {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    gap: 12px;
+    min-width: 0;
+    padding: 16px;
+    overflow-y: auto;
+    background: #ece9d8;
+}
+
+.putty-heading {
+    padding-bottom: 4px;
+    border-bottom: 1px solid #9ca3af;
+    font-weight: 700;
+}
+
+.putty-section {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.putty-subheading {
+    font-weight: 500;
+}
+
+.putty-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px 8px;
+}
+
+.putty-host-label {
+    width: 96px;
+}
+
+.putty-input {
+    min-width: 0;
+    padding: 1px 8px;
+    border: 1px solid #6b7280;
+    background: #fff;
+    outline: none;
+}
+
+.putty-host {
+    flex: 1 1 140px;
+}
+
+.putty-port {
+    width: 64px;
+}
+
+.putty-radio {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.putty-sessions {
+    display: flex;
+    gap: 12px;
+}
+
+.putty-list {
+    flex: 1 1 auto;
+    min-width: 0;
+    padding: 4px;
+    border: 1px solid #6b7280;
+    background: #fff;
+}
+
+.putty-option {
+    display: block;
+    width: 100%;
+    padding: 1px 8px;
+    border: 0;
+    background: none;
+    text-align: left;
+}
+
+.putty-option:hover {
+    background: #f3f4f6;
+}
+
+.putty-option[aria-selected='true'] {
+    background: #316ac5;
+    color: #fff;
+}
+
+.putty-side-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.putty-button {
+    width: 80px;
+    padding: 2px 0;
+    border: 1px solid #6b7280;
+    background: #ece9d8;
+    box-shadow: inset 1px 1px #fff, inset -1px -1px #a0a0a0;
+}
+
+.putty-button:hover:not(:disabled) {
+    background: #e5e7eb;
+}
+
+.putty-button:active:not(:disabled) {
+    box-shadow: inset 1px 1px #a0a0a0;
+}
+
+.putty-button:disabled {
+    color: #9ca3af;
+}
+
+.putty-button-default {
+    border-color: #1f2937;
+    font-weight: 600;
+}
+
+.putty-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: auto;
+    padding-top: 16px;
+}
+
+.putty-terminal {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    min-height: 0;
+    padding: 4px 6px;
+    overflow-y: auto;
+    background: #000;
+    color: #c0c0c0;
+    font: 13px/1.35 'Courier New', Consolas, monospace;
+    user-select: text;
+    -webkit-user-select: text;
+}
+
+.putty-output {
+    margin: 0;
+    font: inherit;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+
+.putty-prompt {
+    display: flex;
+    gap: 1ch;
+}
+
+.putty-prompt input {
+    flex: 1;
+    min-width: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    outline: none;
+    caret-color: #c0c0c0;
+    font: inherit;
+}
+
+@container putty (max-width: 560px) {
+    .putty-body {
+        flex-direction: column;
+    }
+
+    .putty-tree {
+        width: auto;
+        max-height: 112px;
+        border-right: 0;
+        border-bottom: 1px solid #9ca3af;
+    }
+
+    .putty-panel {
+        padding: 12px;
+    }
+
+    .putty-sessions {
+        flex-direction: column;
+    }
+
+    .putty-side-buttons {
+        flex-direction: row;
+    }
+}

@@ -1,84 +1,85 @@
-<!-- partials/apps/putty.php -->
-<div class="h-full flex flex-col bg-[#f0f0f0] dark:bg-[#1c1c1c] text-black dark:text-white select-none overflow-hidden" x-data="{ activeSession: null }">
-    <div class="grow flex p-4 space-x-6">
-        <!-- Category Sidebar -->
-        <div class="w-48 flex flex-col space-y-1">
-            <div class="text-[11px] font-semibold mb-2 opacity-60 uppercase tracking-wider">Category:</div>
-            <div class="border border-gray-300 dark:border-gray-700 bg-white dark:bg-black/20 rounded-xs p-1 h-64 overflow-y-auto">
-                <div class="text-[11px] space-y-0.5">
-                    <div class="flex items-center space-x-1 cursor-pointer hover:bg-win-blue hover:text-white px-1">
-                        <span>▼</span> <span>Session</span>
+<!-- partials/apps/putty.php: the same markup as v2's Putty.tsx, styled by assets/css/office.css. -->
+<div class="putty-app" data-office-app="putty" x-data="puttyApp()">
+    <div class="putty-titlebar" data-putty-titlebar>
+        <img :src="imgPath + 'putty.webp'" alt="">
+        <span x-text="session ? `${session.host} - PuTTY` : 'PuTTY Configuration'"></span>
+    </div>
+
+    <template x-if="!session">
+        <div class="putty-body">
+            <div class="putty-tree">
+                <div class="putty-tree-label" id="putty-category">Category:</div>
+                <ul role="tree" aria-labelledby="putty-category">
+                    <template x-for="group in CATEGORIES" :key="group.name">
+                        <li class="putty-tree-group">
+                            <div role="treeitem" class="putty-tree-parent" :data-putty-category="group.name"
+                                 :aria-selected="String(group.name === 'Session')" x-text="group.name"></div>
+                            <ul role="group">
+                                <template x-for="child in group.children" :key="child">
+                                    <li role="treeitem" class="putty-tree-child" :data-putty-category="child" aria-selected="false" x-text="child"></li>
+                                </template>
+                            </ul>
+                        </li>
+                    </template>
+                </ul>
+            </div>
+
+            <div class="putty-panel" data-putty-panel>
+                <div class="putty-heading">Basic options for your PuTTY session</div>
+
+                <div class="putty-section">
+                    <div class="putty-subheading">Specify the destination you want to connect to</div>
+                    <div class="putty-row">
+                        <label class="putty-host-label" for="putty-host">Host Name (or IP address)</label>
+                        <input id="putty-host" class="putty-input putty-host" type="text" autocomplete="off" spellcheck="false"
+                               x-model="host" @keydown.enter="open()">
+                        <label for="putty-port">Port</label>
+                        <input id="putty-port" class="putty-input putty-port" type="number" min="1" max="65535"
+                               :value="port" @input="port = Number($event.target.value)">
                     </div>
-                    <div class="ml-4 space-y-0.5 opacity-70">
-                        <div class="cursor-pointer hover:bg-win-blue hover:text-white px-1">Logging</div>
+                    <div class="putty-row" role="radiogroup" aria-label="Connection type">
+                        <span>Connection type:</span>
+                        <template x-for="type in TYPES" :key="type">
+                            <label class="putty-radio">
+                                <input type="radio" name="putty-connection" :value="type" :checked="type === connection" @change="connection = type">
+                                <span x-text="type"></span>
+                            </label>
+                        </template>
                     </div>
-                    <div class="flex items-center space-x-1 cursor-pointer hover:bg-win-blue hover:text-white px-1">
-                        <span>▶</span> <span>Terminal</span>
+                </div>
+
+                <div class="putty-section">
+                    <div class="putty-subheading" id="putty-saved">Load, save or delete a stored session</div>
+                    <div class="putty-sessions">
+                        <div class="putty-list" role="listbox" aria-labelledby="putty-saved">
+                            <template x-for="saved in SESSIONS" :key="saved.name">
+                                <button type="button" role="option" class="putty-option" :aria-selected="String(saved.name === selected)"
+                                        @click="pick(saved)" @dblclick="pick(saved); open()" x-text="saved.name"></button>
+                            </template>
+                        </div>
+                        <div class="putty-side-buttons">
+                            <button type="button" class="putty-button" @click="pick(SESSIONS.find((saved) => saved.name === selected))">Load</button>
+                            <button type="button" class="putty-button">Save</button>
+                            <button type="button" class="putty-button">Delete</button>
+                        </div>
                     </div>
-                    <div class="flex items-center space-x-1 cursor-pointer hover:bg-win-blue hover:text-white px-1">
-                        <span>▶</span> <span>Window</span>
-                    </div>
-                    <div class="flex items-center space-x-1 cursor-pointer hover:bg-win-blue hover:text-white px-1 font-bold">
-                        <span>▶</span> <span>Connection</span>
-                    </div>
+                </div>
+
+                <div class="putty-actions">
+                    <button type="button" class="putty-button putty-button-default" :disabled="!host.trim()" @click="open()">Open</button>
+                    <button type="button" class="putty-button" @click="cancel()">Cancel</button>
                 </div>
             </div>
         </div>
+    </template>
 
-        <!-- Session Configuration -->
-        <div class="grow flex flex-col space-y-4">
-            <div class="border border-gray-300 dark:border-gray-700 rounded-xs p-4 relative bg-white/50 dark:bg-white/5">
-                <span class="absolute -top-2.5 left-4 bg-[#f0f0f0] dark:bg-[#1c1c1c] px-2 text-[11px] font-semibold">Basic options for your PuTTY session</span>
-                
-                <div class="space-y-4 pt-2">
-                    <div class="flex flex-col space-y-1">
-                        <label class="text-[11px]">Host Name (or IP address)</label>
-                        <input type="text" value="192.168.1.15" class="bg-white dark:bg-black/40 border border-gray-300 dark:border-gray-700 px-2 py-1 text-xs outline-hidden focus:border-win-blue">
-                    </div>
-                    
-                    <div class="flex space-x-4">
-                        <div class="flex flex-col space-y-1 w-24">
-                            <label class="text-[11px]">Port</label>
-                            <input type="text" value="22" class="bg-white dark:bg-black/40 border border-gray-300 dark:border-gray-700 px-2 py-1 text-xs outline-hidden">
-                        </div>
-                        <div class="flex flex-col space-y-1">
-                            <label class="text-[11px]">Connection type:</label>
-                            <div class="flex space-x-3 text-[11px] pt-1">
-                                <label class="flex items-center space-x-1"><input type="radio" checked> <span>SSH</span></label>
-                                <label class="flex items-center space-x-1"><input type="radio"> <span>Serial</span></label>
-                                <label class="flex items-center space-x-1"><input type="radio"> <span>Telnet</span></label>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="border border-gray-300 dark:border-gray-700 rounded-xs p-4 relative bg-white/50 dark:bg-white/5 grow">
-                <span class="absolute -top-2.5 left-4 bg-[#f0f0f0] dark:bg-[#1c1c1c] px-2 text-[11px] font-semibold">Load, save or delete a stored session</span>
-                
-                <div class="flex flex-col space-y-2 h-full pt-2">
-                    <label class="text-[11px]">Saved Sessions</label>
-                    <div class="flex space-x-2">
-                        <input type="text" x-model="activeSession" placeholder="Default Settings" class="grow bg-white dark:bg-black/40 border border-gray-300 dark:border-gray-700 px-2 py-1 text-xs outline-hidden">
-                        <button class="px-4 py-1 bg-gray-200 dark:bg-white/10 border border-gray-400 dark:border-gray-600 rounded-xs text-[11px] hover:bg-gray-300">Save</button>
-                    </div>
-                    <div class="grow border border-gray-300 dark:border-gray-700 bg-white dark:bg-black/20 rounded-xs overflow-y-auto">
-                        <div class="text-xs">
-                            <div @click="activeSession = 'Production VPS'" :class="activeSession === 'Production VPS' ? 'bg-win-blue text-white' : 'hover:bg-gray-100 dark:hover:bg-white/5'" class="px-2 py-1 cursor-pointer">Production VPS (CentOS 9)</div>
-                            <div @click="activeSession = 'SQL Server Node'" :class="activeSession === 'SQL Server Node' ? 'bg-win-blue text-white' : 'hover:bg-gray-100 dark:hover:bg-white/5'" class="px-2 py-1 cursor-pointer">SQL Server Node (Ubuntu 22.04)</div>
-                            <div @click="activeSession = 'Web Cluster 01'" :class="activeSession === 'Web Cluster 01' ? 'bg-win-blue text-white' : 'hover:bg-gray-100 dark:hover:bg-white/5'" class="px-2 py-1 cursor-pointer">Web Cluster 01 (Nginx/PHP-FPM)</div>
-                            <div @click="activeSession = 'Dev Environment'" :class="activeSession === 'Dev Environment' ? 'bg-win-blue text-white' : 'hover:bg-gray-100 dark:hover:bg-white/5'" class="px-2 py-1 cursor-pointer">Dev Environment (Docker Host)</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+    <template x-if="session">
+        <div class="putty-terminal" data-putty-terminal x-ref="terminal" @click="$refs.command?.focus()">
+            <pre class="putty-output" x-text="lines.join('\n')"></pre>
+            <form class="putty-prompt" @submit.prevent="submit()">
+                <span x-text="O.puttyPrompt(session.host)"></span>
+                <input x-ref="command" aria-label="Command" autocomplete="off" autocapitalize="off" spellcheck="false" x-model="command">
+            </form>
         </div>
-    </div>
-
-    <!-- PuTTY Actions -->
-    <div class="h-12 border-t border-gray-300 dark:border-gray-800 bg-[#f0f0f0] dark:bg-[#2b2b2b] flex items-center px-4 justify-end space-x-2 shrink-0">
-        <button @click="openApp('terminal', activeSession || 'PuTTY Terminal')" class="px-6 py-1.5 bg-win-blue text-white border border-blue-700 rounded-xs text-xs font-semibold hover:bg-blue-600 shadow-xs transition-all active:scale-95">Open</button>
-        <button class="px-6 py-1.5 bg-gray-200 dark:bg-white/10 border border-gray-400 dark:border-gray-600 rounded-xs text-xs hover:bg-gray-300">Cancel</button>
-        <button class="px-6 py-1.5 bg-gray-200 dark:bg-white/10 border border-gray-400 dark:border-gray-600 rounded-xs text-xs hover:bg-gray-300">About</button>
-    </div>
+    </template>
 </div>

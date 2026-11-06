@@ -1,167 +1,219 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import {
+  PUTTY_CATEGORIES,
+  PUTTY_CONNECTION_TYPES,
+  PUTTY_SESSIONS,
+  puttyBanner,
+  puttyPrompt,
+  puttyReply,
+  type PuttySession,
+} from '../../../../assets/js/windowing/office.js'
+import { useOsStore } from '../../store/osStore'
+import { useCurrentWindow } from '../../windowing/WindowContext'
 
-interface SavedSession {
-  name: string
-  host: string
-}
+// PuTTY's configuration dialog, in the classic look the real one still has,
+// and the session it opens. Its sessions and the server's replies live in
+// assets/js/windowing/office.js, which v1 shares, and it is styled by
+// assets/css/office.css.
 
-const SAVED: SavedSession[] = [
-  { name: 'Default Settings', host: '' },
-  { name: 'devante-homelab', host: '192.168.1.42' },
-  { name: 'cloud-prod-eu', host: 'prod-eu.example.com' },
-  { name: 'staging-uk', host: 'staging.example.co.uk' },
-]
-
-// PuTTY connection dialog — pure cosmetic, but the form remembers state and
-// shows a faux terminal when "Open" is clicked.
 export default function Putty() {
+  const win = useCurrentWindow()
   const [host, setHost] = useState('')
   const [port, setPort] = useState(22)
-  const [connected, setConnected] = useState<string | null>(null)
-  const [selectedSaved, setSelectedSaved] = useState<string>('Default Settings')
+  const [connection, setConnection] = useState('SSH')
+  const [selected, setSelected] = useState('Default Settings')
+  const [session, setSession] = useState<{ host: string; port: number } | null>(null)
+  const [lines, setLines] = useState<string[]>([])
+  const [command, setCommand] = useState('')
+  const commandRef = useRef<HTMLInputElement>(null)
+  const terminalRef = useRef<HTMLDivElement>(null)
 
-  const connect = () => {
-    if (!host) return
-    setConnected(host)
+  useEffect(() => {
+    if (!session) return
+    commandRef.current?.focus()
+    const terminal = terminalRef.current
+    if (terminal) terminal.scrollTop = terminal.scrollHeight
+  }, [session, lines])
+
+  const pick = (saved: PuttySession | undefined) => {
+    if (!saved) return
+    setSelected(saved.name)
+    setHost(saved.host)
   }
 
-  if (connected) {
-    return (
-      <div className="h-full flex flex-col bg-[#0c0c0c] text-[#00ff66] font-mono text-xs">
-        <div className="h-6 bg-[#1a1a1a] flex items-center px-3 shrink-0 text-[10px] text-gray-400">
-          {connected}:{port} — PuTTY
-        </div>
-        <div className="grow p-3 whitespace-pre-wrap leading-relaxed">
-          {`Connecting to ${connected}:${port}...
-Using username "devante".
-Last login: ${new Date().toLocaleString()}
+  const open = () => {
+    const target = host.trim()
+    if (!target) return
+    setSession({ host: target, port })
+    setLines(puttyBanner({ host: target, port }))
+    setCommand('')
+  }
 
-Welcome to Ubuntu 24.04.1 LTS (GNU/Linux 6.8.0-49-generic x86_64)
-
- * Documentation:  https://help.ubuntu.com
- * Management:     https://landscape.canonical.com
-
-System load:  0.42                Processes:               148
-Usage of /:   38.2% of 461.04GB   Users logged in:         1
-Memory usage: 24%                 IPv4 address for ens33:  ${connected}
-Swap usage:   0%
-
-devante@${connected}:~$ `}
-        </div>
-      </div>
-    )
+  const submit = () => {
+    if (!session) return
+    const reply = puttyReply(command, { host: session.host })
+    const echoed = [...lines, `${puttyPrompt(session.host)} ${command}`]
+    setLines(reply.clear ? [] : [...echoed, ...reply.lines])
+    setCommand('')
+    if (reply.exit) setSession(null)
   }
 
   return (
-    <div className="h-full flex flex-col bg-[#f0f0f0] text-black select-none">
-      <div className="h-6 bg-[#0a246a] text-white text-xs flex items-center px-2 shrink-0">
-        <img src="/assets/img/putty.webp" alt="" className="w-3 h-3 mr-2" />
-        PuTTY Configuration
+    <div className="putty-app" data-office-app="putty">
+      <div className="putty-titlebar" data-putty-titlebar="">
+        <img src="/assets/img/putty.webp" alt="" />
+        <span>{session ? `${session.host} - PuTTY` : 'PuTTY Configuration'}</span>
       </div>
 
-      <div className="grow flex min-h-0">
-        <div className="w-48 bg-white border-r border-gray-400 overflow-y-auto shrink-0 p-2">
-          <div className="text-[10px] font-bold mb-1">Category:</div>
-          <ul className="text-[11px] space-y-0.5">
-            <li className="bg-[#316ac5] text-white px-1">Session</li>
-            <li className="px-1 hover:bg-gray-100">Logging</li>
-            <li className="font-bold mt-2">Terminal</li>
-            <li className="px-1 hover:bg-gray-100">Keyboard</li>
-            <li className="px-1 hover:bg-gray-100">Bell</li>
-            <li className="px-1 hover:bg-gray-100">Features</li>
-            <li className="font-bold mt-2">Window</li>
-            <li className="px-1 hover:bg-gray-100">Appearance</li>
-            <li className="font-bold mt-2">Connection</li>
-            <li className="px-1 hover:bg-gray-100">SSH</li>
-          </ul>
+      {session ? (
+        <div className="putty-terminal" data-putty-terminal="" ref={terminalRef} onClick={() => commandRef.current?.focus()}>
+          <pre className="putty-output">{lines.join('\n')}</pre>
+          <form
+            className="putty-prompt"
+            onSubmit={(event) => {
+              event.preventDefault()
+              submit()
+            }}
+          >
+            <span>{puttyPrompt(session.host)}</span>
+            <input
+              ref={commandRef}
+              aria-label="Command"
+              autoComplete="off"
+              autoCapitalize="off"
+              spellCheck={false}
+              value={command}
+              onChange={(event) => setCommand(event.target.value)}
+            />
+          </form>
         </div>
-
-        <div className="grow p-4 space-y-3 text-xs bg-[#ece9d8]">
-          <div className="font-bold border-b border-gray-400 pb-1">
-            Basic options for your PuTTY session
-          </div>
-
-          <div className="space-y-2">
-            <div className="font-medium">Specify the destination you want to connect to</div>
-            <div className="flex items-center space-x-2">
-              <label className="w-24">Host Name (or IP address)</label>
-              <input
-                type="text"
-                value={host}
-                onChange={(e) => setHost(e.target.value)}
-                className="grow bg-white border border-gray-500 px-2 py-0.5"
-              />
-              <label className="ml-3">Port</label>
-              <input
-                type="number"
-                value={port}
-                onChange={(e) => setPort(Number(e.target.value))}
-                className="w-16 bg-white border border-gray-500 px-2 py-0.5"
-              />
+      ) : (
+        <div className="putty-body">
+          <div className="putty-tree">
+            <div className="putty-tree-label" id="putty-category">
+              Category:
             </div>
-            <div className="flex items-center space-x-3 mt-1">
-              <span>Connection type:</span>
-              {['SSH', 'Telnet', 'Rlogin', 'Serial'].map((t) => (
-                <label key={t} className="flex items-center space-x-1">
-                  <input type="radio" name="conn" defaultChecked={t === 'SSH'} />
-                  <span>{t}</span>
-                </label>
+            <ul role="tree" aria-labelledby="putty-category">
+              {PUTTY_CATEGORIES.map((group) => (
+                <li key={group.name} className="putty-tree-group">
+                  <div
+                    role="treeitem"
+                    className="putty-tree-parent"
+                    data-putty-category={group.name}
+                    aria-selected={group.name === 'Session'}
+                  >
+                    {group.name}
+                  </div>
+                  <ul role="group">
+                    {group.children.map((child) => (
+                      <li key={child} role="treeitem" className="putty-tree-child" data-putty-category={child} aria-selected="false">
+                        {child}
+                      </li>
+                    ))}
+                  </ul>
+                </li>
               ))}
-            </div>
+            </ul>
           </div>
 
-          <div className="space-y-2 pt-3">
-            <div className="font-medium">Load, save, or delete a stored session</div>
-            <div className="flex space-x-3">
-              <div className="grow border border-gray-500 bg-white p-1 space-y-0.5">
-                {SAVED.map((s) => (
-                  <button
-                    key={s.name}
-                    type="button"
-                    onClick={() => {
-                      setSelectedSaved(s.name)
-                      setHost(s.host)
-                    }}
-                    className={`w-full text-left px-2 py-0.5 ${
-                      selectedSaved === s.name ? 'bg-[#316ac5] text-white' : 'hover:bg-gray-100'
-                    }`}
-                  >
-                    {s.name}
-                  </button>
-                ))}
+          <div className="putty-panel" data-putty-panel="">
+            <div className="putty-heading">Basic options for your PuTTY session</div>
+
+            <div className="putty-section">
+              <div className="putty-subheading">Specify the destination you want to connect to</div>
+              <div className="putty-row">
+                <label className="putty-host-label" htmlFor="putty-host">
+                  Host Name (or IP address)
+                </label>
+                <input
+                  id="putty-host"
+                  className="putty-input putty-host"
+                  type="text"
+                  autoComplete="off"
+                  spellCheck={false}
+                  value={host}
+                  onChange={(event) => setHost(event.target.value)}
+                  onKeyDown={(event) => event.key === 'Enter' && open()}
+                />
+                <label htmlFor="putty-port">Port</label>
+                <input
+                  id="putty-port"
+                  className="putty-input putty-port"
+                  type="number"
+                  min={1}
+                  max={65535}
+                  value={port}
+                  onChange={(event) => setPort(Number(event.target.value))}
+                />
               </div>
-              <div className="space-y-1">
-                {['Load', 'Save', 'Delete'].map((b) => (
-                  <button
-                    key={b}
-                    type="button"
-                    className="w-20 py-0.5 bg-[#ece9d8] border border-gray-500 hover:bg-gray-200"
-                  >
-                    {b}
-                  </button>
+              <div className="putty-row" role="radiogroup" aria-label="Connection type">
+                <span>Connection type:</span>
+                {PUTTY_CONNECTION_TYPES.map((type) => (
+                  <label key={type} className="putty-radio">
+                    <input
+                      type="radio"
+                      name="putty-connection"
+                      value={type}
+                      checked={type === connection}
+                      onChange={() => setConnection(type)}
+                    />
+                    <span>{type}</span>
+                  </label>
                 ))}
               </div>
             </div>
-          </div>
 
-          <div className="flex justify-end space-x-2 pt-4 mt-auto">
-            <button
-              type="button"
-              onClick={connect}
-              disabled={!host}
-              className="w-24 py-1 bg-[#ece9d8] border border-gray-700 font-semibold hover:bg-gray-200 disabled:opacity-50"
-            >
-              Open
-            </button>
-            <button
-              type="button"
-              className="w-24 py-1 bg-[#ece9d8] border border-gray-500 hover:bg-gray-200"
-            >
-              Cancel
-            </button>
+            <div className="putty-section">
+              <div className="putty-subheading" id="putty-saved">
+                Load, save or delete a stored session
+              </div>
+              <div className="putty-sessions">
+                <div className="putty-list" role="listbox" aria-labelledby="putty-saved">
+                  {PUTTY_SESSIONS.map((saved) => (
+                    <button
+                      key={saved.name}
+                      type="button"
+                      role="option"
+                      className="putty-option"
+                      aria-selected={saved.name === selected}
+                      onClick={() => pick(saved)}
+                      onDoubleClick={() => {
+                        pick(saved)
+                        if (saved.host) {
+                          setSession({ host: saved.host, port })
+                          setLines(puttyBanner({ host: saved.host, port }))
+                        }
+                      }}
+                    >
+                      {saved.name}
+                    </button>
+                  ))}
+                </div>
+                <div className="putty-side-buttons">
+                  <button type="button" className="putty-button" onClick={() => pick(PUTTY_SESSIONS.find((saved) => saved.name === selected))}>
+                    Load
+                  </button>
+                  <button type="button" className="putty-button">
+                    Save
+                  </button>
+                  <button type="button" className="putty-button">
+                    Delete
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div className="putty-actions">
+              <button type="button" className="putty-button putty-button-default" disabled={!host.trim()} onClick={open}>
+                Open
+              </button>
+              <button type="button" className="putty-button" onClick={() => useOsStore.getState().closeWindow(win.id)}>
+                Cancel
+              </button>
+            </div>
           </div>
         </div>
-      </div>
+      )}
     </div>
   )
 }

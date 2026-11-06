@@ -1,6 +1,7 @@
 @import 'tailwindcss';
 @import './windowing.css';
 @import './flstudio.css';
+@import './office.css';
 
 
 @custom-variant dark (&:is(.dark *));
