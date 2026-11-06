@@ -48,7 +48,8 @@ $navItems = ['portfolio' => ['Portfolio', BASE_PATH], 'privacy' => ['Privacy', B
             }
         }
         *, *::before, *::after { box-sizing: border-box; }
-        html { overflow-x: hidden; scrollbar-gutter: stable; -webkit-text-size-adjust: 100%; }
+        /* scroll-padding keeps a heading reached by a link clear of the sticky header. */
+        html { overflow-x: hidden; scrollbar-gutter: stable; scroll-padding-top: 88px; -webkit-text-size-adjust: 100%; }
         body {
             margin: 0;
             overflow-x: clip;
@@ -97,16 +98,17 @@ $navItems = ['portfolio' => ['Portfolio', BASE_PATH], 'privacy' => ['Privacy', B
             color: var(--text);
             font-weight: 600;
             text-decoration: none;
-            overflow-wrap: anywhere;
+            white-space: nowrap;
         }
-        .site-header ul { list-style: none; margin: 0; padding: 0; display: flex; gap: 4px; }
+        .site-header ul { list-style: none; margin: 0; padding: 0; display: flex; gap: 2px; }
         .site-header nav a {
             min-height: 44px;
             display: inline-flex;
             align-items: center;
-            padding: 0 10px;
+            padding: 0 8px;
             border-radius: 6px;
         }
+        @media (min-width: 768px) { .site-header nav a { padding: 0 12px; } }
         .site-header nav a[aria-current="page"] { color: var(--text); font-weight: 600; text-decoration: none; }
         main { display: block; max-width: 46rem; margin: 0 auto; padding: 24px 16px 48px; }
         main:focus { outline: none; }
