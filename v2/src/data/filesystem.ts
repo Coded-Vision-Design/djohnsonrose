@@ -52,13 +52,26 @@ export interface FsLinkEntry {
   url: string
 }
 
-export type FsEntry =
+/** Set by what a visitor does to an entry. See file-ops.js. */
+interface FsHistory {
+  modified?: number
+  shortcut?: boolean
+  zipped?: boolean
+  originalName?: string
+  originalPath?: string
+  /** Where a search result was found. */
+  location?: string
+}
+
+export type FsEntry = (
   | FsAppEntry
   | FsFolderEntry
   | FsFileEntry
   | FsImageEntry
   | FsVideoEntry
   | FsLinkEntry
+) &
+  FsHistory
 
 export type FileSystem = Record<string, FsEntry[]>
 

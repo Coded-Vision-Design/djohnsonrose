@@ -1,5 +1,33 @@
 // assets/js/components/os/shell.js
 document.addEventListener('alpine:init', () => {
+    // Edits a name in place. Enter or clicking away keeps it, and Escape cancels.
+    Alpine.data('renameInput', (name) => ({
+        value: name,
+
+        init() {
+            this.$nextTick(() => {
+                this.$el.focus();
+                // The name without its extension, as Windows selects it.
+                const dot = name.lastIndexOf('.');
+                this.$el.setSelectionRange(0, dot > 0 ? dot : name.length);
+            });
+        },
+
+        commit() {
+            const moved = Alpine.store('os').commitRename(this.value);
+            if (moved?.path === OsWindowing.DESKTOP && this.desktopIconPositions?.[moved.from]) {
+                const { [moved.from]: position, ...others } = this.desktopIconPositions;
+                this.desktopIconPositions = { ...others, [moved.to]: position };
+                localStorage.setItem('os.iconPositions', JSON.stringify(this.desktopIconPositions));
+            }
+        },
+
+        onKey(e) {
+            if (e.key === 'Enter') this.commit();
+            if (e.key === 'Escape') Alpine.store('os').renaming = null;
+        }
+    }));
+
     Alpine.data('os', () => ({
         booted: false,
         isBooting: localStorage.getItem('auth.loggedIn') !== 'true',
@@ -31,7 +59,8 @@ document.addEventListener('alpine:init', () => {
             startY: 0,
             timer: null,
             isLongPress: false,
-            lastDistance: null
+            pinchGap: 0,
+            pinchZoom: 1
         },
         
         get settings() { return Alpine.store('os').settings; },
@@ -50,10 +79,30 @@ document.addEventListener('alpine:init', () => {
             return isCharging ? imgPath + 'energy.svg' : imgPath + 'battery.svg';
         },
         emptyRecycleBin() {
-            Alpine.store('os').fileSystem['C:\\Recycle Bin'] = [];
-            Alpine.store('os').saveFileSystem();
+            Alpine.store('os').changeFiles(OsWindowing.emptyBin);
             Alpine.store('os').playSound('recycle');
             Alpine.store('os').logEvent('System', 'Information', 'Recycle Bin emptied');
+        },
+        get propertiesRows() {
+            const os = Alpine.store('os');
+            if (!os.properties) return [];
+            const { entry, path } = os.properties;
+            return OsWindowing.entryProperties(os.fileSystem, entry, path);
+        },
+        get startPinnedFiles() {
+            const os = Alpine.store('os');
+            return os.startPins
+                .map(full => ({ full, found: OsWindowing.findEntry(os.fileSystem, full) }))
+                .filter(pin => pin.found)
+                .map(pin => ({ full: pin.full, entry: pin.found.entry, path: pin.found.path }));
+        },
+        isCutOnDesktop(icon) {
+            const clip = Alpine.store('os').fileClipboard;
+            return clip?.mode === 'cut' && clip.fromPath === OsWindowing.DESKTOP && clip.name === icon.name;
+        },
+        isRenamingOnDesktop(icon) {
+            const renaming = Alpine.store('os').renaming;
+            return renaming?.path === OsWindowing.DESKTOP && renaming.name === icon.name;
         },
         get desktopIcons() {
             const icons = (Alpine.store('os').fileSystem['C:\\Users\\DeVante\\Desktop'] || []);
@@ -156,6 +205,7 @@ document.addEventListener('alpine:init', () => {
             OsWindowing.watchDesktop(document.getElementById('windows-layer'), (desktop, mode) => {
                 Alpine.store('os').setDesktop(desktop, mode);
             });
+            OsWindowing.keepFileLongPress();
 
             // Dismisses Snap Assist and the flyout, as a click elsewhere does in Windows.
             document.addEventListener('pointerdown', (e) => {
@@ -178,6 +228,8 @@ document.addEventListener('alpine:init', () => {
             this.$watch('settings.wallpaper', (val) => {
                 localStorage.setItem('settings.wallpaper', val);
             });
+
+            if (this.loggedIn) this.openSharedFile();
 
             const initialApp = window.portfolioConfig.appToOpen;
             if (this.loggedIn && initialApp) {
@@ -334,10 +386,8 @@ document.addEventListener('alpine:init', () => {
                 }, 600);
             } else if (e.touches.length === 2) {
                 clearTimeout(this.touchData.timer);
-                this.touchData.lastDistance = Math.hypot(
-                    e.touches[0].clientX - e.touches[1].clientX,
-                    e.touches[0].clientY - e.touches[1].clientY
-                );
+                this.touchData.pinchGap = OsWindowing.fingerGap(e.touches);
+                this.touchData.pinchZoom = Alpine.store('os').desktopZoom;
             }
         },
 
@@ -350,23 +400,16 @@ document.addEventListener('alpine:init', () => {
                 if (dist > 10) {
                     clearTimeout(this.touchData.timer);
                 }
-            } else if (e.touches.length === 2) {
-                const dist = Math.hypot(
-                    e.touches[0].clientX - e.touches[1].clientX,
-                    e.touches[0].clientY - e.touches[1].clientY
-                );
-                const delta = dist - this.touchData.lastDistance;
-                
-                if (Math.abs(delta) > 2) {
-                    const zoomChange = delta > 0 ? 0.02 : -0.02;
-                    Alpine.store('os').desktopZoom = Math.min(Math.max(0.7, Alpine.store('os').desktopZoom + zoomChange), 1.3);
-                    this.touchData.lastDistance = dist;
-                }
+            } else if (e.touches.length === 2 && !e.target.closest('.os-window')) {
+                const { pinchZoom, pinchGap } = this.touchData;
+                Alpine.store('os').desktopZoom = OsWindowing.pinchZoom(pinchZoom, pinchGap, OsWindowing.fingerGap(e.touches));
             }
         },
 
         handleTouchEnd(e) {
             clearTimeout(this.touchData.timer);
+            // Lifting the finger would click, which would close the menu it just opened.
+            if (this.touchData.isLongPress) e.preventDefault();
         },
 
         // Opens a menu from data/menus.json, which v2 shares, so that the two
@@ -378,9 +421,43 @@ document.addEventListener('alpine:init', () => {
             this.contextMenu = { open: true, ...menu, ...OsWindowing.placeMenu(e.clientX, e.clientY, menu, viewport, above) };
         },
 
-        desktopMenuHandlers() {
+        // Plugs v1 into the shared file rules in file-ops.js. Explorer overrides
+        // what differs inside it, such as opening a folder in the same window.
+        fileOs(overrides = {}) {
             const os = Alpine.store('os');
+            const imgPath = window.portfolioConfig.imgPath;
             return {
+                files: () => os.fileSystem,
+                changeFiles: (change) => os.changeFiles(change),
+                clipboard: () => os.fileClipboard,
+                setClipboard: (clip) => { os.fileClipboard = clip; },
+                startPins: () => os.startPins,
+                favourites: () => os.favourites,
+                toggleStartPin: (full) => os.toggleStartPin(full),
+                toggleFavourite: (full) => os.toggleFavourite(full),
+                openEntry: (entry, path) => this.openFile(entry, path),
+                openLocation: (path, name) => os.openApp('explorer', path.split('\\').filter(Boolean).pop(), { initialPath: path, selectName: name }),
+                beginRename: (entry, path) => { os.renaming = { path, name: entry.name }; },
+                showProperties: (entry, path) => { os.properties = { entry, path }; },
+                setWallpaper: (url) => os.setWallpaper(url),
+                toast: (message) => os.showToast(message),
+                playSound: (name) => os.playSound(name),
+                shareBase: window.location.origin + window.portfolioConfig.basePath,
+                icons: { zip: imgPath + 'win11/zipfolder.webp', folder: imgPath + 'win11/folder.webp', text: imgPath + 'notepad++.webp' },
+                iconSize: () => os.desktopIconSize,
+                setIconSize: (size) => os.setDesktopIconSize(size),
+                iconsVisible: () => os.desktopIconsVisible,
+                setIconsVisible: (visible) => os.setDesktopIconsVisible(visible),
+                resetIconPositions: () => this.clearDesktopPositions(),
+                ...overrides
+            };
+        },
+
+        desktopMenuHandlers(e) {
+            const os = Alpine.store('os');
+            const show = (name, point, handlers, overrides) => this.openMenu(name, point, handlers, overrides);
+            return {
+                ...OsWindowing.desktopMenuHandlers(this.fileOs(), show, e),
                 refresh: () => location.reload(),
                 displaySettings: () => os.openApp('settings'),
                 personalise: () => os.openApp('settings', 'Settings', { currentTab: 'personalisation' }),
@@ -388,20 +465,28 @@ document.addEventListener('alpine:init', () => {
             };
         },
 
+        // Apps have their own right-click: the desktop's menu does not belong on them.
+        onDesktopContextMenu(e) {
+            if (e.target.closest('input, textarea')) return;
+            e.preventDefault();
+            if (!e.target.closest('.os-window')) this.showDesktopContextMenu(e);
+        },
+
         showDesktopContextMenu(e) {
             const os = Alpine.store('os');
             this.openMenu('desktop', e, {
-                ...this.desktopMenuHandlers(),
-                autoArrange: () => this.clearDesktopPositions(),
-                sortBy: () => this.clearDesktopPositions(),
+                ...this.desktopMenuHandlers(e),
                 resetZoom: () => { os.desktopZoom = 1; },
                 classic: () => this.showClassicDesktopContextMenu(e)
-            }, { resetZoom: { disabled: os.desktopZoom === 1 } });
+            }, {
+                ...OsWindowing.folderMenuOverrides(this.fileOs()),
+                resetZoom: { disabled: os.desktopZoom === 1 }
+            });
         },
 
         // Win10-style menu, opened from "Show more options".
         showClassicDesktopContextMenu(e) {
-            this.openMenu('desktopClassic', e, this.desktopMenuHandlers());
+            this.openMenu('desktopClassic', e, this.desktopMenuHandlers(e), OsWindowing.folderMenuOverrides(this.fileOs()));
         },
 
         showTaskbarContextMenu(e) {
@@ -432,29 +517,34 @@ document.addEventListener('alpine:init', () => {
             }, true);
         },
 
-        showFileContextMenu(e, item, path) {
-            const classic = () => this.showClassicDesktopContextMenu(e);
-
-            if (item.name === 'Recycle Bin') {
-                const binned = Alpine.store('os').fileSystem['C:\\Recycle Bin'] || [];
-                this.openMenu('recycleBin', e, {
-                    open: () => this.openItem(item),
-                    empty: () => this.emptyRecycleBin(),
-                    classic
-                }, { empty: { disabled: binned.length === 0 } });
-                return;
-            }
-
-            const isImage = item.type === 'image' || /\.(webp|jpe?g)$/.test(item.name || '');
-            this.openMenu('file', e, {
-                open: () => this.openItem(item, path),
-                delete: () => this.deleteItem(item, path),
-                setBackground: () => this.setWallpaper(item.url || (window.portfolioConfig.basePath + item.name)),
-                classic
-            }, { setBackground: { hidden: !isImage } });
+        showFileContextMenu(e, item, path, fileOs = this.fileOs()) {
+            const { name, handlers, overrides } = OsWindowing.fileMenuFor(fileOs, item, path);
+            this.openMenu(name, e, { ...handlers, classic: () => this.showClassicDesktopContextMenu(e) }, overrides);
         },
 
+        showComputerMenu(e) {
+            const pc = { name: 'DeVanté\'s PC', type: 'folder', path: 'C:\\', icon: window.portfolioConfig.imgPath + 'thispc.webp' };
+            this.openMenu('computer', e, {
+                open: () => this.openApp('explorer', 'This PC', { initialPath: 'C:\\' }),
+                properties: () => { Alpine.store('os').properties = { entry: pc, path: 'C:\\' }; },
+                classic: () => this.showClassicDesktopContextMenu(e)
+            });
+        },
+
+        openSharedFile() {
+            const shared = OsWindowing.sharedPath(window.location.hash);
+            if (!shared) return;
+            window.history.replaceState(null, '', window.location.pathname);
+            const found = OsWindowing.findEntry(Alpine.store('os').fileSystem, shared);
+            if (found) this.openFile(found.entry, found.path);
+        },
+
+        // Explorer has its own openItem, which opens folders in its own window.
         openItem(item, path = null) {
+            this.openFile(item, path);
+        },
+
+        openFile(item, path = null) {
             if (item.extraData && item.extraData.locked) {
                 this.playSound('error');
                 const fullPath = item.fullPath || (path ? (path.endsWith('\\') ? path : path + '\\') + item.name : `C:\\Users\\DeVante\\Desktop\\${item.name}`);
@@ -512,8 +602,8 @@ document.addEventListener('alpine:init', () => {
 
         updateClock() {
             const now = new Date();
-            this.clock.time = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-            this.clock.date = now.toLocaleDateString();
+            this.clock.time = OsWindowing.clockTime(now);
+            this.clock.date = OsWindowing.clockDate(now);
         },
 
         login() {
@@ -536,7 +626,8 @@ document.addEventListener('alpine:init', () => {
 
                 Alpine.store('os').logEvent('Security', 'Information', `User DeVante logged in successfully (Session: ${sessionID})`);
                 localStorage.setItem('auth.loggedIn', 'true');
-                
+                this.openSharedFile();
+
                 if (window.location.pathname !== window.portfolioConfig.basePath + 'desktop') {
                     window.history.pushState({}, '', window.portfolioConfig.basePath + 'desktop');
                 }
@@ -687,30 +778,20 @@ document.addEventListener('alpine:init', () => {
         },
 
         deleteItem(item, fromPath) {
-            if (!item || !fromPath || item.name === 'Recycle Bin' || item.name === 'DeVanté\'s PC') return;
+            if (!item || !fromPath) return;
+            const os = Alpine.store('os');
+            os.changeFiles(fs => OsWindowing.deleteEntry(fs, fromPath, item.name));
 
-            const fs = Alpine.store('os').fileSystem;
-            if (!fs[fromPath]) return;
-
-            const index = fs[fromPath].findIndex(f => f.name === item.name);
-            if (index > -1) {
-                const deletedItem = fs[fromPath].splice(index, 1)[0];
-                deletedItem.originalPath = fromPath;
-                if (!fs['C:\\Recycle Bin']) fs['C:\\Recycle Bin'] = [];
-                fs['C:\\Recycle Bin'].push(deletedItem);
-                Alpine.store('os').saveFileSystem();
-
-                // Remove from custom positions so it resets to grid on restore
-                if (fromPath === 'C:\\Users\\DeVante\\Desktop') {
-                    const newPositions = { ...this.desktopIconPositions };
-                    delete newPositions[item.name];
-                    this.desktopIconPositions = newPositions;
-                    localStorage.setItem('os.iconPositions', JSON.stringify(this.desktopIconPositions));
-                }
-
-                this.playSound('recycle');
-                Alpine.store('os').logEvent('Explorer', 'Information', `Moved to Recycle Bin: ${item.name}`);
+            // Remove from custom positions so it resets to grid on restore
+            if (fromPath === OsWindowing.DESKTOP) {
+                const newPositions = { ...this.desktopIconPositions };
+                delete newPositions[item.name];
+                this.desktopIconPositions = newPositions;
+                localStorage.setItem('os.iconPositions', JSON.stringify(this.desktopIconPositions));
             }
+
+            this.playSound('recycle');
+            os.logEvent('Explorer', 'Information', `Moved to Recycle Bin: ${item.name}`);
         },
 
         handleGlobalKeys(e) {

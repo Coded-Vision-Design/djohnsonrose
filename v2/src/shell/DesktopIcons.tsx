@@ -1,13 +1,14 @@
 import { useMemo, useRef, useState } from 'react'
 import { useOsStore, TASKBAR_HEIGHT } from '../store/osStore'
-import { listAt, type FsEntry } from '../data/filesystem'
-import { showClassicDesktopMenu, showMenu, type MenuPoint } from './menus'
-import { isImageEntry, openEntry } from './openEntry'
+import { DESKTOP, RECYCLE_BIN, deleteEntry } from '../../../assets/js/windowing/file-ops.js'
+import type { FsEntry } from '../data/filesystem'
+import { RenameInput } from './RenameInput'
+import { showClassicDesktopMenu, showFileMenu, showMenu, type MenuPoint } from './menus'
+import { openEntry } from './openEntry'
 import { playSound } from '../lib/sounds'
 
-const DESKTOP_PATH = 'C:\\Users\\DeVante\\Desktop'
-const RECYCLE_PATH = 'C:\\Recycle Bin'
 const PC_NAME = "DeVanté's PC"
+const PC: FsEntry = { name: PC_NAME, type: 'folder', path: 'C:\\', icon: '/assets/img/thispc.webp' }
 const ICON_W = 110
 const ICON_H = 110
 const MARGIN = 16
@@ -80,16 +81,15 @@ export function DesktopIcons() {
   const openApp = useOsStore((s) => s.openApp)
   const iconPositions = useOsStore((s) => s.iconPositions)
   const setIconPosition = useOsStore((s) => s.setIconPosition)
-  const recycleItem = useOsStore((s) => s.recycleItem)
-  const recycled = useOsStore((s) => s.recycleBin.length)
-  const restoredSeeds = useOsStore((s) => s.restoredSeeds)
-  const recycleCount =
-    recycled + listAt(RECYCLE_PATH).filter((e) => !restoredSeeds.includes(e.name)).length
-  const hiddenDesktop = useOsStore((s) => s.hiddenDesktop)
-  const recoveredItems = useOsStore((s) => s.recoveredItems)
-  const emptyRecycleBin = useOsStore((s) => s.emptyRecycleBin)
-  const updateSetting = useOsStore((s) => s.updateSetting)
+  const entries = useOsStore((s) => s.fileSystem[DESKTOP])
+  const recycleCount = useOsStore((s) => s.fileSystem[RECYCLE_BIN]?.length ?? 0)
+  const changeFiles = useOsStore((s) => s.changeFiles)
   const desktopZoom = useOsStore((s) => s.desktopZoom)
+  const iconSize = useOsStore((s) => s.desktopIconSize)
+  const iconsVisible = useOsStore((s) => s.desktopIconsVisible)
+  const renaming = useOsStore((s) => s.renaming)
+  const clipboard = useOsStore((s) => s.fileClipboard)
+  const showProperties = useOsStore((s) => s.showProperties)
 
   const [hoverRecycle, setHoverRecycle] = useState(false)
   const [draggingName, setDraggingName] = useState<string | null>(null)
@@ -98,22 +98,12 @@ export function DesktopIcons() {
   )
 
   const icons = useMemo<PlacedIcon[]>(() => {
-    const staticEntries = listAt(DESKTOP_PATH).filter(
-      (e) => !hiddenDesktop.includes(e.name),
-    )
-    // Items restored from the recycle bin re-appear on the Desktop.
-    const recoveredDesktop = recoveredItems
-      .filter((r) => r.path === DESKTOP_PATH)
-      .map((r) => r.item as unknown as FsEntry)
-      .filter((e) => !staticEntries.some((s) => s.name === e.name))
-    const entries = [...staticEntries, ...recoveredDesktop]
-
     const availH = window.innerHeight - TASKBAR_HEIGHT - MARGIN * 2
     const maxPerCol = Math.max(1, Math.floor(availH / ICON_H))
 
     const positions = computeLayout(
       PC_NAME,
-      entries.map((e) => e.name),
+      (entries ?? []).map((e) => e.name),
       iconPositions,
       maxPerCol,
     )
@@ -127,7 +117,7 @@ export function DesktopIcons() {
         y: positions[PC_NAME].y,
         isRecycleBin: false,
       },
-      ...entries.map((entry): PlacedIcon => {
+      ...(entries ?? []).map((entry): PlacedIcon => {
         const isRecycleBin = entry.name === 'Recycle Bin'
         const icon = isRecycleBin
           ? recycleCount > 0
@@ -147,7 +137,7 @@ export function DesktopIcons() {
       }),
     ]
     return placed
-  }, [iconPositions, recycleCount, hiddenDesktop, recoveredItems])
+  }, [iconPositions, recycleCount, entries])
 
 
   const open = (i: PlacedIcon) => {
@@ -155,43 +145,29 @@ export function DesktopIcons() {
       openApp('explorer', 'This PC', { extra: { initialPath: 'C:\\' } })
       return
     }
-    if (i.entry) openEntry(i.entry, DESKTOP_PATH)
+    if (i.entry) openEntry(i.entry, DESKTOP)
   }
 
   const showIconMenu = (icon: PlacedIcon, { clientX, clientY }: MenuPoint) => {
     const here = { clientX, clientY }
-    const classic = () => showClassicDesktopMenu(here)
-    if (icon.isRecycleBin) {
-      showMenu(
-        'recycleBin',
-        here,
-        { open: () => open(icon), empty: () => emptyRecycleBin(), classic },
-        { empty: { disabled: recycleCount === 0 } },
-      )
+    if (icon.entry) {
+      showFileMenu(icon.entry, DESKTOP, here)
       return
     }
-    const { entry } = icon
-    showMenu(
-      'file',
-      here,
-      {
-        open: () => open(icon),
-        delete: () => {
-          if (!entry) return
-          recycleItem(icon.name, DESKTOP_PATH, { ...entry })
-          playSound('recycle')
-        },
-        setBackground: () => {
-          if (entry && 'url' in entry) updateSetting('wallpaper', entry.url)
-        },
-        classic,
-      },
-      { setBackground: { hidden: !entry || !isImageEntry(entry) } },
-    )
+    showMenu('computer', here, {
+      open: () => open(icon),
+      properties: () => showProperties(PC, 'C:\\'),
+      classic: () => showClassicDesktopMenu(here),
+    })
+  }
+
+  const recycle = (name: string) => {
+    changeFiles((fs) => deleteEntry(fs, DESKTOP, name))
+    playSound('recycle')
   }
 
   const onMouseDown = (icon: PlacedIcon, e: React.MouseEvent) => {
-    if (e.button !== 0) return
+    if (e.button !== 0 || renaming) return
     const target = e.currentTarget as HTMLElement
     const rect = target.getBoundingClientRect()
     dragRef.current = {
@@ -222,11 +198,7 @@ export function DesktopIcons() {
         const elsAt = document.elementsFromPoint(ev.clientX, ev.clientY)
         const droppedOnBin = elsAt.some((el) => el.getAttribute('data-recycle-target') === 'true')
         if (d.moved && droppedOnBin && d.name !== 'Recycle Bin' && d.name !== PC_NAME) {
-          const entry = icons.find((i) => i.name === d.name)?.entry
-          if (entry) {
-            recycleItem(d.name, DESKTOP_PATH, { ...entry })
-            playSound('recycle')
-          }
+          if (icons.find((i) => i.name === d.name)?.entry) recycle(d.name)
         } else if (!d.moved) {
           const i = icons.find((x) => x.name === d.name)
           if (i) open(i)
@@ -247,14 +219,22 @@ export function DesktopIcons() {
       className="absolute inset-0 pointer-events-none p-2 transition-transform duration-75 origin-center"
       style={{ transform: `scale(${desktopZoom})` }}
       aria-label="Desktop icons"
+      data-icon-size={iconSize}
+      hidden={!iconsVisible}
     >
       {icons.map((icon) => {
         const isDragging = draggingName === icon.name
         const recycleHover = icon.isRecycleBin && hoverRecycle
+        const isRenaming = renaming?.path === DESKTOP && renaming.name === icon.name
+        const isCut = clipboard?.mode === 'cut' && clipboard.fromPath === DESKTOP && clipboard.name === icon.name
         return (
-          <button
+          <div
             key={icon.name}
-            type="button"
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') open(icon)
+            }}
             data-recycle-target={icon.isRecycleBin ? 'true' : undefined}
             onMouseDown={(e) => onMouseDown(icon, e)}
             onDoubleClick={() => open(icon)}
@@ -269,10 +249,10 @@ export function DesktopIcons() {
               recycleHover
                 ? 'bg-white/30 ring-2 ring-win-blue scale-110'
                 : 'hover:bg-white/10'
-            } ${isDragging ? 'opacity-90 cursor-grabbing' : 'cursor-default'}`}
+            } ${isDragging ? 'opacity-90 cursor-grabbing' : 'cursor-default'} ${isCut ? 'file-cut' : ''}`}
             style={{ left: icon.x, top: icon.y, userSelect: 'none' }}
           >
-            <div className="mb-1 drop-shadow-md w-12 h-12 flex items-center justify-center">
+            <div className="desktop-tile-icon mb-1 drop-shadow-md w-12 h-12 flex items-center justify-center">
               {icon.icon.includes('.') || icon.icon.startsWith('/') ? (
                 <img
                   src={icon.icon}
@@ -284,10 +264,17 @@ export function DesktopIcons() {
                 <span className="text-4xl">{icon.icon}</span>
               )}
             </div>
-            <span className="text-white text-[11px] drop-shadow-lg w-full px-1 leading-tight">
-              {icon.name}
-            </span>
-          </button>
+            {isRenaming ? (
+              <RenameInput
+                name={icon.name}
+                className="w-full rounded-sm border border-win-blue bg-white px-1 text-center text-[11px] text-black outline-hidden"
+              />
+            ) : (
+              <span className="text-white text-[11px] drop-shadow-lg w-full px-1 leading-tight">
+                {icon.name}
+              </span>
+            )}
+          </div>
         )
       })}
     </div>

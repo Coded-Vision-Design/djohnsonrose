@@ -67,7 +67,9 @@
     <script type="module" nonce="<?php echo $cspNonce; ?>">
         import * as windowing from '<?php echo BASE_PATH; ?>assets/js/windowing/windowing.js?v=<?php echo @filemtime(__DIR__ . '/../assets/js/windowing/windowing.js') ?: time(); ?>';
         import * as shellCore from '<?php echo BASE_PATH; ?>assets/js/windowing/shell-core.js?v=<?php echo @filemtime(__DIR__ . '/../assets/js/windowing/shell-core.js'); ?>';
-        window.OsWindowing = { ...windowing, ...shellCore };
+        import * as fileOps from '<?php echo BASE_PATH; ?>assets/js/windowing/file-ops.js?v=<?php echo @filemtime(__DIR__ . '/../assets/js/windowing/file-ops.js'); ?>';
+        import * as textOps from '<?php echo BASE_PATH; ?>assets/js/windowing/text-ops.js?v=<?php echo @filemtime(__DIR__ . '/../assets/js/windowing/text-ops.js'); ?>';
+        window.OsWindowing = { ...windowing, ...shellCore, ...fileOps, ...textOps };
     </script>
     <!-- Alpine.js -->
     <script defer src="<?php echo BASE_PATH; ?>assets/js/alpine/alpine-3.17.5.min.js"></script>
@@ -239,7 +241,7 @@
 
 
         <!-- Main Content Area -->
-        <main id="main-content" class="grow relative h-full w-full" @contextmenu.prevent="showDesktopContextMenu($event)">
+        <main id="main-content" class="grow relative h-full w-full" @contextmenu="onDesktopContextMenu($event)">
             <!-- Windows Error Dialog (Modal) -->
             <div x-show="$store.os.errorDialog.open" 
                  x-cloak
@@ -286,6 +288,7 @@
             <!-- Desktop Environment -->
             <div x-show="loggedIn && !isBooting && !loggingIn" x-cloak class="h-full w-full absolute inset-0 z-1">
                 <?php include __DIR__ . '/desktop.php'; ?>
+                <?php include __DIR__ . '/file-dialogs.php'; ?>
             </div>
         </main>
 

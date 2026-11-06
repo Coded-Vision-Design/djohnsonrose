@@ -11,6 +11,7 @@ import {
   fractionToRect,
   getLayout,
   hitSnapBar,
+  keepFileLongPress,
   keyboardPlacement,
   maximizePatch,
   minimizePatch,
@@ -527,6 +528,67 @@ describe('shortcutFromEvent', () => {
     expect(shortcutFromEvent(key({ key: 'ArrowLeft' }))).toBeNull()
     expect(shortcutFromEvent(key({ key: 'z' }))).toBeNull()
     expect(shortcutFromEvent(key({ key: 'ArrowLeft', altKey: true }))).toBeNull()
+  })
+})
+
+describe('keepFileLongPress', () => {
+  const setUp = () => {
+    const root = document.createElement('div')
+    root.innerHTML = '<div data-explorer-file="a.txt"><span>a.txt</span></div><div id="clip" draggable="true"></div>'
+    return { root, file: root.querySelector('[data-explorer-file]')!, clip: root.querySelector('#clip')! }
+  }
+  const fingers = (type: string, target: Element, touches: number) => {
+    const event = new Event(type, { bubbles: true })
+    Object.defineProperty(event, 'touches', { value: Array.from({ length: touches }) })
+    target.dispatchEvent(event)
+  }
+  /** True if the drag was allowed to start. */
+  const drag = (target: Element) => target.dispatchEvent(new Event('dragstart', { bubbles: true, cancelable: true }))
+
+  it('stops a held finger from dragging a file, so its menu can open', () => {
+    const { root, file } = setUp()
+    keepFileLongPress(root)
+    fingers('touchstart', file, 1)
+    expect(drag(file)).toBe(false)
+  })
+
+  it('leaves a mouse free to drag a file', () => {
+    const { root, file } = setUp()
+    keepFileLongPress(root)
+    expect(drag(file)).toBe(true)
+  })
+
+  it('leaves a finger free to drag anything else, such as a clip in FL Studio', () => {
+    const { root, clip } = setUp()
+    keepFileLongPress(root)
+    fingers('touchstart', clip, 1)
+    expect(drag(clip)).toBe(true)
+  })
+
+  it('lets a mouse drag again once every finger has lifted', () => {
+    const { root, file } = setUp()
+    keepFileLongPress(root)
+    fingers('touchstart', file, 2)
+    fingers('touchend', file, 1)
+    expect(drag(file)).toBe(false)
+    fingers('touchend', file, 0)
+    expect(drag(file)).toBe(true)
+  })
+
+  it('treats a cancelled touch as lifted', () => {
+    const { root, file } = setUp()
+    keepFileLongPress(root)
+    fingers('touchstart', file, 1)
+    fingers('touchcancel', file, 0)
+    expect(drag(file)).toBe(true)
+  })
+
+  it('stops watching when asked', () => {
+    const { root, file } = setUp()
+    const stop = keepFileLongPress(root)
+    fingers('touchstart', file, 1)
+    stop()
+    expect(drag(file)).toBe(true)
   })
 })
 

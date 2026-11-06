@@ -3,7 +3,9 @@ import { useOsStore } from '../store/osStore'
 import { startPinnedApps } from '../apps/manifest'
 import { getApp, groupAppsByLetter, listApps } from '../apps/registry'
 import { searchOs, type SearchResult } from '../../../assets/js/windowing/shell-core.js'
-import { filesystem, type FsEntry } from '../data/filesystem'
+import { findEntry, joinPath } from '../../../assets/js/windowing/file-ops.js'
+import type { FsEntry } from '../data/filesystem'
+import { showFileMenu } from './menus'
 import { openEntry } from './openEntry'
 
 type View = 'pinned' | 'allApps'
@@ -15,6 +17,11 @@ type Result = SearchResult<FsEntry>
 
 export function StartMenu() {
   const open = useOsStore((s) => s.startMenuOpen)
+  // Mounted only while open, so that each opening starts afresh.
+  return open ? <StartPanel /> : null
+}
+
+function StartPanel() {
   const close = useOsStore((s) => s.closeAllPopups)
   const openAppStore = useOsStore((s) => s.openApp)
   const logout = useOsStore((s) => s.logout)
@@ -26,7 +33,6 @@ export function StartMenu() {
 
   // Click-away
   useEffect(() => {
-    if (!open) return
     const onDown = (e: MouseEvent) => {
       if (!containerRef.current || containerRef.current.contains(e.target as Node)) return
       // Ignore clicks on the taskbar's start/search/quick-settings buttons -
@@ -35,23 +41,17 @@ export function StartMenu() {
       const t = e.target as Element | null
       if (t?.closest?.('[data-popup-toggle]')) return
       close()
-      setView('pinned')
-      setQuery('')
     }
     const id = window.setTimeout(() => document.addEventListener('mousedown', onDown), 0)
     return () => {
       window.clearTimeout(id)
       document.removeEventListener('mousedown', onDown)
     }
-  }, [open, close])
+  }, [close])
 
   useEffect(() => {
-    if (open) {
-      setView('pinned')
-      setQuery('')
-      inputRef.current?.focus()
-    }
-  }, [open])
+    inputRef.current?.focus()
+  }, [])
 
   const pinned = useMemo(
     () => startPinnedApps.map(getApp).filter((a): a is NonNullable<typeof a> => !!a),
@@ -59,33 +59,17 @@ export function StartMenu() {
   )
 
   const grouped = useMemo(() => groupAppsByLetter(), [])
-  const recycleBin = useOsStore((s) => s.recycleBin)
-  const recoveredItems = useOsStore((s) => s.recoveredItems)
-  const renames = useOsStore((s) => s.renames)
-
-  // The file system as the visitor has left it: v1 changes its copy directly,
-  // and v2 keeps their changes as overlays.
-  const files = useMemo(() => {
-    const visible: Record<string, FsEntry[]> = {}
-    for (const [path, entries] of Object.entries(filesystem)) {
-      const recycled = recycleBin.filter((r) => r.fromPath === path).map((r) => r.name)
-      const recovered = recoveredItems
-        .filter((r) => r.path === path)
-        .map((r) => r.item as unknown as FsEntry)
-        .filter((item) => !entries.some((entry) => entry.name === item.name))
-      visible[path] = [...entries.filter((entry) => !recycled.includes(entry.name)), ...recovered].map(
-        (entry) => ({ ...entry, name: renames[`${path}::${entry.name}`] ?? entry.name }),
-      )
-    }
-    return visible
-  }, [recycleBin, recoveredItems, renames])
+  const files = useOsStore((s) => s.fileSystem)
+  const startPins = useOsStore((s) => s.startPins)
+  const pinnedFiles = useMemo(
+    () => startPins.map((full) => findEntry(files, full)).filter((found) => found !== null),
+    [startPins, files],
+  )
 
   const searchResults = useMemo(
     () => (query ? searchOs(query, listApps(), files) : []),
     [query, files],
   )
-
-  if (!open) return null
 
   const launch = (id: string) => {
     const def = getApp(id)
@@ -157,6 +141,11 @@ export function StartMenu() {
       ) : view === 'pinned' ? (
         <PinnedView
           pinned={pinned}
+          pinnedFiles={pinnedFiles}
+          onOpenFile={(entry, path) => {
+            openEntry(entry, path)
+            close()
+          }}
           onLaunch={launch}
           onAllApps={() => setView('allApps')}
         />
@@ -251,10 +240,14 @@ function SearchView({
 
 function PinnedView({
   pinned,
+  pinnedFiles,
+  onOpenFile,
   onLaunch,
   onAllApps,
 }: {
   pinned: ReturnType<typeof getApp>[]
+  pinnedFiles: { entry: FsEntry; path: string }[]
+  onOpenFile: (entry: FsEntry, path: string) => void
   onLaunch: (id: string) => void
   onAllApps: () => void
 }) {
@@ -290,6 +283,32 @@ function PinnedView({
             </button>
           ) : null,
         )}
+        {pinnedFiles.map(({ entry, path }) => (
+          <button
+            key={joinPath(path, entry.name)}
+            type="button"
+            data-pinned-file={joinPath(path, entry.name)}
+            title={entry.name}
+            onClick={() => onOpenFile(entry, path)}
+            onContextMenu={(e) => {
+              e.preventDefault()
+              e.stopPropagation()
+              showFileMenu(entry, path, e)
+            }}
+            className="flex flex-col items-center group cursor-pointer transition-all active:scale-95 w-full min-w-0"
+          >
+            <div className="w-10 h-10 rounded-sm flex items-center justify-center text-2xl group-hover:scale-110 transition-transform bg-white/5 dark:bg-white/5 group-hover:bg-white/10 shrink-0 overflow-hidden">
+              {entry.icon?.includes('.') ? (
+                <img src={entry.icon} alt="" className="w-7 h-7 object-contain" />
+              ) : (
+                <span>{entry.icon || '📄'}</span>
+              )}
+            </div>
+            <span className="text-[11px] mt-2 dark:text-white text-center truncate w-full px-0.5">
+              {entry.name}
+            </span>
+          </button>
+        ))}
       </div>
 
       <div className="mt-8">

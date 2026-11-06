@@ -4,6 +4,8 @@ import { BootScreen } from './BootScreen'
 import { LockScreen } from './LockScreen'
 import { Desktop } from './Desktop'
 import { getApp } from '../apps/registry'
+import { findEntry, sharedPath } from '../../../assets/js/windowing/file-ops.js'
+import { openEntry } from './openEntry'
 
 interface ShellProps {
   // If passed, opens this app once boot+login complete (for /app/:name routes).
@@ -20,6 +22,15 @@ export function Shell({ initialApp }: ShellProps) {
   useEffect(() => {
     if (loggedIn && isBooting) finishBoot()
   }, [loggedIn, isBooting, finishBoot])
+
+  // A shared link: open that file once we land on the desktop.
+  useEffect(() => {
+    const shared = sharedPath(window.location.hash)
+    if (!loggedIn || !shared) return
+    window.history.replaceState(null, '', window.location.pathname)
+    const found = findEntry(useOsStore.getState().fileSystem, shared)
+    if (found) openEntry(found.entry, found.path)
+  }, [loggedIn])
 
   // Deep link: open the requested app once we land on the desktop.
   useEffect(() => {

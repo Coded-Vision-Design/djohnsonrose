@@ -1,6 +1,9 @@
 <!-- partials/taskbar.php -->
 <div class="os-taskbar w-full taskbar-glass flex items-center justify-between px-2 z-9999 border-t border-white/20"
      :class="{ 'taskbar-mobile': !isDesktop }"
+     @touchstart="handleTouchStart($event, (pos) => showTaskbarContextMenu(pos))"
+     @touchmove="handleTouchMove($event)"
+     @touchend="handleTouchEnd($event)"
      @contextmenu.prevent.stop="showTaskbarContextMenu($event)">
     <!-- Widgets Area (Left) -->
     <div class="flex items-center w-48 overflow-hidden" x-show="isDesktop" @contextmenu.prevent.stop="showTaskbarContextMenu($event)">
@@ -47,6 +50,9 @@
         <template x-for="appId in [...new Set([...$store.os.pinnedApps, ...windows.map(w => w.app)])]" :key="appId">
             <button @click="taskbarClick(appId)" 
                     @contextmenu.prevent.stop="showAppContextMenu($event, appId)"
+                    @touchstart.stop="handleTouchStart($event, (pos) => showAppContextMenu(pos, appId))"
+                    @touchmove="handleTouchMove($event)"
+                    @touchend="handleTouchEnd($event)"
                     :data-taskbar-app="appId"
                     :title="appTitle(appId)"
                     class="w-10 h-10 flex items-center justify-center rounded-sm hover:bg-white/10 transition-all relative group"

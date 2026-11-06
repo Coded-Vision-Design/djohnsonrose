@@ -455,6 +455,7 @@ export function Taskbar() {
           type="button"
           onClick={minimizeAll}
           aria-label="Show desktop"
+          hidden={!isDesktop}
           className="w-[2px] hover:bg-white/20 h-8 ml-1 cursor-pointer transition-colors"
         />
       </div>

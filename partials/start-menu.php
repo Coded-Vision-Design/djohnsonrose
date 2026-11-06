@@ -15,7 +15,7 @@
                    x-model="searchQuery"
                    placeholder="Search for apps, settings, and documents" 
                    class="w-full bg-white dark:bg-black/20 border-b-2 border-win-blue px-10 py-2 rounded-md outline-hidden text-sm transition-all focus:bg-white dark:focus:bg-[#1c1c1c]"
-                   @keydown.enter="if(searchResults.length > 0) { openItem(searchResults[0]); startMenuOpen = false; }">
+                   @keydown.enter="if(searchResults.length > 0) { openFile(searchResults[0], searchResults[0].fullPath); searchQuery = ''; startMenuOpen = false; }">
             <svg class="absolute left-3 top-2.5 w-4 h-4 text-gray-400 group-focus-within:text-win-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
         </div>
     </div>
@@ -26,7 +26,7 @@
         <div class="space-y-1">
             <div x-show="searchResults.length === 0" class="text-xs opacity-50 py-4">No matches.</div>
             <template x-for="item in searchResults" :key="item.fullPath + item.name">
-                <div @click="openItem(item, item.fullPath); searchQuery = ''; startMenuOpen = false"
+                <div @click="openFile(item, item.fullPath); searchQuery = ''; startMenuOpen = false"
                      :data-search-result="item.name"
                      :data-search-app="item.type === 'app' ? item.app : null"
                      draggable="true"
@@ -66,6 +66,23 @@
                         <img :src="app.icon" alt="" class="w-7 h-7 object-contain">
                     </div>
                     <span class="text-[11px] mt-2 dark:text-white text-center truncate w-full px-0.5" x-text="app.name"></span>
+                </div>
+            </template>
+            <template x-for="pin in startPinnedFiles" :key="pin.full">
+                <div @click="openFile(pin.entry, pin.path); startMenuOpen = false"
+                     @contextmenu.prevent.stop="showFileContextMenu($event, pin.entry, pin.path)"
+                     :data-pinned-file="pin.full"
+                     :title="pin.entry.name"
+                     class="flex flex-col items-center group cursor-pointer transition-all active:scale-95 w-full min-w-0">
+                    <div class="w-10 h-10 rounded-sm flex items-center justify-center text-2xl group-hover:scale-110 transition-transform bg-white/5 dark:bg-white/5 group-hover:bg-white/10 shrink-0 overflow-hidden">
+                        <template x-if="(pin.entry.icon || '').includes('.')">
+                            <img :src="pin.entry.icon" alt="" class="w-7 h-7 object-contain">
+                        </template>
+                        <template x-if="!(pin.entry.icon || '').includes('.')">
+                            <span x-text="pin.entry.icon || '📄'"></span>
+                        </template>
+                    </div>
+                    <span class="text-[11px] mt-2 dark:text-white text-center truncate w-full px-0.5" x-text="pin.entry.name"></span>
                 </div>
             </template>
         </div>

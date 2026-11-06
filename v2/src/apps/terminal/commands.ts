@@ -1,7 +1,6 @@
 // Pure terminal command dispatcher — testable without React.
 
-import type { useOsStore } from '../../store/osStore'
-import { filesystem } from '../../data/filesystem'
+import { useOsStore } from '../../store/osStore'
 
 type Store = ReturnType<typeof useOsStore.getState>
 
@@ -77,7 +76,7 @@ export function runCommand(raw: string, ctx: CommandContext): CommandResult {
       return { res: args.join(' ') }
     case 'dir':
     case 'ls': {
-      const files = filesystem[ctx.cwd] ?? []
+      const files = useOsStore.getState().fileSystem[ctx.cwd] ?? []
       if (files.length === 0) return { res: 'Directory is empty.' }
       const lines = [` Directory of ${ctx.cwd}`, '']
       for (const f of files) {
@@ -96,7 +95,7 @@ export function runCommand(raw: string, ctx: CommandContext): CommandResult {
         const next = parts.slice(0, -1).join('\\') || 'C:\\'
         return { cwd: next }
       }
-      const files = filesystem[ctx.cwd] ?? []
+      const files = useOsStore.getState().fileSystem[ctx.cwd] ?? []
       const folder = files.find(
         (f) => f.type === 'folder' && f.name.toLowerCase() === target.toLowerCase(),
       )

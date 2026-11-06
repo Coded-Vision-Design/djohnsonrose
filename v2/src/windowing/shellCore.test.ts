@@ -1,6 +1,10 @@
 import { describe, it, expect, vi } from 'vitest'
 import {
   buildMenu,
+  clockDate,
+  clockTime,
+  fingerGap,
+  pinchZoom,
   placeMenu,
   prepareFileSystem,
   searchOs,
@@ -118,8 +122,11 @@ describe('buildMenu', () => {
     expect(built.actions[0].icon).toBe('/assets/img/win11/delete.svg')
   })
 
-  it('gives an item with no handler an action that does nothing', () => {
-    expect(() => buildMenu(menu, IMG).items[2].action?.()).not.toThrow()
+  it('greys out an item with no action, so nothing is silently dead', () => {
+    const built = buildMenu(menu, IMG, { open: () => {} })
+    expect(built.items[0].disabled).toBe(false)
+    expect(built.items[2].disabled).toBe(true)
+    expect(built.actions[0].disabled).toBe(true)
   })
 
   it('applies changes for one item, such as a new label', () => {
@@ -161,6 +168,47 @@ describe('data/menus.json', () => {
 
   it('keeps Show more options off the classic menu', () => {
     expect(menus.desktopClassic.items.some((item) => 'id' in item && item.id === 'classic')).toBe(false)
+  })
+})
+
+describe('touch', () => {
+  it('measures the gap between two fingers', () => {
+    expect(fingerGap([{ clientX: 0, clientY: 0 }, { clientX: 3, clientY: 4 }])).toBe(5)
+  })
+
+  it('has no gap to measure with one finger', () => {
+    expect(fingerGap([{ clientX: 10, clientY: 10 }])).toBe(0)
+  })
+
+  it('zooms by as much as the fingers moved, however many events carried them', () => {
+    expect(pinchZoom(1, 100, 120)).toBeCloseTo(1.2)
+    expect(pinchZoom(1, 100, 80)).toBeCloseTo(0.8)
+    expect(pinchZoom(1.2, 100, 90)).toBeCloseTo(1.08)
+  })
+
+  it('stops at the same limits in both directions', () => {
+    expect(pinchZoom(1, 100, 900)).toBe(1.3)
+    expect(pinchZoom(1, 100, 10)).toBe(0.7)
+  })
+
+  it('leaves the zoom alone when a pinch has no starting gap', () => {
+    expect(pinchZoom(1.1, 0, 200)).toBe(1.1)
+  })
+})
+
+describe('the clock', () => {
+  it('shows 24-hour time, whatever the visitor’s language', () => {
+    expect(clockTime(new Date(2026, 9, 31, 23, 42))).toBe('23:42')
+    expect(clockTime(new Date(2026, 9, 31, 9, 5))).toBe('09:05')
+  })
+
+  it('shows midnight as 00, not 24', () => {
+    expect(clockTime(new Date(2026, 9, 31, 0, 5))).toBe('00:05')
+  })
+
+  it('pads the date', () => {
+    expect(clockDate(new Date(2026, 0, 5))).toMatch(/\b0?5\b.*2026|2026.*\b0?5\b/)
+    expect(clockDate(new Date(2026, 0, 5))).toContain('01')
   })
 })
 

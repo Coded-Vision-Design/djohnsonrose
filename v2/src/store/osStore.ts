@@ -26,26 +26,31 @@ import {
   type WindowMode,
   type WindowPatch,
 } from '../../../assets/js/windowing/windowing.js'
+import {
+  DESKTOP,
+  renameEntry,
+  restoreFileSystem,
+  type FileClipboard,
+  type IconSize,
+} from '../../../assets/js/windowing/file-ops.js'
+import { filesystem, type FileSystem, type FsEntry } from '../data/filesystem'
 
-// Static C:\Recycle Bin seeds — when restored, we re-materialise them at
-// their originalPath. Keep this list aligned with data/filesystem.ts.
-// (Inlined rather than imported to avoid a circular dependency.)
-function lookupRecycleBinSeed(
-  name: string,
-): { fromPath: string; item: Record<string, unknown> } | null {
-  if (name === 'Easter Egg - South Africa 25 Video.mp4') {
-    return {
-      fromPath: 'C:\\Users\\DeVante\\Desktop',
-      item: {
-        name: 'Easter Egg - South Africa 25 Video.mp4',
-        type: 'video',
-        icon: '🎬',
-        url: '/data/south-africa-25.mp4',
-      },
-    }
+// The file system is saved on its own, and only when it changes: it is far too
+// big to go through persist below, which writes on every state change.
+const FILES_KEY = 'react.fileSystem'
+const FILES_VERSION = 1
+
+function savedFiles(): FileSystem {
+  try {
+    const version = localStorage.getItem(`${FILES_KEY}.version`)
+    return restoreFileSystem(localStorage.getItem(FILES_KEY), version, filesystem, FILES_VERSION)
+  } catch {
+    return filesystem
   }
-  return null
 }
+
+const toggled = (list: string[], item: string) =>
+  list.includes(item) ? list.filter((value) => value !== item) : [...list, item]
 
 export interface WinWindow extends ManagedWindow {
   app: string
@@ -53,6 +58,8 @@ export interface WinWindow extends ManagedWindow {
   loading: boolean
   // Per-app extras (photos image, pdf url, etc.) — typed as unknown for now.
   extra?: Record<string, unknown>
+  /** Goes up when an open app is given something new to show. */
+  revision?: number
 }
 
 export interface Settings {
@@ -205,16 +212,19 @@ interface OsState {
   battery: { level: number; charging: boolean }
   desktopZoom: number
 
-  // Recycle bin + desktop icon layout (both persisted)
-  recycleBin: RecycledItem[]
-  hiddenDesktop: string[]
-  /** Static C:\Recycle Bin items the user has "Restored" (i.e. removed). */
-  restoredSeeds: string[]
-  /** Items materialised at a given path by restoring from the recycle bin. */
-  recoveredItems: { path: string; item: Record<string, unknown> }[]
+  // The file system, and what a visitor is doing to it.
+  fileSystem: FileSystem
+  fileClipboard: FileClipboard | null
+  renaming: { path: string; name: string } | null
+  properties: { entry: FsEntry; path: string } | null
+  toast: string | null
+
+  // Persisted.
+  startPins: string[]
+  favourites: string[]
+  desktopIconSize: IconSize
+  desktopIconsVisible: boolean
   iconPositions: Record<string, IconPosition>
-  /** In-session Explorer rename overlay. Key is `${path}::${originalName}`. */
-  renames: Record<string, string>
 
   // Viewport flags — kept in-memory only, updated by a global listener.
   isMobile: boolean
@@ -270,17 +280,24 @@ interface OsState {
   setWeather: (weather: Partial<Weather>) => void
   setNews: (news: NewsItem[]) => void
 
-  // Recycle bin / icon positions
-  recycleItem: (name: string, fromPath: string, payload: Record<string, unknown>) => void
-  restoreFromRecycle: (name: string) => void
-  emptyRecycleBin: () => void
+  // Files. Each change comes from a function in file-ops.js.
+  changeFiles: (change: (fs: FileSystem) => FileSystem) => void
+  setFileClipboard: (clip: FileClipboard | null) => void
+  toggleStartPin: (full: string) => void
+  toggleFavourite: (full: string) => void
+  beginRename: (path: string, name: string) => void
+  commitRename: (value: string) => void
+  cancelRename: () => void
+  showProperties: (entry: FsEntry, path: string) => void
+  closeProperties: () => void
+  showToast: (message: string) => void
+  setDesktopIconSize: (size: IconSize) => void
+  setDesktopIconsVisible: (visible: boolean) => void
   setIconPosition: (name: string, pos: IconPosition) => void
   resetIconPositions: () => void
 
-  // Explorer rename (session-scoped overlay; doesn't mutate the static fs)
-  renameFile: (path: string, originalName: string, newName: string) => void
-
   // Responsive flags + context menu
+  setWindowTitle: (id: number, title: string) => void
   setBattery: (battery: OsState['battery']) => void
   setDesktopZoom: (zoom: number) => void
   togglePinned: (app: string) => void
@@ -299,12 +316,11 @@ interface OsState {
 interface PersistedSlice {
   loggedIn: boolean
   settings: Settings
-  recycleBin: RecycledItem[]
-  hiddenDesktop: string[]
-  restoredSeeds: string[]
-  recoveredItems: { path: string; item: Record<string, unknown> }[]
+  startPins: string[]
+  favourites: string[]
+  desktopIconSize: IconSize
+  desktopIconsVisible: boolean
   iconPositions: Record<string, IconPosition>
-  renames: Record<string, string>
 }
 
 export const useOsStore = create<OsState>()(
@@ -354,11 +370,15 @@ export const useOsStore = create<OsState>()(
       weather: { temp: '--', condition: 'Loading...', icon: '☁️', city: 'London' },
       news: [],
 
-      recycleBin: [],
-      hiddenDesktop: [],
-      restoredSeeds: [],
-      recoveredItems: [],
-      renames: {},
+      fileSystem: savedFiles(),
+      fileClipboard: null,
+      renaming: null,
+      properties: null,
+      toast: null,
+      startPins: [],
+      favourites: [],
+      desktopIconSize: 'medium',
+      desktopIconsVisible: true,
       iconPositions: {},
 
       // Kept up to date by setDesktop.
@@ -409,6 +429,16 @@ export const useOsStore = create<OsState>()(
         // If already open, focus + restore.
         const existing = state.windows.find((w) => w.app === app)
         if (existing) {
+          // A new file, folder or address replaces what the app is showing.
+          if (options?.extra) {
+            set({
+              windows: get().windows.map((w) =>
+                w.id === existing.id
+                  ? { ...w, title: title ?? w.title, extra: options.extra, revision: (w.revision ?? 0) + 1 }
+                  : w,
+              ),
+            })
+          }
           if (existing.state === 'minimized') {
             get().toggleMinimize(existing.id)
           } else {
@@ -630,93 +660,59 @@ export const useOsStore = create<OsState>()(
       setWeather: (partial) => set({ weather: { ...get().weather, ...partial } }),
       setNews: (news) => set({ news }),
 
-      recycleItem: (name, fromPath, payload) => {
-        const state = get()
-        if (state.recycleBin.some((r) => r.name === name)) return
-        set({
-          recycleBin: [...state.recycleBin, { name, fromPath, payload }],
-          hiddenDesktop: state.hiddenDesktop.includes(name)
-            ? state.hiddenDesktop
-            : [...state.hiddenDesktop, name],
-        })
-        state.logEvent('FileSystem', 'Information', `Recycled: ${name}`)
-      },
-
-      restoreFromRecycle: (name) => {
-        const state = get()
-        // Materialise the entry back at its original path so it actually
-        // reappears (otherwise Restore would only "uncycle" without putting
-        // anything anywhere visible). v1 mutated its mock filesystem; we
-        // keep a `recoveredItems` overlay instead.
-        let recoveredAdditions: { path: string; item: Record<string, unknown> }[] = []
-        const dynamicMatch = state.recycleBin.find((r) => r.name === name)
-        if (dynamicMatch) {
-          recoveredAdditions = [
-            { path: dynamicMatch.fromPath, item: dynamicMatch.payload },
-          ]
-        } else {
-          // Seeded item — look up its originalPath from the static filesystem.
-          const seededAt = lookupRecycleBinSeed(name)
-          if (seededAt) recoveredAdditions = [{ path: seededAt.fromPath, item: seededAt.item }]
+      changeFiles: (change) => {
+        const fileSystem = change(get().fileSystem)
+        if (fileSystem === get().fileSystem) return
+        set({ fileSystem })
+        try {
+          localStorage.setItem(FILES_KEY, JSON.stringify(fileSystem))
+          localStorage.setItem(`${FILES_KEY}.version`, String(FILES_VERSION))
+        } catch {
+          // Storage is full or blocked, so this change lasts until the page closes.
         }
-        // De-dup by (path, name) so repeated restores don't multiply entries.
-        const existing = state.recoveredItems
-        const additions = recoveredAdditions.filter(
-          (a) =>
-            !existing.some(
-              (e) =>
-                e.path === a.path &&
-                (e.item as { name?: string }).name === (a.item as { name?: string }).name,
-            ),
-        )
-        set({
-          recycleBin: state.recycleBin.filter((r) => r.name !== name),
-          hiddenDesktop: state.hiddenDesktop.filter((n) => n !== name),
-          restoredSeeds: state.restoredSeeds.includes(name)
-            ? state.restoredSeeds
-            : [...state.restoredSeeds, name],
-          recoveredItems: [...existing, ...additions],
-        })
-        state.logEvent('FileSystem', 'Information', `Restored from recycle bin: ${name}`)
       },
-
-      emptyRecycleBin: () => {
-        const state = get()
-        state.logEvent(
-          'FileSystem',
-          'Warning',
-          `Recycle bin emptied (${state.recycleBin.length} items)`,
-        )
-        // Empty wipes both the dynamic bin and any remaining seeded items —
-        // user can recover seeds via a fresh `localStorage.clear()` if needed.
-        // Importing data/filesystem lazily would create a circular dep, so we
-        // hard-code the known seed list here.
-        const seedNames = ['Easter Egg - South Africa 25 Video.mp4']
-        set({
-          recycleBin: [],
-          restoredSeeds: Array.from(new Set([...state.restoredSeeds, ...seedNames])),
-        })
+      setFileClipboard: (fileClipboard) => set({ fileClipboard }),
+      toggleStartPin: (full) => set({ startPins: toggled(get().startPins, full) }),
+      toggleFavourite: (full) => set({ favourites: toggled(get().favourites, full) }),
+      beginRename: (path, name) => set({ renaming: { path, name } }),
+      cancelRename: () => set({ renaming: null }),
+      commitRename: (value) => {
+        const { renaming, iconPositions } = get()
+        if (!renaming) return
+        const { path, name } = renaming
+        const newName = value.trim()
+        set({ renaming: null })
+        get().changeFiles((fs) => renameEntry(fs, path, name, newName))
+        const renamed = get().fileSystem[path]?.some((entry) => entry.name === newName)
+        if (renamed && newName !== name && path === DESKTOP && iconPositions[name]) {
+          const { [name]: position, ...others } = iconPositions
+          set({ iconPositions: { ...others, [newName]: position } })
+        }
       },
+      showProperties: (entry, path) => set({ properties: { entry, path } }),
+      closeProperties: () => set({ properties: null }),
+      showToast: (toast) => {
+        set({ toast })
+        window.setTimeout(() => {
+          if (get().toast === toast) set({ toast: null })
+        }, 3000)
+      },
+      setDesktopIconSize: (desktopIconSize) => set({ desktopIconSize }),
+      setDesktopIconsVisible: (desktopIconsVisible) => set({ desktopIconsVisible }),
 
       setIconPosition: (name, pos) =>
         set({ iconPositions: { ...get().iconPositions, [name]: pos } }),
 
       resetIconPositions: () => set({ iconPositions: {} }),
 
-      renameFile: (path, originalName, newName) => {
-        const trimmed = newName.trim()
-        if (!trimmed || trimmed === originalName) return
-        const key = `${path}::${originalName}`
-        set({ renames: { ...get().renames, [key]: trimmed } })
-        get().logEvent('FileSystem', 'Information', `Renamed ${originalName} → ${trimmed}`)
-      },
-
       openContextMenu: (x, y, items, variant = 'modern', actions = []) =>
         set({ contextMenu: { open: true, x, y, items, actions, variant } }),
       closeContextMenu: () =>
         set({ contextMenu: { open: false, x: 0, y: 0, items: [], actions: [], variant: 'modern' } }),
+      setWindowTitle: (id, title) =>
+        set({ windows: get().windows.map((w) => (w.id === id ? { ...w, title } : w)) }),
       setBattery: (battery) => set({ battery }),
-      setDesktopZoom: (zoom) => set({ desktopZoom: Math.min(Math.max(0.7, zoom), 1.3) }),
+      setDesktopZoom: (desktopZoom) => set({ desktopZoom }),
       togglePinned: (app) =>
         set((state) => ({
           pinnedApps: state.pinnedApps.includes(app)
@@ -731,12 +727,11 @@ export const useOsStore = create<OsState>()(
       partialize: (state): PersistedSlice => ({
         loggedIn: state.loggedIn,
         settings: state.settings,
-        recycleBin: state.recycleBin,
-        hiddenDesktop: state.hiddenDesktop,
-        restoredSeeds: state.restoredSeeds,
-        recoveredItems: state.recoveredItems,
+        startPins: state.startPins,
+        favourites: state.favourites,
+        desktopIconSize: state.desktopIconSize,
+        desktopIconsVisible: state.desktopIconsVisible,
         iconPositions: state.iconPositions,
-        renames: state.renames,
       }),
     },
   ),

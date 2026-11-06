@@ -11,6 +11,17 @@ const APP_LOAD_ERROR = `
         </div>
     </div>`;
 
+const readList = (key) => {
+    try {
+        const list = JSON.parse(localStorage.getItem(key));
+        return Array.isArray(list) ? list : [];
+    } catch {
+        return [];
+    }
+};
+
+const toggled = (list, item) => (list.includes(item) ? list.filter(value => value !== item) : [...list, item]);
+
 document.addEventListener('alpine:init', () => {
     Alpine.store('os', {
         windows: [],
@@ -129,6 +140,60 @@ document.addEventListener('alpine:init', () => {
         },
         // Injected from filesystem.js
         fileSystem: window.loadFileSystem(),
+        fileClipboard: null,
+        renaming: null,
+        properties: null,
+        toastMessage: null,
+        startPins: readList('os.startPins'),
+        favourites: readList('os.favourites'),
+        desktopIconSize: localStorage.getItem('os.iconSize') || 'medium',
+        desktopIconsVisible: localStorage.getItem('os.iconsVisible') !== 'false',
+
+        // Each change comes from a function in file-ops.js.
+        changeFiles(change) {
+            const next = change(this.fileSystem);
+            if (next === this.fileSystem) return;
+            this.fileSystem = next;
+            this.saveFileSystem();
+        },
+
+        toggleStartPin(full) {
+            this.startPins = toggled(this.startPins, full);
+            localStorage.setItem('os.startPins', JSON.stringify(this.startPins));
+        },
+
+        toggleFavourite(full) {
+            this.favourites = toggled(this.favourites, full);
+            localStorage.setItem('os.favourites', JSON.stringify(this.favourites));
+        },
+
+        setDesktopIconSize(size) {
+            this.desktopIconSize = size;
+            localStorage.setItem('os.iconSize', size);
+        },
+
+        setDesktopIconsVisible(visible) {
+            this.desktopIconsVisible = visible;
+            localStorage.setItem('os.iconsVisible', visible);
+        },
+
+        /** Returns the old and new names, so that the desktop can move the icon's spot. */
+        commitRename(value) {
+            if (!this.renaming) return null;
+            const { path, name } = this.renaming;
+            const newName = value.trim();
+            this.renaming = null;
+            this.changeFiles(fs => OsWindowing.renameEntry(fs, path, name, newName));
+            const renamed = (this.fileSystem[path] || []).some(entry => entry.name === newName);
+            return renamed && newName !== name ? { path, from: name, to: newName } : null;
+        },
+
+        showToast(message) {
+            this.toastMessage = message;
+            setTimeout(() => {
+                if (this.toastMessage === message) this.toastMessage = null;
+            }, 3000);
+        },
 
         saveFileSystem() {
             localStorage.setItem('os.fileSystem', JSON.stringify(this.fileSystem));
@@ -193,7 +258,7 @@ document.addEventListener('alpine:init', () => {
                 if (appHandle === 'explorer' && extraData.initialPath) {
                     // Dispatch after focusing to ensure the listener identifies the right window
                     setTimeout(() => {
-                        window.dispatchEvent(new CustomEvent('explorer-navigate', { detail: { path: extraData.initialPath } }));
+                        window.dispatchEvent(new CustomEvent('explorer-navigate', { detail: { selectName: extraData.selectName, path: extraData.initialPath } }));
                     }, 10);
                 }
                 return;
@@ -389,19 +454,8 @@ document.addEventListener('alpine:init', () => {
         },
 
         writeFile(path, file) {
-            if (!this.fileSystem[path]) {
-                this.fileSystem[path] = [];
-            }
-            
-            const existingIndex = this.fileSystem[path].findIndex(f => f.name === file.name);
-            if (existingIndex > -1) {
-                this.fileSystem[path][existingIndex] = { ...this.fileSystem[path][existingIndex], ...file };
-            } else {
-                this.fileSystem[path].push(file);
-            }
-            
+            this.changeFiles(fs => OsWindowing.writeTextFile(fs, path, file.name, file.content, file.icon));
             this.logEvent('FileSystem', 'Information', `File saved: ${path}\\${file.name}`);
-            this.saveFileSystem();
             return true;
         }
     });

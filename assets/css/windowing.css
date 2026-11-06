@@ -499,3 +499,26 @@ html[data-os-keyboard][data-os-mode='phone'] .os-taskbar {
     animation: none;
   }
 }
+
+/* Desktop icon sizes, from the desktop's View menu. */
+[data-icon-size='small'] .desktop-tile-icon {
+    width: 2rem;
+    height: 2rem;
+}
+
+[data-icon-size='large'] .desktop-tile-icon {
+    width: 4rem;
+    height: 4rem;
+}
+
+/* A long press opens our own menu, so Safari's callout must not open as well. */
+.desktop-icon-container,
+.os-taskbar,
+[data-explorer-file] {
+    -webkit-touch-callout: none;
+}
+
+/* A file that has been cut, until it is pasted. */
+.file-cut {
+    opacity: 0.5;
+}

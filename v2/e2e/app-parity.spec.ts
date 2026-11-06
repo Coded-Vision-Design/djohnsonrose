@@ -93,9 +93,10 @@ async function openStart(page: Page) {
 for (const build of BUILDS) {
   test.describe(build.name, () => {
     test('Start shows the shared pins, in order', async ({ page }) => {
+      test.setTimeout(60_000) // A cold dev server sends icons one at a time.
       await boot(page, build.url)
       await openStart(page)
-      await expect.poll(() => undrawn(page, 'data-pinned-app'), { timeout: 15_000 }).toEqual([])
+      await expect.poll(() => undrawn(page, 'data-pinned-app'), { timeout: 40_000 }).toEqual([])
 
       const tiles = await entries(page, 'data-pinned-app')
       expect(tiles.map((tile) => tile.id)).toEqual(manifest.startPinned)
@@ -106,10 +107,11 @@ for (const build of BUILDS) {
     })
 
     test('All apps lists every app, in order', async ({ page }) => {
+      test.setTimeout(60_000) // A cold dev server sends icons one at a time.
       await boot(page, build.url)
       await openStart(page)
       await page.getByRole('button', { name: /All apps/ }).click()
-      await expect.poll(() => undrawn(page, 'data-all-app'), { timeout: 15_000 }).toEqual([])
+      await expect.poll(() => undrawn(page, 'data-all-app'), { timeout: 40_000 }).toEqual([])
 
       const rows = await entries(page, 'data-all-app')
       const sorted = [...manifest.apps].sort((a, b) => a.title.localeCompare(b.title))
@@ -552,6 +554,33 @@ test.describe('the tray in both builds', () => {
       expect(v1).toEqual(v2)
     })
   }
+
+  test('tells the time the same way, whatever the visitor’s language', async ({ browser }) => {
+    test.setTimeout(60_000)
+    const [v1, v2] = await inBothBuilds(browser, async (page) => {
+      await page.waitForTimeout(1000) // The clock fills in just after the shell boots.
+      return page.locator('[data-tray-item="clock"]').innerText()
+    })
+    expect(v1).toMatch(/^\d{2}:\d{2}/)
+    expect(v1).toEqual(v2)
+  })
+
+  test('lines up at phone size', async ({ browser }) => {
+    test.setTimeout(60_000)
+    const [v1, v2] = await inBothBuilds(
+      browser,
+      async (page) => {
+        await page.waitForTimeout(1000) // The clock fills in just after the shell boots.
+        return page.locator('[data-tray-item]').evaluateAll((items) =>
+          items
+            .filter((el) => (el as HTMLElement).offsetParent !== null)
+            .map((el) => Math.round(el.getBoundingClientRect().x)),
+        )
+      },
+      { viewport: { width: 390, height: 844 } },
+    )
+    expect(v1).toEqual(v2)
+  })
 
   const readBattery = async (page: Page) => {
     const battery = page.locator('[data-tray-battery]')

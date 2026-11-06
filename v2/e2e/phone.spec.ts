@@ -1,0 +1,249 @@
+import { test, expect, type Page } from '@playwright/test'
+
+// Both builds on a phone. This runs twice, as an iPhone on WebKit, Safari's own
+// engine, and as a Pixel on Chromium. Chromium takes real gestures through its
+// input pipeline. WebKit has no such door, so touches there are raised on the
+// page, which still exercises Safari's own event handling.
+
+const BUILDS = [
+  { name: 'v1', url: process.env.V1_URL ?? 'http://localhost:8765/' },
+  { name: 'v2', url: `${process.env.V2_ORIGIN ?? 'http://localhost:5173'}/v2/` },
+] as const
+
+const FILE = 'achievements.txt'
+
+const icon = (page: Page, name: string) => page.locator(`[data-desktop-item="${name}"]`)
+const item = (page: Page, label: string) => page.locator(`[data-menu-item="${label}"]`)
+
+async function boot(page: Page, url: string) {
+  await page.addInitScript(() => {
+    localStorage.setItem('auth.loggedIn', 'true')
+    localStorage.setItem('cookie.consent', 'false')
+    localStorage.setItem('react.cookie.consent', 'false')
+    localStorage.setItem('react.os', JSON.stringify({ state: { loggedIn: true }, version: 0 }))
+  })
+  await page.route('**/api/log.php', (route) => route.fulfill({ status: 204, body: '' }))
+  await page.goto(url, { waitUntil: 'domcontentloaded' })
+  await icon(page, FILE).waitFor({ timeout: 20_000 })
+  await page.waitForTimeout(600)
+}
+
+/**
+ * Raises a touch on whatever is at a point, as WebKit has no gesture API here,
+ * and its desktop port will not build Touch objects, so these stand in for them.
+ */
+const touch = (page: Page, type: string, points: { x: number; y: number }[]) =>
+  page.evaluate(
+    ([kind, fingers]) => {
+      const { x, y } = fingers[0]
+      const target = window.__touchTarget ?? document.elementFromPoint(x, y)
+      window.__touchTarget = target
+      const ended = kind === 'touchend'
+      const touches = ended ? [] : fingers.map((finger) => ({ target, clientX: finger.x, clientY: finger.y }))
+      const event = new Event(kind, { bubbles: true, cancelable: true })
+      Object.defineProperty(event, 'touches', { value: touches })
+      target?.dispatchEvent(event)
+      if (ended) window.__touchTarget = undefined
+    },
+    [type, points] as const,
+  )
+
+declare global {
+  interface Window {
+    __touchTarget?: Element | null
+  }
+}
+
+async function longPress(page: Page, browserName: string, x: number, y: number) {
+  if (browserName === 'chromium') {
+    const cdp = await page.context().newCDPSession(page)
+    await cdp.send('Input.synthesizeTapGesture', { x, y, duration: 900, gestureSourceType: 'touch' })
+  } else {
+    await touch(page, 'touchstart', [{ x, y }])
+    await page.waitForTimeout(800)
+    await touch(page, 'touchend', [{ x, y }])
+  }
+}
+
+async function pinchOpen(page: Page, browserName: string, x: number, y: number) {
+  if (browserName === 'chromium') {
+    const cdp = await page.context().newCDPSession(page)
+    await cdp.send('Input.synthesizePinchGesture', { x, y, scaleFactor: 1.6, gestureSourceType: 'touch' })
+    return
+  }
+  const fingers = (gap: number) => [
+    { x: x - gap, y },
+    { x: x + gap, y },
+  ]
+  await touch(page, 'touchstart', fingers(30))
+  for (let gap = 40; gap <= 130; gap += 10) await touch(page, 'touchmove', fingers(gap))
+  await touch(page, 'touchend', fingers(130))
+}
+
+const middle = async (page: Page, name: string) => {
+  const box = await icon(page, name).boundingBox()
+  if (!box) throw new Error(`no icon: ${name}`)
+  return [box.x + box.width / 2, box.y + box.height / 2] as const
+}
+
+for (const build of BUILDS) {
+  test.describe(`${build.name} on a phone`, () => {
+    test.beforeEach(({ page }) => boot(page, build.url))
+
+    test('fits the screen, with nothing to scroll sideways', async ({ page }) => {
+      const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)
+      expect(overflow).toBeLessThanOrEqual(0)
+      const taskbar = await page.locator('.os-taskbar').boundingBox()
+      const viewport = page.viewportSize()
+      expect(Math.round((taskbar?.y ?? 0) + (taskbar?.height ?? 0))).toBe(viewport?.height)
+    })
+
+    test('a tap opens a file', async ({ page }) => {
+      await icon(page, FILE).tap()
+      await expect(page.getByRole('dialog', { name: FILE, exact: true })).toBeVisible()
+    })
+
+    test('a long press on an icon opens its menu, not the file', async ({ page, browserName }) => {
+      const [x, y] = await middle(page, FILE)
+      await longPress(page, browserName, x, y)
+      await expect(item(page, 'Copy as path')).toBeVisible()
+      await expect(page.getByRole('dialog', { name: FILE, exact: true })).toHaveCount(0)
+    })
+
+    test('a finger held on a file cannot start a drag, which would cancel its menu', async ({ page }) => {
+      await icon(page, 'Projects').tap()
+      const file = page.locator('[data-explorer-file]').first()
+      await file.waitFor({ timeout: 20_000 })
+      const dragged = await file.evaluate((el) => {
+        const lift = (type: string, touches: unknown[]) => {
+          const event = new Event(type, { bubbles: true, cancelable: true })
+          Object.defineProperty(event, 'touches', { value: touches })
+          el.dispatchEvent(event)
+        }
+        lift('touchstart', [{ target: el, clientX: 40, clientY: 200 }])
+        const started = el.dispatchEvent(
+          new DragEvent('dragstart', { bubbles: true, cancelable: true, dataTransfer: new DataTransfer() }),
+        )
+        lift('touchend', [])
+        return started
+      })
+      expect(dragged).toBe(false)
+    })
+
+    test('a long press on the wallpaper opens the desktop menu', async ({ page, browserName }) => {
+      const viewport = page.viewportSize()
+      await longPress(page, browserName, (viewport?.width ?? 390) - 40, (viewport?.height ?? 800) - 200)
+      await expect(item(page, 'Refresh')).toBeVisible()
+    })
+
+    test('a long press on a taskbar button opens its menu, not the app', async ({ page, browserName }) => {
+      const box = await page.locator('[data-taskbar-app="edge"]').boundingBox()
+      if (!box) throw new Error('no button')
+      await longPress(page, browserName, box.x + box.width / 2, box.y + box.height / 2)
+      await expect(item(page, 'Unpin from taskbar')).toBeVisible()
+      await expect(page.getByRole('dialog')).toHaveCount(0)
+    })
+
+    test('a tap on a text box still focuses it after a long press', async ({ page, browserName }) => {
+      const viewport = page.viewportSize()
+      await longPress(page, browserName, (viewport?.width ?? 390) - 40, (viewport?.height ?? 800) - 200)
+      await expect(item(page, 'Refresh')).toBeVisible()
+      await page.keyboard.press('Escape')
+      await page.locator('.os-taskbar-apps button').first().tap()
+      const search = page.getByPlaceholder('Search for apps, settings, and documents')
+      await search.tap()
+      await expect(search).toBeFocused()
+    })
+
+    test('the menu stays on screen', async ({ page, browserName }) => {
+      const viewport = page.viewportSize()
+      const [x, y] = await middle(page, 'Recycle Bin')
+      await longPress(page, browserName, x, y)
+      const box = await page.locator('[data-context-menu]').filter({ visible: true }).boundingBox()
+      expect(box?.x ?? -1).toBeGreaterThanOrEqual(0)
+      expect((box?.x ?? 0) + (box?.width ?? 0)).toBeLessThanOrEqual(viewport?.width ?? 0)
+    })
+
+    const scale = (page: Page) => page.locator('[data-icon-size]').evaluate((el) => new DOMMatrix(getComputedStyle(el).transform).a)
+
+    test('a pinch zooms the desktop icons and not the page', async ({ page, browserName }) => {
+      const viewport = page.viewportSize()
+      await pinchOpen(page, browserName, (viewport?.width ?? 390) - 90, (viewport?.height ?? 800) - 220)
+      await expect.poll(() => scale(page)).toBeCloseTo(1.3, 2)
+      expect(await page.evaluate(() => window.visualViewport?.scale ?? 1)).toBe(1)
+    })
+
+    test('a pinch inside an open window leaves the desktop icons alone', async ({ page, browserName }) => {
+      test.skip(browserName === 'chromium', 'Needs fingers placed on one exact element.')
+      await icon(page, FILE).tap()
+      const win = page.getByRole('dialog', { name: FILE, exact: true })
+      await win.waitFor()
+      const box = await win.boundingBox()
+      if (!box) throw new Error('no window')
+      await pinchOpen(page, browserName, box.x + box.width / 2, box.y + box.height / 2)
+      expect(await scale(page)).toBe(1)
+    })
+
+    test('the stylesheets turn off Safari’s long-press callout', async ({ page }) => {
+      const css = await page.evaluate(async () => {
+        const sheets = [...document.styleSheets].map((sheet) =>
+          sheet.href
+            ? fetch(sheet.href).then((reply) => reply.text()).catch(() => '')
+            : (sheet.ownerNode?.textContent ?? ''),
+        )
+        return (await Promise.all(sheets)).join('')
+      })
+      expect(css).toMatch(/touch-callout:\s*none/)
+    })
+
+    test('the desktop tells the browser it handles its own gestures', async ({ page }) => {
+      const action = await icon(page, FILE).evaluate((el) => {
+        const root = el.closest('[data-os-desktop]') ?? el.closest('.wallpaper-bg')
+        return root ? getComputedStyle(root).touchAction : 'missing'
+      })
+      expect(action).toBe('none')
+    })
+
+    test('the battery matches what this browser reports', async ({ page }) => {
+      const reported = await page.evaluate(async () => {
+        const nav = navigator as Navigator & { getBattery?: () => Promise<{ level: number; charging: boolean }> }
+        if (!nav.getBattery) return null
+        const { level, charging } = await nav.getBattery()
+        return { level, charging }
+      })
+      const battery = page.locator('[data-tray-battery]')
+      const expected = reported
+        ? `${Math.round(reported.level * 100)}%${reported.charging ? ' (Charging)' : ''}`
+        : '85%'
+      await expect.poll(async () => (await battery.getAttribute('title'))?.trim()).toBe(expected)
+      await expect(battery.locator('img')).toHaveAttribute(
+        'src',
+        reported?.charging ? /energy\.svg$/ : /battery\.svg$/,
+      )
+    })
+
+    test('a tap on Notepad’s text lets you type', async ({ page }) => {
+      await icon(page, FILE).tap()
+      const win = page.getByRole('dialog', { name: FILE, exact: true })
+      await win.locator('[data-notepad-view]').waitFor({ timeout: 20_000 })
+      // The heading, as a tap on one of the file's links would follow it instead.
+      await win.locator('[data-notepad-view]').tap({ position: { x: 20, y: 10 } })
+      const box = win.locator('[data-notepad-text]')
+      await expect(box).toBeFocused()
+      await page.keyboard.type('typed by hand')
+      await expect(box).toHaveValue(/typed by hand/)
+    })
+
+    test('Notepad works by touch, and its menus fit', async ({ page }) => {
+      await icon(page, FILE).tap()
+      const win = page.getByRole('dialog', { name: FILE, exact: true })
+      await win.locator('[data-notepad-menu="Edit"]').waitFor({ timeout: 20_000 })
+      await win.locator('[data-notepad-menu="Edit"]').tap()
+      await expect(win.locator('[data-notepad-item="Find..."]')).toBeVisible()
+      await win.locator('[data-notepad-item="Find..."]').tap()
+      await page.getByLabel('Find', { exact: true }).fill('World')
+      await win.getByRole('button', { name: 'Find Next' }).tap()
+      await expect(win.locator('[data-notepad-mark]')).toHaveText('World')
+    })
+  })
+}

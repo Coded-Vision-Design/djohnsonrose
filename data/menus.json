@@ -5,10 +5,11 @@
       { "id": "autoArrange", "label": "Auto-arrange icons", "icon": "win11/check.svg" },
       { "id": "sortBy", "label": "Sort by", "icon": "win11/sort.svg" },
       { "id": "refresh", "label": "Refresh", "icon": "win11/refresh.svg" },
+      { "id": "paste", "label": "Paste", "icon": "win11/copy.svg" },
       { "separator": true },
       { "id": "resetZoom", "label": "Reset Zoom", "icon": "win11/search.webp" },
       { "separator": true },
-      { "id": "new", "label": "New", "icon": "win11/new.svg", "disabled": true },
+      { "id": "new", "label": "New", "icon": "win11/new.svg" },
       { "separator": true },
       { "id": "displaySettings", "label": "Display settings", "icon": "win11/display.webp" },
       { "id": "personalise", "label": "Personalise", "icon": "win11/settings.webp" },
@@ -21,18 +22,41 @@
   "desktopClassic": {
     "variant": "classic",
     "items": [
-      { "id": "view", "label": "View", "icon": "win11/view.svg", "disabled": true },
-      { "id": "sortBy", "label": "Sort by", "icon": "win11/sort.svg", "disabled": true },
+      { "id": "view", "label": "View", "icon": "win11/view.svg" },
+      { "id": "sortBy", "label": "Sort by", "icon": "win11/sort.svg" },
       { "id": "refresh", "label": "Refresh", "icon": "win11/refresh.svg" },
       { "separator": true },
-      { "id": "paste", "label": "Paste", "icon": "win11/copy.svg", "disabled": true },
-      { "id": "pasteShortcut", "label": "Paste shortcut", "icon": "win11/open.svg", "disabled": true },
+      { "id": "paste", "label": "Paste", "icon": "win11/copy.svg" },
+      { "id": "pasteShortcut", "label": "Paste shortcut", "icon": "win11/open.svg" },
       { "separator": true },
-      { "id": "new", "label": "New", "icon": "win11/new.svg", "disabled": true },
+      { "id": "new", "label": "New", "icon": "win11/new.svg" },
       { "id": "displaySettings", "label": "Display settings", "icon": "win11/display.webp" },
       { "id": "personalise", "label": "Personalise", "icon": "win11/personalize.webp" },
       { "separator": true },
       { "id": "terminal", "label": "Open in PowerShell", "icon": "terminal.webp" }
+    ]
+  },
+  "desktopView": {
+    "items": [
+      { "id": "iconsLarge", "label": "Large icons", "icon": "win11/view.svg" },
+      { "id": "iconsMedium", "label": "Medium icons", "icon": "win11/view.svg" },
+      { "id": "iconsSmall", "label": "Small icons", "icon": "win11/view.svg" },
+      { "separator": true },
+      { "id": "toggleIcons", "label": "Show desktop icons", "icon": "win11/view.svg" }
+    ]
+  },
+  "desktopSort": {
+    "items": [
+      { "id": "sortName", "label": "Name", "icon": "win11/sort.svg" },
+      { "id": "sortSize", "label": "Size", "icon": "win11/sort.svg" },
+      { "id": "sortType", "label": "Item type", "icon": "win11/sort.svg" },
+      { "id": "sortDate", "label": "Date modified", "icon": "win11/sort.svg" }
+    ]
+  },
+  "newItem": {
+    "items": [
+      { "id": "newFolder", "label": "Folder", "icon": "win11/folder.webp" },
+      { "id": "newTextFile", "label": "Text Document", "icon": "notepad++.webp" }
     ]
   },
   "taskbar": {
@@ -51,6 +75,15 @@
       { "id": "taskManager", "label": "Task Manager", "icon": "win11/taskmgr.webp" },
       { "separator": true },
       { "id": "close", "label": "Close window", "icon": "win11/delete.webp" },
+      { "separator": true },
+      { "id": "classic", "label": "Show more options", "icon": "win11/more.svg", "shortcut": "Shift+F10" }
+    ]
+  },
+  "computer": {
+    "items": [
+      { "id": "open", "label": "Open", "icon": "win11/open.svg" },
+      { "separator": true },
+      { "id": "properties", "label": "Properties", "icon": "win11/properties.svg" },
       { "separator": true },
       { "id": "classic", "label": "Show more options", "icon": "win11/more.svg", "shortcut": "Shift+F10" }
     ]
@@ -89,26 +122,31 @@
       { "id": "classic", "label": "Show more options", "icon": "win11/more.svg", "shortcut": "Shift+F10" }
     ]
   },
+  "recycledFile": {
+    "items": [
+      { "id": "restore", "label": "Restore", "icon": "win11/refresh.svg" },
+      { "id": "deleteForever", "label": "Delete", "icon": "win11/delete.svg" },
+      { "separator": true },
+      { "id": "properties", "label": "Properties", "icon": "win11/properties.svg" },
+      { "separator": true },
+      { "id": "classic", "label": "Show more options", "icon": "win11/more.svg", "shortcut": "Shift+F10" }
+    ]
+  },
   "explorerPane": {
     "items": [
       { "id": "view", "label": "View", "icon": "win11/view.svg" },
       { "id": "details", "label": "Show details pane", "icon": "win11/properties.svg" },
       { "separator": true },
-      { "id": "sortHeader", "label": "Sort by", "icon": "win11/sort.svg", "disabled": true },
-      { "id": "sortName", "label": "Name", "icon": "win11/sort.svg" },
-      { "id": "sortType", "label": "Type", "icon": "win11/sort.svg" },
-      { "id": "sortDate", "label": "Date modified", "icon": "win11/sort.svg" },
-      { "id": "sortSize", "label": "Size", "icon": "win11/sort.svg" }
-    ]
-  },
-  "recycledFile": {
-    "items": [
-      { "id": "open", "label": "Open", "icon": "win11/open.svg" },
-      { "id": "restore", "label": "Restore", "icon": "win11/refresh.svg" },
+      { "id": "sortName", "label": "Sort by name", "icon": "win11/sort.svg" },
+      { "id": "sortType", "label": "Sort by type", "icon": "win11/sort.svg" },
+      { "id": "sortDate", "label": "Sort by date modified", "icon": "win11/sort.svg" },
+      { "id": "sortSize", "label": "Sort by size", "icon": "win11/sort.svg" },
       { "separator": true },
-      { "id": "properties", "label": "Properties", "icon": "win11/properties.svg" },
+      { "id": "paste", "label": "Paste", "icon": "win11/copy.svg" },
+      { "id": "pasteShortcut", "label": "Paste shortcut", "icon": "win11/open.svg" },
       { "separator": true },
-      { "id": "classic", "label": "Show more options", "icon": "win11/more.svg", "shortcut": "Shift+F10" }
+      { "id": "newFolder", "label": "New folder", "icon": "win11/folder.webp" },
+      { "id": "newTextFile", "label": "New text document", "icon": "notepad++.webp" }
     ]
   }
 }

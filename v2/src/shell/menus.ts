@@ -5,7 +5,15 @@ import {
   type MenuData,
   type MenuItemData,
 } from '../../../assets/js/windowing/shell-core.js'
+import {
+  desktopMenuHandlers,
+  fileMenuFor,
+  folderMenuOverrides,
+  type FileOs,
+} from '../../../assets/js/windowing/file-ops.js'
+import type { FsEntry } from '../data/filesystem'
 import { useOsStore } from '../store/osStore'
+import { fileOs } from './fileOs'
 
 const IMG = '/assets/img/'
 
@@ -32,9 +40,10 @@ export function showMenu(
   useOsStore.getState().openContextMenu(x, y, menu.items, menu.variant, menu.actions)
 }
 
-function desktopHandlers() {
+function desktopHandlers(here: MenuPoint) {
   const { openApp } = useOsStore.getState()
   return {
+    ...desktopMenuHandlers(fileOs(), showMenu as never, here),
     refresh: () => window.location.reload(),
     displaySettings: () => openApp('settings'),
     personalise: () => openApp('settings', 'Settings', { extra: { currentTab: 'personalisation' } }),
@@ -43,25 +52,34 @@ function desktopHandlers() {
 }
 
 /** The Win10-style menu, opened from "Show more options". */
-export function showClassicDesktopMenu(point: MenuPoint) {
-  const { clientX, clientY } = point
-  showMenu('desktopClassic', { clientX, clientY }, desktopHandlers())
+export function showClassicDesktopMenu({ clientX, clientY }: MenuPoint) {
+  const here = { clientX, clientY }
+  showMenu('desktopClassic', here, desktopHandlers(here), folderMenuOverrides(fileOs()))
 }
 
-export function showDesktopMenu(point: MenuPoint) {
-  const { clientX, clientY } = point
+export function showDesktopMenu({ clientX, clientY }: MenuPoint) {
   const here = { clientX, clientY }
-  const { desktopZoom, resetIconPositions, setDesktopZoom } = useOsStore.getState()
+  const { desktopZoom, setDesktopZoom } = useOsStore.getState()
   showMenu(
     'desktop',
     here,
     {
-      ...desktopHandlers(),
-      autoArrange: resetIconPositions,
-      sortBy: resetIconPositions,
+      ...desktopHandlers(here),
       resetZoom: () => setDesktopZoom(1),
       classic: () => showClassicDesktopMenu(here),
     },
-    { resetZoom: { disabled: desktopZoom === 1 } },
+    { ...folderMenuOverrides(fileOs()), resetZoom: { disabled: desktopZoom === 1 } },
   )
+}
+
+/** A file's menu, wherever it is. Explorer overrides what differs inside it. */
+export function showFileMenu(
+  entry: FsEntry,
+  path: string,
+  { clientX, clientY }: MenuPoint,
+  overrides: Partial<FileOs<FsEntry>> = {},
+) {
+  const here = { clientX, clientY }
+  const { name, handlers, overrides: changes } = fileMenuFor(fileOs(overrides), entry, path)
+  showMenu(name, here, { ...handlers, classic: () => showClassicDesktopMenu(here) }, changes)
 }

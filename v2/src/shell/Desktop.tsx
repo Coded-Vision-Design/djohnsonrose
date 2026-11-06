@@ -6,6 +6,7 @@ import { WindowErrorBoundary } from '../windowing/WindowErrorBoundary'
 import { SnapUi } from './SnapUi'
 import { TaskSwitcher } from './TaskSwitcher'
 import { Taskbar } from './Taskbar'
+import { PropertiesDialog, Toast } from './FileDialogs'
 import { showDesktopMenu } from './menus'
 import { StartMenu } from './StartMenu'
 import { QuickSettings } from './QuickSettings'
@@ -14,7 +15,8 @@ import { CookieBanner } from './CookieBanner'
 import { DesktopIcons } from './DesktopIcons'
 import { ContextMenu } from './ContextMenu'
 import { useWindowShortcuts } from '../windowing/useWindowShortcuts'
-import { watchDesktop } from '../../../assets/js/windowing/windowing.js'
+import { keepFileLongPress, watchDesktop } from '../../../assets/js/windowing/windowing.js'
+import { fingerGap, pinchZoom } from '../../../assets/js/windowing/shell-core.js'
 import { getApp } from '../apps/registry'
 import { useClock } from '../lib/useClock'
 import { useWeather } from '../lib/useWeather'
@@ -44,7 +46,7 @@ const WindowHost = memo(function WindowHost({ win }: { win: WinWindow }) {
         <WindowContextProvider value={win}>
           <WindowErrorBoundary onClose={() => closeWindow(win.id)}>
             <Suspense fallback={<WindowLoader />}>
-              <Component />
+              <Component key={win.revision ?? 0} />
             </Suspense>
           </WindowErrorBoundary>
         </WindowContextProvider>
@@ -54,6 +56,8 @@ const WindowHost = memo(function WindowHost({ win }: { win: WinWindow }) {
     </Window>
   )
 })
+
+const LONG_PRESS_MS = 600
 
 export function Desktop() {
   const windows = useOsStore((s) => s.windows)
@@ -70,34 +74,61 @@ export function Desktop() {
     () => watchDesktop(windowsLayer.current!, (desktop, mode) => useOsStore.getState().setDesktop(desktop, mode)),
     [],
   )
+  useEffect(() => keepFileLongPress(), [])
 
-  // Pinching the desktop zooms its icons, as in v1.
-  const pinchDistance = useRef(0)
-  const fingerGap = ({ touches }: TouchEvent) =>
-    Math.hypot(touches[0].clientX - touches[1].clientX, touches[0].clientY - touches[1].clientY)
+  // Phones have no right button, so a long press does the same job: it raises
+  // the right-click on whatever is under the finger, as in v1. Pinching the
+  // desktop zooms its icons.
+  const pinch = useRef({ gap: 0, zoom: 1 })
+  const press = useRef({ x: 0, y: 0, timer: 0, fired: false })
   const onDesktopTouchStart = (e: TouchEvent) => {
-    if (e.touches.length === 2) pinchDistance.current = fingerGap(e)
+    window.clearTimeout(press.current.timer)
+    press.current.fired = false
+    if (e.touches.length === 2) {
+      pinch.current = { gap: fingerGap(e.touches), zoom: useOsStore.getState().desktopZoom }
+      return
+    }
+    const target = e.target as Element
+    const hasOwnMenu = !target.closest('.os-window') || target.closest('[data-explorer-pane]')
+    if (!hasOwnMenu || target.closest('.os-task-switcher, input, textarea')) return
+    const { clientX, clientY } = e.touches[0]
+    const timer = window.setTimeout(() => {
+      press.current.fired = true
+      target.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, clientX, clientY }))
+    }, LONG_PRESS_MS)
+    press.current = { x: clientX, y: clientY, timer, fired: false }
   }
   const onDesktopTouchMove = (e: TouchEvent) => {
+    if (e.touches.length === 1) {
+      const { clientX, clientY } = e.touches[0]
+      if (Math.hypot(clientX - press.current.x, clientY - press.current.y) > 10) {
+        window.clearTimeout(press.current.timer)
+      }
+      return
+    }
     if (e.touches.length !== 2 || (e.target as Element).closest('.os-window')) return
-    const gap = fingerGap(e)
-    const change = gap - pinchDistance.current
-    if (Math.abs(change) <= 2) return
-    const { desktopZoom, setDesktopZoom } = useOsStore.getState()
-    setDesktopZoom(desktopZoom + (change > 0 ? 0.02 : -0.02))
-    pinchDistance.current = gap
+    useOsStore.getState().setDesktopZoom(pinchZoom(pinch.current.zoom, pinch.current.gap, fingerGap(e.touches)))
   }
 
   return (
     <div
-      className="relative h-dvh w-dvw overflow-hidden bg-cover bg-center"
+      data-os-desktop=""
+      className="relative h-dvh w-dvw overflow-hidden bg-cover bg-center touch-none"
       style={{ backgroundImage: `url(${wallpaper})` }}
       onContextMenu={(e) => {
+        const target = e.target as Element
+        if (target.closest('input, textarea')) return
         e.preventDefault()
-        showDesktopMenu(e)
+        if (!target.closest('.os-window')) showDesktopMenu(e)
       }}
       onTouchStart={onDesktopTouchStart}
       onTouchMove={onDesktopTouchMove}
+      onTouchEnd={(e) => {
+        window.clearTimeout(press.current.timer)
+        // Lifting the finger would click, which would close the menu it just opened.
+        if (press.current.fired) e.preventDefault()
+      }}
+      onTouchCancel={() => window.clearTimeout(press.current.timer)}
     >
       <DesktopIcons />
       <div
@@ -119,6 +150,8 @@ export function Desktop() {
       <Taskbar />
       <CookieBanner />
       <ContextMenu />
+      <PropertiesDialog />
+      <Toast />
     </div>
   )
 }

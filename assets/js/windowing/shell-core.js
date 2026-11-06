@@ -38,6 +38,7 @@ export function searchOs(query, apps, fileSystem, limit = 10) {
   if (!query) return [];
   const needle = query.toLowerCase();
   const matches = (name) => name.toLowerCase().includes(needle);
+  const inBin = (path) => path === RECYCLE_BIN || path.startsWith(`${RECYCLE_BIN}\\`);
 
   const found = apps
     .filter((app) => matches(app.title))
@@ -45,7 +46,7 @@ export function searchOs(query, apps, fileSystem, limit = 10) {
   const titles = new Set(found.map((app) => app.name));
 
   for (const [path, entries] of Object.entries(fileSystem)) {
-    if (path === RECYCLE_BIN) continue;
+    if (inBin(path)) continue;
     for (const entry of entries) {
       if (matches(entry.name) && !(entry.type === 'app' && titles.has(entry.name))) {
         found.push({ ...entry, fullPath: path });
@@ -65,13 +66,15 @@ const withoutStraySeparators = (items) =>
 /**
  * Fills in a menu from data/menus.json. Each build supplies what the items do,
  * as handlers by id, and any change to one item, as overrides by id. An override
- * of { hidden: true } drops the item.
+ * of { hidden: true } drops the item. An item with no action is greyed out, so
+ * that nothing in a menu can look as if it works when it does not.
  */
 export function buildMenu(menu, imgPath, handlers = {}, overrides = {}) {
   const fill = (item) => {
     if (item.separator) return item;
     const filled = { ...item, ...overrides[item.id] };
-    return { ...filled, icon: imgPath + filled.icon, action: handlers[item.id] ?? (() => {}) };
+    const action = handlers[item.id];
+    return { ...filled, icon: imgPath + filled.icon, action, disabled: Boolean(filled.disabled || !action) };
   };
   const shown = (item) => !item.hidden;
 
@@ -86,6 +89,28 @@ function menuSize(menu) {
   const classic = menu.variant === 'classic';
   const rows = menu.items.reduce((total, item) => total + (item.separator ? 9 : classic ? 26 : 32), 12);
   return { width: classic ? 240 : 260, height: rows + (menu.actions?.length ? 44 : 0) };
+}
+
+/** The taskbar clock. h23 keeps midnight at 00:00, where hour12: false can give 24:00. */
+export const clockTime = (date) =>
+  date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
+
+export const clockDate = (date) =>
+  date.toLocaleDateString(undefined, { day: '2-digit', month: '2-digit', year: 'numeric' });
+
+/** The distance between two fingers, or 0 with fewer than two. */
+export function fingerGap(touches) {
+  if (touches.length < 2) return 0;
+  return Math.hypot(touches[0].clientX - touches[1].clientX, touches[0].clientY - touches[1].clientY);
+}
+
+/**
+ * The zoom a pinch has reached. It follows the fingers rather than counting touch
+ * events, so the same pinch lands on the same zoom on a fast phone and a slow one.
+ */
+export function pinchZoom(startZoom, startGap, gap) {
+  if (!startGap) return startZoom;
+  return Math.min(Math.max(0.7, startZoom * (gap / startGap)), 1.3);
 }
 
 /** Where a menu opened at a point goes, kept on screen. */

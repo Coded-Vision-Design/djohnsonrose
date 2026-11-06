@@ -23,7 +23,11 @@ export default defineConfig({
   projects: [
     {
       name: 'chromium',
+      testIgnore: /phone\.spec/,
       use: { ...devices['Desktop Chrome'], viewport: { width: 1440, height: 900 } },
     },
+    // Safari's own engine, as an iPhone.
+    { name: 'iphone', testMatch: /phone\.spec/, use: devices['iPhone 14'] },
+    { name: 'android', testMatch: /phone\.spec/, use: devices['Pixel 7'] },
   ],
 })

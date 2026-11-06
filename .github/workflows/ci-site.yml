@@ -39,6 +39,10 @@ jobs:
         working-directory: v2
         run: npm ci --ignore-scripts --no-audit --no-fund
 
+      - name: Lint
+        working-directory: v2
+        run: npm run lint
+
       - name: Unit tests
         working-directory: v2
         run: npm test
@@ -65,11 +69,11 @@ jobs:
           cache: npm
           cache-dependency-path: v2/package-lock.json
 
-      - name: Install v2 and Chromium
+      - name: Install v2 and the browsers
         working-directory: v2
         run: |
           npm ci --ignore-scripts --no-audit --no-fund
-          npx playwright install --with-deps chromium
+          npx playwright install --with-deps chromium webkit
 
       - name: Build v2
         working-directory: v2

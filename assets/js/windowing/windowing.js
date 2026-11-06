@@ -812,6 +812,27 @@ export function beginWindowResize(event, ctx) {
 }
 
 /**
+ * A finger held on a file means its menu. Left alone, the browser turns that press
+ * into a native drag at about half a second and cancels the touch, so the menu never
+ * opens. A mouse still drags files, and a finger still drags other things.
+ */
+export function keepFileLongPress(root = document) {
+  let fingers = 0
+  const count = (event) => { fingers = event.touches.length }
+  const stopDrag = (event) => {
+    if (fingers && event.target.closest('[data-explorer-file]')) event.preventDefault()
+  }
+  const touches = ['touchstart', 'touchend', 'touchcancel']
+  const passive = { capture: true, passive: true }
+  touches.forEach((type) => root.addEventListener(type, count, passive))
+  root.addEventListener('dragstart', stopDrag, true)
+  return () => {
+    touches.forEach((type) => root.removeEventListener(type, count, passive))
+    root.removeEventListener('dragstart', stopDrag, true)
+  }
+}
+
+/**
  * Reports the usable desktop, and marks the page with the current mode so that
  * CSS can adapt. Also tracks the on-screen keyboard, which on iOS does not
  * resize the layout viewport.
