@@ -113,6 +113,18 @@ for (const build of BUILDS) {
   })
 }
 
+test('v2 fetches the likeliest apps once the desktop is idle', async ({ page }) => {
+  const wanted = ['Explorer', 'Notepad', 'Word', 'Terminal']
+  const seen = new Set<string>()
+  page.on('request', (req) => {
+    const match = new URL(req.url()).pathname.match(/\/(Explorer|Notepad|Word|Terminal)(-[\w-]+)?\.(js|tsx)$/)
+    if (match) seen.add(match[1])
+  })
+  await boot(page, BUILDS[1].url)
+  await expect.poll(() => [...seen].sort(), { timeout: 10_000 }).toEqual([...wanted].sort())
+  await expect(page.locator('.os-window')).toHaveCount(0)
+})
+
 test('v1 versions its scripts by file time, so they stay cached between visits', async ({ request }) => {
   const html = await (await request.get(BUILDS[0].url)).text()
   const scripts = [...html.matchAll(/assets\/js\/components\/([\w/-]+)\.js\?v=(\d+)/g)]

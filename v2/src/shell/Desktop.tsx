@@ -18,6 +18,7 @@ import { useWindowShortcuts } from '../windowing/useWindowShortcuts'
 import { keepFileLongPress, watchDesktop } from '../../../assets/js/windowing/windowing.js'
 import { cssUrl, fingerGap, pinchZoom } from '../../../assets/js/windowing/shell-core.js'
 import { getApp } from '../apps/registry'
+import { preloadWhenIdle } from '../apps/preload'
 import { useClock } from '../lib/useClock'
 import { useWeather } from '../lib/useWeather'
 
@@ -75,6 +76,8 @@ export function Desktop() {
     [],
   )
   useEffect(() => keepFileLongPress(), [])
+  // Fetch the most opened apps once the desktop is idle, so they open at once.
+  useEffect(() => preloadWhenIdle(), [])
 
   // Phones have no right button, so a long press does the same job: it raises
   // the right-click on whatever is under the finger, as in v1. Pinching the
