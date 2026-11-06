@@ -5,6 +5,12 @@ require_once __DIR__ . '/bootstrap.php';
 $path = getRequestPath();
 $htmx = isHtmx();
 
+// The recruiter CV is a plain page of its own, not the desktop.
+if (rtrim($path, '/') === '/cv') {
+    require __DIR__ . '/partials/cv-page.php';
+    exit;
+}
+
 // Route mapping
 if ($path === '/' || $path === '/login') {
     $route = 'login';
