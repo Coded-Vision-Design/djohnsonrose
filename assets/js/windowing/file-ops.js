@@ -231,6 +231,32 @@ const TYPE_BY_EXTENSION = [
   [/\.(webp|png|jpe?g)$/, 'Image'],
 ];
 
+const ICON_BY_EXTENSION = [
+  [/\.(webp|png|jpe?g|gif)$/, 'win11/image.webp'],
+  [/\.(mp4|webm|mov)$/, 'movies.webp'],
+  [/\.(mp3|wav)$/, 'win11/music.webp'],
+  [/\.pdf$/, 'pdf.webp'],
+  [/\.zip$/, 'win11/zipfolder.webp'],
+  [/\.(exe|dll|msi)$/, 'win11/settings.webp'],
+  [/\.theme$/, 'win11/personalize.webp'],
+];
+
+/**
+ * The picture for an entry. Old saved file systems and a few built-in files
+ * still name an emoji, which Explorer never shows: they get a Windows image
+ * for their type instead.
+ */
+export function entryIcon(entry, imgPath) {
+  const icon = entry.icon ?? '';
+  if (icon.startsWith('/') || /\.(webp|svg|png|jpe?g|gif)$/i.test(icon)) return icon;
+  if (entry.type === 'folder') return `${imgPath}win11/folder.webp`;
+  if (entry.type === 'image') return `${imgPath}win11/image.webp`;
+  if (entry.type === 'video') return `${imgPath}movies.webp`;
+  const lower = entry.name.toLowerCase();
+  const match = ICON_BY_EXTENSION.find(([pattern]) => pattern.test(lower));
+  return imgPath + (match ? match[1] : 'notepad++.webp');
+}
+
 /** The app a file opens in: projects in FL Studio, everything else in Notepad. */
 export function appForFile(name) {
   return /\.flp$/i.test(name) ? 'flstudio' : 'notepad';

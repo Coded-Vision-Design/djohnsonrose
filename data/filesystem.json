@@ -21,7 +21,7 @@
   ],
   "C:\\Program Files\\Google\\Chrome\\Application": [
     {"name":"chrome.exe","type":"app","app":"edge","icon":"chrome.webp"},
-    {"name":"chrome_proxy.exe","type":"file","icon":"⚙️"}
+    {"name":"chrome_proxy.exe","type":"file","icon":"win11/settings.webp"}
   ],
   "C:\\Program Files\\Google\\Chrome": [
     {"name":"Application","type":"folder","icon":"win11/folder.webp"}
@@ -53,7 +53,7 @@
     {"name":"htdocs","type":"folder","icon":"win11/folder.webp"},
     {"name":"mysql","type":"folder","icon":"win11/folder.webp"},
     {"name":"php","type":"folder","icon":"win11/folder.webp"},
-    {"name":"xampp-control.exe","type":"file","icon":"🧡"}
+    {"name":"xampp-control.exe","type":"file","icon":"win11/settings.webp"}
   ],
   "C:\\Program Files (x86)": [
     {"name":"FileZilla FTP Client","type":"folder","icon":"win11/folder.webp"},
@@ -73,7 +73,7 @@
   ],
   "C:\\Program Files (x86)\\PuTTY": [
     {"name":"putty.exe","type":"app","icon":"putty.webp","app":"putty"},
-    {"name":"pscp.exe","type":"file","icon":"⚙️"}
+    {"name":"pscp.exe","type":"file","icon":"win11/settings.webp"}
   ],
   "C:\\Program Files (x86)\\FileZilla FTP Client": [
     {"name":"filezilla.exe","type":"app","app":"filezilla","icon":"filezilla.webp"},
@@ -98,14 +98,14 @@
     {"name":"config","type":"folder","icon":"win11/folder.webp"}
   ],
   "C:\\Windows\\Media": [
-    {"name":"Windows Logon.wav","type":"file","icon":"🎵"},
-    {"name":"Windows Error.wav","type":"file","icon":"🎵"},
-    {"name":"Windows Background.wav","type":"file","icon":"🎵"}
+    {"name":"Windows Logon.wav","type":"file","icon":"win11/music.webp"},
+    {"name":"Windows Error.wav","type":"file","icon":"win11/music.webp"},
+    {"name":"Windows Background.wav","type":"file","icon":"win11/music.webp"}
   ],
   "C:\\Windows\\Fonts": [
-    {"name":"Segoe UI.ttf","type":"file","icon":"🔤"},
-    {"name":"Arial.ttf","type":"file","icon":"🔤"},
-    {"name":"Consolas.ttf","type":"file","icon":"🔤"}
+    {"name":"Segoe UI.ttf","type":"file","icon":"win11/documents.webp"},
+    {"name":"Arial.ttf","type":"file","icon":"win11/documents.webp"},
+    {"name":"Consolas.ttf","type":"file","icon":"win11/documents.webp"}
   ],
   "C:\\Users": [
     {"name":"DeVante","type":"folder","icon":"win11/folder.webp"},
@@ -146,20 +146,20 @@
     {"name":"References (locked).txt","type":"app","app":"references","icon":"notepad++.webp","extraData":{"locked":true}}
   ],
   "C:\\Users\\DeVante\\Pictures": [
-    {"name":"baymotors.webp","type":"image","icon":"🖼️","url":"portfolio/baymotors.webp"},
-    {"name":"cpttours.webp","type":"image","icon":"🖼️","url":"portfolio/cpttours.webp"},
-    {"name":"ekbjjdesktop.webp","type":"image","icon":"🖼️","url":"portfolio/ekbjjdesktop.webp"},
-    {"name":"eurogoatdesktop.webp","type":"image","icon":"🖼️","url":"portfolio/eurogoatdesktop.webp"},
-    {"name":"youngsconstructiondesktop.webp","type":"image","icon":"🖼️","url":"portfolio/youngsconstructiondesktop.webp"},
-    {"name":"AJP Grand Slam 2024.webp","type":"image","icon":"🖼️","url":"assets/img/AJP Grand Slam 2024.webp"},
-    {"name":"Allstars UK Nationals.webp","type":"image","icon":"🖼️","url":"assets/img/Allstars UK Nationals.webp"},
-    {"name":"IBJJF European No-Gi 2023.webp","type":"image","icon":"🖼️","url":"assets/img/IBJJF European No-Gi 2023.webp"},
-    {"name":"IBJJF No-Gi World Championships 2023.webp","type":"image","icon":"🖼️","url":"assets/img/IBJJF No-Gi World Championships 2023.webp"},
-    {"name":"IBJJF World Championships 2022.webp","type":"image","icon":"🖼️","url":"assets/img/IBJJF World Championships 2022.webp"},
-    {"name":"NAGA World Championships 2023.webp","type":"image","icon":"🖼️","url":"assets/img/NAGA World Championships 2023.webp"}
+    {"name":"baymotors.webp","type":"image","icon":"win11/image.webp","url":"portfolio/baymotors.webp"},
+    {"name":"cpttours.webp","type":"image","icon":"win11/image.webp","url":"portfolio/cpttours.webp"},
+    {"name":"ekbjjdesktop.webp","type":"image","icon":"win11/image.webp","url":"portfolio/ekbjjdesktop.webp"},
+    {"name":"eurogoatdesktop.webp","type":"image","icon":"win11/image.webp","url":"portfolio/eurogoatdesktop.webp"},
+    {"name":"youngsconstructiondesktop.webp","type":"image","icon":"win11/image.webp","url":"portfolio/youngsconstructiondesktop.webp"},
+    {"name":"AJP Grand Slam 2024.webp","type":"image","icon":"win11/image.webp","url":"assets/img/AJP Grand Slam 2024.webp"},
+    {"name":"Allstars UK Nationals.webp","type":"image","icon":"win11/image.webp","url":"assets/img/Allstars UK Nationals.webp"},
+    {"name":"IBJJF European No-Gi 2023.webp","type":"image","icon":"win11/image.webp","url":"assets/img/IBJJF European No-Gi 2023.webp"},
+    {"name":"IBJJF No-Gi World Championships 2023.webp","type":"image","icon":"win11/image.webp","url":"assets/img/IBJJF No-Gi World Championships 2023.webp"},
+    {"name":"IBJJF World Championships 2022.webp","type":"image","icon":"win11/image.webp","url":"assets/img/IBJJF World Championships 2022.webp"},
+    {"name":"NAGA World Championships 2023.webp","type":"image","icon":"win11/image.webp","url":"assets/img/NAGA World Championships 2023.webp"}
   ],
   "C:\\Recycle Bin": [
-    {"name":"Easter Egg - South Africa 25 Video.mp4","type":"video","icon":"🎬","url":"data/south-africa-25.mp4","originalPath":"C:\\Users\\DeVante\\Desktop"}
+    {"name":"Easter Egg - South Africa 25 Video.mp4","type":"video","icon":"movies.webp","url":"data/south-africa-25.mp4","originalPath":"C:\\Users\\DeVante\\Desktop"}
   ],
   "C:\\Users\\DeVante\\Projects": [
     {"name":"Freelance","type":"folder","icon":"win11/folder.webp"},
@@ -193,8 +193,8 @@
     {"name":"Themes","type":"folder","icon":"win11/folder.webp"}
   ],
   "C:\\Windows\\Resources\\Themes": [
-    {"name":"aero.theme","type":"file","icon":"🎨"},
-    {"name":"dark.theme","type":"file","icon":"🎨"}
+    {"name":"aero.theme","type":"file","icon":"win11/personalize.webp"},
+    {"name":"dark.theme","type":"file","icon":"win11/personalize.webp"}
   ],
   "C:\\Windows\\Web": [
     {"name":"Wallpaper","type":"folder","icon":"win11/folder.webp"},
@@ -232,8 +232,8 @@
     {"name":"Pictures","type":"folder","icon":"win11/folder.webp"}
   ],
   "C:\\Users\\DeVante\\Projects\\Freelance\\Earth Echo\\Pictures": [
-    {"name":"Desktop UI.webp","type":"image","icon":"🖼️","url":"portfolio/earthecho.webp"},
-    {"name":"Mobile UI.webp","type":"image","icon":"🖼️","url":"portfolio/earthecho-mobile.webp"}
+    {"name":"Desktop UI.webp","type":"image","icon":"win11/image.webp","url":"portfolio/earthecho.webp"},
+    {"name":"Mobile UI.webp","type":"image","icon":"win11/image.webp","url":"portfolio/earthecho-mobile.webp"}
   ],
   "C:\\Users\\DeVante\\Projects\\Freelance\\Combat Evolved Sports": [
     {"name":"Visit Site.url","type":"app","app":"edge","icon":"chrome.webp","extraData":{"initialUrl":"https://combatevolvedsports.com/"}},
@@ -243,8 +243,8 @@
     {"name":"Pictures","type":"folder","icon":"win11/folder.webp"}
   ],
   "C:\\Users\\DeVante\\Projects\\Freelance\\Combat Evolved Sports\\Pictures": [
-    {"name":"Desktop UI.webp","type":"image","icon":"🖼️","url":"portfolio/combatevolvedsports.webp"},
-    {"name":"Mobile UI.webp","type":"image","icon":"🖼️","url":"portfolio/combatevolvedsports-mobile.webp"}
+    {"name":"Desktop UI.webp","type":"image","icon":"win11/image.webp","url":"portfolio/combatevolvedsports.webp"},
+    {"name":"Mobile UI.webp","type":"image","icon":"win11/image.webp","url":"portfolio/combatevolvedsports-mobile.webp"}
   ],
   "C:\\Users\\DeVante\\Projects\\Freelance\\Ram's Taxis": [
     {"name":"Visit Site.url","type":"app","app":"edge","icon":"chrome.webp","extraData":{"initialUrl":"https://ramstaxis.co.uk/"}},
@@ -254,8 +254,8 @@
     {"name":"Pictures","type":"folder","icon":"win11/folder.webp"}
   ],
   "C:\\Users\\DeVante\\Projects\\Freelance\\Ram's Taxis\\Pictures": [
-    {"name":"Desktop UI.webp","type":"image","icon":"🖼️","url":"portfolio/ramstaxis.webp"},
-    {"name":"Mobile UI.webp","type":"image","icon":"🖼️","url":"portfolio/ramstaxis-mobile.webp"}
+    {"name":"Desktop UI.webp","type":"image","icon":"win11/image.webp","url":"portfolio/ramstaxis.webp"},
+    {"name":"Mobile UI.webp","type":"image","icon":"win11/image.webp","url":"portfolio/ramstaxis-mobile.webp"}
   ],
   "C:\\Users\\DeVante\\Projects\\Freelance\\English Open BJJ": [
     {"name":"Visit Site.url","type":"app","app":"edge","extraData":{"initialUrl":"https://englishopenbjjchampionships.co.uk/"},"icon":"chrome.webp"},
@@ -265,8 +265,8 @@
     {"name":"Pictures","type":"folder","icon":"win11/folder.webp"}
   ],
   "C:\\Users\\DeVante\\Projects\\Freelance\\English Open BJJ\\Pictures": [
-    {"name":"Desktop UI.webp","type":"image","icon":"🖼️","url":"portfolio/englishopenbjj.webp"},
-    {"name":"Mobile UI.webp","type":"image","icon":"🖼️","url":"portfolio/englishopenbjj-mobile.webp"}
+    {"name":"Desktop UI.webp","type":"image","icon":"win11/image.webp","url":"portfolio/englishopenbjj.webp"},
+    {"name":"Mobile UI.webp","type":"image","icon":"win11/image.webp","url":"portfolio/englishopenbjj-mobile.webp"}
   ],
   "C:\\Users\\DeVante\\Projects\\Freelance\\Bay Motors": [
     {"name":"Visit Site.url","type":"app","app":"edge","extraData":{"initialUrl":"https://www.baymotors.co.uk/"},"icon":"chrome.webp"},
@@ -276,8 +276,8 @@
     {"name":"Pictures","type":"folder","icon":"win11/folder.webp"}
   ],
   "C:\\Users\\DeVante\\Projects\\Freelance\\Bay Motors\\Pictures": [
-    {"name":"Desktop UI.webp","type":"image","icon":"🖼️","url":"portfolio/baymotors.webp"},
-    {"name":"Mobile UI.webp","type":"image","icon":"🖼️","url":"portfolio/baymotors-mobile.webp"}
+    {"name":"Desktop UI.webp","type":"image","icon":"win11/image.webp","url":"portfolio/baymotors.webp"},
+    {"name":"Mobile UI.webp","type":"image","icon":"win11/image.webp","url":"portfolio/baymotors-mobile.webp"}
   ],
   "C:\\Users\\DeVante\\Projects\\Freelance\\CPT Tours": [
     {"name":"Visit Site.url","type":"app","app":"edge","extraData":{"initialUrl":"https://cpttours.co.za/"},"icon":"chrome.webp"},
@@ -287,8 +287,8 @@
     {"name":"Pictures","type":"folder","icon":"win11/folder.webp"}
   ],
   "C:\\Users\\DeVante\\Projects\\Freelance\\CPT Tours\\Pictures": [
-    {"name":"Desktop UI.webp","type":"image","icon":"🖼️","url":"portfolio/cpttours.webp"},
-    {"name":"Mobile UI.webp","type":"image","icon":"🖼️","url":"portfolio/cpttours-mobile.webp"}
+    {"name":"Desktop UI.webp","type":"image","icon":"win11/image.webp","url":"portfolio/cpttours.webp"},
+    {"name":"Mobile UI.webp","type":"image","icon":"win11/image.webp","url":"portfolio/cpttours-mobile.webp"}
   ],
   "C:\\Users\\DeVante\\Projects\\Freelance\\EKBJJ": [
     {"name":"Visit Site.url","type":"app","app":"edge","extraData":{"initialUrl":"https://ekbjj.com/"},"icon":"chrome.webp"},
@@ -298,8 +298,8 @@
     {"name":"Pictures","type":"folder","icon":"win11/folder.webp"}
   ],
   "C:\\Users\\DeVante\\Projects\\Freelance\\EKBJJ\\Pictures": [
-    {"name":"Desktop UI.webp","type":"image","icon":"🖼️","url":"portfolio/ekbjjdesktop.webp"},
-    {"name":"Mobile UI.webp","type":"image","icon":"🖼️","url":"portfolio/ekbjjdesktop-mobile.webp"}
+    {"name":"Desktop UI.webp","type":"image","icon":"win11/image.webp","url":"portfolio/ekbjjdesktop.webp"},
+    {"name":"Mobile UI.webp","type":"image","icon":"win11/image.webp","url":"portfolio/ekbjjdesktop-mobile.webp"}
   ],
   "C:\\Users\\DeVante\\Projects\\Freelance\\BJJ Havering": [
     {"name":"Visit Site.url","type":"app","app":"edge","extraData":{"initialUrl":"https://bjjhavering.co.uk/"},"icon":"chrome.webp"},
@@ -309,8 +309,8 @@
     {"name":"Pictures","type":"folder","icon":"win11/folder.webp"}
   ],
   "C:\\Users\\DeVante\\Projects\\Freelance\\BJJ Havering\\Pictures": [
-    {"name":"Desktop UI.webp","type":"image","icon":"🖼️","url":"portfolio/wolvesbjj.webp"},
-    {"name":"Mobile UI.webp","type":"image","icon":"🖼️","url":"portfolio/wolvesbjj-mobile.webp"}
+    {"name":"Desktop UI.webp","type":"image","icon":"win11/image.webp","url":"portfolio/wolvesbjj.webp"},
+    {"name":"Mobile UI.webp","type":"image","icon":"win11/image.webp","url":"portfolio/wolvesbjj-mobile.webp"}
   ],
   "C:\\Users\\DeVante\\Projects\\Freelance\\BHR Recovery": [
     {"name":"Visit Site.url","type":"app","app":"edge","extraData":{"initialUrl":"https://bhrrecovery.co.uk/"},"icon":"chrome.webp"},
@@ -320,8 +320,8 @@
     {"name":"Pictures","type":"folder","icon":"win11/folder.webp"}
   ],
   "C:\\Users\\DeVante\\Projects\\Freelance\\BHR Recovery\\Pictures": [
-    {"name":"Desktop UI.webp","type":"image","icon":"🖼️","url":"portfolio/bhrrecovery.webp"},
-    {"name":"Mobile UI.webp","type":"image","icon":"🖼️","url":"portfolio/bhrrecovery-mobile.webp"}
+    {"name":"Desktop UI.webp","type":"image","icon":"win11/image.webp","url":"portfolio/bhrrecovery.webp"},
+    {"name":"Mobile UI.webp","type":"image","icon":"win11/image.webp","url":"portfolio/bhrrecovery-mobile.webp"}
   ],
   "C:\\Users\\DeVante\\Projects\\Freelance\\Euro-Goat": [
     {"name":"Visit Site.url","type":"app","app":"edge","extraData":{"initialUrl":"https://euro-goat.com/"},"icon":"chrome.webp"},
@@ -331,8 +331,8 @@
     {"name":"Pictures","type":"folder","icon":"win11/folder.webp"}
   ],
   "C:\\Users\\DeVante\\Projects\\Freelance\\Euro-Goat\\Pictures": [
-    {"name":"Desktop UI.webp","type":"image","icon":"🖼️","url":"portfolio/eurogoatdesktop.webp"},
-    {"name":"Mobile UI.webp","type":"image","icon":"🖼️","url":"portfolio/eurogoatdesktop-mobile.webp"}
+    {"name":"Desktop UI.webp","type":"image","icon":"win11/image.webp","url":"portfolio/eurogoatdesktop.webp"},
+    {"name":"Mobile UI.webp","type":"image","icon":"win11/image.webp","url":"portfolio/eurogoatdesktop-mobile.webp"}
   ],
   "C:\\Users\\DeVante\\Projects\\Freelance\\Youngs Construction": [
     {"name":"Visit Site.url","type":"app","app":"edge","extraData":{"initialUrl":"https://youngsconstructionltd.co.uk/"},"icon":"chrome.webp"},
@@ -342,8 +342,8 @@
     {"name":"Pictures","type":"folder","icon":"win11/folder.webp"}
   ],
   "C:\\Users\\DeVante\\Projects\\Freelance\\Youngs Construction\\Pictures": [
-    {"name":"Desktop UI.webp","type":"image","icon":"🖼️","url":"portfolio/youngsconstructiondesktop.webp"},
-    {"name":"Mobile UI.webp","type":"image","icon":"🖼️","url":"portfolio/youngsconstructiondesktop-mobile.webp"}
+    {"name":"Desktop UI.webp","type":"image","icon":"win11/image.webp","url":"portfolio/youngsconstructiondesktop.webp"},
+    {"name":"Mobile UI.webp","type":"image","icon":"win11/image.webp","url":"portfolio/youngsconstructiondesktop-mobile.webp"}
   ],
   "C:\\Users\\DeVante\\Projects\\Freelance\\Boulevard Logistics": [
     {"name":"Visit Site.url","type":"app","app":"edge","extraData":{"initialUrl":"https://boulevardlogistics.co.uk/"},"icon":"chrome.webp"},
@@ -353,8 +353,8 @@
     {"name":"Pictures","type":"folder","icon":"win11/folder.webp"}
   ],
   "C:\\Users\\DeVante\\Projects\\Freelance\\Boulevard Logistics\\Pictures": [
-    {"name":"Desktop UI.webp","type":"image","icon":"🖼️","url":"portfolio/boulevardlogistics.webp"},
-    {"name":"Mobile UI.webp","type":"image","icon":"🖼️","url":"portfolio/boulevardlogistics-mobile.webp"}
+    {"name":"Desktop UI.webp","type":"image","icon":"win11/image.webp","url":"portfolio/boulevardlogistics.webp"},
+    {"name":"Mobile UI.webp","type":"image","icon":"win11/image.webp","url":"portfolio/boulevardlogistics-mobile.webp"}
   ],
   "C:\\Users\\DeVante\\Projects\\Freelance\\Hameedahs Delights": [
     {"name":"Visit Site.url","type":"app","app":"edge","extraData":{"initialUrl":"https://hameedahsdelights.com/"},"icon":"chrome.webp"},
@@ -364,7 +364,25 @@
     {"name":"Pictures","type":"folder","icon":"win11/folder.webp"}
   ],
   "C:\\Users\\DeVante\\Projects\\Freelance\\Hameedahs Delights\\Pictures": [
-    {"name":"Desktop UI.webp","type":"image","icon":"🖼️","url":"portfolio/sweetdelights.webp"},
-    {"name":"Mobile UI.webp","type":"image","icon":"🖼️","url":"portfolio/sweetdelights-mobile.webp"}
-  ]
+    {"name":"Desktop UI.webp","type":"image","icon":"win11/image.webp","url":"portfolio/sweetdelights.webp"},
+    {"name":"Mobile UI.webp","type":"image","icon":"win11/image.webp","url":"portfolio/sweetdelights-mobile.webp"}
+  ],
+  "C:\\Program Files\\Adobe\\Adobe Premiere Pro 2024": [],
+  "C:\\Program Files\\Adobe\\Adobe Illustrator 2024": [],
+  "C:\\Program Files\\Adobe\\Adobe After Effects 2024": [],
+  "C:\\Program Files\\Microsoft VS Code\\bin": [],
+  "C:\\Program Files\\Microsoft VS Code\\resources": [],
+  "C:\\Program Files\\XAMPP\\htdocs": [],
+  "C:\\Program Files\\XAMPP\\mysql": [],
+  "C:\\Program Files\\XAMPP\\php": [],
+  "C:\\Program Files (x86)\\Notepad++\\plugins": [],
+  "C:\\Program Files (x86)\\FileZilla FTP Client\\docs": [],
+  "C:\\Windows\\SysWOW64": [],
+  "C:\\Windows\\System32\\drivers": [],
+  "C:\\Windows\\System32\\config": [],
+  "C:\\Users\\Public": [],
+  "C:\\Users\\DeVante\\Downloads": [],
+  "C:\\Program Files\\Docker\\Docker\\resources": [],
+  "C:\\Windows\\Web\\Wallpaper": [],
+  "C:\\Windows\\Web\\Screen": []
 }

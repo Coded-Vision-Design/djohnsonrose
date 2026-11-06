@@ -39,7 +39,8 @@ import { forgetReferences } from '../../../assets/js/windowing/references.js'
 // The file system is saved on its own, and only when it changes: it is far too
 // big to go through persist below, which writes on every state change.
 const FILES_KEY = 'react.fileSystem'
-const FILES_VERSION = 1
+// Bump this when data/filesystem.json changes, so that saved copies pick it up.
+const FILES_VERSION = 2
 
 function savedFiles(): FileSystem {
   try {

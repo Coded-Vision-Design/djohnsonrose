@@ -7,6 +7,7 @@ import {
   deleteEntry,
   emptyBin,
   entryDate,
+  entryIcon,
   entryProperties,
   entrySize,
   entryType,
@@ -393,7 +394,8 @@ export default function Explorer() {
         {/* Empty Recycle Bin */}
         {isRecycle && (
           <button type="button" onClick={() => changeFiles(emptyBin)} disabled={sortedFiles.length === 0} className="px-3 py-1.5 rounded-sm text-xs font-medium bg-red-500 text-white hover:bg-red-600 disabled:opacity-40 disabled:cursor-not-allowed" title="Empty Recycle Bin">
-            🗑 Empty
+            <img src={`${IMG}win11/delete.webp`} alt="" className="w-3.5 h-3.5 inline-block mr-1 align-[-2px] brightness-0 invert" />
+            Empty
           </button>
         )}
       </div>
@@ -417,7 +419,7 @@ export default function Explorer() {
                 className={`w-full text-left py-1.5 rounded-sm hover:bg-gray-100 dark:hover:bg-white/5 flex items-center group transition-colors ${active ? 'bg-blue-100/50 dark:bg-blue-900/20 text-win-blue font-semibold' : ''} ${item.indent ? 'pl-8' : 'px-3'}`}
               >
                 <span className="mr-3 text-base group-hover:scale-110 transition-transform flex items-center justify-center w-5 h-5 shrink-0">
-                  {item.icon?.includes('.') ? <img src={item.icon} alt="" className="w-full h-full object-contain" /> : (item.icon || '📁')}
+                  <img src={entryIcon({ name: item.label, type: 'folder', icon: item.icon }, IMG)} alt="" className="w-full h-full object-contain" />
                 </span>
                 <span className="truncate">{item.label}</span>
               </button>
@@ -516,7 +518,7 @@ export default function Explorer() {
           )}
           {selectedFile && (
             <div className="flex items-center space-x-1">
-              <span>📁</span>
+              <img src={entryIcon(selectedFile, IMG)} alt="" className="w-3.5 h-3.5 object-contain" />
               <span>1 item selected · {formatSize(entrySize(selectedFile))}</span>
             </div>
           )}
@@ -570,10 +572,8 @@ function GridView({
             <div className="w-12 h-12 mb-2 flex items-center justify-center relative overflow-hidden rounded-sm shadow-xs group-hover:scale-105 transition-transform shrink-0">
               {file.type === 'image' ? (
                 <img src={file.url} alt="" className="w-full h-full object-cover" loading="lazy" />
-              ) : file.icon && (file.icon.includes('.') || file.icon.startsWith('/')) ? (
-                <img src={file.icon} alt="" className="w-10 h-10 object-contain" />
               ) : (
-                <div className="text-4xl drop-shadow-xs">{file.icon || '📁'}</div>
+                <img src={entryIcon(file, IMG)} alt="" className="w-10 h-10 object-contain" />
               )}
             </div>
             {isRenaming ? (
@@ -639,10 +639,8 @@ function DetailsView({
                 <span className="w-5 h-5 flex items-center justify-center shrink-0">
                   {file.type === 'image' ? (
                     <img src={file.url} alt="" className="w-5 h-5 object-cover rounded-sm" />
-                  ) : file.icon && (file.icon.includes('.') || file.icon.startsWith('/')) ? (
-                    <img src={file.icon} alt="" className="w-5 h-5 object-contain" />
                   ) : (
-                    <span className="text-sm">{file.icon || '📁'}</span>
+                    <img src={entryIcon(file, IMG)} alt="" className="w-5 h-5 object-contain" />
                   )}
                 </span>
                 {isRenaming ? (
@@ -703,10 +701,8 @@ function DetailsPanel({ file, rows, onClose }: DetailsPanelProps) {
             <div className="w-20 h-20 flex items-center justify-center rounded-sm shadow-xs">
               {file.type === 'image' ? (
                 <img src={file.url} alt="" className="w-full h-full object-cover rounded-sm" />
-              ) : file.icon?.includes('.') ? (
-                <img src={file.icon} alt="" className="w-16 h-16 object-contain" />
               ) : (
-                <div className="text-5xl">{file.icon || '📁'}</div>
+                <img src={entryIcon(file, IMG)} alt="" className="w-16 h-16 object-contain" />
               )}
             </div>
             <div className="mt-3 text-center font-semibold text-sm break-all">{file.name}</div>
