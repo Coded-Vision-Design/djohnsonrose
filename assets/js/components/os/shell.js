@@ -636,6 +636,8 @@ document.addEventListener('alpine:init', () => {
 
         logout() {
             Alpine.store('os').logEvent('Security', 'Information', 'User DeVante logged out');
+            // Letters opened in References must not outlast the visitor's session.
+            OsWindowing.forgetReferences(sessionStorage);
             this.loggedIn = false;
             localStorage.removeItem('auth.loggedIn');
             Alpine.store('os').windows = [];

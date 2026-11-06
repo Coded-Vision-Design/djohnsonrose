@@ -343,17 +343,18 @@ document.addEventListener('alpine:init', () => {
     }));
 
     // Password-protected references vault. Fetches /data/references.enc.json
-    // and decrypts it client-side with Web Crypto. Same blob the v2 React
-    // component uses.
+    // and decrypts it in the browser through assets/js/windowing/references.js,
+    // shared with v2. The opened letters are forgotten on Lock and on sign-out.
     Alpine.data('referencesVault', () => ({
         envelope: null,
         loadError: null,
         password: '',
         busy: false,
         error: null,
-        refs: null,
+        refs: OsWindowing.savedReferences(sessionStorage),
         selected: 0,
 
+        // Alpine calls this once by itself; the partial must not call it again.
         async init() {
             try {
                 const r = await fetch(window.portfolioConfig.basePath + 'data/references.enc.json', { credentials: 'same-origin' });
@@ -362,17 +363,10 @@ document.addEventListener('alpine:init', () => {
             } catch (e) {
                 this.loadError = e.message;
             }
-            try {
-                const cached = sessionStorage.getItem('references.session');
-                if (cached) this.refs = JSON.parse(cached);
-            } catch (_) { /* ignore */ }
         },
 
-        _b64ToBytes(b64) {
-            const raw = atob(b64);
-            const out = new Uint8Array(raw.length);
-            for (let i = 0; i < raw.length; i++) out[i] = raw.charCodeAt(i);
-            return out;
+        get current() {
+            return this.refs?.[this.selected] ?? this.refs?.[0] ?? null;
         },
 
         async unlock() {
@@ -380,23 +374,10 @@ document.addEventListener('alpine:init', () => {
             this.busy = true;
             this.error = null;
             try {
-                const salt = this._b64ToBytes(this.envelope.salt);
-                const iv = this._b64ToBytes(this.envelope.iv);
-                const ciphertext = this._b64ToBytes(this.envelope.ciphertext);
-                const keyMaterial = await crypto.subtle.importKey(
-                    'raw', new TextEncoder().encode(this.password),
-                    { name: 'PBKDF2' }, false, ['deriveKey']
-                );
-                const key = await crypto.subtle.deriveKey(
-                    { name: 'PBKDF2', salt, iterations: this.envelope.iterations, hash: 'SHA-256' },
-                    keyMaterial,
-                    { name: 'AES-GCM', length: 256 }, false, ['decrypt']
-                );
-                const plaintext = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, ciphertext);
-                const decoded = new TextDecoder().decode(plaintext);
-                this.refs = JSON.parse(decoded);
+                const { references, text } = await OsWindowing.decryptReferences(this.envelope, this.password);
+                this.refs = references;
                 this.selected = 0;
-                sessionStorage.setItem('references.session', decoded);
+                OsWindowing.saveReferences(sessionStorage, text);
                 this.password = '';
             } catch (_) {
                 this.error = 'Incorrect password.';
@@ -406,7 +387,7 @@ document.addEventListener('alpine:init', () => {
         },
 
         lock() {
-            sessionStorage.removeItem('references.session');
+            OsWindowing.forgetReferences(sessionStorage);
             this.refs = null;
             this.selected = 0;
         },

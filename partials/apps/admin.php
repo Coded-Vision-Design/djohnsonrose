@@ -4,7 +4,7 @@
      are shared with v2 (api/admin_*.php, api/stats.php). -->
 <div class="h-full flex flex-col bg-[#f5f5f5] dark:bg-[#1c1c1c] text-black dark:text-white overflow-hidden"
      style="font-family: 'Segoe UI', sans-serif;"
-     x-data="adminApp()" x-init="init()">
+     x-data="adminApp()">
 
     <!-- ============ Lock screen (unauthenticated) ============ -->
     <template x-if="!me || !me.authenticated">
@@ -71,6 +71,11 @@
 
             <!-- Body -->
             <div class="grow overflow-auto p-4 md:p-6 space-y-6">
+                <template x-if="statsError">
+                    <div role="alert" data-stats-error class="rounded-lg border border-red-300 bg-red-50 text-red-800 dark:border-red-800 dark:bg-red-950/40 dark:text-red-200 px-4 py-3 text-sm">
+                        Could not load the stats: <span x-text="statsError"></span>
+                    </div>
+                </template>
                 <template x-if="busy && !stats">
                     <div class="flex items-center justify-center py-20">
                         <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-win-blue"></div>

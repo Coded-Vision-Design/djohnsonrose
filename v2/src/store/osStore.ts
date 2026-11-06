@@ -34,6 +34,7 @@ import {
   type IconSize,
 } from '../../../assets/js/windowing/file-ops.js'
 import { filesystem, type FileSystem, type FsEntry } from '../data/filesystem'
+import { forgetReferences } from '../../../assets/js/windowing/references.js'
 
 // The file system is saved on its own, and only when it changes: it is far too
 // big to go through persist below, which writes on every state change.
@@ -400,6 +401,8 @@ export const useOsStore = create<OsState>()(
       },
       logout: () => {
         get().logEvent('Security', 'Information', 'User DeVante logged out')
+        // Letters opened in References must not outlast the visitor's session.
+        forgetReferences(sessionStorage)
         set({
           loggedIn: false,
           windows: [],
