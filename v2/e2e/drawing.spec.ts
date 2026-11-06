@@ -52,12 +52,23 @@ const darkTheme = (page: Page) =>
     else w.__osStore.getState().updateSetting('theme', 'dark')
   })
 
+/**
+ * Waits for the window to finish opening. Its open animation scales and moves
+ * everything in it, so a point measured during it would miss.
+ */
+const settle = (target: Locator) =>
+  target.evaluate(async (el) => {
+    const win = el.closest('.os-window')
+    await Promise.all((win?.getAnimations() ?? []).map((animation) => animation.finished.catch(() => undefined)))
+  })
+
 async function openPaint(page: Page) {
   await call(page, 'openApp', 'paint')
   const app = page.locator('.pt-app')
   await expect(app).toBeVisible({ timeout: 20_000 })
   const canvas = app.locator('[data-paint-canvas]')
   await expect.poll(() => canvas.evaluate((el: HTMLCanvasElement) => el.width)).toBe(800)
+  await settle(app)
   return { app, canvas }
 }
 
@@ -66,6 +77,7 @@ async function openPhotoshop(page: Page) {
   const app = page.locator('.ps-app')
   await expect(app).toBeVisible({ timeout: 20_000 })
   await expect(app.locator('[data-ps-layer]')).toHaveCount(3)
+  await settle(app)
   return { app, stack: app.locator('[data-ps-stack]') }
 }
 
