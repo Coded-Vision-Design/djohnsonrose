@@ -225,10 +225,16 @@ const TYPE_BY_EXTENSION = [
   [/\.xlsx$/, 'Microsoft Excel Worksheet'],
   [/\.pptx$/, 'Microsoft PowerPoint Presentation'],
   [/\.psd$/, 'Adobe Photoshop Image'],
+  [/\.flp$/, 'FL Studio Project'],
   [/\.(mp4|webm)$/, 'Video file'],
   [/\.(mp3|wav)$/, 'Audio file'],
   [/\.(webp|png|jpe?g)$/, 'Image'],
 ];
+
+/** The app a file opens in: projects in FL Studio, everything else in Notepad. */
+export function appForFile(name) {
+  return /\.flp$/i.test(name) ? 'flstudio' : 'notepad';
+}
 
 export function entryType(entry) {
   if (entry.shortcut) return 'Shortcut';

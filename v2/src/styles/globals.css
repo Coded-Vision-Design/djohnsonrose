@@ -1,5 +1,6 @@
 @import 'tailwindcss';
 @import '../../../assets/css/windowing.css';
+@import '../../../assets/css/flstudio.css';
 
 @custom-variant dark (&:is(.dark *));
 
@@ -27,7 +28,7 @@
   }
 }
 
-/* Ported from assets/css/app.css — visual parity with v1 PHP version. */
+/* Ported from assets/css/app.css, for visual parity with the v1 PHP version. */
 
 :root {
     --win11-blue: #0078d4;

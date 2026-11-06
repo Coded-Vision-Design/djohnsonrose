@@ -15,7 +15,7 @@
     <meta property="og:type" content="website">
     <meta property="og:site_name" content="DeVanté Johnson-Rose · Portfolio OS">
     <meta property="og:title" content="DeVanté Johnson-Rose | Full Stack Developer & Systems Engineer">
-    <meta property="og:description" content="Interactive Windows 11-styled portfolio. Open the apps, browse the projects, drop into the CV — every desktop tile is a real, working surface.">
+    <meta property="og:description" content="Interactive Windows 11-styled portfolio. Open the apps, browse the projects, drop into the CV. Every desktop tile is a real, working surface.">
     <meta property="og:url" content="https://devante.johnson-rose.co.uk/">
     <meta property="og:image" content="https://devante.johnson-rose.co.uk/assets/img/favicon.webp">
     <meta property="og:locale" content="en_GB">
@@ -69,7 +69,9 @@
         import * as shellCore from '<?php echo BASE_PATH; ?>assets/js/windowing/shell-core.js?v=<?php echo @filemtime(__DIR__ . '/../assets/js/windowing/shell-core.js'); ?>';
         import * as fileOps from '<?php echo BASE_PATH; ?>assets/js/windowing/file-ops.js?v=<?php echo @filemtime(__DIR__ . '/../assets/js/windowing/file-ops.js'); ?>';
         import * as textOps from '<?php echo BASE_PATH; ?>assets/js/windowing/text-ops.js?v=<?php echo @filemtime(__DIR__ . '/../assets/js/windowing/text-ops.js'); ?>';
+        import * as flStudio from '<?php echo BASE_PATH; ?>assets/js/windowing/fl-studio.js?v=<?php echo @filemtime(__DIR__ . '/../assets/js/windowing/fl-studio.js'); ?>';
         window.OsWindowing = { ...windowing, ...shellCore, ...fileOps, ...textOps };
+        window.FlStudio = flStudio;
     </script>
     <!-- Alpine.js -->
     <script defer src="<?php echo BASE_PATH; ?>assets/js/alpine/alpine-3.17.5.min.js"></script>
@@ -102,7 +104,7 @@
     <?php
     // Cache-bust on file mtime so a fresh CSS bundle invalidates the
     // browser + Hostinger CDN cache immediately (default Cache-Control on
-    // /assets is max-age=604800 — without this the URL never changes and
+    // /assets is max-age=604800, and without this the URL never changes and
     // the old bundle keeps serving for a week after each deploy).
     $cssPath = __DIR__ . '/../assets/css/app.css';
     $cssVer  = @filemtime($cssPath) ?: time();
@@ -134,7 +136,7 @@
 <body class="h-full w-full overflow-hidden transition-[filter] duration-300" 
       x-data="os" 
       :class="{ 'dark': settings.theme === 'dark' }"
-      :style="`--wallpaper: url(${Alpine.store('os').previewWallpaper || settings.wallpaper}); filter: brightness(${settings.brightness}%) ${settings.nightLight ? 'sepia(40%) saturate(120%)' : ''} ${settings.accessibility ? 'contrast(120%) brightness(110%)' : ''};`"
+      :style="`--wallpaper: ${OsWindowing.cssUrl(Alpine.store('os').previewWallpaper || settings.wallpaper)}; filter: brightness(${settings.brightness}%) ${settings.nightLight ? 'sepia(40%) saturate(120%)' : ''} ${settings.accessibility ? 'contrast(120%) brightness(110%)' : ''};`"
       @keydown.window="handleGlobalKeys($event)"
       @keyup.window="handleGlobalKeyUp($event)">
 

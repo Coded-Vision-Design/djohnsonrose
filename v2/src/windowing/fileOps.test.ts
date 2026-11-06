@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import {
   DESKTOP,
   RECYCLE_BIN,
+  appForFile,
   compressEntry,
   copyText,
   createFolder,
@@ -64,6 +65,18 @@ const fixture = (): OsFiles => ({
 })
 
 const names = (fs: OsFiles, path: string) => fs[path].map((e) => e.name)
+
+describe('appForFile', () => {
+  it('opens FL Studio projects in FL Studio', () => {
+    expect(appForFile('Demo.flp')).toBe('flstudio')
+    expect(appForFile('LOUD.FLP')).toBe('flstudio')
+  })
+
+  it('opens everything else in Notepad', () => {
+    expect(appForFile('notes.txt')).toBe('notepad')
+    expect(appForFile('flp')).toBe('notepad')
+  })
+})
 
 describe('paths', () => {
   it('joins a name to a folder, and to the drive', () => {

@@ -1,5 +1,6 @@
 import type { FsEntry } from '../data/filesystem'
 import { useOsStore } from '../store/osStore'
+import { appForFile } from '../../../assets/js/windowing/file-ops.js'
 
 /** Opens a file system entry from the desktop or search, as v1's openItem does. */
 export function openEntry(entry: FsEntry, path: string) {
@@ -17,7 +18,7 @@ export function openEntry(entry: FsEntry, path: string) {
   } else if (entry.type === 'video') {
     openApp('video', entry.name, { extra: { videoUrl: entry.url } })
   } else if (entry.type === 'file') {
-    openApp('notepad', entry.name, { extra: { content: entry.content ?? '', filePath: path } })
+    openApp(appForFile(entry.name), entry.name, { extra: { content: entry.content ?? '', filePath: path } })
   } else if (entry.type === 'link') {
     // Cross-build hop (e.g. PHP/React Desktop shortcuts). Logged via the same
     // Security/System event mechanism v1 uses so emails read alike.

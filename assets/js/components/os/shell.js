@@ -569,8 +569,8 @@ document.addEventListener('alpine:init', () => {
                 this.openApp('photos', item.name, { imageName: item.name, folderPath: path || 'C:\\Users\\DeVante\\Desktop' });
             } else if (item.type === 'video') {
                 this.openApp('video', item.name, { videoUrl: item.url });
-            } else if (item.type === 'file' && item.name.endsWith('.txt')) {
-                this.openApp('notepad', item.name, { fileContent: item.content, filePath: path });
+            } else if (item.type === 'file') {
+                this.openApp(OsWindowing.appForFile(item.name), item.name, { fileContent: item.content, filePath: path });
             }
         },
 
@@ -617,7 +617,7 @@ document.addEventListener('alpine:init', () => {
                 localStorage.setItem('auth.loginTime', Date.now());
                 
                 // Set session identifier for the session. Uses
-                // crypto.getRandomValues (cryptographically secure) — Math.random
+                // crypto.getRandomValues (cryptographically secure), as Math.random
                 // is predictable enough that CodeQL flags it for session IDs.
                 const sessionBuf = new Uint8Array(8);
                 window.crypto.getRandomValues(sessionBuf);

@@ -105,6 +105,7 @@ export function writeTextFile<T extends OsEntry>(
   icon: string,
 ): OsFiles<T>
 
+export function appForFile(name: string): 'flstudio' | 'notepad'
 export function entryType(entry: Pick<OsEntry, 'name' | 'type'> & Partial<OsEntry>): string
 export function entrySize(entry: Pick<OsEntry, 'name' | 'type'> & Partial<OsEntry>): number
 export function entryDate(entry: Pick<OsEntry, 'name' | 'type'> & Partial<OsEntry>): Date

@@ -242,7 +242,7 @@ document.addEventListener('alpine:init', () => {
                     existing.pdfUrl = extraData.pdfUrl;
                     existing.title = title || existing.title;
                 }
-                if (appHandle === 'notepad' && extraData.fileContent !== undefined) {
+                if ((appHandle === 'notepad' || appHandle === 'flstudio') && extraData.fileContent !== undefined) {
                     existing.fileContent = extraData.fileContent;
                     existing.filePath = extraData.filePath;
                     existing.fileRevision = (existing.fileRevision ?? 0) + 1;
