@@ -17,14 +17,19 @@
     <meta property="og:title" content="DeVanté Johnson-Rose | Full Stack Developer & Systems Engineer">
     <meta property="og:description" content="Interactive Windows 11-styled portfolio. Open the apps, browse the projects, drop into the CV. Every desktop tile is a real, working surface.">
     <meta property="og:url" content="https://devante.johnson-rose.co.uk/">
-    <meta property="og:image" content="https://devante.johnson-rose.co.uk/assets/img/favicon.webp">
+    <meta property="og:image" content="https://devante.johnson-rose.co.uk/assets/img/share-card.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:type" content="image/png">
+    <meta property="og:image:alt" content="Portrait of DeVanté Johnson-Rose beside his name and devante.johnson-rose.co.uk">
     <meta property="og:locale" content="en_GB">
 
     <!-- Twitter / X card -->
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="DeVanté Johnson-Rose | Portfolio OS">
     <meta name="twitter:description" content="Interactive Windows-style portfolio with working Paint, Terminal, Explorer, Outlook, FL Studio, and more.">
-    <meta name="twitter:image" content="https://devante.johnson-rose.co.uk/assets/img/favicon.webp">
+    <meta name="twitter:image" content="https://devante.johnson-rose.co.uk/assets/img/share-card.png">
+    <meta name="twitter:image:alt" content="Portrait of DeVanté Johnson-Rose beside his name and devante.johnson-rose.co.uk">
 
     <!-- Favicon -->
     <link rel="icon" type="image/x-icon" href="<?php echo BASE_PATH; ?>favicon.ico">
@@ -35,7 +40,9 @@
     <link rel="preload" as="image" href="<?php echo IMG_PATH; ?>startmenu.webp">
     <link rel="preload" as="image" href="<?php echo IMG_PATH; ?>settings.webp">
 
-    <!-- JSON-LD: Person + WebSite for rich Google results -->
+    <!-- JSON-LD: Person + WebSite for rich Google results. The same in v2/index.html,
+         and worksFor, alumniOf, knowsAbout and sameAs follow data/profile.json, which
+         /cv reads (v2/src/data/profile.test.ts checks all three). -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
@@ -48,6 +55,16 @@
           "image": "https://devante.johnson-rose.co.uk/assets/img/profile.webp",
           "jobTitle": "Senior Full Stack Developer & Systems Engineer",
           "email": "mailto:devante@johnson-rose.co.uk",
+          "worksFor": [
+            { "@type": "Organization", "name": "Killik & Co" },
+            { "@type": "Organization", "name": "Coded Vision Design" }
+          ],
+          "alumniOf": { "@type": "CollegeOrUniversity", "name": "University of East Anglia" },
+          "knowsAbout": [
+            "Applications support", "Full-stack development", "PHP", "Laravel", "JavaScript",
+            "TypeScript", "React", "Next.js", "Node.js", "MySQL", "MS SQL Server", "PowerShell",
+            "Automation", "SCCM", "JAMF", "Active Directory", "Docker", "AI integration"
+          ],
           "sameAs": [
             "https://github.com/CodedVisionDesign"
           ]
