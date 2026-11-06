@@ -52,9 +52,7 @@ jobs:
         run: npm run build
 
       - name: PHP tests
-        run: |
-          php tests/php/contact_test.php
-          php tests/php/security_test.php
+        run: php tests/php/run.php
 
   browser-tests:
     name: browser-tests
