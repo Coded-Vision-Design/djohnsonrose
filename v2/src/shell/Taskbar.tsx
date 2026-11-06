@@ -4,7 +4,7 @@ import { getApp } from '../apps/registry'
 import { VolumeIcon } from './VolumeIcon'
 import { showClassicDesktopMenu, showMenu, type MenuPoint } from './menus'
 
-// 1:1 port of partials/taskbar.php — left widget area, centre pinned + running
+// 1:1 port of partials/taskbar.php - left widget area, centre pinned + running
 // apps with the v1 active indicators (active/inactive/minimized), right system
 // tray with hidden-icons chevron popup + mic + wifi/volume tray + clock + peek.
 
@@ -191,7 +191,7 @@ export function Taskbar() {
       onContextMenu={showTaskbarMenu}
       className="os-taskbar absolute left-0 right-0 bottom-0 taskbar-glass flex items-center justify-between px-2 z-9999 border-t border-white/20"
     >
-      {/* Left — weather widget toggle (v1 puts this in a w-48 container) */}
+      {/* Left - weather widget toggle (v1 puts this in a w-48 container) */}
       <div className="flex items-center w-48 overflow-hidden" hidden={!isDesktop}>
         <button
           type="button"
@@ -215,7 +215,7 @@ export function Taskbar() {
         </button>
       </div>
 
-      {/* Centre — start, search, task view, divider, pinned/running */}
+      {/* Centre - start, search, task view, divider, pinned/running */}
       <div className="os-taskbar-apps flex items-center space-x-1">
         <button
           type="button"
@@ -280,7 +280,7 @@ export function Taskbar() {
         ))}
       </div>
 
-      {/* Right — tray group */}
+      {/* Right - tray group */}
       <div
         ref={trayRef}
         className="os-taskbar-tray flex items-center space-x-1 px-2 text-black dark:text-white relative"

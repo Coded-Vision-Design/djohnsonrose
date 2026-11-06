@@ -4,7 +4,7 @@
             "id": 101,
             "title": "Coded Vision Design",
             "featured": true,
-            "description": "My freelance studio site — a Next.js brochure for the practice covering web development, AI integration, drone media, and 360° virtual tours. Static-first, Vercel-hosted, with a content-driven case-study layout.",
+            "description": "My freelance studio site - a Next.js brochure for the practice covering web development, AI integration, drone media, and 360° virtual tours. Static-first, Vercel-hosted, with a content-driven case-study layout.",
             "tags": [
                 "Next.js",
                 "React",
@@ -22,7 +22,7 @@
             "id": 102,
             "title": "Earth Echo",
             "featured": true,
-            "description": "Carbon-footprint tracker that shipped to production from a university brief. Human-readable metrics, gamified streaks, real-time analytics, and passkey (WebAuthn) auth on the Next.js web client. Ships as native apps across the board: iPhone, Apple Watch (SwiftUI), and Android — all driven from the same Capacitor codebase. D3 + Globe.gl visualisations.",
+            "description": "Carbon-footprint tracker that shipped to production from a university brief. Human-readable metrics, gamified streaks, real-time analytics, and passkey (WebAuthn) auth on the Next.js web client. Ships as native apps across the board: iPhone, Apple Watch (SwiftUI), and Android - all driven from the same Capacitor codebase. D3 + Globe.gl visualisations.",
             "tags": [
                 "Next.js 16",
                 "React 19",
@@ -44,7 +44,7 @@
             "id": 103,
             "title": "Combat Evolved Sports",
             "featured": true,
-            "description": "Sports journalism platform built on PHP 8 with no framework — PSR-4 autoloading, PDO, HTMX for live search/modals, Alpine.js for interactivity, Stripe subscriptions, Google + Facebook OAuth, and an editor-facing admin CMS.",
+            "description": "Sports journalism platform built on PHP 8 with no framework - PSR-4 autoloading, PDO, HTMX for live search/modals, Alpine.js for interactivity, Stripe subscriptions, Google + Facebook OAuth, and an editor-facing admin CMS.",
             "tags": [
                 "PHP 8",
                 "MySQL",
@@ -63,7 +63,7 @@
             "id": 104,
             "title": "Ram's Taxis",
             "featured": true,
-            "description": "Local taxi firm in Braintree, Essex — Next.js marketing site on Vercel. Airport transfers (Stansted/Heathrow/Gatwick), school runs, courier jobs, wheelchair-accessible vehicles. Static-first, clear CTAs, click-to-call optimised for mobile.",
+            "description": "Local taxi firm in Braintree, Essex - Next.js marketing site on Vercel. Airport transfers (Stansted/Heathrow/Gatwick), school runs, courier jobs, wheelchair-accessible vehicles. Static-first, clear CTAs, click-to-call optimised for mobile.",
             "tags": [
                 "Next.js",
                 "TypeScript",
@@ -340,7 +340,7 @@
             "role": "IT Systems Administrator",
             "company": "Blueprint Collections",
             "period": "Sep 2011 - Jun 2013",
-            "highlights": "Systems administration across the business — first professional role."
+            "highlights": "Systems administration across the business - first professional role."
         }
     ],
     "skills": {

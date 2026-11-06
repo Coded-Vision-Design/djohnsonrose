@@ -47,7 +47,7 @@ document.addEventListener('alpine:init', () => {
             temp: '--',
             condition: 'Loading...',
             icon: '☁️',
-            city: 'London',
+            city: 'Essex',
             // 'loading', 'ready' or 'error', as in v2's store.
             status: 'loading'
         },
@@ -520,7 +520,7 @@ document.addEventListener('alpine:init', () => {
             } else if (item.type === 'link' && item.url) {
                 // Cross-build hop (e.g. React/PHP Desktop shortcuts). Mirrored
                 // by v2's DesktopIcons → fires the same Security/System event
-                // shape so the email logs read identically across builds.
+                // shape so the event logs read identically across builds.
                 Alpine.store('os').logEvent('System', 'Information', `Version switch: opening ${item.name} (${item.url})`);
                 window.location.href = item.url;
             } else if (item.type === 'image') {

@@ -12,7 +12,7 @@ import { openEntry } from './openEntry'
 type View = 'pinned' | 'allApps'
 type Result = SearchResult<FsEntry>
 
-// 1:1 port of partials/start-menu.php — 540x600 panel above the taskbar with
+// 1:1 port of partials/start-menu.php - 540x600 panel above the taskbar with
 // search, Pinned grid (6 cols), All Apps A-Z view, Recommended row, and a
 // profile bar at the bottom.
 

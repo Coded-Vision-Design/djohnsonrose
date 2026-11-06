@@ -103,7 +103,7 @@ export function groupAppsByLetter(): { letter: string; apps: AppDef[] }[] {
   }))
 }
 
-/** Search by title — case-insensitive substring match. */
+/** Search by title - case-insensitive substring match. */
 export function searchApps(query: string): AppDef[] {
   if (!query) return []
   const q = query.toLowerCase()

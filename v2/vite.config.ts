@@ -37,7 +37,7 @@ function redirectRootToPhp(): Plugin {
 
 // The React build lives under /v2/ in production (parallel to the PHP version).
 // In dev, Vite serves at http://localhost:5173/v2/.
-// API calls use the unprefixed path /api/*.php — proxied to the PHP server in
+// API calls use the unprefixed path /api/*.php - proxied to the PHP server in
 // dev, and served directly by Apache in production.
 export default defineConfig({
   base: '/v2/',
@@ -69,7 +69,7 @@ export default defineConfig({
         changeOrigin: true,
       },
       // Favicon is shared at root with v1. (v2's manifest is served directly
-      // by Vite from public/ at /v2/manifest.json — no proxy needed.)
+      // by Vite from public/ at /v2/manifest.json - no proxy needed.)
       '/favicon.ico': {
         target: PHP_ORIGIN,
         changeOrigin: true,

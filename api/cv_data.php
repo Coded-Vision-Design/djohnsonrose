@@ -1,9 +1,9 @@
 <?php
-// api/cv_data.php — read-only SQL-shaped view of data/portfolio.json.
+// api/cv_data.php - read-only SQL-shaped view of data/portfolio.json.
 //
 // Powers the SSMS-styled Database app. Returns deterministic rows in the
 // shape { columns: string[], data: object[], count: number } that the v1 and
-// v2 builds can render directly. No user input flows into a query — the
+// v2 builds can render directly. No user input flows into a query - the
 // caller picks one of a fixed table name set, and the server does the
 // flattening from the JSON source. There is therefore no SQL injection
 // surface to begin with.

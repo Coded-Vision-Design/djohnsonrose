@@ -21,7 +21,7 @@ const formatUptime = (ms: number) => {
   return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`
 }
 
-// Pseudo-RAM allocation per app — same vibe as v1, just deterministic.
+// Pseudo-RAM allocation per app - same vibe as v1, just deterministic.
 const ramFor = (w: WinWindow) =>
   Math.round(120 + ((w.id * 31) % 380))
 

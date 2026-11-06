@@ -17,7 +17,7 @@ export interface FsFolderEntry {
   name: string
   type: 'folder'
   icon: string
-  /** Optional alias path — e.g. Desktop's "Projects" shortcut points at Users/.../Projects. */
+  /** Optional alias path - e.g. Desktop's "Projects" shortcut points at Users/.../Projects. */
   path?: string
 }
 

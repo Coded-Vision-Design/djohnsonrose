@@ -7,7 +7,7 @@ import { useOsStore } from '../store/osStore'
 // Regression: selectors that build new arrays/objects each call (e.g. via
 // `.map`, spread, `new Set`) break React's getSnapshot caching and produce
 // "Maximum update depth exceeded". This used to happen in Taskbar's
-// `openAppIds` selector — keep this here so it can't come back unnoticed.
+// `openAppIds` selector - keep this here so it can't come back unnoticed.
 const renderTaskbar = () =>
   render(
     <StrictMode>

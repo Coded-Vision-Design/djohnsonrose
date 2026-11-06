@@ -54,15 +54,11 @@ jobs:
       - name: PHP tests
         run: php tests/php/run.php
 
-      # Keeps images, sounds and bundles within their size budget. Skipped
-      # until scripts/check-asset-sizes.mjs is in the branch being checked.
+      # Keeps images, sounds and bundles within their size budget.
       - name: Asset sizes
         run: |
-          if [ -f scripts/check-asset-sizes.mjs ]; then
-            node scripts/check-asset-sizes.mjs
-          else
-            echo "scripts/check-asset-sizes.mjs not found, skipping"
-          fi
+          node --test scripts/check-asset-sizes.test.mjs
+          node scripts/check-asset-sizes.mjs
 
   browser-tests:
     name: browser-tests

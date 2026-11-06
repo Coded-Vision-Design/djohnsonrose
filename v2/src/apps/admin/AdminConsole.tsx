@@ -13,7 +13,7 @@ import {
 } from 'chart.js'
 import { Bar, Doughnut, Line } from 'react-chartjs-2'
 
-// Admin Console — Google Sign-In gated dashboard for visitor analytics +
+// Admin Console - Google Sign-In gated dashboard for visitor analytics +
 // Outlook enquiries. Reads admin-only /api/stats.php (cookie auth, see
 // requireAdmin() in bootstrap.php).
 
@@ -69,7 +69,6 @@ interface StatsPayload {
   per_app: CountedRow[]
   os: CountedRow[]
   browser: CountedRow[]
-  country: CountedRow[]
   per_day: PerDayRow[]
   screen_time: ScreenTimeRow[]
   enquiries: EnquiryRow[]
@@ -382,12 +381,7 @@ function Dashboard({
     [stats],
   )
 
-  const countryBreakdown = useMemo(
-    () => (stats ? toCountMap(stats.country, 'country') : { labels: [], values: [] }),
-    [stats],
-  )
-
-  // Roll OS rows into Desktop / Mobile / Tablet buckets — much more useful
+  // Roll OS rows into Desktop / Mobile / Tablet buckets - much more useful
   // for the dashboard than 8 separate Windows variants.
   const deviceTypes = useMemo(() => {
     if (!stats) return { labels: [] as string[], values: [] as number[] }
@@ -645,8 +639,8 @@ function Dashboard({
               </ChartCard>
             </section>
 
-            {/* Browser + country */}
-            <section className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            {/* Browser. There is no country chart: no location is stored (see /privacy). */}
+            <section className="grid grid-cols-1 gap-4">
               <ChartCard title="Browser breakdown">
                 {browserBreakdown.labels.length === 0 ? (
                   <Empty />
@@ -668,33 +662,6 @@ function Dashboard({
                       maintainAspectRatio: false,
                       plugins: { legend: { display: false } },
                       scales: { y: { beginAtZero: true, ticks: { precision: 0 } } },
-                    }}
-                  />
-                )}
-              </ChartCard>
-
-              <ChartCard title="Top countries">
-                {countryBreakdown.labels.length === 0 ? (
-                  <Empty />
-                ) : (
-                  <Bar
-                    data={{
-                      labels: countryBreakdown.labels,
-                      datasets: [
-                        {
-                          label: 'Events',
-                          data: countryBreakdown.values,
-                          backgroundColor: '#8b5cf6',
-                          borderRadius: 6,
-                        },
-                      ],
-                    }}
-                    options={{
-                      responsive: true,
-                      maintainAspectRatio: false,
-                      indexAxis: 'y',
-                      plugins: { legend: { display: false } },
-                      scales: { x: { beginAtZero: true, ticks: { precision: 0 } } },
                     }}
                   />
                 )}

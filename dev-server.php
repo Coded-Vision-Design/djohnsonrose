@@ -1,5 +1,5 @@
 <?php
-// dev-server.php — router for `php -S` built-in dev server.
+// dev-server.php - router for `php -S` built-in dev server.
 // Mirrors .htaccess: real files served as-is, everything else → index.php.
 //
 // parse_url() does NOT percent-decode, so a request for

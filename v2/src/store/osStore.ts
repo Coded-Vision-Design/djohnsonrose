@@ -71,7 +71,7 @@ export interface WinWindow extends ManagedWindow {
   app: string
   title: string
   loading: boolean
-  // Per-app extras (photos image, pdf url, etc.) — typed as unknown for now.
+  // Per-app extras (photos image, pdf url, etc.) - typed as unknown for now.
   extra?: Record<string, unknown>
   /** Goes up when an open app is given something new to show. */
   revision?: number
@@ -140,9 +140,9 @@ export interface NewsItem {
 }
 
 export interface RecycledItem {
-  /** Original Desktop entry name — used as the unique key. */
+  /** Original Desktop entry name - used as the unique key. */
   name: string
-  /** Where it lived before being recycled — for restore-in-place. */
+  /** Where it lived before being recycled - for restore-in-place. */
   fromPath: string
   /** Serialised representation of the entry (icon, type, etc.). */
   payload: Record<string, unknown>
@@ -157,7 +157,7 @@ export interface ContextMenuItem {
   label?: string
   icon?: string
   shortcut?: string
-  /** Click handler — receives no args, called once. */
+  /** Click handler - receives no args, called once. */
   action?: () => void
   /** Render as a horizontal divider between groups. */
   separator?: boolean
@@ -188,7 +188,7 @@ function initialMode(): WindowMode {
 }
 const DEFAULT_WALLPAPER = '/assets/img/wallpaper-bloom.webp'
 
-// Monotonic id source — Date.now() collides on rapid successive opens.
+// Monotonic id source - Date.now() collides on rapid successive opens.
 let windowIdCounter = 1
 const nextWindowId = () => windowIdCounter++
 
@@ -251,12 +251,12 @@ interface OsState {
   desktopIconsVisible: boolean
   iconPositions: Record<string, IconPosition>
 
-  // Viewport flags — kept in-memory only, updated by a global listener.
+  // Viewport flags - kept in-memory only, updated by a global listener.
   isMobile: boolean
   isTablet: boolean
   isDesktop: boolean
 
-  // Right-click context menu — single instance, mounted at root.
+  // Right-click context menu - single instance, mounted at root.
   contextMenu: ContextMenuState
 
   // Actions
@@ -348,7 +348,7 @@ interface OsState {
 }
 
 // Only `settings`, the auth flag, and filesystem-shaped state are persisted.
-// Window state intentionally lives only in memory — matches the PHP version.
+// Window state intentionally lives only in memory - matches the PHP version.
 interface PersistedSlice {
   loggedIn: boolean
   settings: Settings
@@ -410,7 +410,7 @@ export const useOsStore = create<OsState>()(
       pinnedApps,
 
       clock: { time: '', date: '' },
-      weather: { temp: '--', condition: 'Loading...', icon: '☁️', city: 'London', status: 'loading' },
+      weather: { temp: '--', condition: 'Loading...', icon: '☁️', city: 'Essex', status: 'loading' },
       news: [],
       newsStatus: 'loading',
 
@@ -438,8 +438,8 @@ export const useOsStore = create<OsState>()(
       login: () => {
         set({ loggedIn: true, isBooting: false })
         // v1 fires a single Security logEvent on login and lets the
-        // Security/System/Explorer router send the email. Mirror that —
-        // a separate track('Login') here would duplicate every email.
+        // Security/System/Explorer router record it. A separate
+        // track('Login') here would record every login twice.
         get().logEvent('Security', 'Information', 'User DeVante logged in successfully')
       },
       logout: () => {
@@ -684,9 +684,9 @@ export const useOsStore = create<OsState>()(
         const next = [ev, ...get().eventLogs]
         if (next.length > 100) next.pop()
         set({ eventLogs: next })
-        // v1's store.js routes Security/System/Explorer events to /api/log.php
-        // which emails the admin. Mirror that behaviour here so the event
-        // viewer in v2 has the same observability surface.
+        // v1's store.js sends Security/System/Explorer events to /api/log.php,
+        // which stores them for the Admin Console and the daily digest.
+        // v2 does the same, so both builds record the same events.
         if (source === 'Security' || source === 'System' || source === 'Explorer') {
           track(`${source}: ${level}`, { description, ...details })
         }

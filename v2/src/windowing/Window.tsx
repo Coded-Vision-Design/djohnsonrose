@@ -58,7 +58,7 @@ export function Window({ win, children }: Props) {
       role="dialog"
       aria-label={win.title}
     >
-      {/* Title bar — Edge hides its title because it has its own tab strip */}
+      {/* Title bar - Edge hides its title because it has its own tab strip */}
       <div
         className={`os-titlebar ${titleBarHeight} flex items-center justify-between px-3 select-none bg-white/10 dark:bg-black/10 cursor-default overflow-hidden`}
         onPointerDown={(e) => {

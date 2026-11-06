@@ -7,7 +7,7 @@
 Built and maintained by [Coded Vision Design](https://github.com/Coded-Vision-Design). [Security policy](https://github.com/Coded-Vision-Design/.github/blob/main/SECURITY.md) &middot; [Contributing](https://github.com/Coded-Vision-Design/.github/blob/main/CONTRIBUTING.md) &middot; [Code of conduct](https://github.com/Coded-Vision-Design/.github/blob/main/CODE_OF_CONDUCT.md)
 
 <!-- END: cvd-org-header -->
-# Portfolio OS — DeVanté Johnson-Rose
+# Portfolio OS - DeVanté Johnson-Rose
 
 A pixel-faithful Windows 11 desktop, in the browser, as a portfolio.
 
@@ -28,7 +28,7 @@ A toggle in each taskbar flips between the two builds so visitors (and recruiter
 
 Portfolios that link to other portfolios are forgettable. This one **is** the work:
 
-- A working desktop OS — taskbar, start menu, quick settings, snapping, drag‑resize, context menus, recycle bin with restore, file explorer, lock screen, telemetry pipeline, admin dashboard.
+- A working desktop OS - taskbar, start menu, quick settings, snapping, drag‑resize, context menus, recycle bin with restore, file explorer, lock screen, telemetry pipeline, admin dashboard.
 - 25 windowed apps in v2 (calculator, paint, photos, video, notepad, word, excel, powerpoint, outlook, edge, vscode, terminal, explorer, photoshop, fl studio, docker, putty, filezilla, ssms‑style SQL viewer, task manager, event viewer, settings, pdf reader, admin console). v1 ships 23 of the same partials.
 - The whole thing is intentionally over‑engineered: SPA routing, lazy‑loaded code‑split bundles, a typed state store, an admin OAuth flow, a Chart.js analytics dashboard, and a CI/CD pipeline that builds **both** tracks and rsyncs them to Hostinger atomically.
 
@@ -36,15 +36,15 @@ Portfolios that link to other portfolios are forgettable. This one **is** the wo
 
 ## Tech stack
 
-**Frontend (v2)** — React 19.2 · TypeScript 6 · Vite 8 · React Router 6 · Tailwind 3.4 · [Zustand 5 with `persist`](v2/src/store/osStore.ts) · Chart.js 4 / react‑chartjs‑2
+**Frontend (v2)** - React 19.2 · TypeScript 6 · Vite 8 · React Router 6 · Tailwind 3.4 · [Zustand 5 with `persist`](v2/src/store/osStore.ts) · Chart.js 4 / react‑chartjs‑2
 
-**Frontend (v1)** — Alpine.js · Tailwind 4 · vanilla JS modules
+**Frontend (v1)** - Alpine.js · Tailwind 4 · vanilla JS modules
 
-**Backend** — PHP 8 (no framework) · MySQL · PDO with prepared statements · HMAC‑SHA256 session cookies (no JWT lib) · Google OAuth (Identity Services + `tokeninfo` verification)
+**Backend** - PHP 8 (no framework) · MySQL · PDO with prepared statements · HMAC‑SHA256 session cookies (no JWT lib) · Google OAuth (Identity Services + `tokeninfo` verification)
 
-**Tooling** — Vitest 4 (118 unit tests) · Playwright 1 (e2e) · `concurrently` for dual‑server dev · `actionlint` for CI · `git-filter-repo` for history hygiene
+**Tooling** - Vitest 4 (118 unit tests) · Playwright 1 (e2e) · `concurrently` for dual‑server dev · `actionlint` for CI · `git-filter-repo` for history hygiene
 
-**Infra / CI** — GitHub Actions → rsync over SSH to Hostinger · atomic releases with snapshot for one‑click rollback · `.htaccess` rewrites for SPA + PHP coexistence
+**Infra / CI** - GitHub Actions → rsync over SSH to Hostinger · atomic releases with snapshot for one‑click rollback · `.htaccess` rewrites for SPA + PHP coexistence
 
 ---
 
@@ -62,7 +62,7 @@ Portfolios that link to other portfolios are forgettable. This one **is** the wo
         ┌──────────── / ────────┴──────── /v2/ ────────┐
         ▼                                              ▼
  ┌────────────────┐                          ┌──────────────────┐
- │  v1 — PHP/Alp  │                          │  v2 — React SPA  │
+ │  v1 - PHP/Alp  │                          │  v2 - React SPA  │
  │  index.php     │                          │  /v2/dist/...    │
  │  partials/*    │                          │  static + index  │
  │  Alpine store  │                          │  Zustand store   │
@@ -88,7 +88,7 @@ Both tracks talk to the **same** PHP API. The React build is just a static SPA m
 
 ## Selected highlights
 
-### 1. HMAC‑signed admin session — no JWT library
+### 1. HMAC‑signed admin session - no JWT library
 
 The admin dashboard is gated by Google OAuth. To avoid pulling a JWT dep, I sign a tiny JSON payload with `hash_hmac('sha256', ...)` and store it in a `HttpOnly`, `SameSite=Lax`, `Secure` cookie. Verification is constant‑time via `hash_equals`. Signing out moves a per-admin counter on, so every earlier cookie stops working at once. ([lib/admin_session.php](lib/admin_session.php))
 
@@ -111,7 +111,7 @@ function admin_session_current($cookie, string $secret, array $admins, string $d
 }
 ```
 
-Google id_tokens are verified server‑side via Google's `tokeninfo` endpoint, with explicit checks on `aud`, `iss`, `email_verified`, and an email allowlist — no client‑trusted claims. ([api/admin_auth.php](api/admin_auth.php))
+Google id_tokens are verified server‑side via Google's `tokeninfo` endpoint, with explicit checks on `aud`, `iss`, `email_verified`, and an email allowlist - no client‑trusted claims. ([api/admin_auth.php](api/admin_auth.php))
 
 ### 2. Defence‑in‑depth SQL viewer
 
@@ -132,7 +132,7 @@ Error responses are intentionally generic; details only land in `error_log` when
 
 ### 3. Lazy app registry with code splitting
 
-Every windowed app is registered once and lazy‑loaded via `React.lazy` + `Suspense`, so the initial JS payload is just the shell — apps stream in as visitors open them. ([v2/src/apps/registry.ts](v2/src/apps/registry.ts))
+Every windowed app is registered once and lazy‑loaded via `React.lazy` + `Suspense`, so the initial JS payload is just the shell - apps stream in as visitors open them. ([v2/src/apps/registry.ts](v2/src/apps/registry.ts))
 
 ```ts
 const FLStudio    = lazy(() => import('./flstudio/FLStudio'))
@@ -147,7 +147,7 @@ export const apps: Record<string, AppDef> = {
 }
 ```
 
-A production build yields one small `index-*.js` for the shell plus one chunk per app — the biggest (Admin Console with Chart.js) only loads when an authorised admin opens it.
+A production build yields one small `index-*.js` for the shell plus one chunk per app - the biggest (Admin Console with Chart.js) only loads when an authorised admin opens it.
 
 ### 4. Typed Zustand store with `persist`
 
@@ -166,7 +166,7 @@ A single typed store drives both the shell and every app. Settings, windowing st
 }
 ```
 
-In production, Apache reverses the role — `.htaccess` rewrites `/v2/*` straight onto `v2/dist/`, and falls back to `v2/dist/index.html` for client‑side routes:
+In production, Apache reverses the role - `.htaccess` rewrites `/v2/*` straight onto `v2/dist/`, and falls back to `v2/dist/index.html` for client‑side routes:
 
 ```apache
 RewriteCond %{DOCUMENT_ROOT}/v2/dist/$1 -f [OR]
@@ -216,7 +216,7 @@ Push to main
 └──────────────────────────────────────────────────┘
 ```
 
-Secrets live in GitHub Actions Secrets only — no `.env` is ever rsync'd. A separate [rollback workflow](.github/workflows/rollback.yml) flips the live directory back to a previous snapshot in seconds.
+Secrets live in GitHub Actions Secrets only - no `.env` is ever rsync'd. A separate [rollback workflow](.github/workflows/rollback.yml) flips the live directory back to a previous snapshot in seconds.
 
 ---
 
@@ -226,7 +226,7 @@ Secrets live in GitHub Actions Secrets only — no `.env` is ever rsync'd. A sep
 - **`npm run e2e`** - Playwright drives real browser interactions. [e2e/windowing.spec.ts](v2/e2e/windowing.spec.ts) runs every window behaviour against both builds, at desktop, tablet and phone sizes, including real touch input. [e2e/app-parity.spec.ts](v2/e2e/app-parity.spec.ts) checks every place that lists apps against [data/apps.json](data/apps.json), opens each app alone in both builds to catch runtime errors, and compares Start, search, every right-click menu and the tray between the builds. [e2e/file-actions.spec.ts](v2/e2e/file-actions.spec.ts) performs every file action in both builds and checks the result, [e2e/phone.spec.ts](v2/e2e/phone.spec.ts) runs both builds on an iPhone profile in WebKit and a Pixel profile in Chromium, and [e2e/flstudio.spec.ts](v2/e2e/flstudio.spec.ts) plays, edits, saves, reopens and exports a song in FL Studio in both builds. FL Studio's engine, editing rules, instruments and WAV export live in [assets/js/windowing/fl-studio.js](assets/js/windowing/fl-studio.js), which both builds share, and its look in [assets/css/flstudio.css](assets/css/flstudio.css). [e2e/drawing.spec.ts](v2/e2e/drawing.spec.ts) draws, fills, zooms and saves in Paint and Photoshop in both builds, by mouse, touch and pen, and checks that the same strokes leave the same pixels and that screenshots of the two builds match. Both apps run on [assets/js/windowing/drawing.js](assets/js/windowing/drawing.js) and are styled by [assets/css/drawing.css](assets/css/drawing.css). Both builds read [data/apps.json](data/apps.json), [data/filesystem.json](data/filesystem.json) and [data/menus.json](data/menus.json), so a change to an app, a file or a menu belongs there, and the rules for what can be done to a file are in [assets/js/windowing/file-ops.js](assets/js/windowing/file-ops.js). They need the PHP server on :8765 and Vite on :5173. Set `V1_URL` or `V2_ORIGIN` to use other addresses.
 - **iOS Safari** - [.github/workflows/ios-safari.yml](.github/workflows/ios-safari.yml) runs both builds in real Mobile Safari on Apple's iOS Simulator, on GitHub's macOS runners, through Appium. It checks long press, pinch, the on-screen keyboard and dragging a file with a finger. It runs on demand and when touch handling changes on a branch, and keeps its screenshots.
 - **`npm run test:php`** (repo root) - unit tests for the contact form library.
-- **`actionlint`** — every CI workflow is linted on push.
+- **`actionlint`** - every CI workflow is linted on push.
 
 ---
 
@@ -239,13 +239,13 @@ cp .env.example .env       # fill in any keys you have
 # 2. v1 (PHP/Alpine) only
 php -S localhost:8000
 
-# 3. v2 (React) — boots both tiers
+# 3. v2 (React) - boots both tiers
 cd v2
 npm install
 npm run dev                # PHP at :8765, Vite at :5173, v2 mounted under /v2/
 ```
 
-The site degrades gracefully if optional services (Google APIs, OAuth, SMTP) aren't configured — features that need them simply hide themselves.
+The site degrades gracefully if optional services (Google APIs, OAuth, SMTP) aren't configured - features that need them simply hide themselves.
 
 ---
 
@@ -275,10 +275,10 @@ The site degrades gracefully if optional services (Google APIs, OAuth, SMTP) are
 
 ## Notes & gotchas (the kind of thing that bites in production)
 
-- **Dev URL decoding** — `dev-server.php` `rawurldecode`s the request path before existence checks; without it `fl%20studio.webp` produced a phantom 404 on the bundled icon.
-- **Snap targets vs Win11 chrome** — window resize uses an 8‑directional invisible border (~6–8 px) and adaptive cursor capture, integrated with the snap‑preview overlay. This is the single subtlest piece of the UI and lives in [`v2/src/windowing/useResize.ts`](v2/src/windowing/useResize.ts) with its own test suite.
-- **Recycle bin restore** — items seeded into the static filesystem can be sent to the bin and restored back to their original path. The store keeps a `restoredSeeds` set so seeded items survive a refresh.
-- **CV stays private** — the printable CV is hosted only on the production server. It is gitignored and is not part of the public repo.
+- **Dev URL decoding** - `dev-server.php` `rawurldecode`s the request path before existence checks; without it `fl%20studio.webp` produced a phantom 404 on the bundled icon.
+- **Snap targets vs Win11 chrome** - window resize uses an 8‑directional invisible border (~6-8 px) and adaptive cursor capture, integrated with the snap‑preview overlay. This is the single subtlest piece of the UI and lives in [`v2/src/windowing/useResize.ts`](v2/src/windowing/useResize.ts) with its own test suite.
+- **Recycle bin restore** - items seeded into the static filesystem can be sent to the bin and restored back to their original path. The store keeps a `restoredSeeds` set so seeded items survive a refresh.
+- **CV stays private** - the printable CV is hosted only on the production server. It is gitignored and is not part of the public repo.
 
 ### House rules: the deliberate exception
 
@@ -288,7 +288,7 @@ The Coded Vision Design website rules ask for a sticky header at the top of ever
 
 ## License
 
-MIT. Use as much or as little of this as you like — it's here to be read.
+MIT. Use as much or as little of this as you like - it's here to be read.
 
 ## Contact
 

@@ -257,7 +257,9 @@ try {
     $cookie = 'admin_session=' . admin_session_encode('owner@example.com', 0, $secret, time(), 3600);
     $me = json_decode(http('GET', '/api/admin_me.php', ['Cookie' => $cookie])['body'], true);
     check('admin: a valid cookie signs in, whatever the case of ADMIN_EMAILS', $me['authenticated'] === true && $me['email'] === 'owner@example.com');
-    check('admin: and opens the stats', http('GET', '/api/stats.php', ['Cookie' => $cookie])['status'] !== 401);
+    $stats = http('GET', '/api/stats.php', ['Cookie' => $cookie]);
+    check('admin: and opens the stats', $stats['status'] !== 401);
+    check('stats: no country breakdown, as no location is stored', !array_key_exists('country', json_decode($stats['body'], true) ?? []));
     check('sign-out: GET is not allowed', http('GET', '/api/admin_logout.php', ['Cookie' => $cookie])['status'] === 405);
     check('sign-out: another site cannot sign the admin out', http('POST', '/api/admin_logout.php', ['Cookie' => $cookie, 'Origin' => 'https://evil.example'])['status'] === 403);
     check('sign-out: a refused request leaves the session alone', json_decode(http('GET', '/api/admin_me.php', ['Cookie' => $cookie])['body'], true)['authenticated'] === true);

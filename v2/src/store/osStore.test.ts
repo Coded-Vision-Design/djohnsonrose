@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { useOsStore } from './osStore'
 
 const reset = () => {
-  // Reset to factory defaults — Zustand persists `loggedIn` + `settings`,
+  // Reset to factory defaults - Zustand persists `loggedIn` + `settings`,
   // so we clear localStorage too.
   localStorage.clear()
   useOsStore.setState({
@@ -134,7 +134,7 @@ describe('osStore', () => {
       const [paint, calc] = useOsStore.getState().windows
       focusWindow(calc.id)
       toggleMinimize(paint.id) // minimize paint
-      toggleMinimize(paint.id) // restore — should refocus paint
+      toggleMinimize(paint.id) // restore - should refocus paint
       expect(useOsStore.getState().focusedWindowId).toBe(paint.id)
     })
   })

@@ -59,7 +59,8 @@ export function weatherFromApi(data) {
   const condition = weatherCondition(current.weathercode);
   return {
     temp: Math.round(Number(current.temperature)),
-    city: data.city || 'London',
+    // Essex is the default place in config.php.
+    city: data.city || 'Essex',
     condition: condition.label,
     icon: condition.icon,
   };

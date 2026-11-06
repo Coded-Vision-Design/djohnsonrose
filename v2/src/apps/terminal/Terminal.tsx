@@ -5,7 +5,7 @@ import { TERMINAL_HOME } from '../../../../assets/js/windowing/terminal.js'
 import { runCommand } from './commands'
 import { track } from '../../lib/telemetry'
 
-// 1:1 port of partials/apps/terminal.php — PowerShell-styled header,
+// 1:1 port of partials/apps/terminal.php - PowerShell-styled header,
 // green prompt + cmd, blue-tinted output, click-anywhere-to-focus input.
 
 interface Entry {
@@ -94,7 +94,7 @@ export default function Terminal() {
 
   return (
     <div className="h-full flex flex-col bg-[#0c0c0c] text-[#cccccc] font-mono text-xs overflow-hidden">
-      {/* Header — Windows Terminal style */}
+      {/* Header - Windows Terminal style */}
       <div className="h-9 bg-[#2b2b2b] flex items-center px-3 space-x-4 border-b border-white/5">
         <div className="flex items-center space-x-2 border-b-2 border-win-blue h-full px-2">
           <img src="/assets/img/win11/powershell.webp" alt="" className="w-4 h-4" />

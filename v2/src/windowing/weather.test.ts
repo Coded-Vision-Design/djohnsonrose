@@ -37,8 +37,8 @@ describe('weatherFromApi', () => {
     })
   })
 
-  it('falls back to London with no city', () => {
-    expect(weatherFromApi({ current_weather: { temperature: 3, weathercode: 0 } })?.city).toBe('London')
+  it('falls back to Essex, the default place in config.php, with no city', () => {
+    expect(weatherFromApi({ current_weather: { temperature: 3, weathercode: 0 } })?.city).toBe('Essex')
   })
 
   it('shows nothing for an answer with no weather in it', () => {

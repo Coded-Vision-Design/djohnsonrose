@@ -51,7 +51,7 @@ export default function VSCode() {
 
   const active = projects.find((p) => p.title === activeFile)
 
-  // Build animation lives on a single interval that we always clean up — the
+  // Build animation lives on a single interval that we always clean up - the
   // old impl could leak across re-renders (and across switching projects mid-
   // build), which is what was causing the "Build" button to white-screen the
   // window after a second click.
@@ -85,7 +85,7 @@ export default function VSCode() {
         setIsBuilding(false)
         return
       }
-      // Capture the line *before* incrementing — the setState updater may
+      // Capture the line *before* incrementing - the setState updater may
       // run later (StrictMode replays / concurrent rendering), at which
       // point a closure-captured lines[i] reads the already-incremented i
       // and pushes undefined, blowing up the map below with

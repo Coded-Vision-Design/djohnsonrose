@@ -1,4 +1,4 @@
-<!-- partials/apps/admin.php — 1:1 with v2/src/apps/admin/AdminConsole.tsx.
+<!-- partials/apps/admin.php - 1:1 with v2/src/apps/admin/AdminConsole.tsx.
      Lazy-loads Chart.js + Google Identity Services on first open so v1
      doesn't pay the ~110 KB cost on every page. Auth + stats endpoints
      are shared with v2 (api/admin_*.php, api/stats.php). -->
@@ -129,15 +129,11 @@
                             </div>
                         </section>
 
-                        <!-- Browser + country -->
-                        <section class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                        <!-- Browser. There is no country chart: no location is stored (see /privacy). -->
+                        <section class="grid grid-cols-1 gap-4">
                             <div class="bg-white dark:bg-[#2b2b2b] border border-gray-200 dark:border-gray-800 rounded-xl p-4 shadow-xs flex flex-col">
                                 <h3 class="text-sm font-semibold mb-3">Browser breakdown</h3>
                                 <div class="relative grow min-h-[240px]"><canvas x-ref="browserChart"></canvas></div>
-                            </div>
-                            <div class="bg-white dark:bg-[#2b2b2b] border border-gray-200 dark:border-gray-800 rounded-xl p-4 shadow-xs flex flex-col">
-                                <h3 class="text-sm font-semibold mb-3">Top countries</h3>
-                                <div class="relative grow min-h-[240px]"><canvas x-ref="countryChart"></canvas></div>
                             </div>
                         </section>
 

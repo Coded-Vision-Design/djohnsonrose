@@ -82,6 +82,12 @@ test.describe('security headers', () => {
     expect(res.headers().location).toBe('https://devante.johnson-rose.co.uk/app/word?x=1')
   })
 
+  test('llms.txt is served as UTF-8, so the accent in DeVanté survives', async ({ request }) => {
+    const res = await request.get(`${BASE}/llms.txt`)
+    expect(res.status()).toBe(200)
+    expect(res.headers()['content-type']).toMatch(/^text\/plain;\s*charset=utf-8$/i)
+  })
+
   for (const [path, status] of [
     ['/lib/security.php', 403],
     ['/lib/migrate.php', 403],

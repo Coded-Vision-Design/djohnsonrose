@@ -25,6 +25,8 @@ AddType video/mp4 .mp4
 AddType video/mp4 .m4v
 AddType video/webm .webm
 AddType video/ogg .ogv
+# llms.txt and llm.txt hold accented names; without a charset browsers guess.
+AddCharset utf-8 .txt
 
 # ---- Sensitive files: deny all direct access ----
 # .env, dotfiles, config/bootstrap, and any PHP file that isn't an entry point.
@@ -56,7 +58,7 @@ RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
 RewriteCond %{HTTP_HOST} ^www\.(.*)$ [NC]
 RewriteRule ^(.*)$ https://%1/$1 [R=301,L]
 
-# Friendly admin URLs — both /admin and /adminconsole resolve to the v2
+# Friendly admin URLs - both /admin and /adminconsole resolve to the v2
 # React app's deep-link route, which auto-launches the Admin Console.
 # Putting these BEFORE the v2 SPA rewrite so they hit the redirect first.
 RewriteRule ^admin/?$        /v2/app/admin [R=302,L]
@@ -68,7 +70,7 @@ RewriteRule ^adminconsole/?$ /v2/app/admin [R=302,L]
 #
 # [END] (Apache 2.3.9+) terminates the rewrite engine entirely. Plain [L]
 # isn't enough here: in .htaccess context Apache restarts mod_rewrite after
-# each match — the second pass would re-match v2/dist/... against the SPA
+# each match - the second pass would re-match v2/dist/... against the SPA
 # fallback and serve index.html for every JS chunk, breaking MIME types.
 RewriteCond %{DOCUMENT_ROOT}/v2/dist/$1 -f [OR]
 RewriteCond %{DOCUMENT_ROOT}/v2/dist/$1 -d

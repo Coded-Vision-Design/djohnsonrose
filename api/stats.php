@@ -1,5 +1,5 @@
 <?php
-// api/stats.php — aggregates for the v2 Admin Console.
+// api/stats.php - aggregates for the v2 Admin Console.
 //
 // Returns a JSON payload the dashboard renders directly into Chart.js. The
 // shape is intentionally chart-ready (label/value arrays) so the React side
@@ -92,7 +92,7 @@ try {
             LIMIT 50
         ")->fetchAll();
     } catch (Throwable $e) {
-        // email_logs may not exist yet — surface as empty list.
+        // email_logs may not exist yet - surface as empty list.
         if (!empty($config['debug'])) {
             error_log('stats: email_logs read failed: ' . $e->getMessage());
         }
@@ -122,9 +122,8 @@ try {
         'per_app'           => $perApp,
         'os'                => $osBreakdown,
         'browser'           => $browserBreakdown,
-        // Location is no longer looked up or stored (see /privacy). The key
-        // stays so both consoles keep their shape; they show it as empty.
-        'country'           => [],
+        // No location is looked up or stored (see /privacy), so there is no
+        // country breakdown.
         'per_day'           => $perDay,
         'screen_time'       => $screenTime,
         'enquiries'         => $enquiries,

@@ -1,5 +1,5 @@
 <?php
-// config.php — environment loader + structured config.
+// config.php - environment loader + structured config.
 
 function getEnvVar($key, $default = null) {
     $val = getenv($key);
@@ -9,7 +9,7 @@ function getEnvVar($key, $default = null) {
     return $val;
 }
 
-// Basic .env loader — supports quoted values, ignores comments / blank lines.
+// Basic .env loader - supports quoted values, ignores comments / blank lines.
 if (file_exists(__DIR__ . '/.env')) {
     $lines = file(__DIR__ . '/.env', FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
     foreach ($lines as $line) {

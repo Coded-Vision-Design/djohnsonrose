@@ -380,7 +380,6 @@ const STATS = {
   per_app: [{ app: 'notepad', total: 2 }],
   os: [{ os: 'Windows', total: 3 }],
   browser: [{ browser: 'Chrome', total: 3 }],
-  country: [{ country: 'United Kingdom', total: 3 }],
   per_day: [{ day: '2026-11-05', source: 'php', sessions: 2 }],
   screen_time: [],
   enquiries: [],
@@ -430,6 +429,14 @@ for (const build of BUILDS) {
       await boot(page, build.url)
       await call(page, 'openApp', 'admin')
       await expect(admin(page).getByRole('alert')).toContainText('Could not load the stats', { timeout: 15_000 })
+    })
+
+    test('has no country chart, as no location is stored', async ({ page }) => {
+      await stubAdmin(page, [SIGNED_IN], { status: 200, body: STATS })
+      await boot(page, build.url)
+      await call(page, 'openApp', 'admin')
+      await expect(admin(page).getByText('Browser breakdown')).toBeVisible({ timeout: 15_000 })
+      await expect(admin(page).getByText('Top countries')).toHaveCount(0)
     })
 
     if (build.name === 'v1') {

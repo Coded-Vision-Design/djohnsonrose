@@ -283,23 +283,6 @@ document.addEventListener('alpine:init', () => {
                     },
                 });
             }
-
-            // 6. Country bar (horizontal)
-            const country = toCountMap(this.stats.country, 'country');
-            if (this.$refs.countryChart && country.values.length) {
-                this._charts.country = new Chart(this.$refs.countryChart, {
-                    type: 'bar',
-                    data: {
-                        labels: country.labels,
-                        datasets: [{ label: 'Events', data: country.values, backgroundColor: '#8b5cf6', borderRadius: 6 }],
-                    },
-                    options: {
-                        responsive: true, maintainAspectRatio: false, indexAxis: 'y',
-                        plugins: { legend: { display: false } },
-                        scales: { x: { beginAtZero: true, ticks: { precision: 0 } } },
-                    },
-                });
-            }
         },
     }));
 });

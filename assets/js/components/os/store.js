@@ -98,8 +98,8 @@ document.addEventListener('alpine:init', () => {
                 details: {
                     ...details,
                     // Tag every event with which build it came from so the
-                    // email logs (and the admin console stats) can split
-                    // PHP-side vs React-side activity.
+                    // daily digest and the Admin Console stats can split
+                    // v1 (PHP) and v2 (React) activity.
                     source: 'php',
                     sessionID
                 },

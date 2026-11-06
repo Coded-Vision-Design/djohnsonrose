@@ -18,7 +18,7 @@ export function Shell({ initialApp }: ShellProps) {
   const openApp = useOsStore((s) => s.openApp)
   const finishBoot = useOsStore((s) => s.finishBoot)
 
-  // If already logged in (persisted), skip boot screen entirely — matches v1.
+  // If already logged in (persisted), skip boot screen entirely - matches v1.
   useEffect(() => {
     if (loggedIn && isBooting) finishBoot()
   }, [loggedIn, isBooting, finishBoot])
