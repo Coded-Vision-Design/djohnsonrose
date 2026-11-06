@@ -126,7 +126,7 @@
                                  :class="selectedDialogFile && selectedDialogFile.name === file.name ? 'bg-win-blue text-white' : 'hover:bg-win-blue hover:text-white'">
                                 <div class="w-6 h-6 flex items-center justify-center mr-3 shrink-0">
                                     <template x-if="file.icon && file.icon.includes('.')">
-                                        <img :src="file.icon" class="w-4 h-4 object-contain" :class="selectedDialogFile && selectedDialogFile.name === file.name ? 'brightness-0 invert' : ''">
+                                        <img :src="file.icon" alt="" class="w-4 h-4 object-contain" :class="selectedDialogFile && selectedDialogFile.name === file.name ? 'brightness-0 invert' : ''">
                                     </template>
                                     <template x-if="!file.icon || !file.icon.includes('.')">
                                         <span x-text="file.type === 'folder' ? '📁' : '📄'" class="text-sm"></span>
