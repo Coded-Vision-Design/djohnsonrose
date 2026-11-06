@@ -138,8 +138,25 @@ const closeMenus = () =>
     window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))
   })
 
+/** True once an icon is on screen, not just in the page: v1 keeps its desktop behind the lock screen. */
+const desktopShown = () =>
+  driver.execute((name) => {
+    const icon = document.querySelector(`[data-desktop-item="${name}"]`)
+    if (!icon?.offsetParent) return false
+    const box = icon.getBoundingClientRect()
+    const top = document.elementFromPoint(box.x + box.width / 2, box.y + box.height / 2)
+    return Boolean(top && icon.contains(top))
+  }, FILE)
+
 async function signIn(url) {
+  const origin = new URL(url).origin
   await driver.url(url)
+  // Safari can answer before it has left the previous page, so wait to be on the site.
+  await driver.waitUntil(() => driver.execute(() => location.origin + '|' + document.readyState).then((v) => v === `${origin}|complete`), {
+    timeout: 60_000,
+    interval: 300,
+    timeoutMsg: 'the site never loaded',
+  })
   await driver.execute(() => {
     localStorage.setItem('auth.loggedIn', 'true')
     localStorage.setItem('cookie.consent', 'false')
@@ -147,10 +164,12 @@ async function signIn(url) {
     localStorage.setItem('react.os', JSON.stringify({ state: { loggedIn: true }, version: 0 }))
   })
   await driver.url(url)
-  await driver.waitUntil(
-    () => driver.execute((name) => Boolean(document.querySelector(`[data-desktop-item="${name}"]`)), FILE),
-    { timeout: 90_000, interval: 500, timeoutMsg: 'the desktop never appeared' },
-  )
+  const shown = await driver.waitUntil(desktopShown, { timeout: 30_000, interval: 500 }).catch(() => false)
+  if (!shown) {
+    // Still on the lock screen: sign in as a visitor would.
+    await driver.execute(() => [...document.querySelectorAll('button')].find((b) => /sign in/i.test(b.textContent))?.click())
+    await driver.waitUntil(desktopShown, { timeout: 60_000, interval: 500, timeoutMsg: 'the desktop never appeared' })
+  }
   await sleep(1500)
 }
 
