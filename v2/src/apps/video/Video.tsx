@@ -72,6 +72,7 @@ export default function Video() {
           onPause={() => setPlaying(false)}
           onEnded={() => setPlaying(false)}
           src={src}
+          poster={src ? `/assets/img/posters/${src.split('/').pop()?.replace(/\.[^.]+$/, '.webp')}` : undefined}
           preload="metadata"
           playsInline
         />

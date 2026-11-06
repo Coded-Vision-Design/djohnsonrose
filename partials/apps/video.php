@@ -21,6 +21,7 @@
                @pause="playing = false"
                @ended="playing = false"
                :src="videoUrl"
+               :poster="videoUrl ? window.portfolioConfig.imgPath + 'posters/' + videoUrl.split('/').pop().replace(/\.[^.]+$/, '.webp') : ''"
                preload="metadata"
                playsinline>
         </video>
