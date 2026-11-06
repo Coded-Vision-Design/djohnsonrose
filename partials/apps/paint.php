@@ -1,124 +1,182 @@
-<!-- partials/apps/paint.php -->
-<div class="h-full flex flex-col bg-[#f0f0f0] dark:bg-win-dark select-none" x-data="paintApp()">
-    <!-- Paint Ribbon UI -->
-    <div class="bg-white dark:bg-[#2d2d2d] border-b border-gray-300 dark:border-gray-700 flex flex-col shadow-xs">
-        <!-- Top Tabs -->
-        <div class="flex items-center px-4 pt-1 space-x-6 text-[11px] font-medium border-b border-gray-100 dark:border-gray-800">
-            <span class="text-win-blue border-b-2 border-win-blue pb-1 px-1 cursor-default">File</span>
-            <span class="text-win-blue border-b-2 border-win-blue pb-1 px-1 cursor-default">Home</span>
-            <span class="text-gray-500 pb-1 px-1 cursor-not-allowed">View</span>
-        </div>
-        
-        <!-- Ribbon Content -->
-        <div class="flex items-center p-2 space-x-4 h-24 overflow-x-auto">
-            <!-- Clipboard & History Group -->
-            <div class="flex flex-col items-center border-r border-gray-200 dark:border-gray-700 pr-4 h-full justify-between">
-                <div class="flex items-center space-x-2">
-                    <button @click="undo()" :disabled="historyStep <= 0" class="p-2 rounded-sm hover:bg-gray-100 dark:hover:bg-white/5 disabled:opacity-30 transition-all active:scale-90" title="Undo (Ctrl+Z)">
-                        ↩️
-                    </button>
-                    <button @click="redo()" :disabled="historyStep >= history.length - 1" class="p-2 rounded-sm hover:bg-gray-100 dark:hover:bg-white/5 disabled:opacity-30 transition-all active:scale-90" title="Redo (Ctrl+Y)">
-                        ↪️
-                    </button>
-                </div>
-                <span class="text-[9px] uppercase text-gray-400">History</span>
-            </div>
+<!-- partials/apps/paint.php: the same markup as v2's Paint.tsx, styled by assets/css/drawing.css. -->
+<div class="pt-app" x-data="paintApp" :data-tool="s.tool">
+    <div class="pt-tabs" role="tablist" aria-label="Paint">
+        <template x-for="tab in TABS" :key="tab.id">
+            <button type="button" role="tab" class="pt-tab" :data-paint-tab="tab.id" :aria-selected="s.tab === tab.id"
+                    @click="call('setTab', tab.id)" x-text="tab.label"></button>
+        </template>
+    </div>
 
-            <!-- Tools Group -->
-            <div class="flex flex-col items-center border-r border-gray-200 dark:border-gray-700 pr-4 h-full justify-between">
-                <div class="grid grid-cols-3 gap-1">
-                    <button @click="tool = 'pencil'" :class="tool === 'pencil' ? 'bg-blue-100 dark:bg-blue-900/50 border-win-blue' : 'border-transparent'" class="p-1.5 rounded-sm border hover:bg-gray-100 dark:hover:bg-white/5 transition-colors" title="Pencil">✏️</button>
-                    <button @click="tool = 'fill'" :class="tool === 'fill' ? 'bg-blue-100 dark:bg-blue-900/50 border-win-blue' : 'border-transparent'" class="p-1.5 rounded-sm border hover:bg-gray-100 dark:hover:bg-white/5 transition-colors" title="Fill">🪣</button>
-                    <button @click="tool = 'text'" :class="tool === 'text' ? 'bg-blue-100 dark:bg-blue-900/50 border-win-blue' : 'border-transparent'" class="p-1.5 rounded-sm border hover:bg-gray-100 dark:hover:bg-white/5 transition-colors" title="Text">A</button>
-                    <button @click="tool = 'eraser'" :class="tool === 'eraser' ? 'bg-blue-100 dark:bg-blue-900/50 border-win-blue' : 'border-transparent'" class="p-1.5 rounded-sm border hover:bg-gray-100 dark:hover:bg-white/5 transition-colors" title="Eraser">🧽</button>
-                    <button @click="tool = 'picker'" :class="tool === 'picker' ? 'bg-blue-100 dark:bg-blue-900/50 border-win-blue' : 'border-transparent'" class="p-1.5 rounded-sm border hover:bg-gray-100 dark:hover:bg-white/5 transition-colors" title="Color Picker">🧪</button>
-                    <button @click="tool = 'zoom'" :class="tool === 'zoom' ? 'bg-blue-100 dark:bg-blue-900/50 border-win-blue' : 'border-transparent'" class="p-1.5 rounded-sm border hover:bg-gray-100 dark:hover:bg-white/5 transition-colors" title="Zoom">🔍</button>
-                </div>
-                <span class="text-[9px] uppercase text-gray-400">Tools</span>
+    <div class="pt-ribbon" role="tabpanel" aria-label="File" :hidden="s.tab !== 'file'">
+        <div class="pt-group">
+            <div class="pt-group-body">
+                <button type="button" class="pt-button pt-big" data-paint-command="new" @click="run('new')">
+                    <svg class="dr-icon" viewBox="0 0 24 24" aria-hidden="true"><path :d="ICONS.new"></path></svg>
+                    <span>New</span>
+                </button>
+                <button type="button" class="pt-button pt-big" data-paint-command="save" @click="run('save')">
+                    <svg class="dr-icon" viewBox="0 0 24 24" aria-hidden="true"><path :d="ICONS.save"></path></svg>
+                    <span>Save as PNG</span>
+                </button>
             </div>
-
-            <!-- Size Selection -->
-            <div class="flex flex-col items-center border-r border-gray-200 dark:border-gray-700 pr-4 h-full justify-between">
-                <div class="flex flex-col items-center py-1">
-                    <input type="range" x-model="size" min="1" max="50" class="w-20 accent-win-blue cursor-pointer">
-                    <div class="flex items-center justify-center h-8 w-8 mt-1">
-                        <div class="bg-black dark:bg-white rounded-full" :style="`width: ${size/2}px; height: ${size/2}px`" style="text-align: center"></div>
-                    </div>
-                </div>
-                <span class="text-[9px] uppercase text-gray-400">Size</span>
-            </div>
-
-            <!-- Colors -->
-            <div class="flex flex-col items-center h-full justify-between">
-                <div class="flex items-center space-x-3">
-                    <div class="flex flex-col items-center">
-                        <div class="w-10 h-10 rounded-sm border-2 border-white dark:border-gray-600 shadow-inner overflow-hidden">
-                            <input type="color" x-model="color" class="w-14 h-14 -m-2 cursor-pointer border-none bg-transparent">
-                        </div>
-                        <span class="text-[8px] mt-1">Color 1</span>
-                    </div>
-                    
-                    <div class="grid grid-cols-5 sm:grid-cols-10 gap-1">
-                        <template x-for="c in palette">
-                            <div @click="color = c" 
-                                 :style="`background-color: ${c}`"
-                                 class="w-4 h-4 rounded-xs border border-gray-300 dark:border-gray-600 cursor-pointer hover:scale-125 transition-transform shadow-xs">
-                            </div>
-                        </template>
-                    </div>
-                </div>
-                <span class="text-[9px] uppercase text-gray-400">Colors</span>
-            </div>
-
-            <div class="grow"></div>
-
-            <!-- Actions -->
-            <div class="flex flex-col items-end space-y-2 pr-4">
-                <button @click="clearCanvas()" class="text-[10px] px-3 py-1 rounded-sm border border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-white/10 transition-colors">Clear</button>
-                <button @click="download()" class="text-[10px] px-3 py-1 rounded-sm bg-win-blue text-white hover:bg-blue-600 transition-colors font-medium">Save PNG</button>
-            </div>
+            <span class="pt-group-label">File</span>
         </div>
     </div>
 
-    <!-- Canvas Area -->
-    <div class="grow overflow-auto p-2 sm:p-12 flex items-center justify-center bg-[#dbdbdb] dark:bg-[#111111] relative scrollbar-thin">
-        <div class="bg-white shadow-2xl relative" x-ref="canvasContainer" :style="`width: ${canvasSize.w}px; height: ${canvasSize.h}px`" style="text-align: center">
-            <canvas x-ref="canvas" 
-                    :class="tool === 'fill' ? 'cursor-alias' : (tool === 'picker' ? 'cursor-cell' : 'cursor-crosshair')"
-                    @mousedown="startAction($event)"
-                    @mousemove="doAction($event)"
-                    @mouseup="stopAction()"
-                    @mouseleave="stopAction()">
-            </canvas>
-            
-            <!-- Resizer Handles -->
-            <div class="absolute -bottom-1.5 -right-1.5 w-3 h-3 bg-white border border-gray-500 cursor-nwse-resize z-10 shadow-xs" @mousedown.stop="startCanvasResize('both', $event)"></div>
-            <div class="absolute top-1/2 -right-1.5 w-2 h-3 bg-white border border-gray-500 cursor-ew-resize -translate-y-1/2 z-10 shadow-xs" @mousedown.stop="startCanvasResize('width', $event)"></div>
-            <div class="absolute bottom-1.5 right-1/2 w-3 h-2 bg-white border border-gray-500 cursor-ns-resize translate-x-1/2 z-10 shadow-xs" @mousedown.stop="startCanvasResize('height', $event)"></div>
+    <div class="pt-ribbon" role="tabpanel" aria-label="Home" :hidden="s.tab !== 'home'">
+        <div class="pt-group">
+            <div class="pt-group-body pt-stack">
+                <button type="button" class="pt-button" data-paint-command="undo" aria-label="Undo" title="Undo (Ctrl+Z)" :disabled="off('undo')" @click="run('undo')">
+                    <svg class="dr-icon" viewBox="0 0 24 24" aria-hidden="true"><path :d="ICONS.undo"></path></svg>
+                </button>
+                <button type="button" class="pt-button" data-paint-command="redo" aria-label="Redo" title="Redo (Ctrl+Y)" :disabled="off('redo')" @click="run('redo')">
+                    <svg class="dr-icon" viewBox="0 0 24 24" aria-hidden="true"><path :d="ICONS.redo"></path></svg>
+                </button>
+            </div>
+            <span class="pt-group-label">History</span>
+        </div>
+
+        <div class="pt-group">
+            <div class="pt-group-body">
+                <div class="pt-grid" role="group" aria-label="Tools">
+                    <template x-for="tool in TOOLS" :key="tool.id">
+                        <button type="button" class="pt-button" :data-paint-tool="tool.id" :aria-label="tool.label" :title="tool.label"
+                                :aria-pressed="s.tool === tool.id" @click="call('setTool', tool.id)">
+                            <svg class="dr-icon" viewBox="0 0 24 24" aria-hidden="true"><path :d="ICONS[tool.id]"></path></svg>
+                        </button>
+                    </template>
+                </div>
+            </div>
+            <span class="pt-group-label">Tools</span>
+        </div>
+
+        <div class="pt-group">
+            <div class="pt-group-body">
+                <button type="button" class="pt-button pt-big" data-paint-tool="brush" :aria-pressed="s.tool === 'brush'" @click="call('setTool', 'brush')">
+                    <svg class="dr-icon" viewBox="0 0 24 24" aria-hidden="true"><path :d="ICONS.brush"></path></svg>
+                    <span>Brush</span>
+                </button>
+            </div>
+            <span class="pt-group-label">Brushes</span>
+        </div>
+
+        <div class="pt-group">
+            <div class="pt-group-body">
+                <div class="pt-grid" role="group" aria-label="Shapes">
+                    <template x-for="shape in SHAPES" :key="shape.id">
+                        <button type="button" class="pt-button" :data-paint-shape="shape.id" :aria-label="shape.label" :title="shape.label"
+                                :aria-pressed="s.tool === 'shape' && s.shape === shape.id" @click="call('setShape', shape.id)">
+                            <svg class="dr-icon" viewBox="0 0 24 24" aria-hidden="true"><path :d="ICONS[shape.id]"></path></svg>
+                        </button>
+                    </template>
+                </div>
+            </div>
+            <span class="pt-group-label">Shapes</span>
+        </div>
+
+        <div class="pt-group">
+            <div class="pt-group-body pt-size">
+                <span class="pt-size-row">
+                    <span class="pt-size-preview" aria-hidden="true">
+                        <span class="pt-size-dot" :style="'--s: ' + s.size + 'px'"></span>
+                    </span>
+                    <span class="pt-size-value" x-text="s.size + 'px'"></span>
+                </span>
+                <input type="range" :min="MIN_SIZE" :max="MAX_SIZE" :value="s.size" aria-label="Size" data-paint-size
+                       @input="call('setSize', $event.target.value)">
+            </div>
+            <span class="pt-group-label">Size</span>
+        </div>
+
+        <div class="pt-group">
+            <div class="pt-group-body pt-colours">
+                <div class="pt-wells">
+                    <template x-for="slot in [0, 1]" :key="slot">
+                        <button type="button" class="pt-well" :data-paint-slot="slot" :aria-label="'Colour ' + (slot + 1)" :title="'Colour ' + (slot + 1)"
+                                :aria-pressed="s.slot === slot" @click="call('setSlot', slot)">
+                            <span class="pt-well-swatch" :style="'--c: ' + s.colours[slot]"></span>
+                        </button>
+                    </template>
+                </div>
+                <div class="pt-palette" role="group" aria-label="Palette">
+                    <template x-for="swatch in PALETTE" :key="swatch.hex">
+                        <button type="button" class="pt-swatch" :data-paint-colour="swatch.hex" :aria-label="swatch.name" :title="swatch.name"
+                                :style="'--c: ' + swatch.hex" @click="call('setColour', swatch.hex)"></button>
+                    </template>
+                </div>
+                <label class="pt-edit" title="Edit colours">
+                    <span class="pt-well-swatch" style="--c: conic-gradient(red, yellow, lime, aqua, blue, magenta, red)"></span>
+                    <span>Edit colours</span>
+                    <input type="color" :value="s.colours[s.slot]" aria-label="Edit colours" data-paint-custom
+                           @input="call('setColour', $event.target.value)">
+                </label>
+            </div>
+            <span class="pt-group-label">Colours</span>
+        </div>
+
+        <div class="pt-actions">
+            <button type="button" class="pt-action" data-paint-command="clear" @click="run('clear')">
+                <svg class="dr-icon" viewBox="0 0 24 24" aria-hidden="true"><path :d="ICONS.clear"></path></svg>
+                Clear
+            </button>
+            <button type="button" class="pt-action pt-action-primary" data-paint-command="save" @click="run('save')">
+                <svg class="dr-icon" viewBox="0 0 24 24" aria-hidden="true"><path :d="ICONS.save"></path></svg>
+                Save PNG
+            </button>
         </div>
     </div>
 
-    <!-- Status Bar -->
-    <div class="h-6 bg-win-bg dark:bg-[#2b2b2b] border-t border-gray-300 dark:border-gray-700 flex items-center px-4 justify-between text-[10px] text-gray-600 dark:text-gray-400 shrink-0">
-        <div class="flex items-center space-x-6">
-            <div class="flex items-center">
-                <span class="mr-2 opacity-70">📍</span>
-                <span x-text="mousePos.x + ', ' + mousePos.y + 'px'"></span>
+    <div class="pt-ribbon" role="tabpanel" aria-label="View" :hidden="s.tab !== 'view'">
+        <div class="pt-group">
+            <div class="pt-group-body">
+                <button type="button" class="pt-button pt-big" data-paint-command="zoomIn" :disabled="off('zoomIn')" @click="run('zoomIn')">
+                    <svg class="dr-icon" viewBox="0 0 24 24" aria-hidden="true"><path :d="ICONS.zoomIn"></path></svg>
+                    <span>Zoom in</span>
+                </button>
+                <button type="button" class="pt-button pt-big" data-paint-command="zoomOut" :disabled="off('zoomOut')" @click="run('zoomOut')">
+                    <svg class="dr-icon" viewBox="0 0 24 24" aria-hidden="true"><path :d="ICONS.zoomOut"></path></svg>
+                    <span>Zoom out</span>
+                </button>
+                <button type="button" class="pt-button pt-big" data-paint-command="zoomReset" :disabled="off('zoomReset')" @click="run('zoomReset')">
+                    <svg class="dr-icon" viewBox="0 0 24 24" aria-hidden="true"><path :d="ICONS.actual"></path></svg>
+                    <span>100%</span>
+                </button>
             </div>
-            <div class="flex items-center">
-                <span class="mr-2 opacity-70">🖼️</span>
-                <span x-text="canvasSize.w + ' x ' + canvasSize.h + 'px'"></span>
-            </div>
-        </div>
-        <div class="flex items-center space-x-4">
-            <span class="font-medium">100%</span>
-            <div class="w-24 h-1 bg-gray-300 dark:bg-gray-700 rounded-full relative">
-                <div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-3 h-3 bg-white border border-gray-400 rounded-full shadow-xs"></div>
-            </div>
+            <span class="pt-group-label">Zoom</span>
         </div>
     </div>
 
-    <script>
-        // App scripts moved to alpine-init.js for global availability
-    </script>
+    <div class="pt-viewport" data-paint-viewport>
+        <div class="pt-frame" data-paint-frame>
+            <div class="pt-sheet">
+                <canvas class="pt-canvas" data-paint-canvas aria-label="Canvas"></canvas>
+            </div>
+            <textarea class="pt-textbox" data-paint-text aria-label="Text" rows="1" hidden></textarea>
+            <span class="pt-handle" data-paint-resize="x" aria-hidden="true"></span>
+            <span class="pt-handle" data-paint-resize="y" aria-hidden="true"></span>
+            <span class="pt-handle" data-paint-resize="xy" aria-hidden="true"></span>
+        </div>
+    </div>
+
+    <div class="pt-status">
+        <span class="pt-status-item">
+            <svg class="dr-icon" viewBox="0 0 24 24" aria-hidden="true"><path :d="ICONS.pointer"></path></svg>
+            <span class="pt-pointer" data-paint-pointer></span>
+        </span>
+        <span class="pt-status-item pt-status-size">
+            <svg class="dr-icon" viewBox="0 0 24 24" aria-hidden="true"><path :d="ICONS.size"></path></svg>
+            <span data-paint-dimensions x-text="s.width + ' × ' + s.height + 'px'"></span>
+        </span>
+        <span class="pt-zoom">
+            <span class="pt-zoom-value" data-paint-zoom x-text="s.zoom + '%'"></span>
+            <button type="button" class="pt-button" aria-label="Zoom out" :disabled="off('zoomOut')" @click="run('zoomOut')">
+                <svg class="dr-icon" viewBox="0 0 24 24" aria-hidden="true"><path :d="ICONS.minus"></path></svg>
+            </button>
+            <input type="range" min="0" :max="ZOOM_LEVELS.length - 1" :value="zoomIndex()" aria-label="Zoom" :aria-valuetext="s.zoom + '%'"
+                   @input="call('setZoom', ZOOM_LEVELS[Number($event.target.value)])">
+            <button type="button" class="pt-button" aria-label="Zoom in" :disabled="off('zoomIn')" @click="run('zoomIn')">
+                <svg class="dr-icon" viewBox="0 0 24 24" aria-hidden="true"><path :d="ICONS.plus"></path></svg>
+            </button>
+        </span>
+    </div>
 </div>

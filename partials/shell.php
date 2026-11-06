@@ -88,9 +88,11 @@
         import * as textOps from '<?php echo BASE_PATH; ?>assets/js/windowing/text-ops.js?v=<?php echo @filemtime(__DIR__ . '/../assets/js/windowing/text-ops.js'); ?>';
         import * as flStudio from '<?php echo BASE_PATH; ?>assets/js/windowing/fl-studio.js?v=<?php echo @filemtime(__DIR__ . '/../assets/js/windowing/fl-studio.js'); ?>';
         import * as officeApps from '<?php echo BASE_PATH; ?>assets/js/windowing/office.js?v=<?php echo @filemtime(__DIR__ . '/../assets/js/windowing/office.js'); ?>';
+        import * as drawing from '<?php echo BASE_PATH; ?>assets/js/windowing/drawing.js?v=<?php echo @filemtime(__DIR__ . '/../assets/js/windowing/drawing.js'); ?>';
         window.OsWindowing = { ...windowing, ...shellCore, ...fileOps, ...textOps };
         window.FlStudio = flStudio;
         window.OfficeApps = officeApps;
+        window.Drawing = drawing;
     </script>
     <!-- Alpine.js -->
     <script defer src="<?php echo BASE_PATH; ?>assets/js/alpine/alpine-3.17.5.min.js"></script>
@@ -351,6 +353,7 @@
         'os/store',
         'os/shell',
         'paint',
+        'photoshop',
         'calculator',
         'terminal',
         'explorer',

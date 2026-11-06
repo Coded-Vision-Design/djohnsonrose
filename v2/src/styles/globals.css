@@ -2,6 +2,7 @@
 @import '../../../assets/css/windowing.css';
 @import '../../../assets/css/flstudio.css';
 @import '../../../assets/css/office.css';
+@import '../../../assets/css/drawing.css';
 
 @custom-variant dark (&:is(.dark *));
 
