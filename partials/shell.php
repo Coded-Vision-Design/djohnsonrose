@@ -72,7 +72,8 @@
         import * as flStudio from '<?php echo BASE_PATH; ?>assets/js/windowing/fl-studio.js?v=<?php echo @filemtime(__DIR__ . '/../assets/js/windowing/fl-studio.js'); ?>';
         import * as calculator from '<?php echo BASE_PATH; ?>assets/js/windowing/calculator.js?v=<?php echo @filemtime(__DIR__ . '/../assets/js/windowing/calculator.js'); ?>';
         import * as terminal from '<?php echo BASE_PATH; ?>assets/js/windowing/terminal.js?v=<?php echo @filemtime(__DIR__ . '/../assets/js/windowing/terminal.js'); ?>';
-        window.OsWindowing = { ...windowing, ...shellCore, ...fileOps, ...textOps, ...calculator, ...terminal };
+        import * as browser from '<?php echo BASE_PATH; ?>assets/js/windowing/browser.js?v=<?php echo @filemtime(__DIR__ . '/../assets/js/windowing/browser.js'); ?>';
+        window.OsWindowing = { ...windowing, ...shellCore, ...fileOps, ...textOps, ...calculator, ...terminal, ...browser };
         window.FlStudio = flStudio;
     </script>
     <!-- Alpine.js -->

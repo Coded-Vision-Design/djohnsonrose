@@ -9,6 +9,8 @@ const BUILDS = [
   { name: 'v2', url: `${process.env.V2_ORIGIN ?? 'http://localhost:5173'}/v2/` },
 ] as const
 
+type Build = (typeof BUILDS)[number]
+
 const portfolio = JSON.parse(
   readFileSync(new URL('../../data/portfolio.json', import.meta.url), 'utf8'),
 ) as { projects: { title: string; url: string; featured?: boolean; tags?: string[] }[] }
@@ -151,3 +153,86 @@ for (const build of BUILDS) {
     })
   })
 }
+
+/** Opens an app with extra data, which v1 takes as the third argument and v2 inside options. */
+const openWith = (page: Page, build: Build, app: string, title: string | null, extra: object) =>
+  build.name === 'v1'
+    ? call(page, 'openApp', app, title, extra)
+    : call(page, 'openApp', app, title ?? undefined, { extra })
+
+const featured = portfolio.projects.filter((project) => project.featured)
+
+for (const build of BUILDS) {
+  test.describe(`${build.name} Chrome`, () => {
+    test.beforeEach(async ({ page }) => {
+      // Never leave the test machine for a project's real site.
+      await page.context().route(/^https:\/\/(?!localhost)[^/]*\.(co\.uk|com|co\.za)\//, (route) =>
+        route.fulfill({ contentType: 'text/html', body: '<title>site</title>' }),
+      )
+      await boot(page, build.url)
+    })
+
+    const chrome = (page: Page) => page.locator('.os-window').filter({ has: page.locator('[data-chrome]') })
+    const address = (page: Page) => chrome(page).getByRole('textbox', { name: 'Address bar' })
+
+    test('shows the featured projects from data/portfolio.json', async ({ page }) => {
+      await call(page, 'openApp', 'edge')
+      const titles = chrome(page).locator('[data-project-title]')
+      await expect(titles).toHaveText(featured.map((project) => project.title), { timeout: 15_000 })
+    })
+
+    test('a keystroke keeps the projects, and Enter loads the address', async ({ page }) => {
+      await call(page, 'openApp', 'edge')
+      await expect(chrome(page).locator('[data-project-title]').first()).toBeVisible({ timeout: 15_000 })
+      await address(page).click()
+      await page.keyboard.type('earthecho.co.uk')
+      await expect(chrome(page).locator('[data-project-title]').first()).toBeVisible()
+      await page.keyboard.press('Enter')
+      const open = chrome(page).getByRole('link', { name: 'Open earthecho.co.uk in a new tab' })
+      await expect(open).toHaveAttribute('href', 'https://earthecho.co.uk')
+      await expect(open).toHaveAttribute('target', '_blank')
+      await chrome(page).getByRole('button', { name: 'Go back', exact: true }).click()
+      await expect(chrome(page).locator('[data-project-title]').first()).toBeVisible()
+    })
+
+    test('Visit Site on a project opens the real site in a new tab', async ({ page }) => {
+      await call(page, 'openApp', 'edge')
+      const first = featured[0]
+      const visit = chrome(page).getByRole('link', { name: `Visit ${first.title}` })
+      await expect(visit).toHaveAttribute('href', first.url, { timeout: 15_000 })
+      const popup = page.waitForEvent('popup')
+      await visit.click()
+      expect((await popup).url()).toBe(first.url)
+    })
+
+    test('a Visit Site.url file opens the project in a new tab', async ({ page }) => {
+      const folder = 'C:\\Users\\DeVante\\Projects\\Freelance\\Earth Echo'
+      await openWith(page, build, 'explorer', 'Earth Echo', { initialPath: folder })
+      const file = page.locator('[data-explorer-file="Visit Site.url"]')
+      await expect(file).toBeVisible({ timeout: 15_000 })
+      const popup = page.waitForEvent('popup')
+      await file.dblclick()
+      expect((await popup).url()).toBe('https://earthecho.co.uk/')
+      await expect(chrome(page).getByRole('link', { name: 'Open earthecho.co.uk in a new tab' })).toBeVisible()
+    })
+  })
+}
+
+test('v2 Chrome copes with a project that has no tags', async ({ page }) => {
+  const errors: string[] = []
+  page.on('pageerror', (error) => errors.push(error.message))
+  await page.route('**/data/portfolio.json', (route) =>
+    route.fulfill({
+      contentType: 'application/json',
+      body: JSON.stringify({
+        projects: [
+          { id: 1, title: 'No Tags Ltd', featured: true, description: 'x', url: 'https://example.com/', thumbnail: 'portfolio/baymotors.webp' },
+        ],
+      }),
+    }),
+  )
+  await boot(page, BUILDS[1].url)
+  await call(page, 'openApp', 'edge')
+  await expect(page.locator('[data-project-title]')).toHaveText(['No Tags Ltd'], { timeout: 15_000 })
+  expect(errors).toEqual([])
+})
