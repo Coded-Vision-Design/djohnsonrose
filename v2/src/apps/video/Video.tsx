@@ -15,8 +15,11 @@ export default function Video() {
         <span className="opacity-70">Movies & TV</span>
         <span className="ml-auto opacity-50">{src.split('/').pop() ?? 'Clip'}</span>
       </div>
+      {/* Fetches only the metadata until played; the poster is assets/img/posters/<video name>.webp. */}
       <video
         src={src}
+        poster={`/assets/img/posters/${src.split('/').pop()?.replace(/\.[^.]+$/, '.webp')}`}
+        preload="metadata"
         controls
         autoPlay
         className="grow w-full h-full bg-black"

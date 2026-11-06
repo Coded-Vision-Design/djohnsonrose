@@ -31,6 +31,17 @@ async function boot(page: Page, url: string) {
 
 const desktop = (page: Page, build: Build) => page.locator(build.name === 'v1' ? '#os-root' : '[data-os-desktop]')
 
+function openVideo(page: Page, build: Build) {
+  return page.evaluate((v1) => {
+    const w = window as unknown as {
+      Alpine?: { store: (n: string) => { openApp: (...x: unknown[]) => void } }
+      __osStore: { getState: () => { openApp: (...x: unknown[]) => void } }
+    }
+    if (v1) w.Alpine!.store('os').openApp('video', 'Clip', { videoUrl: 'data/south-africa-25.mp4' })
+    else w.__osStore.getState().openApp('video', 'Clip', { extra: { videoUrl: '/data/south-africa-25.mp4' } })
+  }, build.name === 'v1')
+}
+
 for (const build of BUILDS) {
   test.describe(`${build.name} performance`, () => {
     test('loads the default wallpaper from this site, never from Unsplash', async ({ page }) => {
@@ -84,6 +95,20 @@ for (const build of BUILDS) {
         expect(body.subarray(4, 8).toString('latin1'), name).toBe('ftyp')
         expect(body.length, name).toBeLessThan(40_000)
       }
+    })
+
+    test('loads only the video metadata, with a poster, until it plays', async ({ page }) => {
+      await boot(page, build.url)
+      await openVideo(page, build)
+      const video = page.locator('video')
+      await expect(video).toHaveAttribute('preload', 'metadata', { timeout: 15_000 })
+      const poster = await video.evaluate((v: HTMLVideoElement) => v.poster)
+      expect(poster).toMatch(/\/assets\/img\/posters\/south-africa-25\.webp$/)
+      const image = await page.request.get(poster)
+      expect(image.ok()).toBe(true)
+      expect((await image.body()).subarray(8, 12).toString('latin1')).toBe('WEBP')
+      const clip = await page.request.head(new URL('/data/south-africa-25.mp4', page.url()).href)
+      expect(Number(clip.headers()['content-length'])).toBeLessThan(8 * 1024 * 1024)
     })
   })
 }
