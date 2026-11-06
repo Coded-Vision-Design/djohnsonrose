@@ -134,6 +134,22 @@ test('v2 fetches the likeliest apps once the desktop is idle', async ({ page }) 
   await expect(page.locator('.os-window')).toHaveCount(0)
 })
 
+// terminal.js and fl-studio.js import file-ops.js themselves. Without the
+// import map that import was a second, unversioned copy, which a browser could
+// keep from before a deploy.
+test('v1 loads each shared module once, at its current version', async ({ page }) => {
+  const seen: string[] = []
+  page.on('request', (req) => {
+    const url = new URL(req.url())
+    if (url.pathname.startsWith('/assets/js/windowing/')) seen.push(url.pathname + url.search)
+  })
+  await boot(page, BUILDS[0].url)
+  expect(seen.filter((address) => !/\?v=\d+$/.test(address))).toEqual([])
+  const files = seen.map((address) => address.split('?')[0])
+  expect(files).toContain('/assets/js/windowing/file-ops.js')
+  expect(files.length).toBe(new Set(files).size)
+})
+
 test('v1 versions its scripts by file time, so they stay cached between visits', async ({ request }) => {
   const html = await (await request.get(BUILDS[0].url)).text()
   const scripts = [...html.matchAll(/assets\/js\/components\/([\w/-]+)\.js\?v=(\d+)/g)]

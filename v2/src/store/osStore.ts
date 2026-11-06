@@ -516,8 +516,8 @@ export const useOsStore = create<OsState>()(
           nextWindowZ: state.nextWindowZ + 1,
         })
         // Single System logEvent matches v1's openApp: the logEvent router
-        // already emails on System source, so an explicit track('Open App')
-        // here would double-fire every email. The app goes with it, as in v1.
+        // already records System events, so an explicit track('Open App')
+        // here would record every open twice. The app goes with it, as in v1.
         get().logEvent('System', 'Information', `Starting application: ${w.title}`, { app })
       },
 

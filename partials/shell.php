@@ -81,6 +81,17 @@
       ]
     }
     </script>
+    <?php
+    // Every shared module's plain address points at its current version, so a
+    // module that imports another (terminal.js imports file-ops.js) gets the
+    // same copy as the page below, never a second, stale one from the cache.
+    $sharedModules = [];
+    foreach (glob(__DIR__ . '/../assets/js/windowing/*.js') ?: [] as $moduleFile) {
+        $moduleUrl = BASE_PATH . 'assets/js/windowing/' . basename($moduleFile);
+        $sharedModules[$moduleUrl] = $moduleUrl . '?v=' . filemtime($moduleFile);
+    }
+    ?>
+    <script type="importmap" nonce="<?php echo $cspNonce; ?>"><?php echo json_encode(['imports' => $sharedModules], JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP); ?></script>
     <!-- Window manager core, shared with v2. Runs before Alpine, as both are deferred. -->
     <script type="module" nonce="<?php echo $cspNonce; ?>">
         import * as windowing from '<?php echo BASE_PATH; ?>assets/js/windowing/windowing.js?v=<?php echo @filemtime(__DIR__ . '/../assets/js/windowing/windowing.js') ?: time(); ?>';

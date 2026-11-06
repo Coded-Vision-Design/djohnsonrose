@@ -70,7 +70,7 @@ ob_start();
         <p>Some pictures load straight from other services, such as wallpapers from Unsplash and flags from flagcdn.com. Opening the Admin Console app loads Google's sign-in button and a chart library from jsDelivr. As with any website, those services receive your IP address and browser details when your browser fetches from them.</p>
 
         <h2 id="withdraw">Changing your mind</h2>
-        <p>Open Settings, go to Privacy, and switch off Telemetry and cookies. Records stop at once. Google Analytics will not load on your next visit; to remove the cookies it has already set, clear this site's cookies in your browser. v1 and v2 each keep their own setting, so if you use both, switch it off in both.</p>
+        <p>Open Settings, go to System, and switch off Telemetry and cookies. Records stop at once. Google Analytics will not load on your next visit; to remove the cookies it has already set, clear this site's cookies in your browser. v1 and v2 each keep their own setting, so if you use both, switch it off in both.</p>
 
         <h2 id="rights">Your rights</h2>
         <p>You can ask what the site holds about you, ask me to delete it, or object to it being kept, by emailing <a href="mailto:<?php echo $e($email); ?>"><?php echo $e($email); ?></a>. Records are not linked to a name, so to find yours I may need the date, the time and the apps you used. You can also complain to the Information Commissioner's Office at <a href="https://ico.org.uk/make-a-complaint/">ico.org.uk</a>.</p>

@@ -168,7 +168,7 @@ try {
     check('privacy: mentions the daily digest', str_contains($page, 'once a day I receive one summary email'));
     check('privacy: describes Google Analytics accurately', str_contains($page, 'G-64PRMY8EKD') && str_contains($page, 'v2 never loads Google Analytics'));
     check('privacy: names the fixed weather place', str_contains($page, 'one fixed place, Essex'));
-    check('privacy: says how to withdraw consent', str_contains($page, 'Open Settings, go to Privacy'));
+    check('privacy: says how to withdraw consent, under System where the switch is', str_contains($page, 'Open Settings, go to System'));
     check('privacy: has no em or en dashes', !preg_match('/\x{2013}|\x{2014}|&mdash;|&ndash;/u', $page));
     check('privacy: marks itself in the nav', str_contains($page, 'href="/privacy" aria-current="page"'));
     check('privacy: the template cannot be fetched directly through the router', http('GET', '/pages/privacy')['status'] === 404);
