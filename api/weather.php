@@ -1,52 +1,55 @@
 <?php
-// api/weather.php
+// api/weather.php - current weather for the taskbar in both builds. Always for
+// the one place set in config, never the visitor's: no IP address or location
+// is looked up or sent anywhere. One cached answer serves every visitor, and
+// the cache is keyed by place so it can never serve an answer for another.
+// Upstream calls give up after WEATHER_TIMEOUT seconds. See lib/weather.php.
+
 require_once __DIR__ . '/../bootstrap.php';
+require_once __DIR__ . '/../lib/request.php';
+require_once __DIR__ . '/../lib/state.php';
+require_once __DIR__ . '/../lib/weather.php';
 
 header('Content-Type: application/json');
 
-$cacheFile = __DIR__ . '/../data/weather_cache.json';
-$cacheTime = 1800; // 30 minutes cache
-
-// Basic rate limiting/caching
-if (file_exists($cacheFile) && (time() - filemtime($cacheFile) < $cacheTime)) {
-    echo file_get_contents($cacheFile);
+function weather_reply(array $data): void {
+    header('Cache-Control: public, max-age=300');
+    echo json_encode($data);
     exit;
 }
 
-// Get IP for rough coordinates if needed, or default to London
-$ip = $_SERVER['HTTP_CF_CONNECTING_IP'] ?? $_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['REMOTE_ADDR'];
-$lat = 51.5074;
-$lon = -0.1278;
+$place = $config['weather'];
+$key = weather_cache_key($place);
+$file = state_dir($config) . '/weather.json';
+$now = time();
 
-try {
-    $geo = file_get_contents("http://ip-api.com/json/{$ip}?fields=status,lat,lon");
-    $geoData = json_decode($geo, true);
-    if ($geoData && $geoData['status'] === 'success') {
-        $lat = $geoData['lat'];
-        $lon = $geoData['lon'];
-        $city = $geoData['city'];
-    }
-} catch (Exception $e) {}
-
-// Fetch weather from Open-Meteo
-$apiUrl = "https://api.open-meteo.com/v1/forecast?latitude={$lat}&longitude={$lon}&current_weather=true&timezone=Europe/London";
-
-try {
-    $weather = file_get_contents($apiUrl);
-    if ($weather) {
-        $data = json_decode($weather, true);
-        $data['city'] = $city ?? 'London';
-        $weather = json_encode($data);
-        file_put_contents($cacheFile, $weather);
-        echo $weather;
-    } else {
-        throw new Exception("Empty response");
-    }
-} catch (Exception $e) {
-    if (file_exists($cacheFile)) {
-        echo file_get_contents($cacheFile);
-    } else {
-        http_response_code(500);
-        echo json_encode(['error' => 'Weather service unavailable']);
-    }
+$cached = weather_cache_state(state_read($file), $key, $now);
+if ($cached['fresh']) {
+    weather_reply($cached['data']);
 }
+
+if (!$cached['cooling']) {
+    $data = http_get_json(weather_url($place), WEATHER_TIMEOUT);
+    if (weather_valid($data)) {
+        $data['city'] = (string)$place['city'];
+        state_update($file, function (array &$state) use ($key, $now, $data): void {
+            $state = ['key' => $key, 'fetched_at' => $now, 'data' => $data];
+        }, null);
+        weather_reply($data);
+    }
+
+    // Note the failure, so the next minute of visitors does not wait on it too.
+    state_update($file, function (array &$state) use ($key, $now): void {
+        if (($state['key'] ?? null) !== $key) $state = ['key' => $key];
+        $state['failed_at'] = $now;
+    }, null);
+}
+
+// An older answer beats none at all.
+if ($cached['data'] !== null) {
+    weather_reply($cached['data']);
+}
+
+http_response_code(503);
+header('Cache-Control: no-store');
+echo json_encode(['error' => 'Weather service unavailable']);
