@@ -236,3 +236,99 @@ test('v2 Chrome copes with a project that has no tags', async ({ page }) => {
   await expect(page.locator('[data-project-title]')).toHaveText(['No Tags Ltd'], { timeout: 15_000 })
   expect(errors).toEqual([])
 })
+
+// The test browser cannot play H.264, so the clip is served as the WebM copy.
+const WEBM = new URL('../../data/south-africa-25.webm', import.meta.url)
+
+for (const build of BUILDS) {
+  test.describe(`${build.name} Video`, () => {
+    test.beforeEach(async ({ page }) => {
+      await page.route('**/data/south-africa-25.mp4', (route) =>
+        route.fulfill({ contentType: 'video/webm', body: readFileSync(WEBM) }),
+      )
+      await boot(page, build.url)
+    })
+
+    const player = (page: Page) => page.locator('.os-window video')
+
+    test('waits for a click to play, then plays', async ({ page }) => {
+      await openWith(page, build, 'video', 'South Africa 25.mp4', { videoUrl: 'data/south-africa-25.mp4' })
+      await expect(player(page)).toHaveCount(1, { timeout: 15_000 })
+      await page.waitForTimeout(1000)
+      expect(await player(page).evaluate((v: HTMLVideoElement) => v.paused)).toBe(true)
+      await page.locator('.os-window').getByRole('button', { name: 'Play', exact: true }).first().click()
+      await expect.poll(() => player(page).evaluate((v: HTMLVideoElement) => v.paused)).toBe(false)
+    })
+
+    test('the seek bar moves the clip without an error', async ({ page }) => {
+      const errors: string[] = []
+      page.on('pageerror', (error) => errors.push(error.message))
+      // A routed file cannot really be seeked, so record where the player was sent.
+      await page.evaluate(() => {
+        const time = Object.getOwnPropertyDescriptor(HTMLMediaElement.prototype, 'currentTime')!
+        Object.defineProperty(HTMLMediaElement.prototype, 'currentTime', {
+          configurable: true,
+          get() {
+            return time.get!.call(this)
+          },
+          set(value: number) {
+            ;(window as unknown as { seekedTo: number }).seekedTo = value
+            time.set!.call(this, value)
+          },
+        })
+      })
+      await openWith(page, build, 'video', 'South Africa 25.mp4', { videoUrl: 'data/south-africa-25.mp4' })
+      await expect
+        .poll(() => player(page).evaluate((v: HTMLVideoElement) => v.duration || 0), { timeout: 15_000 })
+        .toBeGreaterThan(1)
+      const bar = page.locator('.os-window [data-seek-bar]')
+      const box = await bar.boundingBox()
+      if (!box) throw new Error('no seek bar')
+      await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2)
+      const duration = await player(page).evaluate((v: HTMLVideoElement) => v.duration)
+      await expect
+        .poll(() => page.evaluate(() => (window as unknown as { seekedTo?: number }).seekedTo ?? 0))
+        .toBeCloseTo(duration / 2, 0)
+      expect(errors).toEqual([])
+    })
+  })
+
+  test.describe(`${build.name} PDF Reader`, () => {
+    test.beforeEach(async ({ page }) => {
+      // Only the host serves the CV. Dev servers answer with the whole site.
+      await page.route('**/data/cv.pdf', (route) => route.fulfill({ contentType: 'application/pdf', body: '' }))
+    })
+
+    const reader = (page: Page) => page.locator('.os-window').filter({ has: page.locator('[data-pdf-reader]') })
+    const prompt = (page: Page) => reader(page).locator('[data-pdf-prompt]')
+
+    test('on a phone, offers to open or download the CV instead of a blank frame', async ({ page }) => {
+      await page.setViewportSize({ width: 375, height: 740 })
+      await boot(page, build.url)
+      await call(page, 'openApp', 'pdfreader')
+      await expect(prompt(page)).toBeVisible({ timeout: 15_000 })
+      const open = prompt(page).getByRole('link', { name: 'Open the CV' })
+      await expect(open).toHaveAttribute('href', /data\/cv\.pdf$/)
+      await expect(open).toHaveAttribute('target', '_blank')
+      await expect(prompt(page).getByRole('link', { name: 'Download' })).toHaveAttribute('download', /.*/)
+      await expect(reader(page).locator('iframe')).toBeHidden()
+    })
+
+    test('on a desktop with a PDF viewer, shows the CV in the frame', async ({ page }) => {
+      // Headless Chromium has no PDF viewer, so play a desktop browser that has one.
+      await page.addInitScript(() => Object.defineProperty(navigator, 'pdfViewerEnabled', { get: () => true }))
+      await boot(page, build.url)
+      await call(page, 'openApp', 'pdfreader')
+      await expect(reader(page).locator('iframe')).toBeVisible({ timeout: 15_000 })
+      await expect(prompt(page)).toBeHidden()
+    })
+
+    test('a browser with no PDF viewer gets the prompt at any width', async ({ page }) => {
+      await page.addInitScript(() => Object.defineProperty(navigator, 'pdfViewerEnabled', { get: () => false }))
+      await boot(page, build.url)
+      await call(page, 'openApp', 'pdfreader')
+      await expect(prompt(page)).toBeVisible({ timeout: 15_000 })
+      await expect(reader(page).locator('iframe')).toBeHidden()
+    })
+  })
+}

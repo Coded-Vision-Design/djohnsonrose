@@ -73,7 +73,8 @@
         import * as calculator from '<?php echo BASE_PATH; ?>assets/js/windowing/calculator.js?v=<?php echo @filemtime(__DIR__ . '/../assets/js/windowing/calculator.js'); ?>';
         import * as terminal from '<?php echo BASE_PATH; ?>assets/js/windowing/terminal.js?v=<?php echo @filemtime(__DIR__ . '/../assets/js/windowing/terminal.js'); ?>';
         import * as browser from '<?php echo BASE_PATH; ?>assets/js/windowing/browser.js?v=<?php echo @filemtime(__DIR__ . '/../assets/js/windowing/browser.js'); ?>';
-        window.OsWindowing = { ...windowing, ...shellCore, ...fileOps, ...textOps, ...calculator, ...terminal, ...browser };
+        import * as media from '<?php echo BASE_PATH; ?>assets/js/windowing/media.js?v=<?php echo @filemtime(__DIR__ . '/../assets/js/windowing/media.js'); ?>';
+        window.OsWindowing = { ...windowing, ...shellCore, ...fileOps, ...textOps, ...calculator, ...terminal, ...browser, ...media };
         window.FlStudio = flStudio;
     </script>
     <!-- Alpine.js -->
