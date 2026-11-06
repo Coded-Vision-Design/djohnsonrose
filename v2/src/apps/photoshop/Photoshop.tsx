@@ -1,358 +1,285 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type CSSProperties } from 'react'
+import {
+  DRAWING_ICONS,
+  MAX_SIZE,
+  MIN_SIZE,
+  PS_MENUS,
+  PS_SIZE,
+  PS_SWATCHES,
+  PS_TOOLS,
+  ZOOM_LEVELS,
+  commandState,
+  createPhotoshop,
+  photoshopInitialState,
+  zoomIndex,
+  type PhotoshopController,
+} from '../../../../assets/js/windowing/drawing.js'
+import { useOsStore } from '../../store/osStore'
+import { useCurrentWindow } from '../../windowing/WindowContext'
 
-// Photoshop port — Win11 chrome with a canvas you can draw on, a layers
-// panel, and the classic left tool rail. The canvas auto-renders a small
-// "untitled-1.psd" composition that the user can paint over.
+// Photoshop. Everything it does lives in assets/js/windowing/drawing.js, which
+// v1 shares, so this file only renders the same markup as
+// partials/apps/photoshop.php.
 
-type Tool = 'move' | 'brush' | 'eraser' | 'bucket' | 'text'
+const vars = (values: Record<string, string>) => values as CSSProperties
+const TOOL_ICONS: Record<string, string> = { move: 'move', brush: 'brush', eraser: 'eraser', bucket: 'fill', text: 'text' }
 
-interface Layer {
-  id: number
-  name: string
-  visible: boolean
-  opacity: number
+function Icon({ name }: { name: string }) {
+  return (
+    <svg className="dr-icon" viewBox="0 0 24 24" aria-hidden="true">
+      <path d={DRAWING_ICONS[name]} />
+    </svg>
+  )
 }
 
-const TOOLS: { id: Tool; label: string; icon: string }[] = [
-  { id: 'move', label: 'Move', icon: '✥' },
-  { id: 'brush', label: 'Brush', icon: '🖌' },
-  { id: 'eraser', label: 'Eraser', icon: '🧽' },
-  { id: 'bucket', label: 'Paint Bucket', icon: '🪣' },
-  { id: 'text', label: 'Text', icon: 'T' },
-]
-
-const SWATCHES = [
-  '#000000', '#1e1e1e', '#ffffff', '#0078d4', '#31a8ff', '#cc2927',
-  '#ec1ea0', '#ffaa00', '#ffe600', '#00d68f', '#6c63ff', '#a855f7',
-]
-
-const CANVAS_W = 720
-const CANVAS_H = 480
-
 export default function Photoshop() {
-  const [tool, setTool] = useState<Tool>('brush')
-  const [color, setColor] = useState('#0078d4')
-  const [brushSize, setBrushSize] = useState(8)
-  const [layers, setLayers] = useState<Layer[]>([
-    { id: 1, name: 'Background', visible: true, opacity: 100 },
-    { id: 2, name: 'Logo', visible: true, opacity: 100 },
-    { id: 3, name: 'Highlights', visible: true, opacity: 75 },
-  ])
-  const [activeLayer, setActiveLayer] = useState(2)
-  const [zoom, setZoom] = useState(100)
+  const win = useCurrentWindow()
+  const root = useRef<HTMLDivElement>(null)
+  const ps = useRef<PhotoshopController | null>(null)
+  const [s, setS] = useState(photoshopInitialState)
 
-  const canvasRef = useRef<HTMLCanvasElement>(null)
-  const ctxRef = useRef<CanvasRenderingContext2D | null>(null)
-  const drawing = useRef(false)
-
-  // Seed the canvas with a gradient + brand text so the workspace doesn't
-  // open blank — feels like a real PSD.
   useEffect(() => {
-    const cvs = canvasRef.current
-    if (!cvs) return
-    const ctx = cvs.getContext('2d')
-    if (!ctx) return
-    ctxRef.current = ctx
-    cvs.width = CANVAS_W
-    cvs.height = CANVAS_H
-
-    const grad = ctx.createLinearGradient(0, 0, CANVAS_W, CANVAS_H)
-    grad.addColorStop(0, '#0078d4')
-    grad.addColorStop(1, '#1e1e1e')
-    ctx.fillStyle = grad
-    ctx.fillRect(0, 0, CANVAS_W, CANVAS_H)
-
-    ctx.fillStyle = '#ffffff'
-    ctx.font = '700 64px "Segoe UI", sans-serif'
-    ctx.textAlign = 'center'
-    ctx.fillText('Portfolio OS', CANVAS_W / 2, CANVAS_H / 2 - 10)
-    ctx.font = '500 18px "Segoe UI", sans-serif'
-    ctx.fillStyle = 'rgba(255,255,255,0.7)'
-    ctx.fillText('untitled-1.psd', CANVAS_W / 2, CANVAS_H / 2 + 24)
-
-    ctx.lineCap = 'round'
-    ctx.lineJoin = 'round'
-  }, [])
-
-  const posFrom = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    const r = e.currentTarget.getBoundingClientRect()
-    return {
-      x: ((e.clientX - r.left) * CANVAS_W) / r.width,
-      y: ((e.clientY - r.top) * CANVAS_H) / r.height,
+    const controller = createPhotoshop(root.current!, {
+      onChange: setS,
+      isActive: () => useOsStore.getState().focusedWindowId === win.id,
+    })
+    ps.current = controller
+    return () => {
+      controller.dispose()
+      ps.current = null
     }
-  }
+  }, [win.id])
 
-  const onDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    const ctx = ctxRef.current
-    if (!ctx) return
-    const { x, y } = posFrom(e)
-    if (tool === 'bucket') {
-      ctx.fillStyle = color
-      ctx.fillRect(0, 0, CANVAS_W, CANVAS_H)
-      return
-    }
-    if (tool === 'text') {
-      const t = window.prompt('Text:')
-      if (t) {
-        ctx.fillStyle = color
-        ctx.font = `700 ${brushSize * 3}px "Segoe UI", sans-serif`
-        ctx.textAlign = 'left'
-        ctx.fillText(t, x, y)
-      }
-      return
-    }
-    drawing.current = true
-    ctx.beginPath()
-    ctx.moveTo(x, y)
-  }
-
-  const onMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    const ctx = ctxRef.current
-    if (!ctx || !drawing.current) return
-    if (tool !== 'brush' && tool !== 'eraser') return
-    const { x, y } = posFrom(e)
-    ctx.globalCompositeOperation = tool === 'eraser' ? 'destination-out' : 'source-over'
-    ctx.strokeStyle = color
-    ctx.lineWidth = brushSize
-    ctx.lineTo(x, y)
-    ctx.stroke()
-  }
-
-  const onUp = () => {
-    drawing.current = false
-    const ctx = ctxRef.current
-    ctx?.beginPath()
-    if (ctx) ctx.globalCompositeOperation = 'source-over'
-  }
-
-  const toggleLayer = (id: number) => {
-    setLayers((prev) =>
-      prev.map((l) => (l.id === id ? { ...l, visible: !l.visible } : l)),
-    )
-  }
-
-  const setLayerOpacity = (id: number, opacity: number) => {
-    setLayers((prev) => prev.map((l) => (l.id === id ? { ...l, opacity } : l)))
-  }
-
-  const addLayer = () => {
-    setLayers((prev) => [
-      ...prev,
-      { id: prev.length + 1, name: `Layer ${prev.length + 1}`, visible: true, opacity: 100 },
-    ])
-  }
-
-  const exportPng = () => {
-    const cvs = canvasRef.current
-    if (!cvs) return
-    const a = document.createElement('a')
-    a.download = 'untitled-1.png'
-    a.href = cvs.toDataURL('image/png')
-    a.click()
-  }
+  const run = (id: string) => ps.current?.run(id)
+  const tool = PS_TOOLS.find((item) => item.id === s.tool)
+  const layer = s.layers.find((item) => item.id === s.active)
 
   return (
-    <div className="h-full flex flex-col bg-[#535353] text-[#cccccc] select-none">
-      {/* Title bar */}
-      <div className="h-8 bg-[#001e36] flex items-center px-3 shrink-0 text-xs">
-        <img src="/assets/img/photoshop.webp" alt="" className="w-4 h-4 mr-2" />
-        <span>Adobe Photoshop 2025 — untitled-1.psd @ {zoom}%</span>
+    <div className="ps-app" ref={root} data-tool={s.tool}>
+      <div className="ps-titlebar">
+        <img className="ps-logo" src="/assets/img/photoshop.webp" alt="" />
+        <span className="ps-title">
+          Adobe Photoshop 2025 · untitled-1.psd @ {s.zoom}% ({layer?.name}, RGB/8)
+        </span>
       </div>
 
-      {/* Menu bar */}
-      <div className="h-6 bg-[#323232] border-b border-black/40 flex items-center px-2 space-x-3 shrink-0 text-[11px]">
-        {['File', 'Edit', 'Image', 'Layer', 'Type', 'Select', 'Filter', 'View', 'Window', 'Help'].map(
-          (m) => (
-            <span key={m} className="opacity-70 cursor-default">
-              {m}
-            </span>
-          ),
-        )}
-      </div>
-
-      {/* Options bar */}
-      <div className="h-10 bg-[#404040] border-b border-black/40 flex items-center px-3 space-x-3 shrink-0 text-[11px]">
-        <span className="opacity-70">Tool:</span>
-        <span className="font-medium">{TOOLS.find((t) => t.id === tool)?.label}</span>
-        <div className="w-px h-5 bg-black/40 mx-1" />
-        <label className="flex items-center space-x-2">
-          <span className="opacity-70">Size:</span>
-          <input
-            type="range"
-            min={1}
-            max={64}
-            value={brushSize}
-            onChange={(e) => setBrushSize(Number(e.target.value))}
-            className="w-28"
-          />
-          <span className="opacity-80 w-8">{brushSize}px</span>
-        </label>
-        <div className="w-px h-5 bg-black/40 mx-1" />
-        <label className="flex items-center space-x-2">
-          <span className="opacity-70">Zoom:</span>
-          <input
-            type="range"
-            min={25}
-            max={200}
-            value={zoom}
-            onChange={(e) => setZoom(Number(e.target.value))}
-            className="w-28"
-          />
-          <span className="opacity-80 w-10">{zoom}%</span>
-        </label>
-        <div className="ml-auto flex items-center space-x-2">
-          <button
-            type="button"
-            onClick={exportPng}
-            className="px-3 py-1 rounded-sm bg-win-blue hover:bg-[#106ebe] text-white"
-          >
-            Export PNG
-          </button>
-        </div>
-      </div>
-
-      <div className="grow flex min-h-0">
-        {/* Tool rail */}
-        <div className="w-12 bg-[#3a3a3a] border-r border-black/40 shrink-0 py-2 flex flex-col items-center space-y-1">
-          {TOOLS.map((t) => (
+      <nav className="ps-menubar" aria-label="Photoshop menu">
+        {PS_MENUS.map((menu) => (
+          <div key={menu.id} className="ps-menu">
             <button
-              key={t.id}
               type="button"
-              onClick={() => setTool(t.id)}
-              className={`w-10 h-10 rounded flex items-center justify-center text-lg ${
-                tool === t.id ? 'bg-win-blue text-white' : 'hover:bg-white/10'
-              }`}
-              title={t.label}
+              className="ps-menu-button"
+              data-ps-menu={menu.label}
+              aria-haspopup="menu"
+              aria-expanded={s.menu === menu.id}
+              onClick={() => ps.current?.toggleMenu(menu.id)}
             >
-              {t.icon}
+              {menu.label}
+            </button>
+            {s.menu === menu.id && <div className="ps-menu-shield" onPointerDown={() => ps.current?.closeMenu()} />}
+            {s.menu === menu.id && (
+              <div className="ps-menu-list" role="menu">
+                {menu.items.map((item, index) =>
+                  item.separator ? (
+                    <div key={index} className="ps-menu-sep" role="separator" />
+                  ) : (
+                    <button
+                      key={item.id}
+                      type="button"
+                      role="menuitem"
+                      className="ps-menu-item"
+                      data-ps-command={item.id}
+                      disabled={commandState(item.id!, s).disabled}
+                      onClick={() => run(item.id!)}
+                    >
+                      <span>{item.label}</span>
+                      <span className="ps-menu-key">{item.shortcut ?? ''}</span>
+                    </button>
+                  ),
+                )}
+              </div>
+            )}
+          </div>
+        ))}
+      </nav>
+
+      <div className="ps-options">
+        <span className="ps-dim">Tool:</span>
+        <span className="ps-strong" data-ps-tool-name>
+          {tool?.label}
+        </span>
+        <span className="ps-sep" />
+        <label className="ps-field">
+          <span className="ps-dim">Size:</span>
+          <input
+            type="range"
+            min={MIN_SIZE}
+            max={MAX_SIZE}
+            value={s.size}
+            data-ps-size
+            onChange={(e) => ps.current?.setSize(e.target.value)}
+          />
+          <span className="ps-value">{s.size}px</span>
+        </label>
+        <span className="ps-sep" />
+        <label className="ps-field">
+          <span className="ps-dim">Zoom:</span>
+          <input
+            type="range"
+            min={0}
+            max={ZOOM_LEVELS.length - 1}
+            value={zoomIndex(s.zoom)}
+            aria-valuetext={`${s.zoom}%`}
+            data-ps-zoom
+            onChange={(e) => ps.current?.setZoom(ZOOM_LEVELS[Number(e.target.value)])}
+          />
+          <span className="ps-value" data-ps-zoom-value>
+            {s.zoom}%
+          </span>
+        </label>
+        <button type="button" className="ps-export" data-ps-command="save" onClick={() => run('save')}>
+          Export PNG
+        </button>
+      </div>
+
+      <div className="ps-main">
+        <div className="ps-rail" role="toolbar" aria-label="Tools">
+          {PS_TOOLS.map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              className="ps-tool"
+              data-ps-tool={item.id}
+              aria-label={item.label}
+              title={`${item.label} (${item.key})`}
+              aria-pressed={s.tool === item.id}
+              onClick={() => ps.current?.setTool(item.id)}
+            >
+              <Icon name={TOOL_ICONS[item.id]} />
             </button>
           ))}
-          <div className="grow" />
-          {/* Foreground/background colour wells */}
-          <div className="relative w-8 h-8 mb-3">
-            <div
-              className="absolute top-0 left-0 w-5 h-5 rounded-xs border-2 border-white shadow-sm"
-              style={{ backgroundColor: color }}
-            />
-            <div className="absolute bottom-0 right-0 w-5 h-5 rounded-xs border-2 border-white shadow-sm bg-white" />
+          <div className="ps-wells" aria-hidden="true">
+            <span className="ps-well ps-well-front" style={vars({ '--c': s.colour })} />
+            <span className="ps-well ps-well-back" />
           </div>
         </div>
 
-        {/* Canvas viewport */}
-        <div className="grow bg-[#1f1f1f] flex items-center justify-center overflow-auto">
-          <div
-            className="bg-white shadow-2xl"
-            style={{
-              width: (CANVAS_W * zoom) / 100,
-              height: (CANVAS_H * zoom) / 100,
-            }}
-          >
-            <canvas
-              ref={canvasRef}
-              width={CANVAS_W}
-              height={CANVAS_H}
-              onMouseDown={onDown}
-              onMouseMove={onMove}
-              onMouseUp={onUp}
-              onMouseLeave={onUp}
-              className="w-full h-full cursor-crosshair"
-            />
+        <div className="ps-viewport" data-ps-viewport>
+          <div className="ps-frame" data-ps-frame>
+            <div className="ps-stack" data-ps-stack role="img" aria-label="Canvas" />
+            <textarea className="ps-textbox" data-ps-text aria-label="Text" rows={1} hidden />
           </div>
         </div>
 
-        {/* Right panels */}
-        <div className="w-64 bg-[#3a3a3a] border-l border-black/40 shrink-0 flex flex-col">
-          {/* Swatches */}
-          <div className="border-b border-black/40">
-            <div className="px-3 py-2 text-[10px] uppercase tracking-wider opacity-70 border-b border-black/40">
-              Swatches
-            </div>
-            <div className="p-2 grid grid-cols-6 gap-1">
-              {SWATCHES.map((c) => (
+        <div className="ps-panels">
+          <section aria-label="Swatches">
+            <div className="ps-panel-head">Swatches</div>
+            <div className="ps-swatches">
+              {PS_SWATCHES.map((swatch) => (
                 <button
-                  key={c}
+                  key={swatch.hex}
                   type="button"
-                  onClick={() => setColor(c)}
-                  style={{ backgroundColor: c }}
-                  className={`aspect-square rounded-xs border ${
-                    color === c ? 'border-white ring-1 ring-win-blue' : 'border-black/40'
-                  }`}
-                  title={c}
+                  className="ps-swatch"
+                  data-ps-colour={swatch.hex}
+                  aria-label={swatch.name}
+                  title={swatch.name}
+                  aria-pressed={s.colour === swatch.hex}
+                  style={vars({ '--c': swatch.hex })}
+                  onClick={() => ps.current?.setColour(swatch.hex)}
                 />
               ))}
             </div>
-            <div className="px-3 pb-2 flex items-center space-x-2">
+            <div className="ps-custom">
               <input
                 type="color"
-                value={color}
-                onChange={(e) => setColor(e.target.value)}
-                className="w-6 h-6 rounded-sm"
+                value={s.colour}
+                aria-label="Colour"
+                data-ps-custom
+                onChange={(e) => ps.current?.setColour(e.target.value)}
               />
-              <span className="text-[10px] font-mono opacity-70">{color.toUpperCase()}</span>
+              <span className="ps-hex">{s.colour.toUpperCase()}</span>
             </div>
-          </div>
+          </section>
 
-          {/* Layers */}
-          <div className="grow overflow-y-auto">
-            <div className="px-3 py-2 text-[10px] uppercase tracking-wider opacity-70 border-b border-black/40 flex items-center justify-between">
+          <section className="ps-layers" aria-label="Layers">
+            <div className="ps-panel-head">
               <span>Layers</span>
-              <button
-                type="button"
-                onClick={addLayer}
-                className="text-[11px] px-2 rounded-sm hover:bg-white/10"
-                title="New layer"
-              >
-                +
-              </button>
+              <span className="ps-head-buttons">
+                <button
+                  type="button"
+                  className="ps-head-button"
+                  data-ps-command="newLayer"
+                  aria-label="New layer"
+                  title="New layer"
+                  disabled={commandState('newLayer', s).disabled}
+                  onClick={() => run('newLayer')}
+                >
+                  <Icon name="plus" />
+                </button>
+                <button
+                  type="button"
+                  className="ps-head-button"
+                  data-ps-command="deleteLayer"
+                  aria-label="Delete layer"
+                  title="Delete layer"
+                  disabled={commandState('deleteLayer', s).disabled}
+                  onClick={() => run('deleteLayer')}
+                >
+                  <Icon name="clear" />
+                </button>
+              </span>
             </div>
-            {layers
+            {s.layers
               .slice()
               .reverse()
-              .map((l) => (
-                <div
-                  key={l.id}
-                  onClick={() => setActiveLayer(l.id)}
-                  className={`px-3 py-2 border-b border-black/30 cursor-default ${
-                    activeLayer === l.id ? 'bg-win-blue/30' : 'hover:bg-white/5'
-                  }`}
-                >
-                  <div className="flex items-center space-x-2">
+              .map((item) => (
+                <div key={item.id} className="ps-layer-row" data-ps-layer-row={item.id} data-active={String(s.active === item.id)}>
+                  <div className="ps-layer-top">
                     <button
                       type="button"
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        toggleLayer(l.id)
-                      }}
-                      className="w-5 h-5 flex items-center justify-center text-xs opacity-80"
-                      title={l.visible ? 'Hide' : 'Show'}
+                      className="ps-eye"
+                      data-ps-eye={item.id}
+                      aria-label={`Show ${item.name}`}
+                      aria-pressed={item.visible}
+                      title={item.visible ? 'Hide layer' : 'Show layer'}
+                      onClick={() => ps.current?.toggleLayer(item.id)}
                     >
-                      {l.visible ? '👁' : '–'}
+                      {item.visible && <Icon name="eye" />}
                     </button>
-                    <div className="w-7 h-7 bg-linear-to-br from-win-blue to-[#1e1e1e] rounded-xs border border-black/40" />
-                    <span className="text-[11px] grow truncate">{l.name}</span>
+                    <button
+                      type="button"
+                      className="ps-layer-pick"
+                      data-ps-select={item.id}
+                      aria-pressed={s.active === item.id}
+                      onClick={() => ps.current?.selectLayer(item.id)}
+                    >
+                      <canvas className="ps-thumb" data-ps-thumb={item.id} width={36} height={24} aria-hidden="true" />
+                      <span className="ps-layer-name">{item.name}</span>
+                    </button>
                   </div>
-                  <div className="flex items-center space-x-2 mt-1 pl-7">
-                    <span className="text-[9px] opacity-60">Opacity</span>
+                  <label className="ps-opacity">
+                    <span>Opacity</span>
                     <input
                       type="range"
                       min={0}
                       max={100}
-                      value={l.opacity}
-                      onChange={(e) => setLayerOpacity(l.id, Number(e.target.value))}
-                      onClick={(e) => e.stopPropagation()}
-                      className="grow"
+                      value={item.opacity}
+                      aria-label={`${item.name} opacity`}
+                      data-ps-opacity={item.id}
+                      onChange={(e) => ps.current?.setOpacity(item.id, e.target.value)}
                     />
-                    <span className="text-[9px] opacity-70 w-7 text-right">{l.opacity}%</span>
-                  </div>
+                    <span>{item.opacity}%</span>
+                  </label>
                 </div>
               ))}
-          </div>
+          </section>
         </div>
       </div>
 
-      {/* Status */}
-      <div className="h-5 bg-[#323232] border-t border-black/40 flex items-center px-3 shrink-0 text-[10px] opacity-70 justify-between">
-        <span>{CANVAS_W} × {CANVAS_H} · 72 ppi · sRGB</span>
+      <div className="ps-status">
+        <span>
+          {PS_SIZE.width} × {PS_SIZE.height} · 72 ppi · sRGB
+        </span>
         <span>RGB/8</span>
       </div>
     </div>

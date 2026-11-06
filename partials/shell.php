@@ -334,6 +334,7 @@
         'os/store',
         'os/shell',
         'paint',
+        'photoshop',
         'calculator',
         'terminal',
         'explorer',
