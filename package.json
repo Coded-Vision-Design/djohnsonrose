@@ -8,7 +8,7 @@
     "test:php": "php tests/php/contact_test.php && php tests/php/security_test.php"
   },
   "devDependencies": {
-    "@tailwindcss/cli": "^4.3.3",
+    "@tailwindcss/cli": "^4.3.4",
     "playwright": "^1.64.1",
     "sharp": "^0.35.5",
     "tailwindcss": "^4.3.0"
