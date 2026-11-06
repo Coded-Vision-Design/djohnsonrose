@@ -28,7 +28,8 @@ test.describe('boot + login', () => {
     await expect(page.getByRole('button', { name: 'Sign In' })).toBeVisible({
       timeout: 6_000,
     })
-    await expect(page.getByText('DeVanté Johnson-Rose')).toBeVisible()
+    // The account picker names the owner too, so look for the heading.
+    await expect(page.getByRole('heading', { name: 'DeVanté Johnson-Rose' })).toBeVisible()
     await expect(page.getByText('Welcome back, DeVante.')).toBeVisible()
 
     // Profile picture is served from /assets/img/profile.webp (shared with v1).

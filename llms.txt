@@ -1,0 +1,34 @@
+# DeVanté Johnson-Rose
+
+> Applications Support Engineer · Full-Stack Developer, based in Essex, UK. This site is his portfolio: an interactive, Windows 11-style desktop, with a plain CV page for recruiters and search engines.
+
+DeVanté has worked in IT since 2011. He is an Applications Support Engineer at Killik & Co, and has run Coded Vision Design, a freelance full-stack studio, since 2013 (100+ projects). Before that he was Desktop Developer and 3rd Line Engineer at the University of East Anglia (8,000+ devices), Systems Engineer II at Skyscanner, and Desk Side Engineer at Shawbrook Bank. He holds a BSc (Hons) in Business Computing from the University of East Anglia.
+
+For facts about his work, read the CV page first: it is server rendered and needs no JavaScript. The desktops are interactive and need JavaScript; both builds show the same content.
+
+## CV
+
+- [CV](https://devante.johnson-rose.co.uk/cv): the full CV as one HTML page, with summary, experience, featured projects, skills, education and certificates.
+- [CV as a PDF](https://devante.johnson-rose.co.uk/data/cv.pdf): the printable CV.
+
+## Featured projects
+
+- [Coded Vision Design](https://codedvisiondesign.co.uk/): his freelance studio's site, built with Next.js, React and TypeScript.
+- [Earth Echo](https://earthecho.co.uk/): a carbon footprint tracker on the web, iPhone, Apple Watch and Android, built with Next.js, Prisma and Capacitor.
+- [Combat Evolved Sports](https://combatevolvedsports.com/): a sports journalism platform in PHP 8 with HTMX, Alpine.js, Stripe subscriptions and OAuth.
+- [Ram's Taxis](https://ramstaxis.co.uk/): a taxi firm's site in Braintree, Essex, built with Next.js.
+
+## Portfolio
+
+- [Desktop](https://devante.johnson-rose.co.uk/): the interactive portfolio, built with PHP 8, Alpine.js and Tailwind.
+- [Desktop, React build](https://devante.johnson-rose.co.uk/v2/): the same desktop built with React 19, TypeScript and Vite.
+
+## Contact
+
+- Email: devante@johnson-rose.co.uk
+- [GitHub](https://github.com/CodedVisionDesign)
+
+## Optional
+
+- [Privacy notice](https://devante.johnson-rose.co.uk/privacy)
+- [Sitemap](https://devante.johnson-rose.co.uk/sitemap.xml)

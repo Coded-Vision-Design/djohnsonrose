@@ -9,22 +9,28 @@
     <meta name="keywords" content="DeVanté Johnson-Rose, full stack developer UK, systems engineer, React developer, TypeScript, portfolio, Vite, devante.johnson-rose.co.uk" />
     <meta name="robots" content="index, follow, max-image-preview:large" />
     <meta name="theme-color" content="#0078d4" />
-    <link rel="canonical" href="https://devante.johnson-rose.co.uk/v2/" />
+    <!-- Both desktops share one canonical, so that they do not compete in search. -->
+    <link rel="canonical" href="https://devante.johnson-rose.co.uk/" />
 
     <!-- Open Graph -->
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="DeVanté Johnson-Rose · Portfolio OS" />
     <meta property="og:title" content="DeVanté Johnson-Rose | Portfolio OS (React)" />
     <meta property="og:description" content="React + TypeScript port of the Portfolio OS. Same Windows 11-styled desktop, every app working." />
-    <meta property="og:url" content="https://devante.johnson-rose.co.uk/v2/" />
-    <meta property="og:image" content="https://devante.johnson-rose.co.uk/assets/img/favicon.webp" />
+    <meta property="og:url" content="https://devante.johnson-rose.co.uk/" />
+    <meta property="og:image" content="https://devante.johnson-rose.co.uk/assets/img/share-card.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:type" content="image/png" />
+    <meta property="og:image:alt" content="Portrait of DeVanté Johnson-Rose beside his name and devante.johnson-rose.co.uk" />
     <meta property="og:locale" content="en_GB" />
 
     <!-- Twitter / X card -->
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="DeVanté Johnson-Rose | Portfolio OS (React)" />
     <meta name="twitter:description" content="React + TypeScript port of the interactive Windows-style portfolio." />
-    <meta name="twitter:image" content="https://devante.johnson-rose.co.uk/assets/img/favicon.webp" />
+    <meta name="twitter:image" content="https://devante.johnson-rose.co.uk/assets/img/share-card.png" />
+    <meta name="twitter:image:alt" content="Portrait of DeVanté Johnson-Rose beside his name and devante.johnson-rose.co.uk" />
 
     <!-- Favicon set matches v1 exactly — both versions share the same files. -->
     <link rel="icon" type="image/x-icon" href="/favicon.ico" />
@@ -34,7 +40,9 @@
     <!-- v2 ships its own manifest scoped to /v2/. v1 keeps its own at /manifest.json. -->
     <link rel="manifest" href="/v2/manifest.json" />
 
-    <!-- JSON-LD: Person + WebSite -->
+    <!-- JSON-LD: Person + WebSite, the same as v1's in partials/shell.php. worksFor,
+         alumniOf, knowsAbout and sameAs follow data/profile.json, which /cv reads
+         (src/data/profile.test.ts checks all three). -->
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
@@ -47,13 +55,24 @@
             "image": "https://devante.johnson-rose.co.uk/assets/img/profile.webp",
             "jobTitle": "Senior Full Stack Developer & Systems Engineer",
             "email": "mailto:devante@johnson-rose.co.uk",
+            "worksFor": [
+              { "@type": "Organization", "name": "Killik & Co" },
+              { "@type": "Organization", "name": "Coded Vision Design" }
+            ],
+            "alumniOf": { "@type": "CollegeOrUniversity", "name": "University of East Anglia" },
+            "knowsAbout": [
+              "Applications support", "Full-stack development", "PHP", "Laravel", "JavaScript",
+              "TypeScript", "React", "Next.js", "Node.js", "MySQL", "MS SQL Server", "PowerShell",
+              "Automation", "SCCM", "JAMF", "Active Directory", "Docker", "AI integration"
+            ],
             "sameAs": ["https://github.com/CodedVisionDesign"]
           },
           {
             "@type": "WebSite",
-            "@id": "https://devante.johnson-rose.co.uk/v2/#website",
-            "url": "https://devante.johnson-rose.co.uk/v2/",
-            "name": "DeVanté Johnson-Rose · Portfolio OS (React)",
+            "@id": "https://devante.johnson-rose.co.uk/#website",
+            "url": "https://devante.johnson-rose.co.uk/",
+            "name": "DeVanté Johnson-Rose · Portfolio OS",
+            "description": "Interactive Windows-style portfolio of DeVanté Johnson-Rose.",
             "publisher": { "@id": "https://devante.johnson-rose.co.uk/#person" }
           }
         ]

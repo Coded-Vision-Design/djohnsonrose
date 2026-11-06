@@ -23,7 +23,7 @@ function redirectRootToPhp(): Plugin {
           !url.startsWith('/data/') &&
           !url.startsWith('/portfolio/') &&
           url !== '/favicon.ico' &&
-          (url === '/' || url.startsWith('/?') || url.startsWith('/app/') || url === '/desktop' || url === '/login')
+          (url === '/' || url.startsWith('/?') || url.startsWith('/app/') || url === '/desktop' || url === '/login' || url === '/cv')
         ) {
           res.writeHead(302, { Location: PHP_ORIGIN + url })
           res.end()
