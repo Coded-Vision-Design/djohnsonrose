@@ -22,6 +22,33 @@ const readList = (key) => {
 
 const toggled = (list, item) => (list.includes(item) ? list.filter(value => value !== item) : [...list, item]);
 
+// Storage can be blocked, which throws. The page still works, it just forgets.
+const stored = (key) => {
+    try {
+        return localStorage.getItem(key);
+    } catch {
+        return null;
+    }
+};
+
+const store = (key, value) => {
+    try {
+        localStorage.setItem(key, value);
+    } catch {
+        // Kept until the page closes.
+    }
+};
+
+const prefersDark = () => !!window.matchMedia?.('(prefers-color-scheme: dark)').matches;
+
+const readRecent = () => {
+    try {
+        return JSON.parse(localStorage.getItem('os.recent')) || {};
+    } catch {
+        return {};
+    }
+};
+
 document.addEventListener('alpine:init', () => {
     Alpine.store('os', {
         windows: [],
@@ -29,7 +56,7 @@ document.addEventListener('alpine:init', () => {
         contextMenu: { open: false, x: 0, y: 0, items: [], variant: 'modern' },
         nextWindowZ: 100,
         eventLogs: [],
-        logEvent(source, level, description) {
+        logEvent(source, level, description, details = {}) {
             this.eventLogs.unshift({
                 id: Date.now() + Math.random(),
                 time: new Date().toLocaleTimeString(),
@@ -43,32 +70,29 @@ document.addEventListener('alpine:init', () => {
 
             // Send telemetry for important events
             if (source === 'Security' || source === 'System' || source === 'Explorer') {
-                this.sendTelemetry(source + ': ' + level, { description });
+                this.sendTelemetry(source + ': ' + level, { description, ...details });
             }
         },
 
+        // The same as v2's: see deviceInfo in shell-ui.js.
         getDeviceInfo() {
-            const ua = navigator.userAgent;
-            let os = "Unknown OS";
-            if (ua.indexOf("Win") !== -1) os = "Windows";
-            if (ua.indexOf("Mac") !== -1) os = "MacOS";
-            if (ua.indexOf("Linux") !== -1) os = "Linux";
-            if (ua.indexOf("Android") !== -1) os = "Android";
-            if (ua.indexOf("like Mac") !== -1) os = "iOS";
-
-            return {
-                os: os,
-                browser: navigator.appName + " " + navigator.appVersion,
-                resolution: window.screen.width + "x" + window.screen.height,
-                deviceTime: new Date().toString(),
-                userAgent: ua
-            };
+            return OsWindowing.deviceInfo({
+                userAgent: navigator.userAgent,
+                screen: window.screen,
+                touchPoints: navigator.maxTouchPoints
+            });
         },
 
         sendTelemetry(action, details = {}) {
             // GDPR: no telemetry fires until the visitor accepts the cookie
-            // banner. Mirrors v2/src/lib/telemetry.ts behaviour.
-            if (localStorage.getItem('cookie.consent') !== 'true') return;
+            // banner, and none after they withdraw it. Mirrors v2/src/lib/telemetry.ts.
+            if (!this.cookieConsent) return;
+            let sessionID = 'guest';
+            try {
+                sessionID = sessionStorage.getItem('os.sessionID') || 'guest';
+            } catch {
+                // Blocked storage: the event is still worth sending.
+            }
             const data = {
                 action: action,
                 details: {
@@ -77,7 +101,7 @@ document.addEventListener('alpine:init', () => {
                     // email logs (and the admin console stats) can split
                     // PHP-side vs React-side activity.
                     source: 'php',
-                    sessionID: sessionStorage.getItem('os.sessionID') || 'guest'
+                    sessionID
                 },
                 deviceInfo: this.getDeviceInfo()
             };
@@ -95,7 +119,11 @@ document.addEventListener('alpine:init', () => {
         windowHeight: window.innerHeight,
         windowWidth: window.innerWidth,
         previewWallpaper: null,
-        pinnedApps: window.portfolioConfig.pinned,
+        // Saved when the visitor pins or unpins, so the taskbar comes back the same.
+        pinnedApps: (() => {
+            const saved = readList('os.taskbarPins');
+            return stored('os.taskbarPins') === null ? window.portfolioConfig.pinned : saved;
+        })(),
         snapPreview: { rect: null, bar: null, target: null },
         snapFlyout: null,
         snapAssist: null,
@@ -106,34 +134,39 @@ document.addEventListener('alpine:init', () => {
             height: window.innerHeight,
             coarse: window.matchMedia('(pointer: coarse)').matches
         }),
-        cookieConsent: localStorage.getItem('cookie.consent') === 'true',
-        showCookieNotification: localStorage.getItem('auth.loggedIn') === 'true' && localStorage.getItem('cookie.consent') === null,
+        cookieConsent: stored('cookie.consent') === 'true',
+        // Set again after sign-in, so that a new visitor sees it at once.
+        showCookieNotification: stored('cookie.consent') === null,
         errorDialog: { open: false, title: '', message: '', path: '' },
         showError(title, message, path = '') {
             this.errorDialog = { open: true, title, message, path };
         },
         news: [],
+        // 'loading', 'ready' or 'error', so that Widgets can say when headlines failed.
+        newsStatus: 'loading',
+        // When Start's Recommended items were last opened, by key.
+        recent: readRecent(),
         desktopZoom: 1,
         settings: {
-            theme: localStorage.getItem('settings.theme') || 'light',
-            sound: localStorage.getItem('settings.sound') !== 'false',
-            volume: parseInt(localStorage.getItem('settings.volume')) || 75,
-            brightness: parseInt(localStorage.getItem('settings.brightness')) || 100,
-            wallpaper: localStorage.getItem('settings.wallpaper') || 'https://images.unsplash.com/photo-1620641788421-7a1c342ea42e?q=80&w=1974&auto=format&fit=crop',
+            // A first visit follows the system; a choice made in Settings is saved and wins.
+            theme: OsWindowing.initialTheme(stored('settings.theme'), prefersDark()),
+            sound: stored('settings.sound') !== 'false',
+            volume: OsWindowing.storedNumber(stored('settings.volume'), 75),
+            brightness: OsWindowing.storedNumber(stored('settings.brightness'), 100),
+            wallpaper: stored('settings.wallpaper') || 'https://images.unsplash.com/photo-1620641788421-7a1c342ea42e?q=80&w=1974&auto=format&fit=crop',
             email: window.portfolioConfig.email,
-            wifi: localStorage.getItem('settings.wifi') !== 'false',
-            bluetooth: localStorage.getItem('settings.bluetooth') !== 'false',
-            airplane: localStorage.getItem('settings.airplane') === 'true',
-            batterySaver: localStorage.getItem('settings.batterySaver') === 'true',
-            nightLight: localStorage.getItem('settings.nightLight') === 'true',
-            accessibility: localStorage.getItem('settings.accessibility') === 'true'
+            wifi: stored('settings.wifi') !== 'false',
+            bluetooth: stored('settings.bluetooth') !== 'false',
+            airplane: stored('settings.airplane') === 'true',
+            batterySaver: stored('settings.batterySaver') === 'true',
+            nightLight: stored('settings.nightLight') === 'true',
+            accessibility: stored('settings.accessibility') === 'true'
         },
+        // Windows makes no sound for a click, or for opening or minimising a
+        // window, so neither do we. v2's lib/sounds.ts has the same list.
         sounds: {
             startup: window.portfolioConfig.basePath + 'assets/sounds/Windows Logon.wav',
-            click: window.portfolioConfig.basePath + 'assets/sounds/click.wav',
             error: window.portfolioConfig.basePath + 'assets/sounds/Windows Error.wav',
-            minimize: window.portfolioConfig.basePath + 'assets/sounds/Windows Minimize.wav',
-            open: window.portfolioConfig.basePath + 'assets/sounds/Windows Restore.wav',
             notify: window.portfolioConfig.basePath + 'assets/sounds/Windows Notify.wav',
             recycle: window.portfolioConfig.basePath + 'assets/sounds/Windows Recycle.wav',
             uac: window.portfolioConfig.basePath + 'assets/sounds/Windows User Account Control.wav'
@@ -165,6 +198,16 @@ document.addEventListener('alpine:init', () => {
         toggleFavourite(full) {
             this.favourites = toggled(this.favourites, full);
             localStorage.setItem('os.favourites', JSON.stringify(this.favourites));
+        },
+
+        togglePinned(app) {
+            this.pinnedApps = toggled(this.pinnedApps, app);
+            store('os.taskbarPins', JSON.stringify(this.pinnedApps));
+        },
+
+        markRecent(key) {
+            this.recent = { ...this.recent, [key]: Date.now() };
+            store('os.recent', JSON.stringify(this.recent));
         },
 
         setDesktopIconSize(size) {
@@ -223,7 +266,9 @@ document.addEventListener('alpine:init', () => {
         openApp(appHandle, title = null, extraData = {}) {
             this.contextMenu.open = false; // Close menu when opening app
             this.taskSwitcherOpen = false;
-            this.logEvent('System', 'Information', `Starting application: ${title || appHandle}`);
+            this.logEvent('System', 'Information', `Starting application: ${title || appHandle}`, { app: appHandle });
+            const recent = OsWindowing.recentKey(appHandle, extraData);
+            if (recent) this.markRecent(recent);
             if (extraData.fromRecycleBin) {
                 this.playSound('error');
                 return;
@@ -280,7 +325,6 @@ document.addEventListener('alpine:init', () => {
 
             this.windows.push(newWindow);
             this.focusedWindowId = id;
-            this.playSound('open');
 
             fetch(`${window.portfolioConfig.basePath}api/app.php?name=${appHandle}`)
                 .then(res => {
@@ -313,6 +357,7 @@ document.addEventListener('alpine:init', () => {
                 if (win.app === 'settings') {
                     this.previewWallpaper = null;
                 }
+                OsWindowing.animateWindowOut(document.getElementById('win-' + id), 'close');
             }
             this.windows = this.windows.filter(w => w.id !== id);
             if (this.focusedWindowId === id) {
@@ -320,6 +365,14 @@ document.addEventListener('alpine:init', () => {
             }
             this.snapAssist = null;
             if (this.snapFlyout?.windowId === id) this.snapFlyout = null;
+            // Focus went with the window, so it moves on, as v2's Desktop does.
+            if (win) {
+                setTimeout(() => {
+                    if (document.activeElement === document.body || !document.activeElement) {
+                        OsWindowing.focusAfterClose(this.focusedWindowId, win.app);
+                    }
+                });
+            }
         },
 
         focusWindow(id) {
@@ -339,8 +392,8 @@ document.addEventListener('alpine:init', () => {
                 this.focusWindow(id);
                 return;
             }
+            OsWindowing.animateWindowOut(document.getElementById('win-' + id), 'minimise');
             Object.assign(win, OsWindowing.minimizePatch(win));
-            this.playSound('minimize');
             if (this.focusedWindowId === id) {
                 this.focusedWindowId = OsWindowing.nextFocusedWindow(this.windows)?.id ?? null;
             }
@@ -440,16 +493,14 @@ document.addEventListener('alpine:init', () => {
             this.settings.wallpaper = url;
             this.previewWallpaper = null; // Clear preview on permanent save
             localStorage.setItem('settings.wallpaper', url);
-            this.playSound('click');
         },
 
         setCookieConsent(val) {
             this.cookieConsent = val;
-            localStorage.setItem('cookie.consent', val);
-            if (val) {
-                // Initialize GTM if accepted
-                if (window.initGTM) window.initGTM();
-            }
+            store('cookie.consent', val);
+            // Google Analytics loads on acceptance, and stops when consent is withdrawn.
+            if (val) window.initGTM?.();
+            else window.disableGTM?.();
             this.showCookieNotification = false;
         },
 
