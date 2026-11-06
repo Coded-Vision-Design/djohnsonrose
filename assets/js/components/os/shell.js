@@ -326,26 +326,9 @@ document.addEventListener('alpine:init', () => {
             try {
                 const res = await fetch(`${window.portfolioConfig.basePath}api/weather.php`);
                 const data = await res.json();
-                if (data.current_weather) {
-                    this.weather.temp = Math.round(data.current_weather.temperature);
-                    this.weather.city = data.city || 'London';
-                    const code = data.current_weather.weathercode;
-                    // Windows 11 Weather Codes Mapping
-                    const conditions = {
-                        0: { label: 'Clear', icon: '☀️' },
-                        1: { label: 'Mainly clear', icon: '🌤️' },
-                        2: { label: 'Partly cloudy', icon: '⛅' },
-                        3: { label: 'Overcast', icon: '☁️' },
-                        45: { label: 'Foggy', icon: '🌫️' },
-                        51: { label: 'Drizzle', icon: '🌦️' },
-                        61: { label: 'Rain', icon: '🌧️' },
-                        71: { label: 'Snow', icon: '❄️' },
-                        95: { label: 'Thunderstorm', icon: '⛈️' }
-                    };
-                    const condition = conditions[code] || { label: 'Cloudy', icon: '☁️' };
-                    this.weather.condition = condition.label;
-                    this.weather.icon = condition.icon;
-                }
+                // The codes are read in assets/js/windowing/weather.js, shared with v2.
+                const weather = OsWindowing.weatherFromApi(data);
+                if (weather) Object.assign(this.weather, weather);
             } catch (e) {
                 console.warn('Weather fetch failed');
             }

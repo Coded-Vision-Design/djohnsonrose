@@ -77,7 +77,8 @@
         import * as sql from '<?php echo BASE_PATH; ?>assets/js/windowing/sql.js?v=<?php echo @filemtime(__DIR__ . '/../assets/js/windowing/sql.js'); ?>';
         import * as devtools from '<?php echo BASE_PATH; ?>assets/js/windowing/devtools.js?v=<?php echo @filemtime(__DIR__ . '/../assets/js/windowing/devtools.js'); ?>';
         import * as references from '<?php echo BASE_PATH; ?>assets/js/windowing/references.js?v=<?php echo @filemtime(__DIR__ . '/../assets/js/windowing/references.js'); ?>';
-        window.OsWindowing = { ...windowing, ...shellCore, ...fileOps, ...textOps, ...calculator, ...terminal, ...browser, ...media, ...sql, ...devtools, ...references };
+        import * as weather from '<?php echo BASE_PATH; ?>assets/js/windowing/weather.js?v=<?php echo @filemtime(__DIR__ . '/../assets/js/windowing/weather.js'); ?>';
+        window.OsWindowing = { ...windowing, ...shellCore, ...fileOps, ...textOps, ...calculator, ...terminal, ...browser, ...media, ...sql, ...devtools, ...references, ...weather };
         window.FlStudio = flStudio;
     </script>
     <!-- Alpine.js -->

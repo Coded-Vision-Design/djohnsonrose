@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import { useOsStore } from '../store/osStore'
+import { weatherFromApi } from '../../../assets/js/windowing/weather.js'
 
 interface WeatherApiResponse {
   current_weather?: {
@@ -7,18 +8,6 @@ interface WeatherApiResponse {
     weathercode: number
   }
   city?: string
-}
-
-const CONDITIONS: Record<number, { label: string; icon: string }> = {
-  0: { label: 'Clear', icon: '☀️' },
-  1: { label: 'Mainly clear', icon: '🌤️' },
-  2: { label: 'Partly cloudy', icon: '⛅' },
-  3: { label: 'Overcast', icon: '☁️' },
-  45: { label: 'Foggy', icon: '🌫️' },
-  51: { label: 'Drizzle', icon: '🌦️' },
-  61: { label: 'Rain', icon: '🌧️' },
-  71: { label: 'Snow', icon: '❄️' },
-  95: { label: 'Thunderstorm', icon: '⛈️' },
 }
 
 // Fetches /api/weather.php on mount and every 30 minutes after. PHP backend
@@ -33,17 +22,10 @@ export function useWeather() {
       try {
         const res = await fetch('/api/weather.php')
         const data: WeatherApiResponse = await res.json()
-        if (cancelled || !data.current_weather) return
-        const cond = CONDITIONS[data.current_weather.weathercode] ?? {
-          label: 'Cloudy',
-          icon: '☁️',
-        }
-        setWeather({
-          temp: Math.round(data.current_weather.temperature),
-          city: data.city || 'London',
-          condition: cond.label,
-          icon: cond.icon,
-        })
+        // The codes are read in assets/js/windowing/weather.js, shared with v1.
+        const weather = weatherFromApi(data)
+        if (cancelled || !weather) return
+        setWeather(weather)
       } catch {
         // Silent — taskbar already shows the loading placeholder.
       }
