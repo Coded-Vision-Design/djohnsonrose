@@ -542,7 +542,10 @@ for (const build of BUILDS) {
       )
       const at = strip.indexOf('IBJJF World Championships 2022.webp')
       await page.keyboard.press('ArrowRight')
-      await expect(name).toHaveText(strip[(at + 1) % strip.length] as string)
+      const next = strip[(at + 1) % strip.length] as string
+      await expect(name).toHaveText(next)
+      // The window's title names the picture too.
+      await expect(page.getByRole('dialog', { name: next, exact: true })).toBeVisible()
     })
   })
 }

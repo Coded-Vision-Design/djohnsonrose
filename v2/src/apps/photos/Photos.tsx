@@ -25,8 +25,12 @@ export default function Photos() {
   const images = album.images as AlbumPicture[]
   const current = images[index]
 
+  const setWindowTitle = useOsStore((s) => s.setWindowTitle)
+
   const show = (next: number) => {
     setIndex(next)
+    // The title bar names the picture on show, as in v1.
+    if (images[next]) setWindowTitle(windowId, images[next].name)
     setZoom(1)
     setRotation(0)
   }
