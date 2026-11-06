@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useOsStore } from '../../store/osStore'
+import { useCurrentWindow } from '../../windowing/WindowContext'
+import { TERMINAL_HOME } from '../../../../assets/js/windowing/terminal.js'
 import { runCommand } from './commands'
 import { track } from '../../lib/telemetry'
 
@@ -13,25 +15,20 @@ interface Entry {
   res: string
 }
 
-const INITIAL_CWD = 'C:\\Users\\DeVante'
-
 export default function Terminal() {
   const [input, setInput] = useState('')
   const [entries, setEntries] = useState<Entry[]>([])
   const [history, setHistory] = useState<string[]>([])
   const [historyIdx, setHistoryIdx] = useState(-1)
-  const [cwd, setCwd] = useState(INITIAL_CWD)
+  const [cwd, setCwd] = useState(TERMINAL_HOME)
 
   const inputRef = useRef<HTMLInputElement>(null)
   const outputRef = useRef<HTMLDivElement>(null)
   const idRef = useRef(1)
 
-  const focusedApp = useOsStore((s) =>
-    s.windows.find((w) => w.id === s.focusedWindowId)?.app,
-  )
-  const focusedId = useOsStore((s) => s.focusedWindowId)
+  const windowId = useCurrentWindow().id
+  const isFocused = useOsStore((s) => s.focusedWindowId === windowId)
   const closeWindow = useOsStore((s) => s.closeWindow)
-  const isFocused = focusedApp === 'terminal'
 
   useEffect(() => {
     if (isFocused) inputRef.current?.focus()
@@ -61,7 +58,7 @@ export default function Terminal() {
       return
     }
     if (result.exit) {
-      if (focusedId) closeWindow(focusedId)
+      closeWindow(windowId)
       return
     }
     if (result.cwd) setCwd(result.cwd)
@@ -100,11 +97,11 @@ export default function Terminal() {
       {/* Header — Windows Terminal style */}
       <div className="h-9 bg-[#2b2b2b] flex items-center px-3 space-x-4 border-b border-white/5">
         <div className="flex items-center space-x-2 border-b-2 border-win-blue h-full px-2">
-          <span className="text-lg">🪟</span>
+          <img src="/assets/img/win11/powershell.webp" alt="" className="w-4 h-4" />
           <span className="text-[11px] font-medium">PowerShell</span>
           <button
             type="button"
-            onClick={() => focusedId && closeWindow(focusedId)}
+            onClick={() => closeWindow(windowId)}
             className="hover:bg-white/10 rounded-sm p-0.5"
             aria-label="Close tab"
           >
@@ -146,7 +143,7 @@ export default function Terminal() {
               <span>{e.cmd}</span>
             </div>
             {e.res && (
-              <div className="mt-1 whitespace-pre-wrap text-blue-100/80 leading-relaxed">
+              <div data-terminal-output className="mt-1 whitespace-pre-wrap text-blue-100/80 leading-relaxed">
                 {e.res}
               </div>
             )}

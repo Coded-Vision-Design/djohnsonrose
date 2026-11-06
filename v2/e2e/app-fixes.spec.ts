@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs'
 import { test, expect, type Page } from '@playwright/test'
 
 // Apps fixed after the review, run for real in both builds. The rules behind
@@ -7,6 +8,10 @@ const BUILDS = [
   { name: 'v1', url: process.env.V1_URL ?? 'http://localhost:8765/' },
   { name: 'v2', url: `${process.env.V2_ORIGIN ?? 'http://localhost:5173'}/v2/` },
 ] as const
+
+const portfolio = JSON.parse(
+  readFileSync(new URL('../../data/portfolio.json', import.meta.url), 'utf8'),
+) as { projects: { title: string; url: string; featured?: boolean; tags?: string[] }[] }
 
 async function boot(page: Page, url: string) {
   await page.addInitScript(() => {
@@ -100,6 +105,49 @@ for (const build of BUILDS) {
       await expect(dialog(page, 'Task Manager')).toBeVisible()
       await page.keyboard.type('99')
       await expect(display(page)).toHaveText('4')
+    })
+  })
+}
+
+for (const build of BUILDS) {
+  test.describe(`${build.name} Terminal`, () => {
+    test.beforeEach(async ({ page }) => {
+      await boot(page, build.url)
+      await call(page, 'openApp', 'terminal')
+      await expect(input(page)).toBeVisible({ timeout: 15_000 })
+    })
+
+    const terminal = (page: Page) => dialog(page, 'Terminal')
+    const input = (page: Page) => terminal(page).getByRole('textbox')
+    const typeCommand = async (page: Page, command: string) => {
+      await input(page).fill(command)
+      await input(page).press('Enter')
+    }
+    const lastOutput = (page: Page) => terminal(page).locator('[data-terminal-output]').last()
+
+    test('cd .. from C:\\Users reaches C:\\, and quoted paths with spaces work', async ({ page }) => {
+      await typeCommand(page, 'cd ..')
+      await typeCommand(page, 'cd ..')
+      await expect(terminal(page).getByText('PS C:\\>', { exact: true }).last()).toBeVisible()
+      await typeCommand(page, 'cd "Program Files"')
+      await expect(terminal(page).getByText('PS C:\\Program Files>', { exact: true }).last()).toBeVisible()
+    })
+
+    test('ver, dir, projects and contact tell the truth', async ({ page }) => {
+      await typeCommand(page, 'ver')
+      await expect(lastOutput(page)).toHaveText(/Version 10\.0\.26200\./)
+      await typeCommand(page, 'dir')
+      await expect(lastOutput(page)).toContainText('Directory of C:\\Users\\DeVante')
+      await expect(lastOutput(page)).not.toContainText('01/02/2026')
+      await typeCommand(page, 'projects')
+      for (const project of portfolio.projects) await expect(lastOutput(page)).toContainText(project.title)
+      await typeCommand(page, 'contact')
+      await expect(lastOutput(page)).toContainText('github.com/CodedVisionDesign')
+    })
+
+    test('the tab close button closes the Terminal', async ({ page }) => {
+      await terminal(page).getByRole('button', { name: 'Close tab' }).click()
+      await expect(terminal(page)).toHaveCount(0)
     })
   })
 }
