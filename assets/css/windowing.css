@@ -94,6 +94,51 @@
   position: relative;
 }
 
+/* The shell stays unselectable, as in Windows, but text inside an app can be
+   selected and copied. Controls and drawing surfaces keep their own gestures. */
+.os-window-content {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+.os-window-content :where(button, [role='button'], [draggable='true'], canvas, img, svg) {
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.os-window-icon {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  object-fit: contain;
+}
+
+/* What is left of a window for the moment it takes to close or minimise. See
+   animateWindowOut in shell-ui.js. */
+.os-window-ghost {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  pointer-events: none;
+  transform-origin: 50% 100%;
+}
+
+.os-window-ghost[data-leaving='close'] {
+  animation: os-window-close 0.15s ease-in forwards;
+}
+
+.os-window-ghost[data-leaving='minimise'] {
+  animation: os-window-minimise 0.2s ease-in forwards;
+}
+
+@keyframes os-window-close {
+  to { opacity: 0; transform: scale(0.95); }
+}
+
+@keyframes os-window-minimise {
+  to { opacity: 0; transform: translateY(30%) scale(0.6); }
+}
+
 .os-titlebar {
   flex-shrink: 0;
   touch-action: none;
@@ -426,7 +471,8 @@ html[data-os-mode='phone'] .os-window {
   left: 0 !important;
   top: 0 !important;
   right: 0 !important;
-  bottom: max(0px, calc(var(--os-keyboard-inset) - var(--os-taskbar-height))) !important;
+  /* Clear of the cookie bar while it shows, and of the on-screen keyboard. */
+  bottom: max(var(--os-banner-inset, 0px), calc(var(--os-keyboard-inset) - var(--os-taskbar-height))) !important;
   width: auto !important;
   height: auto !important;
   border-radius: 0 !important;
@@ -480,24 +526,178 @@ html[data-os-mode='phone'] .os-taskbar button {
   min-height: 44px;
 }
 
+/* Start and Quick Settings are tapped with a finger on phones. */
+html[data-os-mode='phone'] :is([data-start-menu], [data-quick-settings]) button {
+  min-width: 44px;
+  min-height: 44px;
+}
+
+html[data-os-mode='phone'] [data-start-menu] input[type='text'] {
+  min-height: 44px;
+}
+
+/* The slider keeps its thin track but gets a finger-sized hit area. */
+html[data-os-mode='phone'] [data-quick-settings] .win-slider {
+  height: 44px;
+  background-size: 100% 4px;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
 /* Hidden while the on-screen keyboard is up, so an app gets the room. */
 html[data-os-keyboard][data-os-mode='phone'] .os-taskbar {
   visibility: hidden;
 }
 
+/* The cookie consent card, the same in both builds. On a phone it becomes a
+   slim bar above the taskbar, and windows keep clear of it (see
+   reserveBottomSpace in shell-ui.js), so that it never covers the open app. */
+.os-consent {
+  position: fixed;
+  z-index: 20000;
+  right: 16px;
+  bottom: calc(var(--os-taskbar-height) + 16px);
+  width: 360px;
+  max-width: calc(100% - 32px);
+  border-radius: 12px;
+}
+
+.os-consent-actions button {
+  min-height: 32px;
+}
+
+html[data-os-mode='phone'] .os-consent {
+  left: 0;
+  right: 0;
+  bottom: var(--os-taskbar-height);
+  width: auto;
+  max-width: none;
+  border-radius: 0;
+  border-width: 1px 0 0;
+}
+
+html[data-os-mode='phone'] .os-consent-body {
+  padding: 8px 12px;
+  gap: 4px;
+}
+
+html[data-os-mode='phone'] .os-consent-title {
+  display: none;
+}
+
+html[data-os-mode='phone'] .os-consent-actions button {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+/* Skip link: off screen until a keyboard user reaches it. */
+.os-skip-link {
+  position: fixed;
+  z-index: 2147483647;
+  top: 8px;
+  left: 8px;
+  padding: 10px 16px;
+  border-radius: 6px;
+  background: #0078d4;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  transform: translateY(calc(-100% - 16px));
+}
+
+.os-skip-link:focus {
+  transform: none;
+}
+
+/* A visible focus ring for keyboard users, across the shell and its apps.
+   Text fields show focus with their own accent line instead. */
+:where(a, button, summary, select, [role='button'], [tabindex]:not([tabindex='-1']), input[type='range'], input[type='checkbox'], input[type='radio']):focus-visible {
+  outline: 2px solid #0078d4;
+  outline-offset: 2px;
+}
+
+.dark :where(a, button, summary, select, [role='button'], [tabindex]:not([tabindex='-1']), input[type='range'], input[type='checkbox'], input[type='radio']):focus-visible {
+  outline-color: #60cdff;
+}
+
+/* The Windows 11 loading dots. They take the text colour, so that they show
+   on a dark boot screen and on a light window alike. */
+.win-loader-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.win-loader {
+  position: relative;
+  width: 48px;
+  height: 48px;
+}
+
+.win-loader .dot {
+  position: absolute;
+  width: 5px;
+  height: 5px;
+  background: currentColor;
+  border-radius: 50%;
+  left: 21.5px;
+  top: 0;
+  transform-origin: 2.5px 24px;
+  opacity: 0;
+  animation: win-loader-move 3.5s infinite cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.win-loader .dot:nth-child(2) { animation-delay: 0.15s; }
+.win-loader .dot:nth-child(3) { animation-delay: 0.3s; }
+.win-loader .dot:nth-child(4) { animation-delay: 0.45s; }
+.win-loader .dot:nth-child(5) { animation-delay: 0.6s; }
+
+@keyframes win-loader-move {
+  0% { transform: rotate(0deg); opacity: 0; }
+  5% { opacity: 1; }
+  70% { transform: rotate(720deg); opacity: 1; }
+  75% { opacity: 0; }
+  100% { transform: rotate(720deg); opacity: 0; }
+}
+
+/* Reduced motion: nothing in the shell moves. Windows, menus, panels and the
+   taskbar change at once, and the loading dots stand still in an arc. */
 @media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    animation-delay: 0s !important;
+    transition-duration: 0.01ms !important;
+    transition-delay: 0s !important;
+    scroll-behavior: auto !important;
+  }
+
   .os-window[data-animating],
   .os-snap-preview,
   .os-snap-zone {
-    transition: none;
+    transition: none !important;
   }
 
   .os-snap-preview,
   .os-snap-bar,
   .os-snap-flyout,
   .os-snap-assist {
-    animation: none;
+    animation: none !important;
   }
+
+  .win-loader .dot {
+    animation: none !important;
+    opacity: 1;
+  }
+
+  .win-loader .dot:nth-child(2) { transform: rotate(30deg); opacity: 0.8; }
+  .win-loader .dot:nth-child(3) { transform: rotate(60deg); opacity: 0.6; }
+  .win-loader .dot:nth-child(4) { transform: rotate(90deg); opacity: 0.4; }
+  .win-loader .dot:nth-child(5) { transform: rotate(120deg); opacity: 0.2; }
 }
 
 /* Desktop icon sizes, from the desktop's View menu. */

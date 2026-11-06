@@ -17,6 +17,11 @@ export function deviceInfo(input: {
 
 export function relativeTime(then: Date | number | null | undefined, now?: Date): string | null
 
+export function recentKey(
+  app: string,
+  extra: { pdfUrl?: unknown; initialPath?: unknown } | null | undefined,
+): 'cv' | 'projects' | null
+
 export type Theme = 'light' | 'dark'
 export function initialTheme(saved: string | null | undefined, prefersDark: boolean): Theme
 

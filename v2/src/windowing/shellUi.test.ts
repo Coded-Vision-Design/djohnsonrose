@@ -11,6 +11,7 @@ import {
   initialTheme,
   layoutDesktopIcons,
   quickTogglePatch,
+  recentKey,
   relativeTime,
   reserveBottomSpace,
   shellKeyFromEvent,
@@ -127,6 +128,25 @@ describe('relativeTime', () => {
     expect(relativeTime(now.getTime() - 5 * 60_000, now)).toBe('5m ago')
     expect(relativeTime(null, now)).toBeNull()
     expect(relativeTime(Number.NaN, now)).toBeNull()
+  })
+})
+
+describe('recentKey', () => {
+  it('knows the CV and the Projects folder, which Start recommends', () => {
+    expect(recentKey('pdfreader', {})).toBe('cv')
+    expect(recentKey('pdfreader', { pdfUrl: '/data/cv.pdf' })).toBe('cv')
+    expect(recentKey('explorer', { initialPath: 'C:\\Users\\DeVante\\Projects' })).toBe('projects')
+  })
+
+  it('ignores other documents and folders', () => {
+    expect(recentKey('pdfreader', { pdfUrl: '/data/other.pdf' })).toBeNull()
+    expect(recentKey('explorer', { initialPath: 'C:\\Users\\DeVante\\Projects\\Site' })).toBeNull()
+    expect(recentKey('notepad', {})).toBeNull()
+  })
+
+  it('copes with no extras at all', () => {
+    expect(recentKey('pdfreader', undefined)).toBe('cv')
+    expect(recentKey('explorer', null)).toBeNull()
   })
 })
 
@@ -360,6 +380,24 @@ describe('animateWindowOut', () => {
     expect(ghost.dataset.leaving).toBe('minimise')
     ghost.dispatchEvent(new Event('animationend'))
     expect(document.querySelectorAll('[data-leaving]')).toHaveLength(0)
+  })
+
+  it('leaves nothing for Alpine to run in the copy of a v1 window', () => {
+    setMotion(false)
+    document.body.innerHTML =
+      '<div id="layer"><div id="win-1" class="os-window" x-init="go()" :class="a" @pointerdown="b"><span x-text="win.title"></span><template x-if="x"><i></i></template></div></div>'
+    const ghost = animateWindowOut(document.getElementById('win-1'), 'close')!
+    const names = [ghost, ...ghost.querySelectorAll('*')].flatMap((el) => [...el.attributes].map((a) => a.name))
+    expect(names.filter((name) => /^(x-|:|@)/.test(name))).toEqual([])
+    expect(ghost.querySelector('template')).toBeNull()
+  })
+
+  it('is not removed when something inside it finishes an animation first', () => {
+    setMotion(false)
+    document.body.innerHTML = '<div id="layer"><div id="win-1" class="os-window"><span class="dot"></span></div></div>'
+    const ghost = animateWindowOut(document.getElementById('win-1'), 'close')!
+    ghost.querySelector('.dot')!.dispatchEvent(new Event('animationend', { bubbles: true }))
+    expect(ghost.isConnected).toBe(true)
   })
 
   it('does nothing with reduced motion, or without a window', () => {

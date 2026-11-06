@@ -70,6 +70,13 @@ export function relativeTime(then, now = new Date()) {
   return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
 }
 
+/** Which of Start's Recommended items an app opening shows, or null: the CV or Projects. */
+export function recentKey(app, extra) {
+  if (app === 'pdfreader' && (!extra?.pdfUrl || /(^|\/)cv\.pdf$/.test(extra.pdfUrl))) return 'cv'
+  if (app === 'explorer' && /\\Projects$/.test(extra?.initialPath ?? '')) return 'projects'
+  return null
+}
+
 /** A theme the visitor chose wins. Otherwise a first visit follows the system. */
 export function initialTheme(saved, prefersDark) {
   if (saved === 'light' || saved === 'dark') return saved
@@ -210,7 +217,12 @@ const reducedMotion = () => !!window.matchMedia?.('(prefers-reduced-motion: redu
 export function animateWindowOut(element, kind) {
   if (!element?.parentNode || reducedMotion()) return null
   const ghost = element.cloneNode(true)
-  for (const el of [ghost, ...ghost.querySelectorAll('[id]')]) el.removeAttribute('id')
+  // No ids, and nothing Alpine would try to run again in v1's markup.
+  for (const el of [ghost, ...ghost.querySelectorAll('*')]) {
+    el.removeAttribute('id')
+    for (const { name } of [...el.attributes]) if (/^(x-|:|@)/.test(name)) el.removeAttribute(name)
+  }
+  for (const template of ghost.querySelectorAll('template')) template.remove()
   ghost.removeAttribute('role')
   ghost.removeAttribute('aria-label')
   ghost.removeAttribute('tabindex')
@@ -226,7 +238,10 @@ export function animateWindowOut(element, kind) {
   })
   ghost.dataset.leaving = kind
   const remove = () => ghost.remove()
-  ghost.addEventListener('animationend', remove, { once: true })
+  // Only its own animation: one inside the copy, such as the loading dots, bubbles up too.
+  ghost.addEventListener('animationend', (event) => {
+    if (event.target === ghost) remove()
+  })
   setTimeout(remove, 400)
   element.parentNode.appendChild(ghost)
   return ghost
