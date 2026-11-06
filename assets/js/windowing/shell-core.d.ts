@@ -62,6 +62,7 @@ export function buildMenu(
   overrides?: Record<string, Partial<MenuItemData>>,
 ): BuiltMenu
 
+export function cssUrl(address: string): string
 export function clockTime(date: Date): string
 export function clockDate(date: Date): string
 

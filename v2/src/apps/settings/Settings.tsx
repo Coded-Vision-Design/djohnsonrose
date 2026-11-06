@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
 import { useOsStore, type Settings as SettingsShape } from '../../store/osStore'
 import { useWindowExtras } from '../../windowing/WindowContext'
+import { cssUrl } from '../../../../assets/js/windowing/shell-core.js'
 
-// 1:1 port of partials/apps/settings.php — five-tab Win11 Settings shell that
+// 1:1 port of partials/apps/settings.php: five-tab Win11 Settings shell that
 // reads the same data/portfolio.json the PHP version reads. All copy below
 // flows from data/portfolio.json so the CV stays the single source of truth.
 
@@ -263,8 +264,8 @@ export default function Settings() {
                   <div className="font-medium">Telemetry &amp; cookies</div>
                   <div className="text-xs text-gray-500">
                     {consent
-                      ? 'Accepted — anonymous app-usage events are sent to /api/log.php.'
-                      : 'Declined — no telemetry is being collected.'}
+                      ? 'Accepted: anonymous app-usage events are sent to /api/log.php.'
+                      : 'Declined: no telemetry is being collected.'}
                   </div>
                 </div>
               </div>
@@ -279,7 +280,7 @@ export default function Settings() {
               <div className="w-full md:w-64 aspect-video rounded-lg overflow-hidden border-4 border-white/20 shadow-2xl relative shrink-0">
                 <div
                   className="absolute inset-0 bg-cover bg-center transition-all duration-500"
-                  style={{ backgroundImage: `url(${currentWallpaper})` }}
+                  style={{ backgroundImage: cssUrl(currentWallpaper) }}
                 />
                 <div className="absolute bottom-0 inset-x-0 h-2 bg-white/20 backdrop-blur-md" />
               </div>
@@ -330,7 +331,7 @@ export default function Settings() {
                 >
                   <div
                     className="absolute inset-0 bg-cover bg-center"
-                    style={{ backgroundImage: `url(${wp.url})`, backgroundColor: '#333' }}
+                    style={{ backgroundImage: cssUrl(wp.url), backgroundColor: '#333' }}
                   />
                 </button>
               ))}

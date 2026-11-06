@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useOsStore } from '../store/osStore'
 import { playSound } from '../lib/sounds'
+import { cssUrl } from '../../../assets/js/windowing/shell-core.js'
 
 const formatLockTime = (d: Date) =>
   d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })
@@ -32,7 +33,7 @@ export function LockScreen() {
   return (
     <div
       className="h-dvh w-dvw relative flex flex-col items-center justify-center text-white bg-cover bg-center"
-      style={{ backgroundImage: `url(${wallpaper})` }}
+      style={{ backgroundImage: cssUrl(wallpaper) }}
     >
       <div className="absolute inset-0 bg-black/40" />
 
@@ -72,7 +73,7 @@ export function LockScreen() {
         )}
       </div>
 
-      {/* Bottom-right clock — v1's parallel detail */}
+      {/* Bottom-right clock, as in v1 */}
       <div className="absolute bottom-6 right-6 sm:bottom-12 sm:right-12 text-right z-10">
         <div className="text-4xl sm:text-6xl font-light mb-2 drop-shadow-lg">
           {formatLockTime(now)}

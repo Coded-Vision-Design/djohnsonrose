@@ -80,6 +80,24 @@ for (const build of BUILDS) {
     test.use({ permissions: ['clipboard-read', 'clipboard-write'] })
     test.beforeEach(({ page }) => boot(page, build.url))
 
+    test('a picture with spaces in its name works as the wallpaper', async ({ page }) => {
+      await openExplorer(page, build, 'C:\\Users\\DeVante\\Pictures', 'Pictures')
+      const picture = file(page, 'AJP Grand Slam 2024.webp')
+      await expect(picture).toBeVisible({ timeout: 15_000 })
+      await picture.click({ button: 'right' })
+      await item(page, 'Set as desktop background').click()
+      // A value CSS rejects would leave no background at all.
+      await expect
+        .poll(() =>
+          page.evaluate(() =>
+            [...document.querySelectorAll('body, body *')].some((el) =>
+              getComputedStyle(el).backgroundImage.includes('AJP%20Grand%20Slam%202024.webp'),
+            ),
+          ),
+        )
+        .toBe(true)
+    })
+
     test('Cut and Paste move a file', async ({ page }) => {
       await fileMenu(page)
       await action(page, 'Cut').click()

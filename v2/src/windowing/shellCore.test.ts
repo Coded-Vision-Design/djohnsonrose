@@ -3,6 +3,7 @@ import {
   buildMenu,
   clockDate,
   clockTime,
+  cssUrl,
   fingerGap,
   pinchZoom,
   placeMenu,
@@ -168,6 +169,24 @@ describe('data/menus.json', () => {
 
   it('keeps Show more options off the classic menu', () => {
     expect(menus.desktopClassic.items.some((item) => 'id' in item && item.id === 'classic')).toBe(false)
+  })
+})
+
+describe('cssUrl', () => {
+  it('quotes a plain address', () => {
+    expect(cssUrl('/assets/img/wall.webp')).toBe('url("/assets/img/wall.webp")')
+  })
+
+  it('keeps a picture with spaces in its name working as a wallpaper', () => {
+    expect(cssUrl('/assets/img/Allstars UK Nationals.webp')).toBe('url("/assets/img/Allstars%20UK%20Nationals.webp")')
+  })
+
+  it('cannot be broken out of with quotes, brackets or backslashes', () => {
+    expect(cssUrl('a") ;background:red;("\\b')).toBe('url("a%22%29%20%3Bbackground:red%3B%28%22%5Cb")')
+  })
+
+  it('leaves an address that is already encoded alone', () => {
+    expect(cssUrl('https://images.example/x%20y.webp?q=80&w=1974')).toBe('url("https://images.example/x%20y.webp?q=80&w=1974")')
   })
 })
 

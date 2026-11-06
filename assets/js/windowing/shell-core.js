@@ -91,6 +91,15 @@ function menuSize(menu) {
   return { width: classic ? 240 : 260, height: rows + (menu.actions?.length ? 44 : 0) };
 }
 
+/**
+ * A CSS url() for a wallpaper or picture. A file name with spaces, quotes or
+ * brackets would otherwise end the value early and blank the background.
+ */
+export function cssUrl(address) {
+  const safe = String(address).replace(/[\s"'()\\;]/g, (char) => `%${char.charCodeAt(0).toString(16).toUpperCase().padStart(2, '0')}`);
+  return `url("${safe}")`;
+}
+
 /** The taskbar clock. h23 keeps midnight at 00:00, where hour12: false can give 24:00. */
 export const clockTime = (date) =>
   date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });

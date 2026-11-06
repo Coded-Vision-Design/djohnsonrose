@@ -77,7 +77,7 @@
                     <span class="text-2xl mr-4">🍪</span>
                     <div>
                         <div class="font-medium">Telemetry &amp; cookies</div>
-                        <div class="text-xs text-gray-500" x-text="Alpine.store('os').cookieConsent ? 'Accepted — anonymous app-usage events are sent to /api/log.php.' : 'Declined — no telemetry is being collected.'"></div>
+                        <div class="text-xs text-gray-500" x-text="Alpine.store('os').cookieConsent ? 'Accepted: anonymous app-usage events are sent to /api/log.php.' : 'Declined: no telemetry is being collected.'"></div>
                     </div>
                 </div>
                 <button @click="Alpine.store('os').setCookieConsent(!Alpine.store('os').cookieConsent)"
@@ -94,7 +94,7 @@
             <!-- Current Wallpaper Preview -->
             <div class="glass p-6 rounded-lg border border-gray-200 dark:border-white/10 flex flex-col md:flex-row items-center space-y-4 md:space-y-0 md:space-x-8">
                 <div class="w-full md:w-64 aspect-video rounded-lg overflow-hidden border-4 border-white/20 shadow-2xl relative">
-                    <div class="absolute inset-0 bg-cover bg-center transition-all duration-500" :style="'background-image: url(' + (selectedWallpaper || Alpine.store('os').settings.wallpaper) + ')'"></div>
+                    <div class="absolute inset-0 bg-cover bg-center transition-all duration-500" :style="'background-image: ' + OsWindowing.cssUrl(selectedWallpaper || Alpine.store('os').settings.wallpaper)"></div>
                     <!-- Mock Taskbar in preview -->
                     <div class="absolute bottom-0 inset-x-0 h-2 bg-white/20 backdrop-blur-md"></div>
                 </div>
@@ -121,7 +121,7 @@
                     <div @click="setWallpaper(wp.url)" 
                          class="cursor-pointer group relative rounded-md overflow-hidden aspect-square border-2 transition-all hover:scale-105"
                          :class="(selectedWallpaper || Alpine.store('os').settings.wallpaper) === wp.url ? 'border-win-blue ring-2 ring-win-blue/20 shadow-lg' : 'border-transparent hover:border-gray-400'">
-                        <div class="absolute inset-0 bg-cover bg-center" :style="'background-image: url(' + wp.url + '); background-color: #333;'"></div>
+                        <div class="absolute inset-0 bg-cover bg-center" :style="'background-image: ' + OsWindowing.cssUrl(wp.url) + '; background-color: #333;'"></div>
                         <div class="absolute inset-0 bg-black/20 group-hover:bg-transparent transition-colors"></div>
                     </div>
                 </template>

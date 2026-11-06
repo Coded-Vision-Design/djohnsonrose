@@ -16,7 +16,7 @@ import { DesktopIcons } from './DesktopIcons'
 import { ContextMenu } from './ContextMenu'
 import { useWindowShortcuts } from '../windowing/useWindowShortcuts'
 import { keepFileLongPress, watchDesktop } from '../../../assets/js/windowing/windowing.js'
-import { fingerGap, pinchZoom } from '../../../assets/js/windowing/shell-core.js'
+import { cssUrl, fingerGap, pinchZoom } from '../../../assets/js/windowing/shell-core.js'
 import { getApp } from '../apps/registry'
 import { useClock } from '../lib/useClock'
 import { useWeather } from '../lib/useWeather'
@@ -114,7 +114,7 @@ export function Desktop() {
     <div
       data-os-desktop=""
       className="relative h-dvh w-dvw overflow-hidden bg-cover bg-center touch-none"
-      style={{ backgroundImage: `url(${wallpaper})` }}
+      style={{ backgroundImage: cssUrl(wallpaper) }}
       onContextMenu={(e) => {
         const target = e.target as Element
         if (target.closest('input, textarea')) return
