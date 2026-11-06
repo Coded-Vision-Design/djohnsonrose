@@ -1,14 +1,17 @@
 import { describe, it, expect } from 'vitest'
 import {
+  DEFAULT_ALBUM,
   DEFAULT_PDF,
   DEFAULT_VIDEO,
   canShowPdf,
   formatMediaTime,
   mediaName,
   pdfOpenLabel,
+  photoAlbum,
   progressPercent,
   seekTime,
 } from '../../../assets/js/windowing/media.js'
+import { filesystem } from '../data/filesystem'
 
 // What Video and PDF Reader share between the builds.
 
@@ -48,6 +51,43 @@ describe('seeking', () => {
     expect(progressPercent(15, 60)).toBe(25)
     expect(progressPercent(15, 0)).toBe(0)
     expect(progressPercent(15, Number.NaN)).toBe(0)
+  })
+})
+
+describe('photoAlbum', () => {
+  const fs = filesystem as unknown as Record<string, { name: string; type: string; url?: string }[]>
+
+  it('shows both the portfolio screenshots and the competition photos', () => {
+    const { path, images, index } = photoAlbum(fs)
+    expect(path).toBe(DEFAULT_ALBUM)
+    expect(index).toBe(0)
+    const urls = images.map((image) => image.url ?? '')
+    expect(urls.some((url) => url.includes('/portfolio/'))).toBe(true)
+    expect(urls.some((url) => url.includes('AJP%20Grand%20Slam') || url.includes('AJP Grand Slam'))).toBe(true)
+  })
+
+  it('opens on the picture asked for, by name or by address', () => {
+    const byName = photoAlbum(fs, { imageName: 'IBJJF World Championships 2022.webp' })
+    expect(byName.images[byName.index].name).toBe('IBJJF World Championships 2022.webp')
+    const url = fs[DEFAULT_ALBUM].find((entry) => entry.name === 'cpttours.webp')!.url!
+    const byUrl = photoAlbum(fs, { imageUrl: url })
+    expect(byUrl.images[byUrl.index].name).toBe('cpttours.webp')
+  })
+
+  it('brings the folder of a picture kept elsewhere', () => {
+    const folder = 'C:\\Users\\DeVante\\Projects\\Freelance\\Earth Echo\\Pictures'
+    const album = photoAlbum(fs, { imageUrl: fs[folder][1].url })
+    expect(album.path).toBe(folder)
+    expect(album.index).toBe(1)
+  })
+
+  it('still shows a picture that is in no folder', () => {
+    const album = photoAlbum(fs, { imageUrl: '/somewhere/else.webp' })
+    expect(album.images).toEqual([{ name: 'else.webp', type: 'image', url: '/somewhere/else.webp' }])
+  })
+
+  it('falls back to Pictures for a folder that does not exist', () => {
+    expect(photoAlbum(fs, { folderPath: 'C:\\Nowhere' }).path).toBe(DEFAULT_ALBUM)
   })
 })
 

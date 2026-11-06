@@ -1,5 +1,6 @@
-// What Video and PDF Reader share between the builds: the player's clock and
-// seek bar, and whether this browser can show a PDF inside a window.
+// What Video, PDF Reader and Photos share between the builds: the player's
+// clock and seek bar, whether this browser can show a PDF inside a window, and
+// which pictures Photos shows.
 
 // Paths from the site root. v1 puts its base path in front, v2 a slash.
 export const DEFAULT_VIDEO = 'data/south-africa-25.mp4';
@@ -33,3 +34,35 @@ export const canShowPdf = (nav) => nav?.pdfViewerEnabled !== false;
 export const pdfOpenLabel = (url) => (/(^|\/)cv\.pdf$/i.test(url) ? 'Open the CV' : 'Open the PDF');
 
 export const mediaName = (url) => url.split('/').pop() ?? '';
+
+// ---- Photos ----------------------------------------------------------------
+
+export const DEFAULT_ALBUM = 'C:\\Users\\DeVante\\Pictures';
+
+const isPicture = (entry) => !!entry.url && (entry.type === 'image' || /\.(webp|png|jpe?g|gif)$/i.test(entry.name ?? ''));
+const urlKey = (url) => decodeURIComponent(String(url)).replace(/^\/+/, '');
+const sameUrl = (a, b) => urlKey(a).endsWith(urlKey(b)) || urlKey(b).endsWith(urlKey(a));
+
+/**
+ * What Photos shows: the pictures in a folder of the shared file system, and
+ * which one is open. Pictures holds both the portfolio screenshots and the
+ * competition photos. A picture opened from elsewhere brings its own folder.
+ * Returns { path, images, index }.
+ */
+export function photoAlbum(fs, { folderPath, imageName, imageUrl } = {}) {
+  const pictures = (path) => (fs[path] ?? []).filter(isPicture);
+  const path = folderPath && fs[folderPath] ? folderPath : DEFAULT_ALBUM;
+  const images = pictures(path);
+  if (!imageName && !imageUrl) return { path, images, index: 0 };
+
+  const wanted = (entry) => (!imageName || entry.name === imageName) && (!imageUrl || sameUrl(entry.url, imageUrl));
+  const here = images.findIndex(wanted);
+  if (here !== -1) return { path, images, index: here };
+  for (const folder of Object.keys(fs)) {
+    const others = pictures(folder);
+    const index = others.findIndex(wanted);
+    if (index !== -1) return { path: folder, images: others, index };
+  }
+  if (imageUrl) return { path: '', images: [{ name: mediaName(imageUrl), type: 'image', url: imageUrl }], index: 0 };
+  return { path, images, index: 0 };
+}
