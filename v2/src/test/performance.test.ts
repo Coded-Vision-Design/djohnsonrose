@@ -31,7 +31,7 @@ describe('default wallpaper', () => {
   it('is a local file in both builds, not a hot-linked one', () => {
     expect(images.has(`/assets/img/${WALLPAPER}`)).toBe(true)
     expect(useOsStore.getState().settings.wallpaper).toBe(`/assets/img/${WALLPAPER}`)
-    const v1Default = storeJs.match(/wallpaper: localStorage\.getItem\('settings\.wallpaper'\) \|\| (.+),$/m)?.[1]
+    const v1Default = storeJs.match(/wallpaper: stored\('settings\.wallpaper'\) \|\| (.+),$/m)?.[1]
     expect(v1Default).toBe(`window.portfolioConfig.imgPath + '${WALLPAPER}'`)
   })
 

@@ -8,7 +8,8 @@ import { useOsStore } from '../store/osStore'
 const files = new Set(
   Object.keys(import.meta.glob('../../../assets/sounds/**/*')).map((p) => p.replace('../../../', '/')),
 )
-const TYPES: SoundType[] = ['startup', 'click', 'error', 'minimize', 'open', 'notify', 'recycle', 'uac']
+// Windows has no click, open or minimise sounds, so neither build plays them.
+const TYPES: SoundType[] = ['startup', 'error', 'notify', 'recycle', 'uac']
 
 const played: string[] = []
 class RecordingAudio {
@@ -43,8 +44,8 @@ describe('playSound', () => {
   it('uses the dark-mode copy only for the sounds that have one', () => {
     setSettings({ theme: 'dark' })
     playSound('notify')
-    playSound('click')
-    expect(played).toEqual(['/assets/sounds/dm/Windows Notify.m4a', '/assets/sounds/click.m4a'])
+    playSound('error')
+    expect(played).toEqual(['/assets/sounds/dm/Windows Notify.m4a', '/assets/sounds/Windows Error.m4a'])
   })
 
   it('plays nothing when sound is off', () => {

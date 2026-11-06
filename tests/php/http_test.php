@@ -129,7 +129,7 @@ try {
     // The CV page's own template replaces the desktop here once it lands.
     check('route: /cv is kept, not a 404', http('GET', '/cv')['status'] === 200);
     check('route: a deep link opens its app', str_contains(http('GET', '/app/word')['body'], 'appToOpen: "word"'));
-    foreach (['/api/news.php', '/assets/css/app.css', '/data/portfolio.json', '/portfolio/1uthealth.webp', '/manifest.json', '/favicon.ico', '/robots.txt'] as $path) {
+    foreach (['/api/news.php', '/assets/css/app.css', '/data/portfolio.json', '/portfolio/baymotors.webp', '/manifest.json', '/favicon.ico', '/robots.txt'] as $path) {
         check("route: {$path} gives 200", http('GET', $path)['status'] === 200);
     }
     $r = http('GET', '/v2/');
