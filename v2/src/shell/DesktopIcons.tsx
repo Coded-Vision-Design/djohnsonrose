@@ -1,6 +1,7 @@
 import { useMemo, useRef, useState } from 'react'
-import { useOsStore, TASKBAR_HEIGHT } from '../store/osStore'
+import { useOsStore } from '../store/osStore'
 import { DESKTOP, RECYCLE_BIN, deleteEntry } from '../../../assets/js/windowing/file-ops.js'
+import { layoutDesktopIcons } from '../../../assets/js/windowing/shell-ui.js'
 import type { FsEntry } from '../data/filesystem'
 import { RenameInput } from './RenameInput'
 import { showClassicDesktopMenu, showFileMenu, showMenu, type MenuPoint } from './menus'
@@ -9,9 +10,6 @@ import { playSound } from '../lib/sounds'
 
 const PC_NAME = "DeVanté's PC"
 const PC: FsEntry = { name: PC_NAME, type: 'folder', path: 'C:\\', icon: '/assets/img/thispc.webp' }
-const ICON_W = 110
-const ICON_H = 110
-const MARGIN = 16
 
 interface PlacedIcon {
   name: string
@@ -21,60 +19,6 @@ interface PlacedIcon {
   x: number
   y: number
   isRecycleBin: boolean
-}
-
-/**
- * Lay out icons in column-first order. Stored positions are honoured first
- * and pre-marked as occupied so unpositioned icons get the next free slot
- * deterministically.
- *
- * The PC tile is pinned to slot (0,0) unless the user has explicitly dragged
- * it elsewhere — earlier versions auto-laid PC like any other icon and ended
- * up putting it at slot (0,1), leaving the top-left empty.
- */
-function computeLayout(
-  pcName: string,
-  names: string[],
-  stored: Record<string, { x: number; y: number }>,
-  maxPerCol: number,
-) {
-  const occupied = new Set<string>()
-  const positions: Record<string, { x: number; y: number }> = {}
-
-  // First pass: place icons with stored positions, marking their slots.
-  for (const name of [pcName, ...names]) {
-    const pos = stored[name]
-    if (!pos) continue
-    positions[name] = pos
-    const col = Math.max(0, Math.round((pos.x - MARGIN) / ICON_W))
-    const row = Math.max(0, Math.round((pos.y - MARGIN) / ICON_H))
-    occupied.add(`${col},${row}`)
-  }
-
-  // Pin PC to (0,0) if it has no stored position.
-  if (!positions[pcName]) {
-    positions[pcName] = { x: MARGIN, y: MARGIN }
-    occupied.add('0,0')
-  }
-
-  // Second pass: assign the next empty slot to unpositioned icons.
-  let cursor = 0
-  for (const name of names) {
-    if (positions[name]) continue
-    while (true) {
-      const col = Math.floor(cursor / maxPerCol)
-      const row = cursor % maxPerCol
-      const key = `${col},${row}`
-      cursor++
-      if (!occupied.has(key)) {
-        occupied.add(key)
-        positions[name] = { x: MARGIN + col * ICON_W, y: MARGIN + row * ICON_H }
-        break
-      }
-    }
-  }
-
-  return positions
 }
 
 export function DesktopIcons() {
@@ -97,15 +41,16 @@ export function DesktopIcons() {
     null,
   )
 
-  const icons = useMemo<PlacedIcon[]>(() => {
-    const availH = window.innerHeight - TASKBAR_HEIGHT - MARGIN * 2
-    const maxPerCol = Math.max(1, Math.floor(availH / ICON_H))
+  // The measured desktop, so that the icons are laid out again after a resize
+  // or a rotation, and pulled back on screen. Shared with v1: layoutDesktopIcons.
+  const areaWidth = useOsStore((s) => s.desktop.width)
+  const areaHeight = useOsStore((s) => s.desktop.height)
 
-    const positions = computeLayout(
-      PC_NAME,
-      (entries ?? []).map((e) => e.name),
+  const icons = useMemo<PlacedIcon[]>(() => {
+    const positions = layoutDesktopIcons(
+      [PC_NAME, ...(entries ?? []).map((e) => e.name)],
       iconPositions,
-      maxPerCol,
+      { width: areaWidth, height: areaHeight },
     )
 
     const placed: PlacedIcon[] = [
@@ -137,7 +82,7 @@ export function DesktopIcons() {
       }),
     ]
     return placed
-  }, [iconPositions, recycleCount, entries])
+  }, [iconPositions, recycleCount, entries, areaWidth, areaHeight])
 
 
   const open = (i: PlacedIcon) => {
@@ -267,10 +212,10 @@ export function DesktopIcons() {
             {isRenaming ? (
               <RenameInput
                 name={icon.name}
-                className="w-full rounded-sm border border-win-blue bg-white px-1 text-center text-[11px] text-black outline-hidden"
+                className="w-full rounded-sm border border-win-blue bg-white px-1 text-center text-xs text-black outline-hidden"
               />
             ) : (
-              <span className="text-white text-[11px] drop-shadow-lg w-full px-1 leading-tight">
+              <span className="text-white text-xs drop-shadow-lg w-full px-1 leading-tight">
                 {icon.name}
               </span>
             )}

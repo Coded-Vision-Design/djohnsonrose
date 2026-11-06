@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useOsStore } from '../store/osStore'
 import { playSound } from '../lib/sounds'
 import { cssUrl } from '../../../assets/js/windowing/shell-core.js'
+import { whenDesktopReady } from './signIn'
 
 const formatLockTime = (d: Date) =>
   d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })
@@ -10,8 +11,8 @@ const formatLockDate = (d: Date) =>
   d.toLocaleDateString([], { weekday: 'long', month: 'long', day: 'numeric' })
 
 // Mirrors partials/login.php: profile + name + Sign In button on top of the
-// current wallpaper, with a large clock in the bottom-right corner. The 3000ms
-// sign-in animation matches v1's shell.js login() exactly.
+// current wallpaper, with a large clock in the bottom-right corner. Signing in
+// waits for the desktop as v1's shell.js login() does.
 export function LockScreen() {
   const login = useOsStore((s) => s.login)
   const wallpaper = useOsStore((s) => s.settings.wallpaper)
@@ -27,7 +28,8 @@ export function LockScreen() {
     if (signingIn) return
     setSigningIn(true)
     playSound('startup')
-    window.setTimeout(login, 3000)
+    // Until the desktop is ready, not a fixed time. See signIn.ts.
+    void whenDesktopReady().then(login)
   }
 
   return (

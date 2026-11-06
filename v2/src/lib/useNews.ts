@@ -5,27 +5,32 @@ interface NewsApiResponse {
   news?: NewsItem[]
 }
 
-// Fetches news lazily — only when the widgets panel is opened for the first
-// time, mirroring the v1 behavior in shell.js `toggleWidgets`.
+// Fetches news lazily, only when the widgets panel is opened, mirroring v1's
+// shell.js `toggleWidgets`. A failure is shown in Widgets, and the next
+// opening tries again.
 export function useNewsOnDemand() {
   const widgetsOpen = useOsStore((s) => s.widgetsOpen)
   const hasNews = useOsStore((s) => s.news.length > 0)
   const setNews = useOsStore((s) => s.setNews)
+  const setNewsStatus = useOsStore((s) => s.setNewsStatus)
 
   useEffect(() => {
     if (!widgetsOpen || hasNews) return
     let cancelled = false
+    setNewsStatus('loading')
     fetch(`/api/news.php?t=${Date.now()}`)
-      .then((r) => r.json())
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`))))
       .then((data: NewsApiResponse) => {
         if (cancelled) return
-        if (data.news) setNews(data.news)
+        const news = Array.isArray(data.news) ? data.news : []
+        setNews(news)
+        setNewsStatus(news.length ? 'ready' : 'error')
       })
       .catch(() => {
-        /* swallow — UI shows a loading state */
+        if (!cancelled) setNewsStatus('error')
       })
     return () => {
       cancelled = true
     }
-  }, [widgetsOpen, hasNews, setNews])
+  }, [widgetsOpen, hasNews, setNews, setNewsStatus])
 }

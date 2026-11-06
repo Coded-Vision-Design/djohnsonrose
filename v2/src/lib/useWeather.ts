@@ -32,8 +32,10 @@ export function useWeather() {
     const fetchWeather = async () => {
       try {
         const res = await fetch('/api/weather.php')
+        if (!res.ok) throw new Error(`HTTP ${res.status}`)
         const data: WeatherApiResponse = await res.json()
-        if (cancelled || !data.current_weather) return
+        if (!data.current_weather) throw new Error('No weather')
+        if (cancelled) return
         const cond = CONDITIONS[data.current_weather.weathercode] ?? {
           label: 'Cloudy',
           icon: '☁️',
@@ -43,9 +45,13 @@ export function useWeather() {
           city: data.city || 'London',
           condition: cond.label,
           icon: cond.icon,
+          status: 'ready',
         })
       } catch {
-        // Silent — taskbar already shows the loading placeholder.
+        // Widgets says so, rather than showing NaN, as v1 does. A later
+        // refresh can still succeed.
+        if (cancelled || useOsStore.getState().weather.status === 'ready') return
+        setWeather({ temp: '--', condition: 'Weather unavailable', icon: '☁️', status: 'error' })
       }
     }
 

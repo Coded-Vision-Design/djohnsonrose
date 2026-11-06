@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useOsStore, type Settings as SettingsShape } from '../../store/osStore'
 import { useWindowExtras } from '../../windowing/WindowContext'
 import { cssUrl } from '../../../../assets/js/windowing/shell-core.js'
+import { setConsent, useConsent } from '../../lib/consent'
 
 // 1:1 port of partials/apps/settings.php: five-tab Win11 Settings shell that
 // reads the same data/portfolio.json the PHP version reads. All copy below
@@ -18,12 +19,13 @@ const WALLPAPERS = [
 
 type Tab = 'system' | 'personalisation' | 'experience' | 'qualifications' | 'about'
 
+// Windows 11 icons, the same as v1's system.js.
 const NAV: { id: Tab; label: string; icon: string }[] = [
-  { id: 'system', label: 'System', icon: '💻' },
-  { id: 'personalisation', label: 'Personalisation', icon: '🎨' },
-  { id: 'experience', label: 'Experience', icon: '🏢' },
-  { id: 'qualifications', label: 'Qualifications', icon: '🎓' },
-  { id: 'about', label: 'About', icon: 'ℹ️' },
+  { id: 'system', label: 'System', icon: '/assets/img/win11/display.webp' },
+  { id: 'personalisation', label: 'Personalisation', icon: '/assets/img/win11/personalize.webp' },
+  { id: 'experience', label: 'Experience', icon: '/assets/img/win11/documents.webp' },
+  { id: 'qualifications', label: 'Qualifications', icon: '/assets/img/win11/star.svg' },
+  { id: 'about', label: 'About', icon: '/assets/img/win11/thispc.webp' },
 ]
 
 interface ExperienceRow {
@@ -85,11 +87,13 @@ const HOME_LAB = [
   { label: 'System type', value: '64-bit Full-Stack Home Lab Architecture' },
 ]
 
-function Toggle({ on, onClick }: { on: boolean; onClick: () => void }) {
+function Toggle({ on, onClick, id, label }: { on: boolean; onClick: () => void; id: string; label: string }) {
   return (
     <button
       type="button"
       onClick={onClick}
+      data-setting-toggle={id}
+      aria-label={label}
       aria-pressed={on}
       className={`w-12 h-6 rounded-full relative transition-colors ${on ? 'bg-win-blue' : 'bg-gray-400'}`}
     >
@@ -102,29 +106,24 @@ function Toggle({ on, onClick }: { on: boolean; onClick: () => void }) {
   )
 }
 
-const CONSENT_KEY = 'react.cookie.consent'
-
-function readConsent(): boolean {
-  return typeof window !== 'undefined' && window.localStorage.getItem(CONSENT_KEY) === 'true'
-}
-
 export default function Settings() {
   const settings = useOsStore((s) => s.settings)
   const updateSetting = useOsStore((s) => s.updateSetting)
+  const setTheme = useOsStore((s) => s.setTheme)
   const isMobile = useOsStore((s) => s.isMobile)
   const { currentTab } = useWindowExtras<{ currentTab?: Tab }>()
   const [tab, setTab] = useState<Tab>(currentTab ?? 'system')
-  const [preview, setPreview] = useState<string | null>(null)
+  // The wallpaper being previewed shows on the desktop too, as in v1.
+  const preview = useOsStore((s) => s.previewWallpaper)
+  const setPreview = useOsStore((s) => s.setPreviewWallpaper)
   const [data, setData] = useState<Portfolio | null>(null)
-  const [consent, setConsent] = useState<boolean>(readConsent)
-
-  const toggleConsent = () => {
-    const next = !consent
-    window.localStorage.setItem(CONSENT_KEY, String(next))
-    setConsent(next)
-  }
+  // Shared with the cookie banner, so a choice made there shows here at once.
+  const consent = useConsent() === true
 
   const currentWallpaper = preview ?? settings.wallpaper
+
+  // Closing Settings drops a preview that was never saved.
+  useEffect(() => () => setPreview(null), [setPreview])
 
   useEffect(() => {
     fetch('/data/portfolio.json', { credentials: 'same-origin' })
@@ -167,7 +166,7 @@ export default function Settings() {
             />
             <div>
               <div className="font-semibold text-sm">DeVanté Johnson-Rose</div>
-              <div className="text-[10px] text-gray-500">Local Account</div>
+              <div className="text-xs text-gray-500">Local Account</div>
             </div>
           </div>
         )}
@@ -178,15 +177,17 @@ export default function Settings() {
               <button
                 key={item.id}
                 type="button"
+                data-settings-nav={item.id}
+                aria-current={active ? 'page' : undefined}
                 onClick={() => setTab(item.id)}
-                className={`px-4 py-2 rounded-full whitespace-nowrap text-[10px] font-medium flex items-center transition-all border ${
+                className={`px-4 py-2 rounded-full whitespace-nowrap text-xs font-medium flex items-center transition-all border ${
                   active
                     ? 'bg-white dark:bg-white/10 shadow-xs border-win-blue text-win-blue'
                     : 'border-transparent'
                 }`}
               >
-                <span className="mr-1 text-sm">{item.icon}</span>
-                {item.label}
+                <img src={item.icon} alt="" className="w-4 h-4 mr-1 object-contain shrink-0" />
+                <span>{item.label}</span>
               </button>
             )
           }
@@ -194,13 +195,15 @@ export default function Settings() {
             <button
               key={item.id}
               type="button"
+              data-settings-nav={item.id}
+              aria-current={active ? 'page' : undefined}
               onClick={() => setTab(item.id)}
               className={`w-full text-left px-3 py-2 rounded-md text-xs font-medium flex items-center transition-all border border-transparent ${
                 active ? 'bg-white dark:bg-white/10 shadow-xs' : ''
               }`}
             >
-              <span className="mr-3 text-lg">{item.icon}</span>
-              {item.label}
+              <img src={item.icon} alt="" className="w-5 h-5 mr-3 object-contain shrink-0" />
+              <span>{item.label}</span>
             </button>
           )
         })}
@@ -237,7 +240,7 @@ export default function Settings() {
                   <div className="text-xs text-gray-500">Enable or disable UI sound effects</div>
                 </div>
               </div>
-              <Toggle on={settings.sound} onClick={() => toggle('sound')} />
+              <Toggle id="sound" label="System Sounds" on={settings.sound} onClick={() => toggle('sound')} />
             </div>
 
             <div className="glass p-6 rounded-lg flex items-center justify-between border border-gray-200 dark:border-white/10">
@@ -249,10 +252,10 @@ export default function Settings() {
                 </div>
               </div>
               <Toggle
+                id="theme"
+                label="Dark Mode"
                 on={settings.theme === 'dark'}
-                onClick={() =>
-                  updateSetting('theme', settings.theme === 'dark' ? 'light' : 'dark')
-                }
+                onClick={() => setTheme(settings.theme === 'dark' ? 'light' : 'dark')}
               />
             </div>
 
@@ -262,14 +265,14 @@ export default function Settings() {
                 <span className="text-2xl mr-4">🍪</span>
                 <div>
                   <div className="font-medium">Telemetry &amp; cookies</div>
-                  <div className="text-xs text-gray-500">
+                  <div className="text-xs text-gray-500 dark:text-gray-400">
                     {consent
-                      ? 'Accepted: anonymous app-usage events are sent to /api/log.php.'
-                      : 'Declined: no telemetry is being collected.'}
+                      ? 'Accepted: the site records which apps you open and a shortened IP address.'
+                      : 'Declined: nothing is recorded.'}
                   </div>
                 </div>
               </div>
-              <Toggle on={consent} onClick={toggleConsent} />
+              <Toggle id="consent" label="Telemetry and cookies" on={consent} onClick={() => setConsent(!consent)} />
             </div>
           </div>
         )}
@@ -307,7 +310,7 @@ export default function Settings() {
                     <button
                       type="button"
                       onClick={() => setPreview(null)}
-                      className="text-xs hover:underline opacity-60"
+                      className="text-xs hover:underline opacity-70"
                     >
                       Reset
                     </button>
@@ -322,6 +325,8 @@ export default function Settings() {
                   key={wp.id}
                   type="button"
                   onClick={() => setPreview(wp.url)}
+                  data-wallpaper={wp.id}
+                  aria-label={wp.id}
                   className={`relative rounded-md overflow-hidden aspect-square border-2 transition-all hover:scale-105 ${
                     currentWallpaper === wp.url
                       ? 'border-win-blue ring-2 ring-win-blue/20 shadow-lg'
@@ -365,7 +370,7 @@ export default function Settings() {
                   <div className="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] glass p-6 rounded-lg border border-gray-200 dark:border-white/10 shadow-xs transition-all hover:border-win-blue/50">
                     <div className="flex items-center justify-between space-x-2 mb-1">
                       <div className="font-bold dark:text-white text-base">{job.role}</div>
-                      <time className="font-mono text-[10px] text-win-blue font-bold whitespace-nowrap bg-win-blue/10 px-2 py-0.5 rounded-sm">
+                      <time className="font-mono text-xs text-win-blue font-bold whitespace-nowrap bg-win-blue/10 px-2 py-0.5 rounded-sm">
                         {job.period}
                       </time>
                     </div>
@@ -411,7 +416,7 @@ export default function Settings() {
               <h3 className="text-lg font-bold mb-4 flex items-center">
                 <span className="mr-3">📜</span> Certifications
                 {data?.certifications && (
-                  <span className="ml-2 text-[10px] font-normal opacity-60">
+                  <span className="ml-2 text-xs font-normal opacity-60">
                     ({data.certifications.length} credentials)
                   </span>
                 )}
@@ -425,7 +430,7 @@ export default function Settings() {
                     <div className="font-bold text-xs mb-1 group-hover:text-win-blue transition-colors">
                       {cert.name}
                     </div>
-                    <div className="text-[10px] text-gray-500 uppercase tracking-widest flex justify-between">
+                    <div className="text-xs text-gray-500 uppercase tracking-widest flex justify-between">
                       <span>{cert.issuer}</span>
                       {cert.year && <span className="opacity-60">{cert.year}</span>}
                     </div>
@@ -494,7 +499,7 @@ export default function Settings() {
                   {(data?.interests ?? []).map((interest) => (
                     <span
                       key={interest}
-                      className="px-2 py-1 bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-sm text-[10px] font-medium"
+                      className="px-2 py-1 bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-sm text-xs font-medium"
                     >
                       {interest}
                     </span>
@@ -508,7 +513,7 @@ export default function Settings() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {HOME_LAB.map((spec) => (
                   <div key={spec.label} className="space-y-1">
-                    <div className="text-[10px] uppercase text-gray-500">{spec.label}</div>
+                    <div className="text-xs uppercase text-gray-500">{spec.label}</div>
                     <div className="text-sm dark:text-white font-medium">{spec.value}</div>
                   </div>
                 ))}
@@ -532,8 +537,8 @@ function SkillCard({
 }) {
   const chip =
     tone === 'blue'
-      ? 'px-2 py-1 bg-win-blue/10 border border-win-blue/20 rounded-sm text-[10px] font-medium'
-      : 'px-2 py-1 bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-sm text-[10px] font-medium'
+      ? 'px-2 py-1 bg-win-blue/10 border border-win-blue/20 rounded-sm text-xs font-medium'
+      : 'px-2 py-1 bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-sm text-xs font-medium'
   return (
     <div className="p-6 glass rounded-lg border border-gray-200 dark:border-white/10">
       <div className="font-bold text-xs uppercase text-gray-400 mb-4 tracking-wider">{label}</div>

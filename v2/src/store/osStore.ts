@@ -33,7 +33,20 @@ import {
   type FileClipboard,
   type IconSize,
 } from '../../../assets/js/windowing/file-ops.js'
+import {
+  animateWindowOut,
+  initialTheme,
+  quickTogglePatch,
+  recentKey,
+  type QuickToggle,
+} from '../../../assets/js/windowing/shell-ui.js'
 import { filesystem, type FileSystem, type FsEntry } from '../data/filesystem'
+
+const prefersDark = () => !!window.matchMedia?.('(prefers-color-scheme: dark)').matches
+
+/** Plays the close or minimise animation on a copy of the window. See shell-ui.js. */
+const animateOut = (id: number, kind: 'close' | 'minimise') =>
+  animateWindowOut(document.getElementById(`win-${id}`), kind)
 
 // The file system is saved on its own, and only when it changes: it is far too
 // big to go through persist below, which writes on every state change.
@@ -110,7 +123,11 @@ export interface Weather {
   city: string
   condition: string
   icon: string
+  /** So that Widgets can say when the forecast failed, as v1 does. */
+  status?: 'loading' | 'ready' | 'error'
 }
+
+export type NewsStatus = 'loading' | 'ready' | 'error'
 
 export interface NewsItem {
   id?: string | number
@@ -193,6 +210,12 @@ interface OsState {
 
   // Settings (persisted)
   settings: Settings
+  /** Whether the visitor picked the theme. Until they do, it follows the system. */
+  themeChosen: boolean
+  /** A wallpaper Settings is previewing on the desktop, before it is saved. */
+  previewWallpaper: string | null
+  /** When Start's Recommended items were last opened, by key. */
+  recent: Record<string, number>
 
   // Logs (in-memory, capped)
   eventLogs: EventLog[]
@@ -207,6 +230,7 @@ interface OsState {
   clock: Clock
   weather: Weather
   news: NewsItem[]
+  newsStatus: NewsStatus
 
   /** Reported by the browser where it can, which is not persisted. */
   battery: { level: number; charging: boolean }
@@ -265,8 +289,18 @@ interface OsState {
   runShortcut: (shortcut: Shortcut) => boolean
 
   updateSetting: <K extends keyof Settings>(key: K, value: Settings[K]) => void
+  /** A theme chosen in Settings, which wins over the system's from then on. */
+  setTheme: (theme: Settings['theme']) => void
+  /** One Quick Settings toggle, with the settings tied to it. See quickTogglePatch. */
+  toggleQuickSetting: (id: QuickToggle) => void
+  setPreviewWallpaper: (url: string | null) => void
 
-  logEvent: (source: string, level: EventLog['level'], description: string) => void
+  logEvent: (
+    source: string,
+    level: EventLog['level'],
+    description: string,
+    details?: Record<string, unknown>,
+  ) => void
 
   // Chrome toggles
   toggleStartMenu: () => void
@@ -279,6 +313,7 @@ interface OsState {
   setClock: (clock: Clock) => void
   setWeather: (weather: Partial<Weather>) => void
   setNews: (news: NewsItem[]) => void
+  setNewsStatus: (status: NewsStatus) => void
 
   // Files. Each change comes from a function in file-ops.js.
   changeFiles: (change: (fs: FileSystem) => FileSystem) => void
@@ -316,6 +351,9 @@ interface OsState {
 interface PersistedSlice {
   loggedIn: boolean
   settings: Settings
+  themeChosen: boolean
+  pinnedApps: string[]
+  recent: Record<string, number>
   startPins: string[]
   favourites: string[]
   desktopIconSize: IconSize
@@ -346,7 +384,8 @@ export const useOsStore = create<OsState>()(
       windowMode: initialMode(),
 
       settings: {
-        theme: 'light',
+        // A first visit follows the system. See the merge below for later ones.
+        theme: initialTheme(null, prefersDark()),
         sound: true,
         volume: 75,
         brightness: 100,
@@ -358,6 +397,9 @@ export const useOsStore = create<OsState>()(
         nightLight: false,
         accessibility: false,
       },
+      themeChosen: false,
+      previewWallpaper: null,
+      recent: {},
 
       eventLogs: [],
 
@@ -367,8 +409,9 @@ export const useOsStore = create<OsState>()(
       pinnedApps,
 
       clock: { time: '', date: '' },
-      weather: { temp: '--', condition: 'Loading...', icon: '☁️', city: 'London' },
+      weather: { temp: '--', condition: 'Loading...', icon: '☁️', city: 'London', status: 'loading' },
       news: [],
+      newsStatus: 'loading',
 
       fileSystem: savedFiles(),
       fileClipboard: null,
@@ -411,6 +454,8 @@ export const useOsStore = create<OsState>()(
       },
 
       openApp: (app, title, options) => {
+        const recent = recentKey(app, options?.extra)
+        if (recent) set({ recent: { ...get().recent, [recent]: Date.now() } })
         const state = get()
         // Launching an app always closes start/quick-settings/widgets popups.
         if (
@@ -467,10 +512,10 @@ export const useOsStore = create<OsState>()(
           focusedWindowId: id,
           nextWindowZ: state.nextWindowZ + 1,
         })
-        // Single System logEvent matches v1's openApp — the logEvent router
+        // Single System logEvent matches v1's openApp: the logEvent router
         // already emails on System source, so an explicit track('Open App')
-        // here would double-fire every email.
-        get().logEvent('System', 'Information', `Starting application: ${w.title}`)
+        // here would double-fire every email. The app goes with it, as in v1.
+        get().logEvent('System', 'Information', `Starting application: ${w.title}`, { app })
       },
 
       closeWindow: (id) => {
@@ -478,6 +523,7 @@ export const useOsStore = create<OsState>()(
         const win = state.windows.find((w) => w.id === id)
         if (win) {
           state.logEvent('System', 'Information', `Closing application: ${win.title}`)
+          animateOut(id, 'close')
         }
         const remaining = state.windows.filter((w) => w.id !== id)
         set({
@@ -488,6 +534,8 @@ export const useOsStore = create<OsState>()(
               : state.focusedWindowId,
           snapAssist: null,
           snapFlyout: state.snapFlyout?.windowId === id ? null : state.snapFlyout,
+          // Closing Settings drops a wallpaper it was only previewing, as in v1.
+          ...(win?.app === 'settings' ? { previewWallpaper: null } : {}),
         })
       },
 
@@ -515,6 +563,7 @@ export const useOsStore = create<OsState>()(
           get().focusWindow(id)
           return
         }
+        animateOut(id, 'minimise')
         patchWindows({ [id]: minimizePatch(win) })
         const windows = get().windows
         if (state.focusedWindowId === id) {
@@ -611,7 +660,16 @@ export const useOsStore = create<OsState>()(
         set({ settings: { ...get().settings, [key]: value } })
       },
 
-      logEvent: (source, level, description) => {
+      setTheme: (theme) => set({ settings: { ...get().settings, theme }, themeChosen: true }),
+
+      toggleQuickSetting: (id) => {
+        const settings = get().settings
+        set({ settings: { ...settings, ...quickTogglePatch(settings, id) } })
+      },
+
+      setPreviewWallpaper: (previewWallpaper) => set({ previewWallpaper }),
+
+      logEvent: (source, level, description, details = {}) => {
         const ev: EventLog = {
           id: Date.now() + Math.random(),
           time: new Date().toLocaleTimeString(),
@@ -627,7 +685,7 @@ export const useOsStore = create<OsState>()(
         // which emails the admin. Mirror that behaviour here so the event
         // viewer in v2 has the same observability surface.
         if (source === 'Security' || source === 'System' || source === 'Explorer') {
-          track(`${source}: ${level}`, { description })
+          track(`${source}: ${level}`, { description, ...details })
         }
       },
 
@@ -659,6 +717,7 @@ export const useOsStore = create<OsState>()(
       setClock: (clock) => set({ clock }),
       setWeather: (partial) => set({ weather: { ...get().weather, ...partial } }),
       setNews: (news) => set({ news }),
+      setNewsStatus: (newsStatus) => set({ newsStatus }),
 
       changeFiles: (change) => {
         const fileSystem = change(get().fileSystem)
@@ -727,12 +786,24 @@ export const useOsStore = create<OsState>()(
       partialize: (state): PersistedSlice => ({
         loggedIn: state.loggedIn,
         settings: state.settings,
+        themeChosen: state.themeChosen,
+        pinnedApps: state.pinnedApps,
+        recent: state.recent,
         startPins: state.startPins,
         favourites: state.favourites,
         desktopIconSize: state.desktopIconSize,
         desktopIconsVisible: state.desktopIconsVisible,
         iconPositions: state.iconPositions,
       }),
+      // Until the visitor picks a theme, it follows the system on every visit, as
+      // in v1. A dark theme saved before this flag existed can only have been chosen.
+      merge: (saved, current) => {
+        const persisted = (saved ?? {}) as Partial<PersistedSlice>
+        const merged = { ...current, ...persisted }
+        const chosen = persisted.themeChosen ?? persisted.settings?.theme === 'dark'
+        const theme = chosen ? merged.settings.theme : initialTheme(null, prefersDark())
+        return { ...merged, themeChosen: chosen, settings: { ...current.settings, ...merged.settings, theme } }
+      },
     },
   ),
 )
