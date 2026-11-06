@@ -48,6 +48,8 @@ export const OFFICE_ICONS = {
   find: { stroke: true, d: 'M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z' },
   replace: { stroke: true, d: 'M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z' },
   print: { stroke: true, d: 'M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z' },
+  zoomOut: { d: 'M19 13H5v-2h14v2z' },
+  zoomIn: { d: 'M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z' },
   previous: { d: 'M15.4 7.4 14 6l-6 6 6 6 1.4-1.4L10.8 12z' },
   next: { d: 'M8.6 16.6 10 18l6-6-6-6-1.4 1.4 4.6 4.6z' },
 };
@@ -103,6 +105,26 @@ export function fitScale(box, content, { min = 0.1, max = 1 } = {}) {
   return Math.min(max, Math.max(min, scale));
 }
 
+/**
+ * Calls back with the scale that fits content inside an element's padding,
+ * now and whenever the element changes size. Returns a function that stops it.
+ * A window with no size, such as a minimised one, is skipped until it has one.
+ */
+export function watchFit(element, content, onScale, options) {
+  if (!element) return () => {};
+  const measure = () => {
+    const style = getComputedStyle(element);
+    const width = element.clientWidth - parseFloat(style.paddingLeft || '0') - parseFloat(style.paddingRight || '0');
+    const height = element.clientHeight - parseFloat(style.paddingTop || '0') - parseFloat(style.paddingBottom || '0');
+    if (width <= 0) return;
+    onScale(fitScale(content.height ? { width, height } : { width }, content, options));
+  };
+  measure();
+  const observer = new ResizeObserver(measure);
+  observer.observe(element);
+  return () => observer.disconnect();
+}
+
 const MIN_PAGE_ZOOM = 0.25;
 const MAX_PAGE_ZOOM = 2;
 
@@ -112,6 +134,13 @@ export function stepPageZoom(zoom, direction) {
   const tenths = Math.round(from * 100) / 10;
   const next = (direction > 0 ? Math.floor(tenths + 1e-9) + 1 : Math.ceil(tenths - 1e-9) - 1) / 10;
   return Math.min(MAX_PAGE_ZOOM, Math.max(MIN_PAGE_ZOOM, next));
+}
+
+/** Where the zoom slider's knob sits, from 0 to 1, with 100% in the middle as Word has it. */
+export function zoomSliderAt(zoom) {
+  const value = Number.isFinite(zoom) ? zoom : 1;
+  const at = value <= 1 ? ((value - MIN_PAGE_ZOOM) / (1 - MIN_PAGE_ZOOM)) * 0.5 : 0.5 + ((value - 1) / (MAX_PAGE_ZOOM - 1)) * 0.5;
+  return Math.min(1, Math.max(0, at));
 }
 
 /** Bold, italic, underline and alignment at the caret, for the ribbon to show. */
@@ -145,6 +174,41 @@ export async function runWordCommand(command, value, doc = document, clipboard =
   } catch {
     return false;
   }
+}
+
+/**
+ * Ties the ribbon to one editor. It remembers the editor's last selection, so
+ * a command still acts on it after a select or a button has taken focus, and
+ * reports the formatting at the caret as it moves. Call stop() when done.
+ */
+export function wordEditor(editor, { onFormat } = {}, doc = document) {
+  let saved = null;
+  const inEditor = (range) => editor.contains(range.commonAncestorContainer);
+  const onSelection = () => {
+    const selection = doc.getSelection();
+    if (!selection?.rangeCount) return;
+    const range = selection.getRangeAt(0);
+    if (!inEditor(range)) return;
+    saved = range.cloneRange();
+    onFormat?.(formatState(doc));
+  };
+  doc.addEventListener('selectionchange', onSelection);
+  return {
+    async run(command, value) {
+      editor.focus({ preventScroll: true });
+      const selection = doc.getSelection();
+      if (saved && selection && !(selection.rangeCount && inEditor(selection.getRangeAt(0)))) {
+        selection.removeAllRanges();
+        selection.addRange(saved);
+      }
+      const done = await runWordCommand(command, value, doc);
+      onFormat?.(formatState(doc));
+      return done;
+    },
+    stop() {
+      doc.removeEventListener('selectionchange', onSelection);
+    },
+  };
 }
 
 const escapeHtml = (value) =>

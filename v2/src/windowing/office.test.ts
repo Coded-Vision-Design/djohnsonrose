@@ -11,14 +11,19 @@ import {
   fitScale,
   formatState,
   loadChecked,
+  pageStyles,
   portfolioDeck,
   portfolioSheet,
   printDocument,
   puttyBanner,
+  puttyPrompt,
   puttyReply,
   runWordCommand,
   slideForKey,
   stepPageZoom,
+  watchFit,
+  wordEditor,
+  zoomSliderAt,
 } from '../../../assets/js/windowing/office.js'
 
 const portfolio = {
@@ -141,6 +146,57 @@ describe('fitScale', () => {
   })
 })
 
+describe('watchFit', () => {
+  const observers: { callback: () => void; disconnect: ReturnType<typeof vi.fn> }[] = []
+  class FakeResizeObserver {
+    disconnect = vi.fn()
+    constructor(callback: () => void) {
+      observers.push({ callback, disconnect: this.disconnect })
+    }
+    observe() {}
+  }
+
+  const area = (width: number, height: number, padding = 0) => {
+    const el = document.createElement('div')
+    el.style.padding = `${padding}px`
+    document.body.append(el)
+    Object.defineProperty(el, 'clientWidth', { configurable: true, get: () => width })
+    Object.defineProperty(el, 'clientHeight', { configurable: true, get: () => height })
+    return el
+  }
+
+  it('fits now and again whenever the space changes, inside the padding', () => {
+    vi.stubGlobal('ResizeObserver', FakeResizeObserver)
+    const el = area(456, 900, 24)
+    const scales: number[] = []
+    const stop = watchFit(el, { width: WORD_PAGE_WIDTH }, (scale) => scales.push(scale))
+    expect(scales).toEqual([0.5])
+    Object.defineProperty(el, 'clientWidth', { get: () => 2000 })
+    observers.at(-1)?.callback()
+    expect(scales).toEqual([0.5, 1])
+    stop()
+    expect(observers.at(-1)?.disconnect).toHaveBeenCalled()
+    vi.unstubAllGlobals()
+  })
+
+  it('fits a slide by both edges', () => {
+    vi.stubGlobal('ResizeObserver', FakeResizeObserver)
+    const scales: number[] = []
+    watchFit(area(960, 270), SLIDE_SIZE, (scale) => scales.push(scale))
+    expect(scales[0]).toBeCloseTo(0.5)
+    vi.unstubAllGlobals()
+  })
+
+  it('waits while there is no space, as when the window is minimised', () => {
+    vi.stubGlobal('ResizeObserver', FakeResizeObserver)
+    const scales: number[] = []
+    watchFit(area(0, 0), { width: WORD_PAGE_WIDTH }, (scale) => scales.push(scale))
+    expect(scales).toEqual([])
+    expect(() => watchFit(null, SLIDE_SIZE, () => {})()).not.toThrow()
+    vi.unstubAllGlobals()
+  })
+})
+
 describe('stepPageZoom', () => {
   it('steps by ten per cent', () => {
     expect(stepPageZoom(1, 1)).toBeCloseTo(1.1)
@@ -156,6 +212,80 @@ describe('stepPageZoom', () => {
     expect(stepPageZoom(0.25, -1)).toBe(0.25)
     expect(stepPageZoom(2, 1)).toBe(2)
     expect(stepPageZoom(Number.NaN, 1)).toBeCloseTo(1.1)
+  })
+})
+
+describe('zoomSliderAt', () => {
+  it('puts 100% in the middle, as Word does', () => {
+    expect(zoomSliderAt(1)).toBeCloseTo(0.5)
+  })
+
+  it('runs from the smallest zoom to the largest', () => {
+    expect(zoomSliderAt(0.25)).toBe(0)
+    expect(zoomSliderAt(2)).toBe(1)
+    expect(zoomSliderAt(1.5)).toBeCloseTo(0.75)
+  })
+
+  it('keeps the knob on the track for any value', () => {
+    expect(zoomSliderAt(0.01)).toBe(0)
+    expect(zoomSliderAt(9)).toBe(1)
+    expect(zoomSliderAt(Number.NaN)).toBeCloseTo(0.5)
+  })
+})
+
+describe('wordEditor', () => {
+  const setup = () => {
+    const editor = html('<p>first words</p><p>second</p>')
+    editor.contentEditable = 'true'
+    document.body.append(editor)
+    const execCommand = vi.fn(() => true)
+    Object.assign(document, { execCommand, queryCommandState: (name: string) => name === 'bold' })
+    const formats: { bold: boolean }[] = []
+    const controller = wordEditor(editor, { onFormat: (format) => formats.push(format) })
+    return { editor, execCommand, formats, controller }
+  }
+  const select = (node: Node, start: number, end: number) => {
+    const range = document.createRange()
+    range.setStart(node, start)
+    range.setEnd(node, end)
+    const selection = document.getSelection() as Selection
+    selection.removeAllRanges()
+    selection.addRange(range)
+    document.dispatchEvent(new Event('selectionchange'))
+  }
+
+  it('reports the formatting wherever the caret goes in the editor', () => {
+    const { editor, formats, controller } = setup()
+    select(editor.querySelector('p')?.firstChild as Node, 0, 5)
+    expect(formats.at(-1)?.bold).toBe(true)
+    controller.stop()
+    editor.remove()
+  })
+
+  it('puts the selection back before a command, as a select or button may have taken focus', async () => {
+    const { editor, execCommand, controller } = setup()
+    const words = editor.querySelector('p')?.firstChild as Node
+    select(words, 6, 11)
+    document.getSelection()?.removeAllRanges()
+    await controller.run('bold')
+    expect(document.getSelection()?.toString()).toBe('words')
+    expect(execCommand).toHaveBeenCalledWith('bold', false, undefined)
+    controller.stop()
+    editor.remove()
+  })
+
+  it('ignores a selection outside the editor, and stops listening when stopped', () => {
+    const { editor, formats, controller } = setup()
+    const outside = document.createElement('p')
+    outside.textContent = 'elsewhere'
+    document.body.append(outside)
+    select(outside.firstChild as Node, 0, 4)
+    expect(formats).toHaveLength(0)
+    controller.stop()
+    select(editor.querySelector('p')?.firstChild as Node, 0, 5)
+    expect(formats).toHaveLength(0)
+    outside.remove()
+    editor.remove()
   })
 })
 
@@ -250,6 +380,23 @@ describe('printDocument', () => {
 
   it('does nothing when a pop-up blocker stops the window', () => {
     expect(printDocument({ title: 'CV', html: 'x' }, { open: () => null })).toBe(false)
+  })
+})
+
+describe('pageStyles', () => {
+  const page = (head: string) => new DOMParser().parseFromString(`<html><head>${head}</head><body></body></html>`, 'text/html')
+
+  it('copies the stylesheets and style blocks, in order', () => {
+    const doc = page('<link rel="stylesheet" href="/assets/css/app.css"><style>p { color: red }</style>')
+    expect(pageStyles(doc)).toBe('<link rel="stylesheet" href="/assets/css/app.css"><style>p { color: red }</style>')
+  })
+
+  it('leaves out links that are not stylesheets', () => {
+    expect(pageStyles(page('<link rel="icon" href="/favicon.ico"><link rel="preload" href="/a.css">'))).toBe('')
+  })
+
+  it('copies nothing from a page without styles', () => {
+    expect(pageStyles(page(''))).toBe('')
   })
 })
 
@@ -391,6 +538,16 @@ describe('PuTTY', () => {
     expect(banner[0]).toBe('login as: devante')
     expect(banner).toContain('Last login: Fri Nov  6 09:05:01 2026 from 192.168.1.10')
     expect(banner.some((line) => line.includes('Welcome to Ubuntu'))).toBe(true)
+  })
+
+  it('dates the last login now when no date is given', () => {
+    expect(puttyBanner({ host: 'h' }).some((line) => /^Last login: \w{3} \w{3} [ \d]\d \d\d:\d\d:\d\d \d{4} from /.test(line))).toBe(true)
+  })
+
+  it('prompts with the short host name, or the whole address', () => {
+    expect(puttyPrompt('staging.example.co.uk')).toBe('devante@staging:~$')
+    expect(puttyPrompt('192.168.1.42')).toBe('devante@192.168.1.42:~$')
+    expect(puttyPrompt('')).toBe('devante@:~$')
   })
 
   it('answers the commands it knows', () => {

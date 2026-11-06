@@ -28,6 +28,8 @@ export const OFFICE_ICONS: Record<
   | 'find'
   | 'replace'
   | 'print'
+  | 'zoomOut'
+  | 'zoomIn'
   | 'previous'
   | 'next',
   OfficeIcon
@@ -41,7 +43,14 @@ export interface FitBox {
   height?: number
 }
 export function fitScale(box: FitBox, content: FitBox, options?: { min?: number; max?: number }): number
+export function watchFit(
+  element: HTMLElement | null | undefined,
+  content: FitBox,
+  onScale: (scale: number) => void,
+  options?: { min?: number; max?: number },
+): () => void
 export function stepPageZoom(zoom: number, direction: number): number
+export function zoomSliderAt(zoom: number): number
 
 export type WordAlign = 'left' | 'center' | 'right' | 'justify'
 export interface WordFormat {
@@ -75,6 +84,16 @@ export function runWordCommand(
   doc?: Pick<Document, 'execCommand'>,
   clipboard?: Pick<Clipboard, 'readText'>,
 ): Promise<boolean>
+
+export interface WordEditor {
+  run(command: WordCommand, value?: string): Promise<boolean>
+  stop(): void
+}
+export function wordEditor(
+  editor: HTMLElement,
+  options?: { onFormat?: (format: WordFormat) => void },
+  doc?: Document,
+): WordEditor
 
 export interface PrintOpener {
   open(url: string, target: string, features: string): PrintWindow | null
