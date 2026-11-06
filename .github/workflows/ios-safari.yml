@@ -1,0 +1,92 @@
+name: iOS Safari
+
+# Both builds in real Mobile Safari on Apple's iOS Simulator. Playwright's WebKit
+# is Safari's engine but not Safari, and only a Mac can run iOS, so this checks
+# what WebKit alone cannot: iOS's own long press, pinch and on-screen keyboard.
+# It is slow, so it runs on demand and when touch handling changes off main.
+
+on:
+  workflow_dispatch:
+  push:
+    branches-ignore: [main]
+    paths:
+      - "assets/js/**"
+      - "assets/css/**"
+      - "partials/**"
+      - "v2/src/**"
+      - ".github/ci/ios-*"
+      - ".github/workflows/ios-safari.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ios-safari-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  safari:
+    name: Safari on iPhone
+    runs-on: macos-15
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: v2/package-lock.json
+
+      - name: Build v2
+        working-directory: v2
+        run: |
+          npm ci --ignore-scripts --no-audit --no-fund
+          npm run build
+
+      - name: Serve both builds
+        run: |
+          command -v php >/dev/null || brew install php
+          php -v | head -1
+          nohup php -S localhost:8765 -t . .github/ci/ios-router.php > /tmp/php.log 2>&1 &
+          curl --fail --silent --show-error --output /dev/null --retry 15 --retry-delay 1 --retry-connrefused http://localhost:8765/
+          curl --fail --silent --show-error --output /dev/null http://localhost:8765/v2/
+
+      - name: Install Appium and its iOS driver
+        run: |
+          npm install --global --no-audit --no-fund appium@3
+          appium driver install xcuitest
+          mkdir -p /tmp/ios
+          cp .github/ci/ios-safari.mjs /tmp/ios/
+          cd /tmp/ios
+          npm init --yes > /dev/null
+          npm install --no-audit --no-fund webdriverio@9
+
+      - name: Pick an iPhone
+        run: |
+          node .github/ci/ios-pick-simulator.mjs | tee -a "$GITHUB_ENV"
+          # The on-screen keyboard only appears with no hardware keyboard attached.
+          defaults write com.apple.iphonesimulator ConnectHardwareKeyboard -bool false
+
+      - name: Start Appium
+        run: |
+          nohup appium --port 4723 --log /tmp/appium.log --log-timestamp > /dev/null 2>&1 &
+          for attempt in $(seq 1 30); do curl --silent --fail http://127.0.0.1:4723/status > /dev/null && exit 0; sleep 2; done
+          echo "Appium did not start" && exit 1
+
+      - name: Check both builds in Safari
+        env:
+          OUT: ${{ github.workspace }}/ios-results
+        run: node /tmp/ios/ios-safari.mjs
+
+      - name: Keep screenshots and logs
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: ios-safari
+          path: |
+            ios-results
+            /tmp/appium.log
+            /tmp/php.log
+          retention-days: 14
+          if-no-files-found: ignore
