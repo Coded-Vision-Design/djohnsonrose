@@ -182,6 +182,8 @@ for (const build of BUILDS) {
       const win = windowOf(page, 'Notepad')
       await expect(win).toBeVisible()
       await expect(banner(page)).toBeVisible()
+      // v2's banner scales in, so measure it once the animation is over.
+      await banner(page).evaluate((el) => Promise.all(el.getAnimations().map((a) => a.finished)))
 
       const bar = (await banner(page).boundingBox())!
       const taskbar = (await page.locator('.os-taskbar').boundingBox())!
@@ -589,8 +591,8 @@ for (const build of BUILDS) {
       await openApp(page, build, 'calculator')
       await expect(windowOf(page, 'Calculator')).toBeVisible()
       const played = await page.evaluate(() => (window as unknown as { played: string[] }).played)
-      expect(played.some((src) => src.includes('Windows Logon.wav'))).toBe(true)
-      expect(played.filter((src) => /click\.wav|Windows Restore\.wav/.test(src))).toEqual([])
+      expect(played.some((src) => src.includes('Windows Logon.m4a'))).toBe(true)
+      expect(played.filter((src) => /click|Windows Restore|Windows Minimize/.test(src))).toEqual([])
     })
   })
 

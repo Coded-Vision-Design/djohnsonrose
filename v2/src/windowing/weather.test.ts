@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { weatherCondition, weatherFromApi } from '../../../assets/js/windowing/weather.js'
+import { weatherCondition, weatherFromApi, weatherFromResponse } from '../../../assets/js/windowing/weather.js'
 
 // The weather words both builds show for Open-Meteo's WMO codes.
 
@@ -45,5 +45,27 @@ describe('weatherFromApi', () => {
     expect(weatherFromApi({})).toBeNull()
     expect(weatherFromApi(null)).toBeNull()
     expect(weatherFromApi({ current_weather: { temperature: Number.NaN, weathercode: 1 } })).toBeNull()
+  })
+})
+
+describe('weatherFromResponse', () => {
+  const reply = (status: number, body: string) =>
+    new Response(body, { status, headers: { 'Content-Type': 'application/json' } })
+
+  it('reads the weather from a good reply', async () => {
+    const res = reply(200, JSON.stringify({ current_weather: { temperature: 9.4, weathercode: 3 }, city: 'Essex' }))
+    await expect(weatherFromResponse(res)).resolves.toMatchObject({ temp: 9, city: 'Essex' })
+  })
+
+  // Chrome keeps a request open until its body is read, so an unread error
+  // reply would stop the page ever going quiet on the network.
+  it('reads the body of an error reply too, then fails', async () => {
+    const res = reply(503, JSON.stringify({ error: 'Weather service unavailable' }))
+    await expect(weatherFromResponse(res)).rejects.toThrow('HTTP 503')
+    expect(res.bodyUsed).toBe(true)
+  })
+
+  it('fails on a good reply with no weather in it', async () => {
+    await expect(weatherFromResponse(reply(200, 'not json'))).rejects.toThrow('No weather')
   })
 })

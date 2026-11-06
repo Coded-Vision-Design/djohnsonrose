@@ -580,8 +580,8 @@ for (const build of BUILDS) {
   })
 }
 
-// The test browser cannot play H.264, so the clip is served as the WebM copy.
-const WEBM = new URL('../../data/south-africa-25.webm', import.meta.url)
+// The test browser cannot play H.264, so a four-second WebM test card stands in for the clip.
+const WEBM = new URL('./fixtures/clip.webm', import.meta.url)
 
 for (const build of BUILDS) {
   test.describe(`${build.name} Video`, () => {

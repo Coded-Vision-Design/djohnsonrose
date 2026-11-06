@@ -65,3 +65,16 @@ export function weatherFromApi(data) {
     icon: condition.icon,
   };
 }
+
+/**
+ * The weather in a reply from api/weather.php, or an error. The body is read
+ * either way: Chrome keeps a request open until it is, so an unread error
+ * reply would stop the page ever going quiet on the network.
+ */
+export async function weatherFromResponse(res) {
+  const data = await res.json().catch(() => null);
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const weather = weatherFromApi(data);
+  if (!weather) throw new Error('No weather');
+  return weather;
+}

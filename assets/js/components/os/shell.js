@@ -293,11 +293,8 @@ document.addEventListener('alpine:init', () => {
         async fetchWeather() {
             try {
                 const res = await fetch(`${window.portfolioConfig.basePath}api/weather.php`);
-                if (!res.ok) throw new Error(`HTTP ${res.status}`);
-                const data = await res.json();
-                // The codes are read in assets/js/windowing/weather.js, shared with v2.
-                const weather = OsWindowing.weatherFromApi(data);
-                if (!weather) throw new Error('No weather');
+                // The reply is read in assets/js/windowing/weather.js, shared with v2.
+                const weather = await OsWindowing.weatherFromResponse(res);
                 Object.assign(this.weather, weather, { status: 'ready' });
             } catch (e) {
                 // Widgets says so, rather than showing NaN. A later refresh can still succeed.

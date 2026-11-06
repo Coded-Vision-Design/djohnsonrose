@@ -84,11 +84,20 @@ for (const build of BUILDS) {
           return audio
         } as unknown as typeof Audio
       })
-      await boot(page, build.url)
-      await page.locator('button:has(img[src$="startmenu.webp"])').first().click()
+      // Signed out, so signing in plays the logon sound.
+      await page.addInitScript(() => {
+        localStorage.setItem('cookie.consent', 'false')
+        localStorage.setItem('react.cookie.consent', 'false')
+      })
+      await page.route('**/api/log.php', (route) => route.fulfill({ status: 204, body: '' }))
+      await page.goto(build.url)
+      await page.getByRole('button', { name: 'Sign In' }).click({ timeout: 20_000 })
+      await page.locator('[data-desktop-item="Recycle Bin"]').waitFor({ timeout: 20_000 })
       const played = await page.evaluate(() => (window as unknown as { __played: string[] }).__played)
-      expect(played.at(-1)).toMatch(/\/assets\/sounds\/click\.m4a$/)
-      for (const name of ['click', 'Windows Logon']) {
+      expect(played.map((src) => decodeURIComponent(src))).toContainEqual(
+        expect.stringMatching(/\/assets\/sounds\/Windows Logon\.m4a$/),
+      )
+      for (const name of ['Windows Logon', 'Windows Error', 'Windows Notify', 'Windows Recycle', 'Windows User Account Control']) {
         const res = await page.request.get(new URL(`/assets/sounds/${name}.m4a`, page.url()).href)
         expect(res.ok(), name).toBe(true)
         const body = await res.body()
