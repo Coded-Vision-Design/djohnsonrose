@@ -61,8 +61,9 @@ $references = [];
 $it = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($root, FilesystemIterator::SKIP_DOTS));
 foreach ($it as $file) {
     $path = str_replace('\\', '/', (string)$file);
-    // Tests may name them, to check that they stay gone.
-    if (preg_match('#/(node_modules|\.git|dist|test-results|playwright-report|tests/php|v2/e2e)/#', $path)) continue;
+    // Tests may name them, to check that they stay gone. Worktrees under .claude
+    // are other copies of the repo, not references.
+    if (preg_match('#/(node_modules|\.git|\.claude|dist|test-results|playwright-report|tests/php|v2/e2e)/#', $path)) continue;
     if (!preg_match('/\.(php|js|ts|tsx|json|md|txt|xml|yml)$/', $path)) continue;
     $text = (string)file_get_contents($path);
     if (str_contains($text, 'database_query') || str_contains($text, 'sitemaps.php')) $references[] = substr($path, strlen($root) + 1);
