@@ -104,6 +104,34 @@ const menuItems = () =>
     [...document.querySelectorAll('[data-menu-item]')].filter((item) => item.offsetParent).map((item) => item.dataset.menuItem),
   )
 
+// v1 keeps some dialogs in the page while hidden, so only count those on screen.
+const visibleDialogs = () =>
+  driver.execute(() => [...document.querySelectorAll('[role="dialog"]')].filter((el) => el.getClientRects().length).length)
+
+/** Records what iOS sends during a gesture, and when a menu opens or closes. */
+const startRecording = () =>
+  driver.execute(() => {
+    const start = performance.now()
+    window.__log = []
+    window.__stamp = (text) => {
+      if (window.__log.length < 40) window.__log.push(`${Math.round(performance.now() - start)}ms ${text}`)
+    }
+    if (window.__recording) return
+    window.__recording = true
+    for (const type of ['touchstart', 'touchend', 'touchcancel', 'pointerdown', 'pointerup', 'pointercancel', 'contextmenu', 'dragstart', 'mousedown', 'click']) {
+      addEventListener(type, (event) => window.__stamp(`${type} ${event.target?.tagName ?? ''}`), { capture: true, passive: true })
+    }
+    const menuOpen = () => [...document.querySelectorAll('[data-menu-item]')].some((el) => el.getClientRects().length)
+    new MutationObserver(() => {
+      const open = menuOpen()
+      if (open !== window.__menuOpen) {
+        window.__menuOpen = open
+        window.__stamp(open ? 'MENU OPEN' : 'menu closed')
+      }
+    }).observe(document.body, { subtree: true, childList: true, attributes: true })
+  })
+const recording = () => driver.execute(() => (window.__log ?? []).join(' | '))
+
 const closeMenus = () =>
   driver.execute(() => {
     document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))
@@ -149,7 +177,7 @@ async function run(name, url) {
   await hold(await centreOf(`[data-desktop-item="${FILE}"]`))
   let items = await menuItems()
   ok(`${name} long press on a desktop icon opens its menu`, items.includes('Copy as path'), items.slice(0, 3).join(', '))
-  ok(`${name} that long press does not open the file`, (await driver.execute(() => document.querySelectorAll('[role="dialog"]').length)) === 0)
+  ok(`${name} that long press does not open the file`, (await visibleDialogs()) === 0)
   await shot(`${name}-icon-menu`)
   await closeMenus()
   await sleep(400)
@@ -212,10 +240,13 @@ async function run(name, url) {
   })
   await sleep(1200)
   for (const part of ['icon', 'label']) {
+    await startRecording()
     await driver.execute('mobile: touchAndHold', { ...screenThird(await centreOf('[data-explorer-file]', part)), duration: 1.0 })
     await sleep(700)
     items = await menuItems()
-    ok(`${name} long press on a file's ${part} in Explorer opens its menu`, items.includes('Copy as path'), items.slice(0, 3).join(', '))
+    const opened = items.includes('Copy as path')
+    ok(`${name} long press on a file's ${part} in Explorer opens its menu`, opened, items.slice(0, 3).join(', '))
+    if (!opened) console.log(`      what iOS sent: ${await recording()}`)
     await shot(`${name}-explorer-${part}`)
     await closeMenus()
     await sleep(500)
