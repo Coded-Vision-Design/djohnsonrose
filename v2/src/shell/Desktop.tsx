@@ -113,7 +113,7 @@ export function Desktop() {
   return (
     <div
       data-os-desktop=""
-      className="relative h-dvh w-dvw overflow-hidden bg-cover bg-center touch-none"
+      className="relative h-dvh w-dvw overflow-hidden bg-[#381759] bg-cover bg-center touch-none"
       style={{ backgroundImage: cssUrl(wallpaper) }}
       onContextMenu={(e) => {
         const target = e.target as Element

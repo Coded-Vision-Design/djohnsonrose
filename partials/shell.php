@@ -34,6 +34,7 @@
     <link rel="manifest" href="<?php echo BASE_PATH; ?>manifest.json">
     <link rel="preload" as="image" href="<?php echo IMG_PATH; ?>startmenu.webp">
     <link rel="preload" as="image" href="<?php echo IMG_PATH; ?>settings.webp">
+    <link rel="preload" as="image" href="<?php echo IMG_PATH; ?>wallpaper-bloom.webp">
 
     <!-- JSON-LD: Person + WebSite for rich Google results -->
     <script type="application/ld+json">
@@ -128,6 +129,8 @@
     .wallpaper-bg {
         background: linear-gradient(135deg, #004a80 0%, #0078d4 100%);
         background-image: var(--wallpaper);
+        /* The default wallpaper's average colour, shown until it loads or if it fails. */
+        background-color: #381759;
         background-size: cover;
         background-position: center;
     }

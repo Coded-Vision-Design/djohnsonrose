@@ -119,7 +119,7 @@ document.addEventListener('alpine:init', () => {
             sound: localStorage.getItem('settings.sound') !== 'false',
             volume: parseInt(localStorage.getItem('settings.volume')) || 75,
             brightness: parseInt(localStorage.getItem('settings.brightness')) || 100,
-            wallpaper: localStorage.getItem('settings.wallpaper') || 'https://images.unsplash.com/photo-1620641788421-7a1c342ea42e?q=80&w=1974&auto=format&fit=crop',
+            wallpaper: localStorage.getItem('settings.wallpaper') || window.portfolioConfig.imgPath + 'wallpaper-bloom.webp',
             email: window.portfolioConfig.email,
             wifi: localStorage.getItem('settings.wifi') !== 'false',
             bluetooth: localStorage.getItem('settings.bluetooth') !== 'false',
