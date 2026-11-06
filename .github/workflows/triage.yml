@@ -1,6 +1,16 @@
-# Per-repo caller for the org-level reusable issue-triage workflow.
-# Deployed to every active CVD repo by scripts/install-triage-claude.ps1
-# in cdv-vps-ops.
+# Posts an impact assessment of new issues to the #issue-triage Discord
+# channel, written by Gemini when GEMINI_API_KEY is set.
+#
+# This used to call Coded-Vision-Design/.github's reusable-issue-triage.yml
+# (installed by scripts/install-triage-claude.ps1 in cdv-vps-ops). That
+# repository is private and this one is public, and GitHub does not let a
+# public repository use a private repository's reusable workflows, so the
+# first issue would have failed the run at startup, as claude.yml's runs did.
+# The same job is now written out here instead.
+#
+# Only issues from the owner, organisation members and collaborators are
+# triaged. Anyone else's issue is skipped without starting a runner, so
+# outside text never reaches Gemini or Discord.
 name: Issue triage
 
 on:
@@ -13,7 +23,109 @@ permissions:
 
 jobs:
   triage:
-    uses: Coded-Vision-Design/.github/.github/workflows/reusable-issue-triage.yml@main
-    secrets:
-      DISCORD_ISSUE_TRIAGE_WEBHOOK: ${{ secrets.DISCORD_ISSUE_TRIAGE_WEBHOOK }}
-      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+    if: contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.issue.author_association)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Short-circuit if no webhook configured
+        id: gate
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_ISSUE_TRIAGE_WEBHOOK }}
+        run: |
+          if [ -z "$DISCORD_WEBHOOK" ]; then
+            echo "No DISCORD_ISSUE_TRIAGE_WEBHOOK secret set, skipping the triage post."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Impact assessment via Gemini
+        id: assess
+        if: steps.gate.outputs.skip != 'true'
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          ISSUE_TITLE: ${{ github.event.issue.title }}
+          ISSUE_BODY: ${{ github.event.issue.body }}
+          ISSUE_LABELS: ${{ toJson(github.event.issue.labels) }}
+          REPO_FULL_NAME: ${{ github.repository }}
+        run: |
+          if [ -z "$GEMINI_API_KEY" ]; then
+            echo "summary=No GEMINI_API_KEY - sending template-only triage message." >> "$GITHUB_OUTPUT"
+            echo "verdict=unknown" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          # Trim the body to keep the prompt small.
+          body_trimmed=$(printf '%s' "$ISSUE_BODY" | head -c 4000)
+          payload=$(jq -n --arg t "$ISSUE_TITLE" --arg b "$body_trimmed" --arg r "$REPO_FULL_NAME" --arg l "$ISSUE_LABELS" '{
+            contents: [{
+              parts: [{
+                text: ("You are an issue-triage assistant for a small web-dev agency (Coded Vision Design). A new GitHub issue was opened in `" + $r + "`.\n\nTitle: " + $t + "\n\nBody:\n" + $b + "\n\nLabels: " + $l + "\n\nReturn a single JSON object (NOT markdown) with these fields:\n- impact (string, 1 sentence): what part of the system this likely affects\n- severity (one of: critical, high, medium, low)\n- auto_fixable (boolean): can Claude open a PR for this without human design input?\n- suggested_action (string, 1 sentence): what to do next\nReturn ONLY the JSON. No code fences.")
+              }]
+            }]
+          }')
+          # The key goes in a header, not the URL, so it never appears in a URL or log.
+          MODEL="gemini-2.5-pro"
+          resp=$(curl -sS -X POST -H "Content-Type: application/json" -H "x-goog-api-key: ${GEMINI_API_KEY}" \
+            "https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent" \
+            -d "$payload")
+          text=$(printf '%s' "$resp" | jq -r '.candidates[0].content.parts[0].text // ""')
+          # Use the fields if Gemini returned JSON, otherwise the raw text.
+          if printf '%s' "$text" | jq -e . >/dev/null 2>&1; then
+            impact=$(printf '%s' "$text" | jq -r '.impact // "(no impact provided)"')
+            severity=$(printf '%s' "$text" | jq -r '.severity // "unknown"')
+            autofix=$(printf '%s' "$text" | jq -r '.auto_fixable // false')
+            action=$(printf '%s' "$text" | jq -r '.suggested_action // ""')
+            summary=$'**Impact:** '"$impact"$'\n**Severity:** '"$severity"$'\n**Auto-fixable:** '"$autofix"$'\n**Suggested:** '"$action"
+          else
+            summary="(Gemini returned non-JSON: ${text:0:300})"
+            severity="unknown"
+          fi
+          {
+            echo "summary<<EOF_SUMMARY"
+            echo "$summary"
+            echo "EOF_SUMMARY"
+            echo "verdict=$severity"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Post to Discord
+        if: steps.gate.outputs.skip != 'true'
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_ISSUE_TRIAGE_WEBHOOK }}
+          ISSUE_URL: ${{ github.event.issue.html_url }}
+          ISSUE_TITLE: ${{ github.event.issue.title }}
+          ISSUE_USER: ${{ github.event.issue.user.login }}
+          REPO: ${{ github.repository }}
+          SUMMARY: ${{ steps.assess.outputs.summary }}
+          VERDICT: ${{ steps.assess.outputs.verdict }}
+        run: |
+          # Severity -> embed colour
+          case "$VERDICT" in
+            critical) COLOUR=15158332 ;;  # red
+            high)     COLOUR=15105570 ;;  # orange
+            medium)   COLOUR=15844367 ;;  # gold
+            low)      COLOUR=3066993  ;;  # green
+            *)        COLOUR=10070709 ;;  # neutral
+          esac
+          payload=$(jq -n \
+            --arg title "$ISSUE_TITLE" \
+            --arg url "$ISSUE_URL" \
+            --arg user "$ISSUE_USER" \
+            --arg repo "$REPO" \
+            --arg summary "$SUMMARY" \
+            --arg verdict "$VERDICT" \
+            --argjson colour "$COLOUR" '{
+              embeds: [{
+                title: $title,
+                url: $url,
+                description: $summary,
+                color: $colour,
+                fields: [
+                  {name: "Repo", value: $repo, inline: true},
+                  {name: "Opened by", value: $user, inline: true},
+                  {name: "Severity (Gemini)", value: $verdict, inline: true}
+                ],
+                footer: {text: "CVD issue triage - automated"}
+              }]
+            }')
+          curl -sS -X POST -H "Content-Type: application/json" \
+               -d "$payload" "$DISCORD_WEBHOOK"
