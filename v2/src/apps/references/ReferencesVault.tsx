@@ -60,13 +60,23 @@ async function decryptEnvelope(envelope: Envelope, password: string): Promise<st
 
 const SESSION_KEY = 'references.session'
 
+/** The letters, if the visitor has already unlocked them this session. */
+function unlockedRefs() {
+  try {
+    const cached = sessionStorage.getItem(SESSION_KEY)
+    return cached ? (JSON.parse(cached) as Reference[]) : null
+  } catch {
+    return null
+  }
+}
+
 export default function ReferencesVault() {
   const [envelope, setEnvelope] = useState<Envelope | null>(null)
   const [loadError, setLoadError] = useState<string | null>(null)
   const [password, setPassword] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [refs, setRefs] = useState<Reference[] | null>(null)
+  const [refs, setRefs] = useState<Reference[] | null>(unlockedRefs)
   const [selected, setSelected] = useState(0)
 
   useEffect(() => {
@@ -83,13 +93,6 @@ export default function ReferencesVault() {
         if (!cancelled) setLoadError(e.message)
       })
 
-    // Restore decrypted refs if the user already unlocked this session.
-    try {
-      const cached = sessionStorage.getItem(SESSION_KEY)
-      if (cached) setRefs(JSON.parse(cached) as Reference[])
-    } catch {
-      /* ignore */
-    }
     return () => {
       cancelled = true
     }

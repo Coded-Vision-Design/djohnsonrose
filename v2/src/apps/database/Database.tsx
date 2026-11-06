@@ -34,11 +34,17 @@ interface Cache {
   rows: Row[]
 }
 
+interface QueryOutcome {
+  executed: { rows: Row[]; columns: string[]; elapsed: number } | null
+  table: Table | null
+  error: string | null
+}
+
 export default function Database() {
   const [activeTable, setActiveTable] = useState<Table>('experience')
   const [query, setQuery] = useState<string>('SELECT * FROM [Portfolio_DB].[dbo].[experience]')
   const [executed, setExecuted] = useState<{ rows: Row[]; columns: string[]; elapsed: number } | null>(null)
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [resultsTab, setResultsTab] = useState<'results' | 'messages'>('results')
   const [helpOpen, setHelpOpen] = useState(false)
@@ -55,74 +61,63 @@ export default function Database() {
     return body.data ?? []
   }, [])
 
-  const runQuery = useCallback(async () => {
-    setLoading(true)
-    setError(null)
-    const started = performance.now()
-    try {
-      const ast = parse(query)
-      if (!TABLES.some((t) => t.id === ast.table)) {
-        throw new ParseError(
-          `Unknown table '${ast.table}'. Known tables: ${TABLES.map((t) => t.id).join(', ')}.`,
-        )
-      }
-      const rows = await loadTable(ast.table as Table)
-      const out = execute(ast, rows)
-      const columns = ast.columns.includes('*')
-        ? COLUMNS_BY_TABLE[ast.table as Table]
-        : ast.columns
-      setExecuted({ rows: out, columns, elapsed: performance.now() - started })
-      setActiveTable(ast.table as Table)
-    } catch (e) {
-      setExecuted(null)
-      setError((e as Error).message)
-    } finally {
-      setLoading(false)
-    }
-  }, [query, loadTable])
-
-  // Run the default query on mount + whenever the user picks a table from the
-  // tree (this also overwrites the editor so the visible SQL matches state).
-  useEffect(() => {
-    runQuery()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
-
-  const pickTable = (t: Table) => {
-    const next = `SELECT * FROM [Portfolio_DB].[dbo].[${t}]`
-    setQuery(next)
-    // Defer to next tick so query state has updated before runQuery reads it.
-    setTimeout(() => {
-      setActiveTable(t)
-      runQueryWith(next)
-    }, 0)
-  }
-
-  const runQueryWith = useCallback(
-    async (sql: string) => {
-      setLoading(true)
-      setError(null)
+  const evaluate = useCallback(
+    async (sql: string): Promise<QueryOutcome> => {
       const started = performance.now()
       try {
         const ast = parse(sql)
         if (!TABLES.some((t) => t.id === ast.table)) {
-          throw new ParseError(`Unknown table '${ast.table}'.`)
+          throw new ParseError(
+            `Unknown table '${ast.table}'. Known tables: ${TABLES.map((t) => t.id).join(', ')}.`,
+          )
         }
         const rows = await loadTable(ast.table as Table)
         const out = execute(ast, rows)
         const columns = ast.columns.includes('*')
           ? COLUMNS_BY_TABLE[ast.table as Table]
           : ast.columns
-        setExecuted({ rows: out, columns, elapsed: performance.now() - started })
+        return {
+          executed: { rows: out, columns, elapsed: performance.now() - started },
+          table: ast.table as Table,
+          error: null,
+        }
       } catch (e) {
-        setExecuted(null)
-        setError((e as Error).message)
-      } finally {
-        setLoading(false)
+        return { executed: null, table: null, error: (e as Error).message }
       }
     },
     [loadTable],
   )
+
+  const show = useCallback((outcome: QueryOutcome) => {
+    setExecuted(outcome.executed)
+    setError(outcome.error)
+    if (outcome.table) setActiveTable(outcome.table)
+    setLoading(false)
+  }, [])
+
+  const runQueryWith = useCallback(
+    (sql: string) => {
+      setLoading(true)
+      setError(null)
+      return evaluate(sql).then(show)
+    },
+    [evaluate, show],
+  )
+
+  const runQuery = useCallback(() => runQueryWith(query), [runQueryWith, query])
+
+  // Run the default query on mount.
+  useEffect(() => {
+    void evaluate(query).then(show)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // Picking a table overwrites the editor, so that the visible SQL matches.
+  const pickTable = (t: Table) => {
+    const next = `SELECT * FROM [Portfolio_DB].[dbo].[${t}]`
+    setQuery(next)
+    void runQueryWith(next)
+  }
 
   const rowCount = executed?.rows.length ?? 0
   const elapsedLabel = useMemo(() => {

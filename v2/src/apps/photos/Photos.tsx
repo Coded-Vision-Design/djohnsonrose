@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { useOsStore } from '../../store/osStore'
 import { useWindowExtras } from '../../windowing/WindowContext'
 
@@ -22,7 +22,7 @@ interface PortfolioJson {
 // on the mock filesystem is dropped — Phase 4 can wire that back in.
 export default function Photos() {
   const extras = useWindowExtras<{ imageUrl?: string }>()
-  const [items, setItems] = useState<PortfolioItem[]>([])
+  const [gallery, setGallery] = useState<PortfolioItem[]>([])
   const [index, setIndex] = useState(0)
   const [zoom, setZoom] = useState(1)
   const [rotation, setRotation] = useState(0)
@@ -32,27 +32,32 @@ export default function Photos() {
   )
   const isFocused = focusedApp === 'photos'
 
+  // When Explorer launches us with a single image URL, skip the gallery load
+  // and render that image solo.
+  const items = useMemo<PortfolioItem[]>(
+    () =>
+      extras.imageUrl
+        ? [
+            {
+              id: 0,
+              title: 'Image',
+              description: '',
+              tags: [],
+              url: '',
+              thumbnail: extras.imageUrl.replace(/^\//, ''),
+            },
+          ]
+        : gallery,
+    [extras.imageUrl, gallery],
+  )
+
   useEffect(() => {
-    // When Explorer launches us with a single image URL, skip the gallery
-    // load and render that image solo.
-    if (extras.imageUrl) {
-      setItems([
-        {
-          id: 0,
-          title: 'Image',
-          description: '',
-          tags: [],
-          url: '',
-          thumbnail: extras.imageUrl.replace(/^\//, ''),
-        },
-      ])
-      return
-    }
+    if (extras.imageUrl) return
     let cancelled = false
     fetch('/data/portfolio.json')
       .then((r) => r.json() as Promise<PortfolioJson>)
       .then((data) => {
-        if (!cancelled) setItems(data.projects)
+        if (!cancelled) setGallery(data.projects)
       })
       .catch(() => {
         /* leave empty — UI shows loading state */

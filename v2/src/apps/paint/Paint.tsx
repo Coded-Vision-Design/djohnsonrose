@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useOsStore } from '../../store/osStore'
 import { floodFill, hexToRgb, rgbToHex } from './floodFill'
 
@@ -44,7 +44,7 @@ export default function Paint() {
     }
   }
 
-  const restore = (dataUrl: string) => {
+  const restore = useCallback((dataUrl: string) => {
     const cvs = canvasRef.current
     const ctx = ctxRef.current
     if (!cvs || !ctx) return
@@ -57,21 +57,21 @@ export default function Paint() {
       ctx.lineJoin = 'round'
     }
     img.src = dataUrl
-  }
+  }, [])
 
-  const undo = () => {
+  const undo = useCallback(() => {
     if (historyStep.current > 0) {
       historyStep.current--
       restore(history.current[historyStep.current])
     }
-  }
+  }, [restore])
 
-  const redo = () => {
+  const redo = useCallback(() => {
     if (historyStep.current < history.current.length - 1) {
       historyStep.current++
       restore(history.current[historyStep.current])
     }
-  }
+  }, [restore])
 
   const clearAll = () => {
     if (!confirm('Clear the entire canvas?')) return
@@ -123,7 +123,7 @@ export default function Paint() {
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [isFocused])
+  }, [isFocused, undo, redo])
 
   const posFrom = (e: React.MouseEvent<HTMLCanvasElement>) => {
     const r = e.currentTarget.getBoundingClientRect()

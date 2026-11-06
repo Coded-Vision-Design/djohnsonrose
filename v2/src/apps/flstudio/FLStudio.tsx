@@ -62,8 +62,9 @@ export default function FLStudio() {
   const [playing, setPlaying] = useState(false)
   const [mode, setMode] = useState<'pattern' | 'song'>('pattern')
   const [bpm, setBpm] = useState(128)
-  const [currentStep, setCurrentStep] = useState(0)
-  const [songStep, setSongStep] = useState(0)
+  // The playhead only counts while playing, and rests at the start otherwise.
+  const [liveStep, setCurrentStep] = useState(0)
+  const [liveSongStep, setSongStep] = useState(0)
   const [masterVolume, setMasterVolume] = useState(0.8)
   const [hintText, setHintText] = useState('Hint: Click steps to toggle sounds')
   const [clock, setClock] = useState(() => new Date())
@@ -200,16 +201,18 @@ export default function FLStudio() {
 
   // Step scheduler — rAF + lookahead like v1's startPlayback. Refs keep the
   // callback reading the latest state without re-creating the loop.
-  const channelsRef = useRef(channels); channelsRef.current = channels
-  const bpmRef = useRef(bpm); bpmRef.current = bpm
-  const modeRef = useRef(mode); modeRef.current = mode
+  const channelsRef = useRef(channels)
+  const bpmRef = useRef(bpm)
+  const modeRef = useRef(mode)
 
   useEffect(() => {
-    if (!playing) {
-      setCurrentStep(0)
-      setSongStep(0)
-      return
-    }
+    channelsRef.current = channels
+    bpmRef.current = bpm
+    modeRef.current = mode
+  })
+
+  useEffect(() => {
+    if (!playing) return
     const ctx = setupAudio()
     if (ctx.state === 'suspended') ctx.resume()
 
@@ -241,6 +244,9 @@ export default function FLStudio() {
     raf = requestAnimationFrame(scheduler)
     return () => cancelAnimationFrame(raf)
   }, [playing, setupAudio, playChannelSound])
+
+  const currentStep = playing ? liveStep : 0
+  const songStep = playing ? liveSongStep : 0
 
   // ---- Channel mutators ----
   const toggleStep = (ci: number, si: number) => {
@@ -490,11 +496,7 @@ export default function FLStudio() {
           </button>
           <button
             type="button"
-            onClick={() => {
-              setPlaying(false)
-              setCurrentStep(0)
-              setSongStep(0)
-            }}
+            onClick={() => setPlaying(false)}
             className="p-1.5 text-gray-500 hover:text-white transition-all"
             aria-label="Stop"
           >
@@ -735,14 +737,11 @@ export default function FLStudio() {
 function Bar({ playing }: { playing: boolean }) {
   const [h, setH] = useState(20)
   useEffect(() => {
-    if (!playing) {
-      setH(8)
-      return
-    }
+    if (!playing) return
     const id = window.setInterval(() => setH(Math.random() * 40 + 5), 120)
     return () => window.clearInterval(id)
   }, [playing])
-  return <div className="w-1 bg-[#00ff00]" style={{ height: h, opacity: playing ? 1 : 0.2 }} />
+  return <div className="w-1 bg-[#00ff00]" style={{ height: playing ? h : 8, opacity: playing ? 1 : 0.2 }} />
 }
 
 function ChannelRack({
@@ -1174,6 +1173,14 @@ function MixerLane({
     }
   }, [onSetVolume])
 
+  // The meter bounces while playing, on a timer so that drawing it stays pure.
+  const [level, setLevel] = useState(0)
+  useEffect(() => {
+    if (!playing) return
+    const id = window.setInterval(() => setLevel(Math.random() * 15), 120)
+    return () => window.clearInterval(id)
+  }, [playing])
+
   const soloed =
     !isMaster &&
     channels.every((c, i) => i === track.index - 1 || c.muted) &&
@@ -1186,7 +1193,7 @@ function MixerLane({
         {Array.from({ length: 15 }).map((_, i) => {
           const colour = i > 12 ? 'bg-red-500' : i > 9 ? 'bg-yellow-500' : 'bg-green-500'
           const dim = i > 12 ? 'bg-red-500/20' : i > 9 ? 'bg-yellow-500/20' : 'bg-green-500/20'
-          const lit = playing && Math.random() * 15 > i
+          const lit = playing && level > i
           return (
             <div
               key={i}

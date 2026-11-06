@@ -1,17 +1,11 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 
 const CONSENT_KEY = 'react.cookie.consent'
 
 // Mirrors v1's cookie notification: shown once after login until the user
 // either accepts or declines. Acceptance enables telemetry (see lib/telemetry).
 export function CookieBanner() {
-  const [open, setOpen] = useState(false)
-
-  useEffect(() => {
-    if (localStorage.getItem(CONSENT_KEY) === null) {
-      setOpen(true)
-    }
-  }, [])
+  const [open, setOpen] = useState(() => localStorage.getItem(CONSENT_KEY) === null)
 
   const accept = () => {
     localStorage.setItem(CONSENT_KEY, 'true')

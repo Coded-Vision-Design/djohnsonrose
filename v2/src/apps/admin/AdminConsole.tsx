@@ -163,6 +163,31 @@ function classifyDevice(os: string | null): 'Desktop' | 'Mobile' | 'Tablet' | 'O
   return 'Other'
 }
 
+type StatsResult =
+  | { status: 'ok'; stats: StatsPayload }
+  | { status: 'signed-out' }
+  | { status: 'failed'; message: string }
+
+async function fetchMe(): Promise<MeResponse> {
+  try {
+    const r = await fetch('/api/admin_me.php', { credentials: 'same-origin' })
+    return (await r.json()) as MeResponse
+  } catch {
+    return { authenticated: false }
+  }
+}
+
+async function fetchStats(): Promise<StatsResult> {
+  try {
+    const r = await fetch('/api/stats.php', { credentials: 'same-origin' })
+    if (r.status === 401) return { status: 'signed-out' }
+    if (!r.ok) throw new Error(`Stats request failed (${r.status})`)
+    return { status: 'ok', stats: (await r.json()) as StatsPayload }
+  } catch (e) {
+    return { status: 'failed', message: (e as Error).message }
+  }
+}
+
 export default function AdminConsole() {
   const [me, setMe] = useState<MeResponse | null>(null)
   const [stats, setStats] = useState<StatsPayload | null>(null)
@@ -172,42 +197,32 @@ export default function AdminConsole() {
   const [selectedEnquiry, setSelectedEnquiry] = useState<EnquiryRow | null>(null)
   const buttonRef = useRef<HTMLDivElement>(null)
 
-  const refreshMe = useCallback(async () => {
-    try {
-      const r = await fetch('/api/admin_me.php', { credentials: 'same-origin' })
-      const body = (await r.json()) as MeResponse
-      setMe(body)
-    } catch {
+  const refreshMe = useCallback(() => fetchMe().then(setMe), [])
+
+  const showStats = useCallback((result: StatsResult) => {
+    if (result.status === 'signed-out') {
       setMe({ authenticated: false })
+      setStats(null)
+    } else if (result.status === 'failed') {
+      setAuthError(result.message)
+    } else {
+      setStats(result.stats)
     }
   }, [])
 
   const loadStats = useCallback(async () => {
     setBusy(true)
-    try {
-      const r = await fetch('/api/stats.php', { credentials: 'same-origin' })
-      if (r.status === 401) {
-        setMe({ authenticated: false })
-        setStats(null)
-        return
-      }
-      if (!r.ok) throw new Error(`Stats request failed (${r.status})`)
-      const body = (await r.json()) as StatsPayload
-      setStats(body)
-    } catch (e) {
-      setAuthError((e as Error).message)
-    } finally {
-      setBusy(false)
-    }
+    showStats(await fetchStats())
+    setBusy(false)
+  }, [showStats])
+
+  useEffect(() => {
+    void fetchMe().then(setMe)
   }, [])
 
   useEffect(() => {
-    refreshMe()
-  }, [refreshMe])
-
-  useEffect(() => {
-    if (me?.authenticated) loadStats()
-  }, [me?.authenticated, loadStats])
+    if (me?.authenticated) void fetchStats().then(showStats)
+  }, [me?.authenticated, showStats])
 
   const handleCredential = useCallback(
     async (credential: string) => {
@@ -307,7 +322,7 @@ export default function AdminConsole() {
     <Dashboard
       me={me}
       stats={stats}
-      busy={busy}
+      busy={busy || (Boolean(me?.authenticated) && !stats && !authError)}
       tab={tab}
       onTab={setTab}
       onRefresh={loadStats}
