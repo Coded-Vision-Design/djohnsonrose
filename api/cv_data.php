@@ -10,14 +10,16 @@
 //
 // Public endpoint by design: every row this returns is already visible in
 // the Word, Settings, and Photos apps. Admin-only data (event_logs,
-// email_logs) lives behind requireAdmin() in api/database_query.php.
+// email_logs) is never served here; the Admin Console reads its totals from
+// api/stats.php, behind requireAdmin().
 
 require_once __DIR__ . '/../bootstrap.php';
+require_once __DIR__ . '/../lib/request.php';
 
 header('Content-Type: application/json');
 header('Cache-Control: public, max-age=60');
 
-$table = strtolower((string)($_GET['table'] ?? ''));
+$table = strtolower(request_string($_GET, 'table') ?? '');
 $allowed = ['experience', 'projects', 'certifications', 'education', 'skills', 'achievements', 'interests'];
 
 if (!in_array($table, $allowed, true)) {
