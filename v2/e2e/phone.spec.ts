@@ -130,6 +130,42 @@ for (const build of BUILDS) {
       expect(dragged).toBe(false)
     })
 
+    test('a finger can carry a file from Explorer to the Recycle Bin', async ({ page, browserName }) => {
+      await icon(page, 'Projects').tap()
+      const file = page.locator('[data-explorer-file="Freelance"]')
+      await file.waitFor({ timeout: 20_000 })
+      // The phone's place chips; the Recycle Bin starts scrolled out of sight.
+      const bin = page.locator('[data-place-pill="Recycle Bin"]')
+      const from = await file.boundingBox()
+      if (!from) throw new Error('no file')
+      const start = { x: from.x + from.width / 2, y: from.y + from.height / 2 }
+      const nudge = { x: start.x + 20, y: start.y - 20 }
+      // Chrome's own touch input on Android; WebKit has no such door, so the page gets the events.
+      const cdp = browserName === 'chromium' ? await page.context().newCDPSession(page) : null
+      const send = async (type: 'touchStart' | 'touchMove' | 'touchEnd', point: { x: number; y: number }) => {
+        if (cdp) await cdp.send('Input.dispatchTouchEvent', { type, touchPoints: type === 'touchEnd' ? [] : [point] })
+        else await touch(page, type.toLowerCase(), [point])
+        await page.waitForTimeout(30)
+      }
+      await send('touchStart', start)
+      await page.waitForTimeout(800)
+      await send('touchMove', nudge)
+      // Starting the drag brings the bin into view.
+      await expect(page.locator('[data-touch-drag]')).toHaveCount(1)
+      await expect(bin).toBeInViewport()
+      const to = await bin.boundingBox()
+      if (!to) throw new Error('no bin')
+      const end = { x: to.x + to.width / 2, y: to.y + to.height / 2 }
+      for (let i = 1; i <= 6; i += 1) {
+        await send('touchMove', { x: nudge.x + ((end.x - nudge.x) * i) / 6, y: nudge.y + ((end.y - nudge.y) * i) / 6 })
+      }
+      await send('touchEnd', end)
+      await expect(file).toHaveCount(0)
+      await expect(page.locator('[data-touch-drag]')).toHaveCount(0)
+      await bin.click()
+      await expect(page.locator('[data-explorer-file="Freelance"]')).toBeVisible()
+    })
+
     test('a long press on the wallpaper opens the desktop menu', async ({ page, browserName }) => {
       const viewport = page.viewportSize()
       await longPress(page, browserName, (viewport?.width ?? 390) - 40, (viewport?.height ?? 800) - 200)

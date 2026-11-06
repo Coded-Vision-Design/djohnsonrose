@@ -218,6 +218,30 @@ document.addEventListener('alpine:init', () => {
             }
         },
 
+        // The Recycle Bin, in the sidebar or the phone's place chips, takes a dropped file.
+        recycleOver(e, item) {
+            if (item.id !== 'recycle') return;
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+            e.currentTarget.classList.add('bg-blue-100', 'dark:bg-blue-900/40');
+        },
+
+        recycleLeave(e, item) {
+            if (item.id === 'recycle') e.currentTarget.classList.remove('bg-blue-100', 'dark:bg-blue-900/40');
+        },
+
+        recycleDrop(e, item) {
+            if (item.id !== 'recycle') return;
+            e.preventDefault();
+            e.currentTarget.classList.remove('bg-blue-100', 'dark:bg-blue-900/40');
+            try {
+                const data = JSON.parse(e.dataTransfer.getData('application/json'));
+                if (data && data.item) this.deleteItem(data.item, data.fromPath);
+            } catch {
+                // Something other than a file was dropped.
+            }
+        },
+
         openSidebarItem(item) {
             if (!item.entry) {
                 if (item.path) this.navigate(item.path);

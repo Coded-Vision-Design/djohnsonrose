@@ -518,6 +518,34 @@ html[data-os-keyboard][data-os-mode='phone'] .os-taskbar {
     -webkit-touch-callout: none;
 }
 
+/* A file being carried by a finger, from keepFileLongPress in windowing.js. */
+[data-touch-drag] {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 100000;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    max-width: 220px;
+    padding: 6px 10px;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.94);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+    color: #1b1b1b;
+    font-size: 12px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    pointer-events: none;
+}
+
+[data-touch-drag] img {
+    width: 24px;
+    height: 24px;
+    object-fit: contain;
+}
+
 /* A file that has been cut, until it is pasted. */
 .file-cut {
     opacity: 0.5;

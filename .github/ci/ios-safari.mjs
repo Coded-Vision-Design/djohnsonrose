@@ -252,6 +252,25 @@ async function run(name, url) {
     await sleep(500)
   }
 
+  // Hold a file, then drag it to the Recycle Bin chip: it goes to the bin.
+  await driver.execute(() => document.querySelector('[data-place-pill="Recycle Bin"]')?.scrollIntoView({ block: 'nearest', inline: 'nearest' }))
+  await sleep(500)
+  const from = await centreOf('[data-explorer-file="Freelance"]')
+  const to = await centreOf('[data-place-pill="Recycle Bin"]')
+  if (from && to) {
+    const a = screenThird(from)
+    const b = screenThird(to)
+    await startRecording()
+    await driver.execute('mobile: dragFromToForDuration', { duration: 1.0, fromX: a.x, fromY: a.y, toX: b.x, toY: b.y })
+    await sleep(900)
+    const gone = await driver.execute(() => !document.querySelector('[data-explorer-file="Freelance"]'))
+    ok(`${name} a finger carries a file to the Recycle Bin`, gone)
+    if (!gone) console.log(`      what iOS sent: ${await recording()}`)
+    await shot(`${name}-dragged`)
+  } else {
+    ok(`${name} a finger carries a file to the Recycle Bin`, false, 'the file or the bin chip is missing')
+  }
+
   errors.push(...(await driver.execute(() => window.__errors ?? [])))
   ok(`${name} no page errors`, errors.length === 0, errors.join(' | '))
 }

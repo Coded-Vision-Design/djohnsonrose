@@ -76,13 +76,9 @@
                         <button type="button"
                                 :data-sidebar-item="item.label"
                                 @click="openSidebarItem(item)"
-                                @dragover.prevent="if(item.id === 'recycle') { $event.dataTransfer.dropEffect = 'move'; $el.classList.add('bg-blue-100', 'dark:bg-blue-900/40'); }"
-                                @dragleave="if(item.id === 'recycle') { $el.classList.remove('bg-blue-100', 'dark:bg-blue-900/40'); }"
-                                @drop.prevent="if(item.id === 'recycle') {
-                                    $el.classList.remove('bg-blue-100', 'dark:bg-blue-900/40');
-                                    const data = JSON.parse($event.dataTransfer.getData('application/json'));
-                                    if (data && data.item) deleteItem(data.item, data.fromPath);
-                                }"
+                                @dragover="recycleOver($event, item)"
+                                @dragleave="recycleLeave($event, item)"
+                                @drop="recycleDrop($event, item)"
                                 :class="{
                                     'bg-blue-100/50 dark:bg-blue-900/20 text-win-blue font-semibold': !item.favourite && currentPath === item.path,
                                     'pl-8': item.indent,
@@ -116,6 +112,11 @@
             <div class="m-4 mb-2 flex overflow-x-auto pb-2 space-x-2 lg:hidden">
                 <template x-for="item in sidebarItems.filter(i => i.type !== 'header')" :key="item.id">
                     <button type="button" @click="openSidebarItem(item)"
+                            :data-place-pill="item.label"
+                            :data-touch-drop="item.id === 'recycle' ? '' : null"
+                            @dragover="recycleOver($event, item)"
+                            @dragleave="recycleLeave($event, item)"
+                            @drop="recycleDrop($event, item)"
                             :class="currentPath === item.path ? 'bg-win-blue text-white shadow-md' : 'bg-gray-100 dark:bg-white/5'"
                             class="px-4 py-1.5 rounded-full text-[10px] whitespace-nowrap transition-all border border-transparent flex items-center space-x-2">
                         <template x-if="(item.icon || '').includes('.')">

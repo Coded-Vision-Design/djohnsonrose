@@ -27,7 +27,7 @@ import { showFileMenu, showMenu } from '../../shell/menus'
 import { openEntry } from '../../shell/openEntry'
 import { RenameInput } from '../../shell/RenameInput'
 
-// 1:1 port of partials/apps/explorer.php — toolbar (back/forward/up,
+// 1:1 port of partials/apps/explorer.php: toolbar (back/forward/up,
 // breadcrumb + editable path, search), 52 px sidebar with pinned + This PC
 // groups (drag-to-Recycle-Bin support), grid OR details file pane, optional
 // details panel, right-click context menu, in-place rename, keyboard
@@ -173,6 +173,24 @@ export default function Explorer() {
       /* noop */
     }
   }
+
+  // The Recycle Bin, in the sidebar or the phone's place chips, takes a dropped file.
+  const recycleDropProps = (isRecycle: boolean) => ({
+    onDragOver: (e: React.DragEvent<HTMLElement>) => {
+      if (!isRecycle) return
+      e.preventDefault()
+      e.dataTransfer.dropEffect = 'move'
+      e.currentTarget.classList.add('bg-blue-100', 'dark:bg-blue-900/40')
+    },
+    onDragLeave: (e: React.DragEvent<HTMLElement>) => {
+      if (isRecycle) e.currentTarget.classList.remove('bg-blue-100', 'dark:bg-blue-900/40')
+    },
+    onDrop: (e: React.DragEvent<HTMLElement>) => {
+      if (!isRecycle) return
+      e.currentTarget.classList.remove('bg-blue-100', 'dark:bg-blue-900/40')
+      onRecycleDrop(e)
+    },
+  })
 
   const openHere = useMemo(
     () => ({ openEntry: (entry: FsEntry) => openItem(entry) }),
@@ -395,9 +413,7 @@ export default function Explorer() {
                 key={item.id ?? item.label} type="button"
                 data-sidebar-item={item.label}
                 onClick={() => openSidebarItem(item)}
-                onDragOver={(e) => { if (!isRecycleEntry) return; e.preventDefault(); e.dataTransfer.dropEffect = 'move'; e.currentTarget.classList.add('bg-blue-100', 'dark:bg-blue-900/40') }}
-                onDragLeave={(e) => { if (!isRecycleEntry) return; e.currentTarget.classList.remove('bg-blue-100', 'dark:bg-blue-900/40') }}
-                onDrop={(e) => { if (!isRecycleEntry) return; e.currentTarget.classList.remove('bg-blue-100', 'dark:bg-blue-900/40'); onRecycleDrop(e) }}
+                {...recycleDropProps(isRecycleEntry)}
                 className={`w-full text-left py-1.5 rounded-sm hover:bg-gray-100 dark:hover:bg-white/5 flex items-center group transition-colors ${active ? 'bg-blue-100/50 dark:bg-blue-900/20 text-win-blue font-semibold' : ''} ${item.indent ? 'pl-8' : 'px-3'}`}
               >
                 <span className="mr-3 text-base group-hover:scale-110 transition-transform flex items-center justify-center w-5 h-5 shrink-0">
@@ -431,6 +447,9 @@ export default function Explorer() {
               .filter((i) => i.type !== 'header')
               .map((i) => (
                 <button key={i.id ?? i.label} type="button" onClick={() => openSidebarItem(i)}
+                  data-place-pill={i.label}
+                  data-touch-drop={i.id === 'recycle' ? '' : undefined}
+                  {...recycleDropProps(i.id === 'recycle')}
                   className={`px-4 py-1.5 rounded-full text-[10px] whitespace-nowrap transition-all border border-transparent flex items-center space-x-2 ${currentPath === i.path ? 'bg-win-blue text-white shadow-md' : 'bg-gray-100 dark:bg-white/5'}`}>
                   {i.icon && <img src={i.icon} alt="" className="w-3 h-3 object-contain" />}
                   <span>{i.label}</span>
