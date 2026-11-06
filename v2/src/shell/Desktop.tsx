@@ -20,6 +20,7 @@ import { keepFileLongPress, watchDesktop } from '../../../assets/js/windowing/wi
 import { focusAfterClose } from '../../../assets/js/windowing/shell-ui.js'
 import { cssUrl, fingerGap, pinchZoom } from '../../../assets/js/windowing/shell-core.js'
 import { getApp } from '../apps/registry'
+import { preloadWhenIdle } from '../apps/preload'
 import { useClock } from '../lib/useClock'
 import { useWeather } from '../lib/useWeather'
 
@@ -92,6 +93,8 @@ export function Desktop() {
     [],
   )
   useEffect(() => keepFileLongPress(), [])
+  // Fetch the most opened apps once the desktop is idle, so they open at once.
+  useEffect(() => preloadWhenIdle(), [])
 
   // Phones have no right button, so a long press does the same job: it raises
   // the right-click on whatever is under the finger, as in v1. Pinching the
@@ -130,7 +133,7 @@ export function Desktop() {
   return (
     <div
       data-os-desktop=""
-      className="relative h-dvh w-dvw overflow-hidden bg-cover bg-center touch-none"
+      className="relative h-dvh w-dvw overflow-hidden bg-[#381759] bg-cover bg-center touch-none"
       style={{ backgroundImage: cssUrl(wallpaper) }}
       onContextMenu={(e) => {
         const target = e.target as Element

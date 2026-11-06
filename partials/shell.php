@@ -39,6 +39,7 @@
     <link rel="manifest" href="<?php echo BASE_PATH; ?>manifest.json">
     <link rel="preload" as="image" href="<?php echo IMG_PATH; ?>startmenu.webp">
     <link rel="preload" as="image" href="<?php echo IMG_PATH; ?>settings.webp">
+    <link rel="preload" as="image" href="<?php echo IMG_PATH; ?>wallpaper-bloom.webp">
 
     <!-- JSON-LD: Person + WebSite for rich Google results. The same in v2/index.html,
          and worksFor, alumniOf, knowsAbout and sameAs follow data/profile.json, which
@@ -164,6 +165,8 @@
     .wallpaper-bg {
         background: linear-gradient(135deg, #004a80 0%, #0078d4 100%);
         background-image: var(--wallpaper);
+        /* The default wallpaper's average colour, shown until it loads or if it fails. */
+        background-color: #381759;
         background-size: cover;
         background-position: center;
     }
@@ -395,8 +398,11 @@
         'apps/admin',
         'flstudio'
     ];
+    // Versioned by file time like the stylesheet, so browsers keep each script
+    // until it changes instead of fetching all of them on every visit.
     foreach ($components as $component) {
-        echo '<script src="' . BASE_PATH . 'assets/js/components/' . $component . '.js?v=' . time() . '"></script>' . "\n    ";
+        $version = @filemtime(__DIR__ . '/../assets/js/components/' . $component . '.js');
+        echo '<script src="' . BASE_PATH . 'assets/js/components/' . $component . '.js?v=' . $version . '"></script>' . "\n    ";
     }
     ?>
 </body>

@@ -153,7 +153,7 @@ document.addEventListener('alpine:init', () => {
             sound: stored('settings.sound') !== 'false',
             volume: OsWindowing.storedNumber(stored('settings.volume'), 75),
             brightness: OsWindowing.storedNumber(stored('settings.brightness'), 100),
-            wallpaper: stored('settings.wallpaper') || 'https://images.unsplash.com/photo-1620641788421-7a1c342ea42e?q=80&w=1974&auto=format&fit=crop',
+            wallpaper: stored('settings.wallpaper') || window.portfolioConfig.imgPath + 'wallpaper-bloom.webp',
             email: window.portfolioConfig.email,
             wifi: stored('settings.wifi') !== 'false',
             bluetooth: stored('settings.bluetooth') !== 'false',
@@ -165,11 +165,11 @@ document.addEventListener('alpine:init', () => {
         // Windows makes no sound for a click, or for opening or minimising a
         // window, so neither do we. v2's lib/sounds.ts has the same list.
         sounds: {
-            startup: window.portfolioConfig.basePath + 'assets/sounds/Windows Logon.wav',
-            error: window.portfolioConfig.basePath + 'assets/sounds/Windows Error.wav',
-            notify: window.portfolioConfig.basePath + 'assets/sounds/Windows Notify.wav',
-            recycle: window.portfolioConfig.basePath + 'assets/sounds/Windows Recycle.wav',
-            uac: window.portfolioConfig.basePath + 'assets/sounds/Windows User Account Control.wav'
+            startup: window.portfolioConfig.basePath + 'assets/sounds/Windows Logon.m4a',
+            error: window.portfolioConfig.basePath + 'assets/sounds/Windows Error.m4a',
+            notify: window.portfolioConfig.basePath + 'assets/sounds/Windows Notify.m4a',
+            recycle: window.portfolioConfig.basePath + 'assets/sounds/Windows Recycle.m4a',
+            uac: window.portfolioConfig.basePath + 'assets/sounds/Windows User Account Control.m4a'
         },
         // Injected from filesystem.js
         fileSystem: window.loadFileSystem(),
@@ -252,7 +252,7 @@ document.addEventListener('alpine:init', () => {
             if (this.settings.theme === 'dark') {
                 const fileName = soundPath.split('/').pop();
                 // Only these three have official dark mode variants in the dm folder
-                const dmVariants = ['Windows Background.wav', 'Windows Notify.wav', 'Windows User Account Control.wav'];
+                const dmVariants = ['Windows Background.m4a', 'Windows Notify.m4a', 'Windows User Account Control.m4a'];
                 if (dmVariants.includes(fileName)) {
                     soundPath = soundPath.replace('assets/sounds/', 'assets/sounds/dm/');
                 }

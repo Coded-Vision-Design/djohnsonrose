@@ -37,7 +37,7 @@ export function LockScreen() {
 
   return (
     <div
-      className="h-dvh w-dvw relative flex flex-col gap-6 p-6 sm:p-12 overflow-y-auto text-white bg-cover bg-center"
+      className="h-dvh w-dvw relative flex flex-col gap-6 p-6 sm:p-12 overflow-y-auto text-white bg-[#381759] bg-cover bg-center"
       style={{ backgroundImage: cssUrl(wallpaper) }}
     >
       <div className="absolute inset-0 bg-black/40" />

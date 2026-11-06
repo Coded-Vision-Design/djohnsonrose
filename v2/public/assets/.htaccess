@@ -1,0 +1,8 @@
+# Copied into v2/dist/assets by the build, next to the hashed files Vite writes.
+# A file here never changes: a new build gives changed content a new name and
+# the deploy removes the old one. So browsers and the CDN may keep each file
+# for a year without asking again. index.html, outside this folder, keeps the
+# server's default caching so a deploy is picked up straight away.
+<IfModule mod_headers.c>
+    Header set Cache-Control "public, max-age=31536000, immutable"
+</IfModule>

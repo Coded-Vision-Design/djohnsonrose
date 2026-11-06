@@ -184,8 +184,7 @@ function initialMode(): WindowMode {
   const coarse = window.matchMedia?.('(pointer: coarse)').matches ?? false
   return detectMode({ width: window.innerWidth, height: window.innerHeight, coarse })
 }
-const DEFAULT_WALLPAPER =
-  'https://images.unsplash.com/photo-1620641788421-7a1c342ea42e?q=80&w=1974&auto=format&fit=crop'
+const DEFAULT_WALLPAPER = '/assets/img/wallpaper-bloom.webp'
 
 // Monotonic id source — Date.now() collides on rapid successive opens.
 let windowIdCounter = 1

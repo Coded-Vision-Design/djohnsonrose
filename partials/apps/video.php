@@ -12,11 +12,14 @@
 
     <!-- Video Container -->
     <div class="grow relative group overflow-hidden bg-black flex items-center justify-center">
-        <video x-ref="videoPlayer" 
+        <!-- Fetches only the metadata until played; the poster is assets/img/posters/<video name>.webp. -->
+        <video x-ref="videoPlayer"
                class="max-h-full max-w-full shadow-2xl"
                @click="togglePlay"
                @timeupdate="updateProgress"
                :src="videoUrl"
+               :poster="videoUrl ? window.portfolioConfig.imgPath + 'posters/' + videoUrl.split('/').pop().replace(/\.[^.]+$/, '.webp') : ''"
+               preload="metadata"
                playsinline>
         </video>
 

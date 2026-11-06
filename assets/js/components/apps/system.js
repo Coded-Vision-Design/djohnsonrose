@@ -119,7 +119,7 @@ document.addEventListener('alpine:init', () => {
         interests: [],
         skills: { frameworks: [], tools: [], operations: [], apis: [] },
         wallpapers: [
-            { id: 'Bloom', url: 'https://images.unsplash.com/photo-1620641788421-7a1c342ea42e?q=80&w=1974&auto=format&fit=crop' },
+            { id: 'Bloom', url: window.portfolioConfig.imgPath + 'wallpaper-bloom.webp' },
             { id: 'Flow', url: 'https://images.unsplash.com/photo-1635776062127-d379bfcba9f8?q=80&w=1974&auto=format&fit=crop' },
             { id: 'Glow', url: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=1974&auto=format&fit=crop' },
             { id: 'Sunrise', url: 'https://images.unsplash.com/photo-1477346611705-65d1883cee1e?q=80&w=1970&auto=format&fit=crop' },

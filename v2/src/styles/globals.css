@@ -3,6 +3,7 @@
 @import '../../../assets/css/flstudio.css';
 @import '../../../assets/css/office.css';
 @import '../../../assets/css/drawing.css';
+@import '../../../assets/css/fonts.css';
 
 @custom-variant dark (&:is(.dark *));
 
@@ -44,7 +45,7 @@ html, body {
 }
 
 body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-family: 'Segoe UI Variable', 'Segoe UI', Selawik, Tahoma, Geneva, Verdana, sans-serif;
     overflow: hidden;
     user-select: none;
     overscroll-behavior: none;
