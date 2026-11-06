@@ -1,143 +1,113 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
+import {
+  EXCEL_TABS,
+  cellValue,
+  loadChecked,
+  portfolioSheet,
+  type Sheet,
+} from '../../../../assets/js/windowing/office.js'
 
-interface Project {
-  id: number
-  title: string
-  description: string
-  tags: string[]
-  url: string
-  location?: string
-  country_code?: string
-}
+// Excel: the portfolio as a sheet, from data/portfolio.json. What it shows
+// lives in assets/js/windowing/office.js, which v1 shares, and it is styled by
+// assets/css/office.css, so this file only draws the screen.
 
-// Lightweight Excel mock — loads portfolio.json into a spreadsheet grid.
-// Cells aren't editable in this port; that's a v1 limitation too.
+const EMPTY = portfolioSheet(null)
+
 export default function Excel() {
-  const [projects, setProjects] = useState<Project[]>([])
-  const [activeCell, setActiveCell] = useState<string>('A1')
+  const [sheet, setSheet] = useState<Sheet>(EMPTY)
+  const [state, setState] = useState<'loading' | 'ready' | 'error'>('loading')
+  const [active, setActive] = useState('A1')
 
   useEffect(() => {
     let cancelled = false
-    fetch('/data/portfolio.json')
-      .then((r) => r.json() as Promise<{ projects: Project[] }>)
-      .then((d) => {
-        if (!cancelled) setProjects(d.projects)
+    loadChecked('/data/portfolio.json')
+      .then((data) => {
+        if (cancelled) return
+        setSheet(portfolioSheet(data))
+        setState('ready')
       })
       .catch(() => {
-        /* leave empty */
+        if (!cancelled) setState('error')
       })
     return () => {
       cancelled = true
     }
   }, [])
 
-  const columns = useMemo(
-    () => ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'] as const,
-    [],
-  )
-  const headers = ['ID', 'Title', 'Location', 'Country', 'Stack', 'URL']
+  const status =
+    state === 'error' ? 'portfolio.json could not be loaded' : state === 'ready' ? `Count: ${sheet.count}` : 'Loading…'
 
   return (
-    <div className="h-full flex flex-col bg-win-bg dark:bg-[#1c1c1c] text-black dark:text-white">
-      <div className="h-8 bg-[#107c41] flex items-center px-3 shrink-0">
-        <img src="/assets/img/excel.webp" alt="" className="w-4 h-4 mr-2" />
-        <span className="text-white text-xs font-medium">portfolio.xlsx — Excel</span>
+    <div className="office-app" data-office-app="excel">
+      <div className="office-titlebar">
+        <div className="office-titlebar-name">
+          <img src="/assets/img/excel.webp" alt="" />
+          <span>portfolio.xlsx - Excel</span>
+        </div>
+        <span className="office-user office-optional">DeVanté Johnson-Rose</span>
       </div>
 
-      <div className="bg-white dark:bg-[#2b2b2b] border-b border-gray-300 dark:border-gray-800 shrink-0">
-        <div className="flex items-center space-x-6 px-4 py-1 text-[11px] border-b border-gray-100 dark:border-gray-800">
-          <span className="text-[#107c41] border-b-2 border-[#107c41] pb-0.5 font-bold">
-            Home
+      <div className="office-tabs">
+        {EXCEL_TABS.map((tab) => (
+          <span key={tab} className="office-tab" data-active={tab === 'Home' ? '' : undefined}>
+            {tab}
           </span>
-          {['Insert', 'Page Layout', 'Formulas', 'Data', 'Review', 'View'].map((t) => (
-            <span key={t} className="opacity-60 cursor-default">
-              {t}
-            </span>
-          ))}
-        </div>
-        <div className="px-3 py-1 flex items-center space-x-2 text-xs">
-          <div className="w-16 px-2 py-1 bg-white dark:bg-black/20 border border-gray-300 dark:border-white/10 rounded-sm">
-            {activeCell}
-          </div>
-          <span className="opacity-50">𝑓𝑥</span>
-          <input
-            type="text"
-            readOnly
-            className="grow bg-transparent border border-gray-300 dark:border-white/10 rounded-sm px-2 py-1"
-          />
-        </div>
+        ))}
       </div>
 
-      <div className="grow overflow-auto">
-        <table className="text-[11px] border-collapse min-w-full">
+      <div className="excel-formula">
+        <div className="excel-namebox" data-excel-namebox="">
+          {active}
+        </div>
+        <span className="excel-fx" aria-hidden="true">
+          fx
+        </span>
+        <input type="text" readOnly aria-label="Formula bar" data-excel-formula="" value={cellValue(sheet, active)} />
+      </div>
+
+      <div className="excel-sheet">
+        <table className="excel-grid" role="grid" aria-label="portfolio.xlsx">
           <thead>
             <tr>
-              <th className="w-10 sticky left-0 bg-win-bg dark:bg-[#1c1c1c] border-r border-b border-gray-300 dark:border-gray-700" />
-              {columns.map((c, i) => (
-                <th
-                  key={c}
-                  className="min-w-[140px] px-2 py-1 bg-win-bg dark:bg-[#1c1c1c] border border-gray-300 dark:border-gray-700 font-normal text-gray-600 dark:text-gray-400"
-                >
-                  <div className="flex items-center justify-between">
-                    <span>{c}</span>
-                    {headers[i] && (
-                      <span className="text-[10px] text-[#107c41]">{headers[i]}</span>
-                    )}
-                  </div>
+              <th className="excel-rowhead" scope="col" />
+              {sheet.columns.map((letter) => (
+                <th key={letter} scope="col">
+                  {letter}
                 </th>
               ))}
             </tr>
           </thead>
           <tbody>
-            {Array.from({ length: Math.max(20, projects.length + 5) }).map((_, rowIdx) => {
-              const p = projects[rowIdx]
-              const r = rowIdx + 1
-              return (
-                <tr key={r}>
-                  <td className="w-10 sticky left-0 bg-win-bg dark:bg-[#1c1c1c] border-r border-b border-gray-300 dark:border-gray-700 text-center text-gray-500">
-                    {r}
+            {sheet.rows.map((row) => (
+              <tr key={row.number}>
+                <th className="excel-rowhead" scope="row">
+                  {row.number}
+                </th>
+                {row.cells.map((cell) => (
+                  <td
+                    key={cell.ref}
+                    data-cell={cell.ref}
+                    data-header={cell.header && cell.value ? '' : undefined}
+                    aria-selected={cell.ref === active}
+                    title={cell.value || undefined}
+                    onClick={() => setActive(cell.ref)}
+                  >
+                    {cell.value}
                   </td>
-                  {columns.map((c, ci) => {
-                    const cell = `${c}${r}`
-                    let value = ''
-                    if (p) {
-                      const vals = [
-                        String(p.id),
-                        p.title,
-                        p.location ?? '',
-                        p.country_code ?? '',
-                        p.tags.join(', '),
-                        p.url,
-                      ]
-                      value = vals[ci] ?? ''
-                    }
-                    return (
-                      <td
-                        key={cell}
-                        onClick={() => setActiveCell(cell)}
-                        className={`min-w-[140px] px-2 py-1 border-r border-b border-gray-200 dark:border-gray-800 cursor-cell truncate ${
-                          activeCell === cell
-                            ? 'ring-2 ring-[#107c41] ring-inset bg-[#107c41]/5'
-                            : ''
-                        }`}
-                        title={value}
-                      >
-                        {value}
-                      </td>
-                    )
-                  })}
-                </tr>
-              )
-            })}
+                ))}
+              </tr>
+            ))}
           </tbody>
         </table>
       </div>
 
-      <div className="h-6 bg-[#107c41] text-white text-[10px] flex items-center px-3 shrink-0 justify-between">
-        <span>Sheet1</span>
-        <div className="flex items-center space-x-4">
-          <span>Count: {projects.length}</span>
-          <span>Ready</span>
+      <div className="office-status">
+        <div className="office-status-group">
+          <span>Sheet1</span>
+        </div>
+        <div className="office-status-group" data-excel-status="">
+          <span>{status}</span>
+          <span className="office-optional">Ready</span>
         </div>
       </div>
     </div>

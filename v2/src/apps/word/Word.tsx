@@ -1,191 +1,305 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState, type CSSProperties, type MouseEvent } from 'react'
+import {
+  OFFICE_ICONS,
+  WORD_FONTS,
+  WORD_PAGE_WIDTH,
+  WORD_SIZES,
+  WORD_TABS,
+  countWords,
+  documentText,
+  loadChecked,
+  pageStyles,
+  printDocument,
+  stepPageZoom,
+  watchFit,
+  wordEditor,
+  zoomSliderAt,
+  type OfficeIcon,
+  type WordCommand,
+  type WordEditor,
+  type WordFormat,
+} from '../../../../assets/js/windowing/office.js'
 
-// document.execCommand is deprecated but still works in every shipping browser
-// and is the simplest way to get rich-text controls without pulling in an
-// editor library for a CV viewer.
-const exec = (cmd: string, value?: string) => {
-  try {
-    document.execCommand(cmd, false, value)
-  } catch {
-    /* no-op */
-  }
+// Word. What it shows and does lives in assets/js/windowing/office.js, which
+// v1 shares, and it is styled by assets/css/office.css, so this file only
+// draws the screen and keeps React state.
+
+const FAILED = '<p>The CV could not be loaded. Please try again later.</p>'
+const vars = (values: Record<string, string | number>) => values as CSSProperties
+// Keeps the editor's selection while a ribbon button is pressed.
+const keepSelection = (event: MouseEvent) => event.preventDefault()
+
+/** Words in the CV as it arrives, before anything has been typed. */
+function wordsInHtml(html: string) {
+  const template = document.createElement('template')
+  template.innerHTML = html
+  return countWords(documentText(template.content))
+}
+
+function Icon({ icon }: { icon: OfficeIcon }) {
+  return (
+    <svg className="office-icon" data-stroke={icon.stroke ? '' : undefined} viewBox="0 0 24 24" aria-hidden="true">
+      <path d={icon.d} />
+    </svg>
+  )
 }
 
 export default function Word() {
-  const [html, setHtml] = useState<string>('')
-  const [wordCount, setWordCount] = useState(0)
+  const [html, setHtml] = useState('')
+  const [edited, setEdited] = useState<number | null>(null)
+  const [fit, setFit] = useState(1)
+  const [userZoom, setUserZoom] = useState<number | null>(null)
+  const [fontName, setFontName] = useState('Calibri')
+  const [fontSize, setFontSize] = useState('3')
+  const [format, setFormat] = useState<WordFormat>({ bold: false, italic: false, underline: false, align: 'left' })
   const editorRef = useRef<HTMLDivElement>(null)
+  const areaRef = useRef<HTMLDivElement>(null)
+  const controller = useRef<WordEditor | null>(null)
 
   useEffect(() => {
     let cancelled = false
-    fetch('/data/cv.php')
-      .then((r) => r.text())
+    loadChecked('/data/cv.php', 'text')
       .then((text) => {
         if (!cancelled) setHtml(text)
       })
       .catch(() => {
-        if (!cancelled) setHtml('<p>Failed to load CV content.</p>')
+        if (!cancelled) setHtml(FAILED)
       })
     return () => {
       cancelled = true
     }
   }, [])
 
-  const updateCounts = () => {
-    const text = editorRef.current?.innerText ?? ''
-    const words = text.trim() ? text.trim().split(/\s+/).length : 0
-    setWordCount(words)
-  }
+  useEffect(() => {
+    if (!editorRef.current) return
+    const editor = wordEditor(editorRef.current, { onFormat: setFormat })
+    controller.current = editor
+    const stopFit = watchFit(areaRef.current, { width: WORD_PAGE_WIDTH }, setFit)
+    return () => {
+      editor.stop()
+      stopFit()
+    }
+  }, [])
+
+  const loaded = useMemo(() => wordsInHtml(html), [html])
+  const words = edited ?? loaded
+  const zoom = userZoom ?? fit
+  const run = (command: WordCommand, value?: string) => controller.current?.run(command, value)
 
   const print = () => {
-    const w = window.open('', '_blank', 'width=900,height=1000')
-    if (!w) return
-    // The site's own styles. The desktop's fixed height would clip the page.
-    const styles = [...document.querySelectorAll('link[rel="stylesheet"], style')]
-      .map((node) => node.outerHTML)
-      .join('')
-    w.document.write(`
-      <html>
-        <head>
-          <title>CV - DeVanté Johnson-Rose</title>
-          ${styles}
-          <style>html, body { height: auto; overflow: visible; }</style>
-        </head>
-        <body>${editorRef.current?.innerHTML ?? ''}</body>
-      </html>
-    `)
-    w.document.close()
-    w.setTimeout(() => w.print(), 500)
+    printDocument({ title: 'CV - DeVanté Johnson-Rose', html: editorRef.current?.innerHTML ?? '', styles: pageStyles() })
   }
 
   return (
-    <div className="h-full flex flex-col bg-win-bg dark:bg-[#1c1c1c] select-none">
-      {/* Title bar */}
-      <div className="h-8 bg-[#2b579a] flex items-center px-3 justify-between shrink-0">
-        <div className="flex items-center space-x-3">
-          <img src="/assets/img/word.webp" alt="" className="w-4 h-4" />
-          <span className="text-[11px] text-white font-medium">CV.docx — Word</span>
+    <div className="office-app" data-office-app="word">
+      <div className="office-titlebar">
+        <div className="office-titlebar-name">
+          <img src="/assets/img/word.webp" alt="" />
+          <span>CV.docx - Word</span>
         </div>
-        <span className="text-white/80 text-[11px]">DeVanté Johnson-Rose</span>
-      </div>
-
-      {/* Ribbon */}
-      <div className="bg-white dark:bg-[#2b2b2b] border-b border-gray-300 dark:border-gray-800 shrink-0">
-        <div className="flex items-center space-x-6 px-4 py-1 text-[11px] font-medium border-b border-gray-100 dark:border-gray-800">
-          {['File', 'Home', 'Insert', 'Layout', 'References'].map((t, i) => (
-            <span
-              key={t}
-              className={
-                i === 1
-                  ? 'text-[#2b579a] border-b-2 border-[#2b579a] pb-0.5 font-bold'
-                  : 'opacity-60 cursor-default px-2 py-0.5'
-              }
-            >
-              {t}
-            </span>
-          ))}
-        </div>
-
-        <div className="p-2 flex items-center space-x-2 bg-gray-50 dark:bg-[#2d2d2d] shadow-xs">
-          <button
-            type="button"
-            onClick={() => exec('bold')}
-            className="w-7 h-7 font-bold hover:bg-gray-200 dark:hover:bg-white/10 rounded-sm text-xs"
-            title="Bold"
-          >
-            B
-          </button>
-          <button
-            type="button"
-            onClick={() => exec('italic')}
-            className="w-7 h-7 italic hover:bg-gray-200 dark:hover:bg-white/10 rounded-sm text-xs"
-            title="Italic"
-          >
-            I
-          </button>
-          <button
-            type="button"
-            onClick={() => exec('underline')}
-            className="w-7 h-7 underline hover:bg-gray-200 dark:hover:bg-white/10 rounded-sm text-xs"
-            title="Underline"
-          >
-            U
-          </button>
-          <div className="w-px h-5 bg-gray-300 dark:bg-gray-700 mx-1" />
-          <button
-            type="button"
-            onClick={() => exec('justifyLeft')}
-            className="px-2 h-7 hover:bg-gray-200 dark:hover:bg-white/10 rounded-sm text-xs"
-          >
-            ←
-          </button>
-          <button
-            type="button"
-            onClick={() => exec('justifyCenter')}
-            className="px-2 h-7 hover:bg-gray-200 dark:hover:bg-white/10 rounded-sm text-xs"
-          >
-            ≡
-          </button>
-          <button
-            type="button"
-            onClick={() => exec('justifyRight')}
-            className="px-2 h-7 hover:bg-gray-200 dark:hover:bg-white/10 rounded-sm text-xs"
-          >
-            →
-          </button>
-          <div className="w-px h-5 bg-gray-300 dark:bg-gray-700 mx-1" />
-          <button
-            type="button"
-            onClick={() => exec('insertUnorderedList')}
-            className="px-2 h-7 hover:bg-gray-200 dark:hover:bg-white/10 rounded-sm text-xs"
-            title="Bulleted list"
-          >
-            •
-          </button>
-          <button
-            type="button"
-            onClick={() => exec('insertOrderedList')}
-            className="px-2 h-7 hover:bg-gray-200 dark:hover:bg-white/10 rounded-sm text-xs"
-            title="Numbered list"
-          >
-            1.
-          </button>
-
-          <div className="ml-auto">
-            <button
-              type="button"
-              onClick={print}
-              className="text-[11px] bg-[#2b579a] text-white px-4 py-1.5 rounded-xs hover:bg-[#1e3e6d] font-medium"
-            >
-              Print PDF
+        <div className="office-titlebar-side">
+          <div className="office-qat">
+            <button type="button" title="Save" aria-label="Save" disabled>
+              <Icon icon={OFFICE_ICONS.save} />
+            </button>
+            <button type="button" title="Undo" aria-label="Undo" onMouseDown={keepSelection} onClick={() => run('undo')}>
+              <Icon icon={OFFICE_ICONS.undo} />
             </button>
           </div>
+          <span className="office-user office-optional">DeVanté Johnson-Rose</span>
         </div>
       </div>
 
-      {/* Document */}
-      <div className="grow overflow-y-auto p-12 flex justify-center bg-[#e6e6e6] dark:bg-win-dark">
+      <div className="office-tabs">
+        {WORD_TABS.map((tab) => (
+          <span key={tab} className="office-tab" data-active={tab === 'Home' ? '' : undefined}>
+            {tab}
+          </span>
+        ))}
+      </div>
+
+      <div className="word-ribbon" role="toolbar" aria-label="Home">
+        <div className="word-group" role="group" aria-label="Clipboard" data-word-group="Clipboard">
+          <div className="word-group-body">
+            <button type="button" className="word-btn word-btn-large" onMouseDown={keepSelection} onClick={() => run('paste')}>
+              <Icon icon={OFFICE_ICONS.paste} />
+              <span>Paste</span>
+            </button>
+            <div className="word-group-stack">
+              <button type="button" className="word-btn word-btn-small" onMouseDown={keepSelection} onClick={() => run('cut')}>
+                <Icon icon={OFFICE_ICONS.cut} />
+                <span>Cut</span>
+              </button>
+              <button type="button" className="word-btn word-btn-small" onMouseDown={keepSelection} onClick={() => run('copy')}>
+                <Icon icon={OFFICE_ICONS.copy} />
+                <span>Copy</span>
+              </button>
+            </div>
+          </div>
+          <span className="word-group-label" aria-hidden="true">
+            Clipboard
+          </span>
+        </div>
+
+        <div className="word-group" role="group" aria-label="Font" data-word-group="Font">
+          <div className="word-group-stack">
+            <div className="word-group-row">
+              <select
+                className="word-select word-select-font"
+                aria-label="Font name"
+                value={fontName}
+                onChange={(event) => {
+                  setFontName(event.target.value)
+                  void run('fontName', event.target.value)
+                }}
+              >
+                {WORD_FONTS.map((font) => (
+                  <option key={font} value={font}>
+                    {font}
+                  </option>
+                ))}
+              </select>
+              <select
+                className="word-select word-select-size"
+                aria-label="Font size"
+                value={fontSize}
+                onChange={(event) => {
+                  setFontSize(event.target.value)
+                  void run('fontSize', event.target.value)
+                }}
+              >
+                {WORD_SIZES.map((size) => (
+                  <option key={size.value} value={size.value}>
+                    {size.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="word-group-row">
+              <button type="button" className="word-btn word-btn-letter" style={{ fontWeight: 700 }} title="Bold" aria-label="Bold" aria-pressed={format.bold} onMouseDown={keepSelection} onClick={() => run('bold')}>
+                B
+              </button>
+              <button type="button" className="word-btn word-btn-letter" style={{ fontStyle: 'italic' }} title="Italic" aria-label="Italic" aria-pressed={format.italic} onMouseDown={keepSelection} onClick={() => run('italic')}>
+                I
+              </button>
+              <button type="button" className="word-btn word-btn-letter" style={{ textDecoration: 'underline' }} title="Underline" aria-label="Underline" aria-pressed={format.underline} onMouseDown={keepSelection} onClick={() => run('underline')}>
+                U
+              </button>
+              <span className="word-divider" aria-hidden="true" />
+              <button type="button" className="word-btn word-btn-letter word-btn-colour" title="Font colour" aria-label="Font colour" onMouseDown={keepSelection} onClick={() => run('foreColor', '#dc2626')}>
+                A
+              </button>
+            </div>
+          </div>
+          <span className="word-group-label" aria-hidden="true">
+            Font
+          </span>
+        </div>
+
+        <div className="word-group" role="group" aria-label="Paragraph" data-word-group="Paragraph">
+          <div className="word-group-stack">
+            <div className="word-group-row">
+              <button type="button" className="word-btn" title="Bullets" aria-label="Bullets" onMouseDown={keepSelection} onClick={() => run('insertUnorderedList')}>
+                <Icon icon={OFFICE_ICONS.bullets} />
+              </button>
+              <button type="button" className="word-btn" title="Numbering" aria-label="Numbering" onMouseDown={keepSelection} onClick={() => run('insertOrderedList')}>
+                <Icon icon={OFFICE_ICONS.numbering} />
+              </button>
+            </div>
+            <div className="word-group-row">
+              <button type="button" className="word-btn" title="Align left" aria-label="Align left" aria-pressed={format.align === 'left'} onMouseDown={keepSelection} onClick={() => run('justifyLeft')}>
+                <Icon icon={OFFICE_ICONS.alignLeft} />
+              </button>
+              <button type="button" className="word-btn" title="Centre" aria-label="Centre" aria-pressed={format.align === 'center'} onMouseDown={keepSelection} onClick={() => run('justifyCenter')}>
+                <Icon icon={OFFICE_ICONS.alignCenter} />
+              </button>
+              <button type="button" className="word-btn" title="Align right" aria-label="Align right" aria-pressed={format.align === 'right'} onMouseDown={keepSelection} onClick={() => run('justifyRight')}>
+                <Icon icon={OFFICE_ICONS.alignRight} />
+              </button>
+            </div>
+          </div>
+          <span className="word-group-label" aria-hidden="true">
+            Paragraph
+          </span>
+        </div>
+
+        <div className="word-group" role="group" aria-label="Styles" data-word-group="Styles">
+          <div className="word-group-body">
+            <button type="button" className="word-style" data-current="" aria-label="Normal style" onMouseDown={keepSelection} onClick={() => run('style', 'normal')}>
+              <b>AaBbCc</b>
+              <small>Normal</small>
+            </button>
+            <button type="button" className="word-style word-style-title" aria-label="Title style" onMouseDown={keepSelection} onClick={() => run('style', 'title')}>
+              <b>AaBbCc</b>
+              <small>Title</small>
+            </button>
+          </div>
+          <span className="word-group-label" aria-hidden="true">
+            Styles
+          </span>
+        </div>
+
+        <div className="word-group" role="group" aria-label="Editing" data-word-group="Editing">
+          <div className="word-group-stack">
+            <button type="button" className="word-btn word-btn-small" disabled>
+              <Icon icon={OFFICE_ICONS.find} />
+              <span>Find</span>
+            </button>
+            <button type="button" className="word-btn word-btn-small" disabled>
+              <Icon icon={OFFICE_ICONS.replace} />
+              <span>Replace</span>
+            </button>
+          </div>
+          <span className="word-group-label" aria-hidden="true">
+            Editing
+          </span>
+        </div>
+
+        <div className="word-print">
+          <button type="button" onClick={print}>
+            <Icon icon={OFFICE_ICONS.print} />
+            <span>Print PDF</span>
+          </button>
+        </div>
+      </div>
+
+      <div className="word-area" data-word-area="" ref={areaRef}>
         <div
           ref={editorRef}
+          className="word-page"
+          data-word-page=""
+          data-word-editor=""
           contentEditable
           suppressContentEditableWarning
           spellCheck={false}
-          className="w-full max-w-[816px] min-h-[1056px] bg-white text-black shadow-2xl p-16 outline-hidden font-serif"
+          role="textbox"
+          aria-multiline="true"
+          aria-label="CV.docx"
+          style={vars({ '--office-zoom': zoom })}
           dangerouslySetInnerHTML={{ __html: html }}
-          onInput={updateCounts}
-          onMouseUp={updateCounts}
-          onKeyUp={updateCounts}
+          onInput={(event) => setEdited(countWords(documentText(event.currentTarget)))}
         />
       </div>
 
-      {/* Status */}
-      <div className="h-6 bg-[#2b579a] flex items-center px-4 justify-between shrink-0 text-white text-[10px]">
-        <div className="flex items-center space-x-4">
-          <span>Page 1 of 1</span>
-          <span>{wordCount} words</span>
-          <span>English (United Kingdom)</span>
+      <div className="office-status">
+        <div className="office-status-group">
+          <span className="office-optional">Page 1 of 1</span>
+          <span data-word-count="">{`${words} words`}</span>
+          <span className="office-optional">English (United Kingdom)</span>
         </div>
-        <span>100%</span>
+        <div className="office-status-group">
+          <span className="office-optional">Focus</span>
+          <div className="word-zoom">
+            <button type="button" title="Zoom out" aria-label="Zoom out" onClick={() => setUserZoom(stepPageZoom(zoom, -1))}>
+              <Icon icon={OFFICE_ICONS.zoomOut} />
+            </button>
+            <span className="word-zoom-track" style={vars({ '--office-zoom-at': `${zoomSliderAt(zoom) * 100}%` })} aria-hidden="true" />
+            <button type="button" title="Zoom in" aria-label="Zoom in" onClick={() => setUserZoom(stepPageZoom(zoom, 1))}>
+              <Icon icon={OFFICE_ICONS.zoomIn} />
+            </button>
+            <span className="word-zoom-value" data-word-zoom="">{`${Math.round(zoom * 100)}%`}</span>
+          </div>
+        </div>
       </div>
     </div>
   )
