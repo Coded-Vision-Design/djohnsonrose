@@ -1,0 +1,3 @@
+# Block direct HTTP access. These are templates, rendered by index.php for
+# the routes in lib/routes.php (for example /privacy).
+Require all denied
