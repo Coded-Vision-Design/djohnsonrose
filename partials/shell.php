@@ -110,7 +110,8 @@
         import * as devtools from '<?php echo BASE_PATH; ?>assets/js/windowing/devtools.js?v=<?php echo @filemtime(__DIR__ . '/../assets/js/windowing/devtools.js'); ?>';
         import * as references from '<?php echo BASE_PATH; ?>assets/js/windowing/references.js?v=<?php echo @filemtime(__DIR__ . '/../assets/js/windowing/references.js'); ?>';
         import * as weather from '<?php echo BASE_PATH; ?>assets/js/windowing/weather.js?v=<?php echo @filemtime(__DIR__ . '/../assets/js/windowing/weather.js'); ?>';
-        window.OsWindowing = { ...windowing, ...shellCore, ...fileOps, ...textOps, ...shellUi, ...calculator, ...terminal, ...browser, ...media, ...sql, ...devtools, ...references, ...weather };
+        import * as tour from '<?php echo BASE_PATH; ?>assets/js/windowing/tour.js?v=<?php echo @filemtime(__DIR__ . '/../assets/js/windowing/tour.js'); ?>';
+        window.OsWindowing = { ...windowing, ...shellCore, ...fileOps, ...textOps, ...shellUi, ...calculator, ...terminal, ...browser, ...media, ...sql, ...devtools, ...references, ...weather, ...tour };
         window.FlStudio = flStudio;
         window.OfficeApps = officeApps;
         window.Drawing = drawing;
@@ -363,6 +364,7 @@
             <div x-show="loggedIn && !isBooting && !loggingIn" x-cloak class="h-full w-full absolute inset-0 z-1">
                 <?php include __DIR__ . '/desktop.php'; ?>
                 <?php include __DIR__ . '/file-dialogs.php'; ?>
+                <?php include __DIR__ . '/tour.php'; ?>
             </div>
         </main>
 
@@ -408,6 +410,7 @@
         'os/filesystem',
         'os/store',
         'os/shell',
+        'os/tour',
         'paint',
         'photoshop',
         'calculator',

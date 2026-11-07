@@ -7,6 +7,7 @@ import { SnapUi } from './SnapUi'
 import { TaskSwitcher } from './TaskSwitcher'
 import { Taskbar } from './Taskbar'
 import { PropertiesDialog, Toast } from './FileDialogs'
+import { Tour } from './Tour'
 import { showDesktopMenu } from './menus'
 import { StartMenu } from './StartMenu'
 import { QuickSettings } from './QuickSettings'
@@ -172,6 +173,7 @@ export function Desktop() {
       <ContextMenu />
       <PropertiesDialog />
       <Toast />
+      <Tour />
     </div>
   )
 }

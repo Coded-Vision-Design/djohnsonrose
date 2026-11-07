@@ -126,6 +126,19 @@
                         <div class="text-xs text-gray-600 dark:text-gray-400" x-text="recentLabel('projects')"></div>
                     </div>
                 </button>
+                <!-- Replays the guided tour (tour.js), as Windows lists Get Started here. -->
+                <button type="button"
+                     data-recommended="tour"
+                     @click="startMenuOpen = false; $store.tour.begin()"
+                     class="w-full text-left flex items-center p-2 rounded-sm hover:bg-white/20 dark:hover:bg-white/10 cursor-pointer">
+                    <div class="w-8 h-8 rounded-sm bg-white flex items-center justify-center mr-3 overflow-hidden shrink-0">
+                        <img alt="" :src="window.portfolioConfig.imgPath + 'startmenu.webp'" class="w-6 h-6 object-contain">
+                    </div>
+                    <div class="min-w-0">
+                        <div class="text-xs font-medium dark:text-white truncate">Take the tour</div>
+                        <div class="text-xs text-gray-600 dark:text-gray-400">About 60 seconds</div>
+                    </div>
+                </button>
             </div>
         </div>
     </div>
