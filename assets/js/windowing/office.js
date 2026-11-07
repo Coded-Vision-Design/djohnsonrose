@@ -487,6 +487,11 @@ export function swipeStep(start, end, threshold = 50) {
  * Calls back with each swipe across an element. Touch events, not pointer
  * events, as a phone cancels the pointer once it decides the finger is
  * panning. A second finger is a pinch, not a swipe. Returns a function that stops it.
+ *
+ * A sideways move is cancelled, so the browser never takes it for a pan. Left
+ * to Chrome, the finger leaving at speed starts a fling, and the next tap only
+ * stops that fling: a tap on Present or End show straight after a swipe would
+ * do nothing. An upright pan and a pinch stay the browser's.
  */
 export function watchSwipe(element, onStep, { threshold } = {}) {
   if (!element) return () => {};
@@ -501,8 +506,13 @@ export function watchSwipe(element, onStep, { threshold } = {}) {
     last = start;
   };
   const move = (event) => {
-    if (event.touches?.length !== 1) start = null;
-    else if (start) last = at(event);
+    if (event.touches?.length !== 1) {
+      start = null;
+      return;
+    }
+    if (!start) return;
+    last = at(event);
+    if (event.cancelable && Math.abs(last.x - start.x) > Math.abs(last.y - start.y)) event.preventDefault();
   };
   const end = () => {
     const step = swipeStep(start, last, threshold);
@@ -513,7 +523,8 @@ export function watchSwipe(element, onStep, { threshold } = {}) {
     start = last = null;
   };
   const listeners = { touchstart: begin, touchmove: move, touchend: end, touchcancel: cancel };
-  for (const [type, listener] of Object.entries(listeners)) element.addEventListener(type, listener, { passive: true });
+  // Only touchmove may be cancelled, so only it holds up the browser's scrolling.
+  for (const [type, listener] of Object.entries(listeners)) element.addEventListener(type, listener, { passive: type !== 'touchmove' });
   return () => {
     for (const [type, listener] of Object.entries(listeners)) element.removeEventListener(type, listener);
   };
