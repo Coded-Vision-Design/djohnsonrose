@@ -5,8 +5,6 @@ import {
   inspectContainer,
   quickconnectLog,
   transferSize,
-  VSCODE_TERMINAL_START,
-  vscodeBuildLog,
   type DockerContainer,
 } from '../../../assets/js/windowing/devtools.js'
 import devtools from '../../../data/devtools.json'
@@ -68,19 +66,6 @@ describe('containers', () => {
     const json = JSON.parse(inspectContainer(containers[0]))
     expect(json).toMatchObject({ Id: containers[0].id, Name: `/${containers[0].name}`, Config: { Image: containers[0].image } })
     expect(inspectContainer(null)).toBe('{}')
-  })
-})
-
-describe('VS Code', () => {
-  it('builds the project that is open, ending with where it went', () => {
-    const log = vscodeBuildLog('Earth Echo')
-    expect(log[0].type).toBe('command')
-    expect(log.at(-1)).toEqual({ type: 'success', text: 'Deployed Earth Echo to staging' })
-  })
-
-  it('still builds with no project open', () => {
-    expect(vscodeBuildLog('').at(-1)?.text).toBe('Deployed the project to staging')
-    expect(VSCODE_TERMINAL_START.length).toBeGreaterThan(0)
   })
 })
 

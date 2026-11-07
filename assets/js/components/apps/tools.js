@@ -194,6 +194,13 @@ document.addEventListener('alpine:init', () => {
             this.rootEl = this.$root;
             this.updateFromStore();
             this.$watch('$store.os.windows', () => this.updateFromStore(), { deep: true });
+            // The text on screen, and its file, go with a switch to the other build.
+            const win = Alpine.store('os').windows.find(w => w.app === 'notepad');
+            if (win) this.stopSharing = OsWindowing.shareLiveExtras(win.id, () => ({ content: this.content, filePath: this.currentFile?.path }));
+        },
+
+        destroy() {
+            this.stopSharing?.();
         },
 
         updateFromStore() {

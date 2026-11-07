@@ -1,12 +1,14 @@
 document.addEventListener('alpine:init', () => {
-    // `projects` comes from data/portfolio.json, written into the partial.
-    Alpine.data('terminalApp', (projects = []) => ({
-        projects,
+    // `shared` holds the projects, profile and portfolio from data/, written into the partial.
+    Alpine.data('terminalApp', (shared = {}) => ({
+        shared,
         input: '',
         history: [],
         cmdHistory: [],
         historyIdx: -1,
         currentPath: OsWindowing.TERMINAL_HOME,
+        // Where Tab completion is up to, so the next Tab moves to the next match.
+        completion: null,
         
         init() {
             this.$nextTick(() => {
@@ -16,7 +18,20 @@ document.addEventListener('alpine:init', () => {
         },
 
         handleKey(e) {
-            if (e.key === 'ArrowUp') {
+            const tab = OsWindowing.completionKey(e, this.input);
+            if (tab) {
+                e.preventDefault();
+                const next = OsWindowing.completeTerminalLine(this.input, {
+                    cwd: this.currentPath,
+                    fileSystem: Alpine.store('os').fileSystem,
+                    apps: Object.keys(window.portfolioConfig.apps),
+                }, this.completion, tab === 'back');
+                this.completion = next.session;
+                this.input = next.line;
+            } else if (e.key === 'Escape' && this.input) {
+                // As in PowerShell, Esc clears the line.
+                this.input = '';
+            } else if (e.key === 'ArrowUp') {
                 e.preventDefault();
                 if (this.cmdHistory.length > 0) {
                     this.historyIdx = Math.min(this.historyIdx + 1, this.cmdHistory.length - 1);
@@ -67,9 +82,11 @@ document.addEventListener('alpine:init', () => {
             const result = OsWindowing.runTerminalCommand(cmd, {
                 cwd: this.currentPath,
                 fileSystem: os.fileSystem,
-                projects: this.projects,
+                projects: this.shared.projects ?? [],
                 email: os.settings.email,
                 build: 'v1',
+                profile: this.shared.profile,
+                portfolio: this.shared.portfolio,
             });
             if (result.clear) {
                 this.history = [];

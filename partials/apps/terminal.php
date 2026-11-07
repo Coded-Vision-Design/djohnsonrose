@@ -1,13 +1,28 @@
 <!-- partials/apps/terminal.php -->
 <?php
-// The project list comes from data/portfolio.json, like v2's Terminal.
-$terminalProjects = array_map(
-    fn($p) => ['title' => $p['title'] ?? '', 'url' => $p['url'] ?? '', 'featured' => !empty($p['featured'])],
-    load_shared_data('portfolio')['projects'] ?? []
-);
+// The projects, CV and skills come from data/portfolio.json and data/profile.json,
+// like v2's Terminal. The commands that print them are in assets/js/windowing/terminal.js.
+$terminalPortfolio = load_shared_data('portfolio');
+$terminalProfile = load_shared_data('profile');
+$terminalData = [
+    'projects' => array_map(
+        fn($p) => ['title' => $p['title'] ?? '', 'url' => $p['url'] ?? '', 'featured' => !empty($p['featured'])],
+        $terminalPortfolio['projects'] ?? []
+    ),
+    'profile' => array_intersect_key($terminalProfile, array_flip(['name', 'headline', 'location', 'alumniOf'])),
+    'portfolio' => [
+        'summary' => $terminalPortfolio['summary'] ?? '',
+        'philosophy' => $terminalPortfolio['philosophy'] ?? '',
+        'experience' => array_map(
+            fn($job) => array_intersect_key($job, array_flip(['role', 'company', 'period', 'location'])),
+            $terminalPortfolio['experience'] ?? []
+        ),
+        'skills' => $terminalPortfolio['skills'] ?? [],
+    ],
+];
 ?>
-<div class="h-full flex flex-col bg-[#0c0c0c] text-[#cccccc] font-mono text-xs overflow-hidden" 
-     x-data="terminalApp(<?php echo htmlspecialchars(js_value($terminalProjects), ENT_QUOTES, 'UTF-8'); ?>)" 
+<div class="h-full flex flex-col bg-[#0c0c0c] text-[#cccccc] font-mono text-xs overflow-hidden"
+     x-data="terminalApp(<?php echo htmlspecialchars(js_value($terminalData), ENT_QUOTES, 'UTF-8'); ?>)"
      @contextmenu="handleContextMenu($event)">
     <!-- Terminal Header Mock -->
     <div class="h-9 bg-[#2b2b2b] flex items-center px-3 space-x-4 border-b border-white/5">

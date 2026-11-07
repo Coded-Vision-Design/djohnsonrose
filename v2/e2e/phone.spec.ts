@@ -80,6 +80,20 @@ async function pinchOpen(page: Page, browserName: string, x: number, y: number) 
   await touch(page, 'touchend', fingers(130))
 }
 
+/** Opens an app through the store, as Start would, and waits for its window. */
+async function openApp(page: Page, app: string, title: string) {
+  await page.evaluate((id) => {
+    const w = window as unknown as {
+      Alpine?: { store: (n: string) => { openApp: (a: string) => void } }
+      __osStore: { getState: () => { openApp: (a: string) => void } }
+    }
+    ;(w.Alpine ? w.Alpine.store('os') : w.__osStore.getState()).openApp(id)
+  }, app)
+  await expect(page.locator(`.os-window[aria-label="${title}"]`)).toBeVisible()
+}
+
+const taskView = (page: Page) => page.getByRole('dialog', { name: 'Task view' })
+
 const middle = async (page: Page, name: string) => {
   const box = await icon(page, name).boundingBox()
   if (!box) throw new Error(`no icon: ${name}`)
@@ -101,6 +115,24 @@ for (const build of BUILDS) {
     test('a tap opens a file', async ({ page }) => {
       await icon(page, FILE).tap()
       await expect(page.getByRole('dialog', { name: FILE, exact: true })).toBeVisible()
+    })
+
+    test('Back returns from an app to the desktop, and Forward brings it back', async ({ page }) => {
+      const base = new URL(build.url).pathname
+      const win = page.getByRole('dialog', { name: FILE, exact: true })
+      await icon(page, FILE).tap()
+      await expect(win).toBeVisible()
+      await expect.poll(() => new URL(page.url()).pathname).toBe(`${base}app/notepad`)
+
+      await page.goBack()
+      await expect(win).toBeHidden()
+      expect(new URL(page.url()).pathname).toBe(base)
+      await icon(page, 'Projects').tap()
+      await expect(page.getByRole('dialog', { name: 'Projects', exact: true })).toBeVisible()
+
+      await page.goBack()
+      await page.goForward()
+      await expect(page.getByRole('dialog', { name: 'Projects', exact: true })).toBeVisible()
     })
 
     test('a long press on an icon opens its menu, not the file', async ({ page, browserName }) => {
@@ -178,6 +210,57 @@ for (const build of BUILDS) {
       await longPress(page, browserName, box.x + box.width / 2, box.y + box.height / 2)
       await expect(item(page, 'Unpin from taskbar')).toBeVisible()
       await expect(page.getByRole('dialog')).toHaveCount(0)
+    })
+
+    // Phones have one Task View: the Open apps button opens it, in two columns.
+    test('the Open apps button opens Task View, with finger-sized controls', async ({ page }) => {
+      await openApp(page, 'settings', 'Settings')
+      await openApp(page, 'calculator', 'Calculator')
+      const toggles = page.locator('[data-task-view-toggle]:visible')
+      await expect(toggles).toHaveCount(1)
+      await expect(toggles).toHaveClass(/os-task-button/)
+      await toggles.tap()
+
+      await expect(taskView(page)).toBeVisible()
+      await expect(toggles).toHaveAttribute('aria-expanded', 'true')
+      await expect(taskView(page).locator('.os-task-view-open')).toHaveText(['Calculator', 'Settings'])
+      const viewport = page.viewportSize()
+      for (const control of [
+        taskView(page).getByRole('button', { name: 'Done' }),
+        taskView(page).getByRole('button', { name: 'Close Settings' }),
+        taskView(page).getByRole('button', { name: 'Close Calculator' }),
+      ]) {
+        const box = await control.boundingBox()
+        // Rounded, as the Pixel's 2.625 pixel ratio snaps 44px to a hair under.
+        expect(Math.round(box?.width ?? 0)).toBeGreaterThanOrEqual(44)
+        expect(Math.round(box?.height ?? 0)).toBeGreaterThanOrEqual(44)
+        expect((box?.x ?? 0) + (box?.width ?? 0)).toBeLessThanOrEqual(viewport?.width ?? 0)
+      }
+      const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)
+      expect(overflow).toBeLessThanOrEqual(0)
+
+      await taskView(page).getByRole('button', { name: 'Settings', exact: true }).tap()
+      await expect(taskView(page)).toHaveCount(0)
+      await expect(page.locator('.os-window[aria-label="Settings"]')).toHaveClass(/window-active/)
+    })
+
+    test('Task View closes apps from their cards, says when none are open, and Done goes back', async ({ page }) => {
+      await openApp(page, 'calculator', 'Calculator')
+      await page.locator('.os-task-button').tap()
+      await taskView(page).getByRole('button', { name: 'Close Calculator' }).tap()
+      await expect(page.locator('.os-window[aria-label="Calculator"]')).toHaveCount(0)
+      await expect(taskView(page).getByText('No apps are open.')).toBeVisible()
+      await taskView(page).getByRole('button', { name: 'Done' }).tap()
+      await expect(taskView(page)).toHaveCount(0)
+    })
+
+    test('a long press in Task View does not open the desktop menu', async ({ page, browserName }) => {
+      await openApp(page, 'settings', 'Settings')
+      await page.locator('.os-task-button').tap()
+      await expect(taskView(page)).toBeVisible()
+      const viewport = page.viewportSize()
+      await longPress(page, browserName, (viewport?.width ?? 390) / 2, (viewport?.height ?? 800) - 160)
+      await expect(item(page, 'Refresh')).toBeHidden()
     })
 
     test('a tap on a text box still focuses it after a long press', async ({ page, browserName }) => {
@@ -270,6 +353,34 @@ for (const build of BUILDS) {
       await expect(box).toHaveValue(/typed by hand/)
     })
 
+    test('a tap on the clock opens the calendar across the screen, above the taskbar', async ({ page }) => {
+      const flyout = page.locator('[data-calendar-flyout]')
+      await page.locator('[data-tray-item="clock"]').tap()
+      await expect(flyout).toBeVisible()
+      await flyout.evaluate((el) => Promise.all([el, ...el.querySelectorAll('*')].flatMap((node) => node.getAnimations().map((a) => a.finished))))
+      const viewport = page.viewportSize()!
+      const box = (await flyout.boundingBox())!
+      const taskbar = (await page.locator('.os-taskbar').boundingBox())!
+      expect(box.x).toBe(0)
+      expect(Math.round(box.width)).toBe(viewport.width)
+      expect(box.y).toBeGreaterThanOrEqual(0)
+      expect(Math.round(box.y + box.height)).toBe(Math.round(taskbar.y))
+      const small = await flyout.evaluate((root) =>
+        [...root.querySelectorAll<HTMLElement>('button, [data-calendar-day]')]
+          .map((el) => el.getBoundingClientRect())
+          .filter((rect) => rect.width < 44 || rect.height < 44).length,
+      )
+      expect(small).toBe(0)
+
+      const next = flyout.getByRole('button', { name: 'Next month' })
+      const title = await page.locator('[data-calendar-title]').innerText()
+      await next.tap()
+      await expect(page.locator('[data-calendar-title]')).not.toHaveText(title)
+      // A tap on the wallpaper above it closes it.
+      await page.touchscreen.tap(viewport.width - 8, 8)
+      await expect(flyout).toBeHidden()
+    })
+
     test('Notepad works by touch, and its menus fit', async ({ page }) => {
       await icon(page, FILE).tap()
       const win = page.getByRole('dialog', { name: FILE, exact: true })
@@ -280,6 +391,115 @@ for (const build of BUILDS) {
       await page.getByLabel('Find', { exact: true }).fill('World')
       await win.getByRole('button', { name: 'Find Next' }).tap()
       await expect(win.locator('[data-notepad-mark]')).toHaveText('World')
+    })
+
+    test('VS Code picks a file by touch and shows its source', async ({ page }) => {
+      await icon(page, 'VS Code').tap()
+      const win = page.getByRole('dialog', { name: 'VS Code', exact: true })
+      const picker = win.getByRole('combobox', { name: 'File' })
+      await picker.waitFor({ timeout: 20_000 })
+      await picker.selectOption('assets/js/windowing/terminal.js')
+      await expect(win.locator('[data-source-tab][data-active]')).toHaveAttribute('data-source-tab', 'assets/js/windowing/terminal.js')
+      await expect(win.locator('[data-vscode-editor] .vsc-row').first()).toContainText("// The Terminal's commands")
+      await win.getByRole('button', { name: 'Close terminal.js' }).tap()
+      await expect(win.locator('[data-source-tab]')).toHaveCount(1)
+    })
+
+    test('the Terminal takes a typed command', async ({ page }) => {
+      await icon(page, 'Terminal').tap()
+      const input = page.getByRole('dialog', { name: 'Terminal', exact: true }).getByRole('textbox', { name: 'Terminal input' })
+      await input.waitFor({ timeout: 20_000 })
+      await input.tap()
+      await page.keyboard.type('man devante')
+      await page.keyboard.press('Enter')
+      await expect(page.locator('[data-terminal-output]').last()).toContainText('SEE ALSO')
+    })
+
+    test('Task Manager fits the phone and works by touch', async ({ page }) => {
+      await page.evaluate(() => {
+        const w = window as unknown as {
+          Alpine?: { store: (n: string) => { openApp: (app: string) => void } }
+          __osStore?: { getState: () => { openApp: (app: string) => void } }
+        }
+        ;(w.Alpine ? w.Alpine.store('os') : w.__osStore!.getState()).openApp('taskmanager')
+      })
+      const manager = page.locator('[data-task-manager]')
+      await manager.waitFor({ timeout: 20_000 })
+      // Tabs and End task are finger-sized, and nothing runs off the side.
+      const small = await manager.locator('[role="tab"], [data-tm-process] button').evaluateAll((all) =>
+        all.filter((el) => el.getBoundingClientRect().height < 44).length,
+      )
+      expect(small).toBe(0)
+      expect(await manager.evaluate((el) => el.scrollWidth - el.clientWidth)).toBeLessThanOrEqual(0)
+      await manager.getByRole('tab', { name: 'Performance', exact: true }).tap()
+      await expect(manager.locator('[data-tm-panel="performance"]')).toBeVisible()
+      await expect(manager.locator('[data-tm-vital]')).toHaveCount(5)
+      await manager.getByRole('tab', { name: 'Processes', exact: true }).tap()
+      await manager.getByRole('button', { name: 'End task: Task Manager' }).tap()
+      await expect(page.getByRole('dialog', { name: 'Task Manager', exact: true })).toHaveCount(0)
+    })
+  })
+}
+
+// The guided tour on a phone: its toast docks above the taskbar, full width,
+// with finger-sized buttons, and its build step points at the desktop icon, as
+// the tray's build chip is hidden here. See assets/js/windowing/tour.js.
+for (const build of BUILDS) {
+  test.describe(`${build.name} tour on a phone`, () => {
+    test.beforeEach(async ({ page }) => {
+      await boot(page, build.url)
+    })
+
+    test('docks above the taskbar, full width, and runs every step by touch', async ({ page }) => {
+      const toast = page.locator('[data-tour-toast]')
+      await page.locator('[data-start-button]').tap()
+      await page.locator('[data-recommended="tour"]').tap()
+      await expect(toast).toHaveAttribute('data-tour-step', 'start')
+      await expect(page.locator('[data-start-menu]')).toBeHidden()
+
+      const viewport = page.viewportSize() as { width: number; height: number }
+      // Measured once it has finished sliding in.
+      await toast.evaluate((el) => Promise.all(el.getAnimations().map((animation) => animation.finished)))
+      const docked = await toast.boundingBox()
+      const taskbar = await page.locator('.os-taskbar').boundingBox()
+      expect(Math.round(docked?.x ?? -1)).toBe(0)
+      expect(Math.round(docked?.width ?? 0)).toBe(viewport.width)
+      expect(Math.round((docked?.y ?? 0) + (docked?.height ?? 0))).toBe(Math.round(taskbar?.y ?? -1))
+
+      // What each step points at here. The build chip is hidden, so the desktop icon stands in.
+      const steps = [
+        ['start', '[data-start-button]'],
+        ['cv', '[data-desktop-item="CV - DeVanté Johnson-Rose.pdf"]'],
+        ['work', '[data-taskbar-app="explorer"]'],
+        ['terminal', '[data-desktop-item="Terminal"]'],
+        ['build', '[data-desktop-item$=" Build"]'],
+        ['done', '[data-start-button]'],
+      ]
+      await expect(page.locator('[data-tray-item="build"]')).toBeHidden()
+      for (const [index, [step, anchor]] of steps.entries()) {
+        await expect(toast).toHaveAttribute('data-tour-step', step)
+        await expect(toast.locator('[data-tour-count]')).toHaveText(`${index + 1} of 6`)
+        for (const height of await toast.locator('button:visible').evaluateAll((all) => all.map((el) => el.getBoundingClientRect().height))) {
+          expect(height).toBeGreaterThanOrEqual(44)
+        }
+        // The ring goes round the part, and the toast never covers it, docking at the top if it must.
+        await expect
+          .poll(
+            () =>
+              page.evaluate((selector) => {
+                const part = (document.querySelector(selector) as Element).getBoundingClientRect()
+                const ring = (document.querySelector('[data-tour-ring]') as Element).getBoundingClientRect()
+                const card = (document.querySelector('[data-tour-toast]') as Element).getBoundingClientRect()
+                const rings = ring.left <= part.left && ring.top <= part.top && ring.right >= part.right && ring.bottom >= part.bottom
+                const clear = part.bottom <= card.top || part.top >= card.bottom
+                return rings && clear
+              }, anchor),
+            { message: step },
+          )
+          .toBe(true)
+        await toast.locator('[data-tour-next]').tap()
+      }
+      await expect(toast).toBeHidden()
     })
   })
 }

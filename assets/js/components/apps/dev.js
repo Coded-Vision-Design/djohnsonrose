@@ -1,41 +1,68 @@
 // assets/js/components/apps/dev.js
 document.addEventListener('alpine:init', () => {
-    // VS Code. Picking a project shows it; only Build switches to the terminal.
-    // The terminal lines are shared with v2 in assets/js/windowing/devtools.js.
-    Alpine.data('vscodeApp', (firstProject = '') => ({
-        activeFile: firstProject,
-        explorerOpen: true,
-        activeTab: 'editor', // 'editor' or 'terminal'
-        terminalOutput: [...OsWindowing.VSCODE_TERMINAL_START],
-        isBuilding: false,
-        _timer: null,
+    // VS Code: a read-only viewer of the site's own source, as in v2. The files,
+    // tree, tabs and colouring are shared in assets/js/windowing/source-viewer.js,
+    // and only listed files are ever fetched.
+    Alpine.data('vscodeApp', () => ({
+        tabs: { tabs: [OsWindowing.SOURCE_START], active: OsWindowing.SOURCE_START },
+        expanded: OsWindowing.sourceFolders(OsWindowing.SOURCE_START),
+        files: {},
+        groups: OsWindowing.sourceGroups(),
+        _pending: new Set(),
 
-        runBuild() {
-            if (this.isBuilding) return;
-            this.isBuilding = true;
-            this.activeTab = 'terminal';
-            const steps = OsWindowing.vscodeBuildLog(this.activeFile);
-            this._timer = setInterval(() => {
-                this.terminalOutput.push(steps.shift());
-                if (!steps.length) {
-                    clearInterval(this._timer);
-                    this.isBuilding = false;
-                }
-                this.$nextTick(() => {
-                    const term = this.$root.querySelector('[data-vscode-terminal]');
-                    if (term) term.scrollTop = term.scrollHeight;
-                });
-            }, 300);
+        init() {
+            this.load();
         },
 
-        selectFile(name) {
-            this.activeFile = name;
-            this.activeTab = 'editor';
+        get rows() {
+            return OsWindowing.sourceRows(OsWindowing.SOURCE_FILES, this.expanded);
         },
 
-        destroy() {
-            clearInterval(this._timer);
-        }
+        get view() {
+            return this.tabs.active ? this.files[this.tabs.active] : undefined;
+        },
+
+        fileName: (path) => path.split('/').pop(),
+        language: (path) => OsWindowing.sourceLanguage(path),
+        badge: (path) => OsWindowing.SOURCE_LANGUAGES[OsWindowing.sourceLanguage(path)].badge,
+
+        // Fetches the open file once. A file that failed is fetched again on retry.
+        load() {
+            const path = this.tabs.active;
+            const url = path ? OsWindowing.sourceUrl(window.portfolioConfig.basePath, path) : null;
+            if (!url || this.files[path] || this._pending.has(path)) return;
+            this._pending.add(path);
+            fetch(url)
+                .then((res) => {
+                    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                    return res.text();
+                })
+                .then((text) => { this.files[path] = { status: 'ready', ...OsWindowing.renderSource(text, path) }; })
+                .catch(() => { this.files[path] = { status: 'error' }; })
+                .finally(() => this._pending.delete(path));
+        },
+
+        open(path) {
+            this.tabs = OsWindowing.openSourceTab(this.tabs, path);
+            this.expanded = [...new Set([...this.expanded, ...OsWindowing.sourceFolders(path)])];
+            this.load();
+        },
+
+        close(path) {
+            this.tabs = OsWindowing.closeSourceTab(this.tabs, path);
+            this.load();
+        },
+
+        toggle(path) {
+            this.expanded = this.expanded.includes(path)
+                ? this.expanded.filter((folder) => folder !== path)
+                : [...this.expanded, path];
+        },
+
+        retry() {
+            delete this.files[this.tabs.active];
+            this.load();
+        },
     }));
 
     // SQL Server Management Studio over the CV. The server (api/cv_data.php)

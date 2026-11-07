@@ -32,7 +32,8 @@ document.addEventListener('alpine:init', () => {
 
     Alpine.data('os', () => ({
         booted: false,
-        isBooting: localStorage.getItem('auth.loggedIn') !== 'true',
+        // Arriving from the other build, the screen is already up: no boot screen.
+        isBooting: localStorage.getItem('auth.loggedIn') !== 'true' && !Alpine.store('os').arrived,
         loggingIn: false,
         loggedIn: localStorage.getItem('auth.loggedIn') === 'true',
         user: {
@@ -49,12 +50,15 @@ document.addEventListener('alpine:init', () => {
             icon: '☁️',
             city: 'Essex',
             // 'loading', 'ready' or 'error', as in v2's store.
-            status: 'loading'
+            status: 'loading',
+            ...(Alpine.store('os').arrivedWeather ? { ...Alpine.store('os').arrivedWeather, status: 'ready' } : {})
         },
         widgetsOpen: false,
         startMenuOpen: false,
         startMenuView: 'pinned', // 'pinned' or 'allApps'
         quickSettingsOpen: false,
+        // The clock's notifications and calendar. See os/calendar.js.
+        calendarOpen: false,
         contextMenu: { open: false, x: 0, y: 0, items: [] },
         flyoutPreview: null,
         searchQuery: '',
@@ -194,12 +198,31 @@ document.addEventListener('alpine:init', () => {
 
             if (this.loggedIn) this.openSharedFile();
 
-            const initialApp = window.portfolioConfig.appToOpen;
-            if (this.loggedIn && initialApp) {
-                setTimeout(() => this.openApp(initialApp), 100);
-            }
-            
+            if (this.loggedIn) this.openAddressedApp();
+            this.followAddress();
+
             this.booted = true;
+        },
+
+        // Deep link: opens the app the address names once on the desktop, after
+        // signing in too. Signing out leaves the desktop's address, so signing in
+        // again opens nothing. The same as v2's Shell. See address.js.
+        openAddressedApp() {
+            const app = OsWindowing.readAddress(window.portfolioConfig.basePath, window.location.pathname, Object.keys(window.portfolioConfig.apps))?.app;
+            if (app) setTimeout(() => this.openApp(app), 100);
+        },
+
+        // The address follows the window in front, and Back and Forward bring
+        // windows back, as v2's Shell does. See address.js.
+        followAddress() {
+            const os = Alpine.store('os');
+            const follower = OsWindowing.followAddress({
+                base: window.portfolioConfig.basePath,
+                appIds: Object.keys(window.portfolioConfig.apps),
+                titleOf: (app) => this.appTitle(app),
+                show: (app) => { if (this.loggedIn) OsWindowing.showAddressed(os, app); }
+            });
+            Alpine.effect(() => follower.update({ app: OsWindowing.addressedApp(os.windows, os.focusedWindowId), opens: os.windowsOpened }));
         },
 
         openApp(a, t, e) { Alpine.store('os').openApp(a, t, e); this.startMenuOpen = false; },
@@ -213,7 +236,6 @@ document.addEventListener('alpine:init', () => {
             return { left: r.x + 'px', top: r.y + 'px', width: r.width + 'px', height: r.height + 'px' };
         },
         resizeDirs(win) { return OsWindowing.resizableEdges(win, Alpine.store('os').desktop); },
-        recentWindows() { return [...this.windows].sort((a, b) => b.z - a.z); },
         appIcon(app) {
             return window.portfolioConfig.imgPath + (window.portfolioConfig.apps[app]?.icon ?? 'favicon.webp');
         },
@@ -325,9 +347,19 @@ document.addEventListener('alpine:init', () => {
             }
         },
 
+        // Opening the clock's flyout closes the other panels, as v2's toggleCalendar does.
+        toggleCalendar() {
+            this.calendarOpen = !this.calendarOpen;
+            if (this.calendarOpen) {
+                this.startMenuOpen = false;
+                this.quickSettingsOpen = false;
+                this.widgetsOpen = false;
+            }
+        },
+
         handleTouchStart(e, action = null) {
             // Long press and pinch belong to the desktop, not to an open app.
-            if (!action && e.target.closest('.os-window, .os-taskbar, .os-task-switcher')) return;
+            if (!action && e.target.closest('.os-window, .os-taskbar, .os-task-view, .os-switcher')) return;
             if (e.touches.length === 1) {
                 this.touchData.startX = e.touches[0].clientX;
                 this.touchData.startY = e.touches[0].clientY;
@@ -486,6 +518,54 @@ document.addEventListener('alpine:init', () => {
             });
         },
 
+        // The build chip, on a plain click. Any other click opens the link as usual.
+        followBuildLink(e, name) {
+            if (!OsWindowing.isPlainClick(e)) return;
+            e.preventDefault();
+            this.switchBuild(e.currentTarget.getAttribute('href'), name);
+        },
+
+        // Swaps to the React build with nothing on screen changing: what is open,
+        // where, and how the desktop looks go with the visitor. See handoff.js,
+        // and v2's switchBuild in its store, which does the same the other way.
+        switchBuild(url, name) {
+            const os = Alpine.store('os');
+            const saved = (key) => {
+                try {
+                    return localStorage.getItem(key);
+                } catch {
+                    return null;
+                }
+            };
+            const handoff = OsWindowing.createHandoff({
+                from: 'v1',
+                signedIn: this.loggedIn,
+                windows: os.windows.map(win => ({
+                    ...win,
+                    extras: { ...OsWindowing.pickExtras(win.app, win, OsWindowing.V1_EXTRA_NAMES), ...OsWindowing.liveExtras(win.id) }
+                })),
+                focusedId: os.focusedWindowId,
+                settings: { ...os.settings, themeChosen: saved('settings.theme') !== null },
+                desktop: {
+                    pinnedApps: os.pinnedApps,
+                    iconSize: os.desktopIconSize,
+                    iconsVisible: os.desktopIconsVisible,
+                    iconPositions: this.desktopIconPositions,
+                    zoom: os.desktopZoom
+                },
+                consent: saved('cookie.consent') === null ? null : os.cookieConsent,
+                weather: this.weather.status === 'ready' ? this.weather : null
+            }, Date.now());
+            try {
+                OsWindowing.writeHandoff(sessionStorage, handoff);
+            } catch {
+                // Blocked storage: the other build starts afresh, as a plain link would.
+            }
+            // The same event as v2's, so that the logs read alike.
+            os.logEvent('System', 'Information', `Version switch: opening ${name} (${url})`);
+            window.location.href = url;
+        },
+
         openSharedFile() {
             const shared = OsWindowing.sharedPath(window.location.hash);
             if (!shared) return;
@@ -515,11 +595,8 @@ document.addEventListener('alpine:init', () => {
             } else if (item.type === 'app') {
                 this.openApp(item.app, item.name, item.extraData);
             } else if (item.type === 'link' && item.url) {
-                // Cross-build hop (e.g. React/PHP Desktop shortcuts). Mirrored
-                // by v2's DesktopIcons → fires the same Security/System event
-                // shape so the event logs read identically across builds.
-                Alpine.store('os').logEvent('System', 'Information', `Version switch: opening ${item.name} (${item.url})`);
-                window.location.href = item.url;
+                // The Desktop's build shortcut, which phones have in place of the chip.
+                this.switchBuild(item.url, item.name);
             } else if (item.type === 'image') {
                 this.openApp('photos', item.name, { imageName: item.name, folderPath: path || 'C:\\Users\\DeVante\\Desktop' });
             } else if (item.type === 'video') {
@@ -589,10 +666,7 @@ document.addEventListener('alpine:init', () => {
                 localStorage.setItem('auth.loggedIn', 'true');
                 // The cookie banner shows from here (loggedIn), not after a reload.
                 this.openSharedFile();
-
-                if (window.location.pathname !== window.portfolioConfig.basePath + 'desktop') {
-                    window.history.pushState({}, '', window.portfolioConfig.basePath + 'desktop');
-                }
+                this.openAddressedApp();
             });
         },
 
@@ -602,9 +676,9 @@ document.addEventListener('alpine:init', () => {
             OsWindowing.forgetReferences(sessionStorage);
             this.loggedIn = false;
             localStorage.removeItem('auth.loggedIn');
+            // The address goes back to the desktop's with the windows. See followAddress.
             Alpine.store('os').windows = [];
             this.startMenuOpen = false;
-            window.history.pushState({}, '', window.portfolioConfig.basePath + 'login');
         },
 
         toggleTheme() {

@@ -2,8 +2,9 @@
     <!-- Header -->
     <div class="text-center mb-10 border-b-2 border-black pb-6">
         <h1 class="text-4xl font-bold uppercase tracking-widest mb-2">DeVanté Johnson-Rose</h1>
-        <p class="text-lg text-gray-700 font-semibold">Applications Support Engineer · Full-Stack Developer</p>
+        <p class="text-lg text-gray-700 font-semibold">Full Stack Developer</p>
         <p class="text-gray-500 text-sm mt-2">📧 devante@johnson-rose.co.uk · ☎ 07429 490 333 · 📍 Essex, UK · 🌍 devante.johnson-rose.co.uk</p>
+        <p class="text-gray-500 text-sm mt-1">🔗 <a href="https://www.linkedin.com/in/devant%C3%A9-johnson-rose-b5303a47/">linkedin.com/in/devanté-johnson-rose-b5303a47</a></p>
     </div>
 
     <!-- Headline stats -->
@@ -78,7 +79,7 @@
             </section>
 
             <section class="mb-8">
-                <h2 class="text-sm font-bold border-b border-black mb-3">CERTIFICATIONS <span class="text-[10px] font-normal text-gray-500">/ 19</span></h2>
+                <h2 class="text-sm font-bold border-b border-black mb-3">CERTIFICATIONS <span class="text-[10px] font-normal text-gray-500">/ 20</span></h2>
                 <div class="space-y-2 text-[10px] text-gray-700 leading-snug">
                     <div>
                         <span class="font-semibold">Anthropic</span> · 2026<br>

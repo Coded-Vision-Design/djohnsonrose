@@ -13,6 +13,7 @@ const APPS = [
   ['settings', 'Settings'], ['taskmanager', 'Task Manager'], ['eventviewer', 'Event Viewer'],
   ['calculator', 'Calculator'], ['paint', 'Paint'], ['photos', 'Photos'], ['video', 'Movies & TV'],
   ['pdfreader', 'PDF Reader'], ['admin', 'Admin Console'], ['references', 'References'], ['github', 'GitHub'],
+  ['copilot', 'Copilot'],
 ] as const
 
 async function prepare(page: Page, violations: string[]) {
@@ -73,6 +74,25 @@ test.describe('security headers', () => {
     expect(res.headers()['content-security-policy']).toContain("default-src 'self'")
   })
 
+  test('v2 still serves its desktop and every app’s address', async ({ request }) => {
+    for (const path of ['/v2', '/v2/', '/v2/login', '/v2/desktop/', ...APPS.map(([app]) => `/v2/app/${app}`), '/v2/app/word/']) {
+      const res = await request.get(BASE + path)
+      expect(res.status(), path).toBe(200)
+      expect(res.headers()['content-security-policy'], path).toContain("default-src 'self'")
+      expect(await res.text(), path).toContain('<div id="root">')
+    }
+  })
+
+  test('v2 answers any other address with v1’s 404 page, as v1 does', async ({ request }) => {
+    for (const path of ['/v2/nonexistent-page', '/v2/app/nope', '/v2/app/word/extra', '/v2/APP/word', '/v2/privacy']) {
+      const res = await request.get(BASE + path)
+      expect(res.status(), path).toBe(404)
+      expect(await res.text(), path).toContain('<h1>Page not found</h1>')
+    }
+    // A missing hashed file is still a bare 404, not a page.
+    expect((await request.get(`${BASE}/v2/assets/missing-chunk.js`)).status()).toBe(404)
+  })
+
   test('the parent domain path redirects to the one canonical address', async ({ request }) => {
     const res = await request.get(`${BASE}/app/word?x=1`, {
       headers: { Host: 'johnson-rose.co.uk' },
@@ -80,6 +100,12 @@ test.describe('security headers', () => {
     })
     expect(res.status()).toBe(301)
     expect(res.headers().location).toBe('https://devante.johnson-rose.co.uk/app/word?x=1')
+  })
+
+  test('the sounds are served as audio, not as text', async ({ request }) => {
+    const res = await request.get(`${BASE}/assets/sounds/Windows%20Notify.m4a`)
+    expect(res.status()).toBe(200)
+    expect(res.headers()['content-type']).toBe('audio/mp4')
   })
 
   test('llms.txt is served as UTF-8, so the accent in DeVanté survives', async ({ request }) => {

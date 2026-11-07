@@ -77,4 +77,16 @@ return [
         'longitude' => (float)getEnvVar('WEATHER_LONGITUDE', '0.56'),
         'city'      => getEnvVar('WEATHER_CITY', 'Essex'),
     ],
+    // Copilot (api/copilot.php) is switched off until ANTHROPIC_API_KEY is set.
+    // The key stays on the server: it is never sent to the browser or logged.
+    // Defaults and limits are in lib/copilot.php (copilot_settings).
+    'copilot' => [
+        'api_key'         => getEnvVar('ANTHROPIC_API_KEY', ''),
+        'base_url'        => getEnvVar('ANTHROPIC_BASE_URL', 'https://api.anthropic.com'),
+        'chat_model'      => getEnvVar('COPILOT_CHAT_MODEL', 'claude-haiku-5-5'),
+        'match_model'     => getEnvVar('COPILOT_MATCH_MODEL', 'claude-sonnet-5-5'),
+        'timeout'         => (float)getEnvVar('COPILOT_TIMEOUT', '60'),
+        'daily_cap'       => (int)getEnvVar('COPILOT_DAILY_CAP', '500'),
+        'match_daily_cap' => (int)getEnvVar('COPILOT_MATCH_DAILY_CAP', '100'),
+    ],
 ];

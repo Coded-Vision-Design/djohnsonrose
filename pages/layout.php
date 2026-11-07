@@ -150,7 +150,7 @@ $navItems = ['portfolio' => ['Portfolio', BASE_PATH], 'privacy' => ['Privacy', B
 <?php echo $pageContent; ?>
     </main>
     <footer class="site-footer">
-        <p>DeVanté Johnson-Rose, Full Stack Developer and Systems Engineer.</p>
+        <p>DeVanté Johnson-Rose, Full Stack Developer.</p>
     </footer>
 </body>
 </html>

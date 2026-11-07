@@ -11,6 +11,11 @@ const TELEMETRY_RATE_LIMIT = 120;     // events per visitor...
 const TELEMETRY_RATE_WINDOW = 600;    // ...in any ten minutes
 const TELEMETRY_DAILY_CAP = 5000;     // events a day from everyone together
 const TELEMETRY_RETENTION_DAYS = 90;
+// Messages from the Outlook app's contact form (email_logs: sender, subject,
+// body and a shortened IP address) are kept for 12 months, long enough to
+// reply and deal with abuse, then deleted by the same daily job. pages/privacy.php
+// says so.
+const EMAIL_LOG_RETENTION_DAYS = 365;
 const TELEMETRY_TIMEZONE = 'Europe/London';
 
 // The only detail fields kept. Anything else a client sends is dropped.

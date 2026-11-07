@@ -52,6 +52,8 @@ export const OFFICE_ICONS = {
   zoomIn: { d: 'M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z' },
   previous: { d: 'M15.4 7.4 14 6l-6 6 6 6 1.4-1.4L10.8 12z' },
   next: { d: 'M8.6 16.6 10 18l6-6-6-6-1.4 1.4 4.6 4.6z' },
+  present: { d: 'M21 3H3a2 2 0 00-2 2v12a2 2 0 002 2h5v2h8v-2h5a2 2 0 002-2V5a2 2 0 00-2-2zm0 14H3V5h18v12zM10 7.5v7l5.5-3.5z' },
+  endShow: { d: 'M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z' },
 };
 
 // Elements that start a new line, so the words either side of them stay apart.
@@ -297,19 +299,152 @@ export function cellValue(sheet, ref) {
 /** Slides are drawn at this size and shrunk to fit, as PowerPoint does. */
 export const SLIDE_SIZE = { width: 960, height: 540 };
 export const POWERPOINT_TABS = ['File', 'Home', 'Insert', 'Design', 'Transitions', 'Animations', 'Slide Show'];
+/** A slide show may grow past the size slides are drawn at, to fill the screen. */
+export const SHOW_MAX_ZOOM = 4;
 
-/** A slide for each project, its picture found under the build's base path. */
-export function portfolioDeck(data, base = '/') {
-  return projectsOf(data)
-    .filter((project) => text(project.title).trim())
-    .map((project) => ({
-      id: project.id,
-      title: text(project.title),
-      description: text(project.description),
-      tags: Array.isArray(project.tags) ? project.tags.map(text) : [],
-      image: project.thumbnail ? `${base}${project.thumbnail}` : '',
-    }));
+// A case study is made only of what the repo already says about a project: its
+// entry in data/portfolio.json, and the files in its folder under Projects in
+// data/filesystem.json. Nothing is written for it, so a part a project lacks
+// is left out rather than filled. Its sections run as the owner asked: problem,
+// approach, outcome, metrics, then the desktop and mobile shots side by side.
+const PROJECTS_ROOT = 'C:\\Users\\DeVante\\Projects';
+const CASE_STUDY_PARTS = [
+  { id: 'problem', file: 'requirements.txt', heading: 'Problem' },
+  { id: 'approach', file: 'plan.txt', heading: 'Approach' },
+  { id: 'outcome', file: 'outcome.txt', heading: 'Outcome' },
+];
+const METRICS = 'Metrics';
+const SHOTS = 'Desktop and mobile';
+const PICTURES = 'Pictures';
+
+/** The only words a slide has that the data does not: the names of its sections. */
+export const SLIDE_HEADINGS = [...CASE_STUDY_PARTS.map((part) => part.heading), METRICS, SHOTS];
+
+// A result's figure: a ranking (#1), a share (75%) or a time (within 3 weeks).
+// A version (PHP 8.5), an ordinal (3rd) or a model (Next.js 16) is not a result.
+const FIGURE = /#\d+|\b\d+(?:\.\d+)?%|\b\d+(?:\.\d+)?\s(?:seconds?|minutes?|hours?|days?|weeks?|months?|years?)\b/i;
+
+/**
+ * The results that carry a figure, each with its figure picked out, word for
+ * word as the outcome has it. The repo's data holds a project's figures only
+ * in its outcome: cv.php names no single project, and a figure in a
+ * description, such as 24/7, describes the service rather than a result.
+ */
+export function slideMetrics(points) {
+  return (Array.isArray(points) ? points : [])
+    .map((point) => ({ figure: FIGURE.exec(text(point))?.[0] ?? '', text: text(point) }))
+    .filter((metric) => metric.figure);
 }
+
+const withBase = (url, base) => (!url ? '' : /^([a-z]+:|\/)/i.test(url) ? url : `${base}${url}`);
+const entriesIn = (files, path) => (Array.isArray(files[path]) ? files[path] : []);
+const lastSegment = (path) => path.slice(path.lastIndexOf('\\') + 1);
+
+/** A project's own folder: the one under Projects named after it. */
+const projectFolder = (files, title) =>
+  Object.keys(files).find((path) => path.startsWith(`${PROJECTS_ROOT}\\`) && lastSegment(path) === title) ?? null;
+
+/** An address as a person would type it: no scheme and no closing slash. */
+export const linkLabel = (url) => text(url).replace(/^[a-z]+:\/\//i, '').replace(/\/+$/, '');
+
+/**
+ * The points of a text file, one to a line. The heading line (REQUIREMENTS:)
+ * and the bullet or number in front of each point go, and a line that is only
+ * indented carries on the point above it.
+ */
+export function slidePoints(value) {
+  const lines = text(value).replace(/\r\n?/g, '\n').split('\n');
+  if (/^[A-Z][A-Z &]*:$/.test(lines[0].trim())) lines.shift();
+  const items = [];
+  let numbered = true;
+  for (const line of lines) {
+    if (!line.trim()) continue;
+    const bullet = /^\s*[-*•]\s+(.*)$/.exec(line);
+    const number = /^\s*\d+[.)]\s+(.*)$/.exec(line);
+    if (bullet || number) {
+      items.push((bullet ?? number)[1].trim());
+      if (!number) numbered = false;
+    } else if (/^\s/.test(line) && items.length) {
+      items[items.length - 1] += ` ${line.trim()}`;
+    } else {
+      items.push(line.trim());
+      numbered = false;
+    }
+  }
+  return { items, ordered: numbered && items.length > 0 };
+}
+
+/** The folder's desktop and mobile shots, or the portfolio's own two when it has none. */
+function deckShots(project, files, folder, base) {
+  const title = text(project.title);
+  const picture = (name, url) => ({ name, url: withBase(url, base), alt: `${title}, ${name}` });
+  const found = folder
+    ? entriesIn(files, `${folder}\\${PICTURES}`)
+        .filter((entry) => entry?.type === 'image' && entry.url)
+        .map((entry) => picture(text(entry.name).replace(/\.[a-z0-9]+$/i, ''), entry.url))
+    : [];
+  if (found.length) return found;
+  return [
+    project.thumbnail && picture('Desktop UI', project.thumbnail),
+    project.thumbnail_mobile && picture('Mobile UI', project.thumbnail_mobile),
+  ].filter(Boolean);
+}
+
+/**
+ * A case study for each project, in the portfolio's order: a title slide (its
+ * name, what it is, its tags and the live link), then the problem from its
+ * requirements, the approach from its plan, its outcome, the outcome's
+ * figures as metrics, and its desktop and mobile shots.
+ */
+export function caseStudyDecks(data, fileSystem, base = '/') {
+  const files = fileSystem && typeof fileSystem === 'object' ? fileSystem : {};
+  return projectsOf(data)
+    .filter((project) => text(project?.title).trim())
+    .map((project) => {
+      const title = text(project.title);
+      const folder = projectFolder(files, title);
+      const entries = folder ? entriesIn(files, folder) : [];
+      const shots = deckShots(project, files, folder, base);
+      const cover = withBase(project.thumbnail, base) || shots[0]?.url || '';
+      const slides = [
+        {
+          kind: 'title',
+          id: 'title',
+          heading: title,
+          text: text(project.description),
+          tags: Array.isArray(project.tags) ? project.tags.map(text) : [],
+          url: text(project.url),
+          link: linkLabel(project.url),
+          image: cover,
+          alt: `The ${title} website`,
+        },
+      ];
+      let outcome = [];
+      for (const part of CASE_STUDY_PARTS) {
+        const file = entries.find((entry) => entry?.name === part.file);
+        const { items, ordered } = slidePoints(file?.content);
+        if (part.id === 'outcome') outcome = items;
+        if (items.length) slides.push({ kind: 'points', id: part.id, heading: part.heading, items, ordered });
+      }
+      const metrics = slideMetrics(outcome);
+      if (metrics.length) slides.push({ kind: 'metrics', id: 'metrics', heading: METRICS, metrics });
+      if (shots.length) {
+        const heading = shots.length > 1 ? SHOTS : shots[0].name;
+        slides.push({ kind: 'shots', id: 'shots', heading, shots });
+      }
+      return { id: project.id, title, cover, slides };
+    });
+}
+
+/** Where the deck a case study file asks for is. The first deck, failing that. */
+export function deckIndex(decks, key) {
+  if (key === undefined || key === null) return 0;
+  const index = decks.findIndex((deck) => String(deck.id) === String(key));
+  return Math.max(0, index);
+}
+
+/** One slide on or back, never past either end. */
+export const stepSlide = (active, step, count) => (count > 0 ? Math.min(count - 1, Math.max(0, active + step)) : 0);
 
 const EDITABLE = 'input, textarea, select, [contenteditable=""], [contenteditable="true"]';
 const SLIDE_STEPS = { ArrowRight: 1, ArrowDown: 1, PageDown: 1, ArrowLeft: -1, ArrowUp: -1, PageUp: -1 };
@@ -325,7 +460,74 @@ export function slideForKey(event, active, count) {
   if (event.key === 'End') return count - 1;
   const step = SLIDE_STEPS[event.key];
   if (!step) return null;
-  return Math.min(count - 1, Math.max(0, active + step));
+  return stepSlide(active, step, count);
+}
+
+/** A key in a slide show: Esc ends it, and the editor's keys move between slides. */
+export function showKey(event, active, count) {
+  if (event.key === 'Escape') {
+    return event.ctrlKey || event.metaKey || event.altKey || event.shiftKey ? null : 'end';
+  }
+  return slideForKey(event, active, count);
+}
+
+/**
+ * Which way a finger swiped: 1 on to the next slide when it moved left, -1 back
+ * when it moved right, and 0 for a tap, a short slide or a mostly upright one.
+ */
+export function swipeStep(start, end, threshold = 50) {
+  if (!start || !end) return 0;
+  const dx = end.x - start.x;
+  const dy = end.y - start.y;
+  if (Math.abs(dx) < threshold || Math.abs(dx) < Math.abs(dy) * 1.5) return 0;
+  return dx < 0 ? 1 : -1;
+}
+
+/**
+ * Calls back with each swipe across an element. Touch events, not pointer
+ * events, as a phone cancels the pointer once it decides the finger is
+ * panning. A second finger is a pinch, not a swipe. Returns a function that stops it.
+ *
+ * A sideways move is cancelled, so the browser never takes it for a pan. Left
+ * to Chrome, the finger leaving at speed starts a fling, and the next tap only
+ * stops that fling: a tap on Present or End show straight after a swipe would
+ * do nothing. An upright pan and a pinch stay the browser's.
+ */
+export function watchSwipe(element, onStep, { threshold } = {}) {
+  if (!element) return () => {};
+  let start = null;
+  let last = null;
+  const at = (event) => {
+    const touch = event.touches?.[0];
+    return touch ? { x: touch.clientX, y: touch.clientY } : null;
+  };
+  const begin = (event) => {
+    start = event.touches?.length === 1 ? at(event) : null;
+    last = start;
+  };
+  const move = (event) => {
+    if (event.touches?.length !== 1) {
+      start = null;
+      return;
+    }
+    if (!start) return;
+    last = at(event);
+    if (event.cancelable && Math.abs(last.x - start.x) > Math.abs(last.y - start.y)) event.preventDefault();
+  };
+  const end = () => {
+    const step = swipeStep(start, last, threshold);
+    start = last = null;
+    if (step) onStep(step);
+  };
+  const cancel = () => {
+    start = last = null;
+  };
+  const listeners = { touchstart: begin, touchmove: move, touchend: end, touchcancel: cancel };
+  // Only touchmove may be cancelled, so only it holds up the browser's scrolling.
+  for (const [type, listener] of Object.entries(listeners)) element.addEventListener(type, listener, { passive: type !== 'touchmove' });
+  return () => {
+    for (const [type, listener] of Object.entries(listeners)) element.removeEventListener(type, listener);
+  };
 }
 
 // ---- PuTTY ---------------------------------------------------------------------

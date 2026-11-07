@@ -25,6 +25,8 @@ AddType video/mp4 .mp4
 AddType video/mp4 .m4v
 AddType video/webm .webm
 AddType video/ogg .ogv
+# Hostinger sent the AAC sounds as text/plain.
+AddType audio/mp4 .m4a
 # llms.txt and llm.txt hold accented names; without a charset browsers guess.
 # A header rather than AddCharset, which Hostinger's server ignores.
 <IfModule mod_headers.c>
@@ -32,6 +34,13 @@ AddType video/ogg .ogv
         Header set Content-Type "text/plain; charset=utf-8"
     </FilesMatch>
 </IfModule>
+# build.json says which commit is live (Task Manager reads it), so it is checked
+# with the server every time rather than kept from an older deploy.
+<Files "build.json">
+    <IfModule mod_headers.c>
+        Header set Cache-Control "no-cache"
+    </IfModule>
+</Files>
 
 # ---- Sensitive files: deny all direct access ----
 # .env, dotfiles, config/bootstrap, and any PHP file that isn't an entry point.
@@ -70,8 +79,9 @@ RewriteRule ^admin/?$        /v2/app/admin [R=302,L]
 RewriteRule ^adminconsole/?$ /v2/app/admin [R=302,L]
 
 # React v2: serve the SPA from /v2/. Real built files under v2/dist/
-# (assets/, index.html, favicon, etc.) are served directly. Anything else
-# under /v2/ falls back to v2/dist/index.html so React Router can handle it.
+# (assets/, index.html, favicon, etc.) are served directly, and so is
+# v2/dist/index.html for v2's own addresses below. Any other address under /v2/
+# falls through to index.php, which answers with v1's 404 page.
 #
 # [END] (Apache 2.3.9+) terminates the rewrite engine entirely. Plain [L]
 # isn't enough here: in .htaccess context Apache restarts mod_rewrite after
@@ -86,7 +96,11 @@ RewriteRule ^v2/(.+)$ v2/dist/$1 [END]
 # instead of a clear load error. Each deploy removes the previous chunks.
 RewriteRule ^v2/assets/ - [R=404,L]
 
-RewriteRule ^v2(/.*)?$ v2/dist/index.html [END]
+# v2's addresses, the same as v1's and as assets/js/windowing/address.js: the
+# desktop (also at /login and /desktop) and each app in data/apps.json. A new
+# app goes in this list too; v2/src/windowing/address.test.ts checks it.
+RewriteRule ^v2(/(login|desktop)?)?/?$ v2/dist/index.html [END]
+RewriteRule ^v2/app/(edge|vscode|explorer|terminal|notepad|word|excel|powerpoint|outlook|photoshop|flstudio|docker|putty|filezilla|database|settings|taskmanager|eventviewer|calculator|paint|photos|video|pdfreader|admin|references|github|copilot)/?$ v2/dist/index.html [END]
 
 # v1 (PHP): handle routing to index.php if file/dir doesn't exist
 RewriteCond %{REQUEST_FILENAME} !-f

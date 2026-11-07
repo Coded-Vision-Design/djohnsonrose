@@ -42,6 +42,16 @@ import {
 } from '../../../assets/js/windowing/shell-ui.js'
 import { filesystem, type FileSystem, type FsEntry } from '../data/filesystem'
 import { forgetReferences } from '../../../assets/js/windowing/references.js'
+import { addNotification, type ShellNotification } from '../../../assets/js/windowing/calendar.js'
+import { siteToVisit } from '../../../assets/js/windowing/browser.js'
+import {
+  createHandoff,
+  liveExtras,
+  restoredWindows,
+  writeHandoff,
+  type Handoff,
+} from '../../../assets/js/windowing/handoff.js'
+import { readConsent } from '../lib/consent'
 
 const prefersDark = () => !!window.matchMedia?.('(prefers-color-scheme: dark)').matches
 
@@ -53,7 +63,7 @@ const animateOut = (id: number, kind: 'close' | 'minimise') =>
 // big to go through persist below, which writes on every state change.
 const FILES_KEY = 'react.fileSystem'
 // Bump this when data/filesystem.json changes, so that saved copies pick it up.
-const FILES_VERSION = 3
+const FILES_VERSION = 4
 
 function savedFiles(): FileSystem {
   try {
@@ -75,6 +85,8 @@ export interface WinWindow extends ManagedWindow {
   extra?: Record<string, unknown>
   /** Goes up when an open app is given something new to show. */
   revision?: number
+  /** Brought over by the build switch, so it appears at once, with no opening animation. */
+  restored?: boolean
 }
 
 export interface Settings {
@@ -178,6 +190,20 @@ export interface ContextMenuState {
 
 const EMPTY_PREVIEW: SnapPreview = { rect: null, bar: null, target: null }
 
+/** The settings the build switch carries as they are. The theme has its own rule. */
+const CARRIED_SETTINGS = [
+  'sound',
+  'volume',
+  'brightness',
+  'wallpaper',
+  'wifi',
+  'bluetooth',
+  'airplane',
+  'batterySaver',
+  'nightLight',
+  'accessibility',
+] as const
+
 function initialDesktop(): Desktop {
   return { left: 0, top: 0, width: window.innerWidth, height: window.innerHeight - TASKBAR_HEIGHT }
 }
@@ -201,6 +227,8 @@ interface OsState {
   windows: WinWindow[]
   focusedWindowId: number | null
   nextWindowZ: number
+  /** How many windows have opened, so that the address can tell an open from a focus. See address.js. */
+  windowsOpened: number
   snapPreview: SnapPreview
   snapFlyout: SnapFlyoutState | null
   snapAssist: AssistPlan | null
@@ -225,6 +253,8 @@ interface OsState {
   startMenuOpen: boolean
   quickSettingsOpen: boolean
   widgetsOpen: boolean
+  /** The clock's notifications and calendar. */
+  calendarOpen: boolean
   pinnedApps: string[]
 
   // Live ambient state
@@ -243,6 +273,8 @@ interface OsState {
   renaming: { path: string; name: string } | null
   properties: { entry: FsEntry; path: string } | null
   toast: string | null
+  /** Every toast shown this session, newest first, for the clock's flyout. */
+  notifications: ShellNotification[]
 
   // Persisted.
   startPins: string[]
@@ -263,6 +295,10 @@ interface OsState {
   finishBoot: () => void
   login: () => void
   logout: () => void
+  /** Takes what v1 had on screen, left by the build switch. See handoff.js. */
+  adoptHandoff: (handoff: Handoff) => void
+  /** Swaps to v1 with nothing on screen changing. See handoff.js. */
+  switchBuild: (url: string, name: string, go?: (url: string) => void) => void
 
   openApp: (
     app: string,
@@ -307,6 +343,7 @@ interface OsState {
   toggleStartMenu: () => void
   toggleQuickSettings: () => void
   toggleWidgets: () => void
+  toggleCalendar: () => void
   closeAllPopups: () => void
   minimizeAll: () => void
 
@@ -327,6 +364,7 @@ interface OsState {
   showProperties: (entry: FsEntry, path: string) => void
   closeProperties: () => void
   showToast: (message: string) => void
+  clearNotifications: () => void
   setDesktopIconSize: (size: IconSize) => void
   setDesktopIconsVisible: (visible: boolean) => void
   setIconPosition: (name: string, pos: IconPosition) => void
@@ -377,6 +415,7 @@ export const useOsStore = create<OsState>()(
       windows: [],
       focusedWindowId: null,
       nextWindowZ: 100,
+      windowsOpened: 0,
       snapPreview: EMPTY_PREVIEW,
       snapFlyout: null,
       snapAssist: null,
@@ -407,6 +446,7 @@ export const useOsStore = create<OsState>()(
       startMenuOpen: false,
       quickSettingsOpen: false,
       widgetsOpen: false,
+      calendarOpen: false,
       pinnedApps,
 
       clock: { time: '', date: '' },
@@ -419,6 +459,7 @@ export const useOsStore = create<OsState>()(
       renaming: null,
       properties: null,
       toast: null,
+      notifications: [],
       startPins: [],
       favourites: [],
       desktopIconSize: 'medium',
@@ -456,9 +497,79 @@ export const useOsStore = create<OsState>()(
         })
       },
 
+      adoptHandoff: (handoff) => {
+        const { settings: carried, desktop: icons } = handoff
+        const state = get()
+        const settings = { ...state.settings }
+        for (const key of CARRIED_SETTINGS) {
+          const value = carried[key]
+          if (value !== null) Object.assign(settings, { [key]: value })
+        }
+        // Until the visitor picks a theme, both builds follow the system.
+        if (carried.themeChosen === false) settings.theme = initialTheme(null, prefersDark())
+        else if (carried.themeChosen && carried.theme) settings.theme = carried.theme
+        const restored = restoredWindows(handoff, nextWindowId, state.nextWindowZ)
+        set({
+          // The screen is already up, so there is no boot screen, and no lock
+          // screen unless the visitor was signed out.
+          isBooting: false,
+          loggedIn: handoff.signedIn,
+          settings,
+          themeChosen: carried.themeChosen ?? state.themeChosen,
+          pinnedApps: icons.pinnedApps ?? state.pinnedApps,
+          desktopIconSize: icons.iconSize ?? state.desktopIconSize,
+          desktopIconsVisible: icons.iconsVisible ?? state.desktopIconsVisible,
+          iconPositions: icons.iconPositions,
+          desktopZoom: icons.zoom ?? 1,
+          windows: restored.windows.map(({ extras, ...win }) => ({
+            ...win,
+            loading: false,
+            ...(Object.keys(extras).length ? { extra: extras } : {}),
+          })),
+          focusedWindowId: restored.focusedId,
+          nextWindowZ: restored.nextWindowZ,
+          // The taskbar keeps the weather it showed, rather than say Loading.
+          ...(handoff.weather ? { weather: { ...handoff.weather, status: 'ready' as const } } : {}),
+        })
+      },
+
+      switchBuild: (url, name, go = (to) => window.location.assign(to)) => {
+        const state = get()
+        const handoff = createHandoff(
+          {
+            from: 'v2',
+            signedIn: state.loggedIn,
+            windows: state.windows.map((w) => ({ ...w, extras: { ...w.extra, ...liveExtras(w.id) } })),
+            focusedId: state.focusedWindowId,
+            settings: { ...state.settings, themeChosen: state.themeChosen },
+            desktop: {
+              pinnedApps: state.pinnedApps,
+              iconSize: state.desktopIconSize,
+              iconsVisible: state.desktopIconsVisible,
+              iconPositions: state.iconPositions,
+              zoom: state.desktopZoom,
+            },
+            consent: readConsent(),
+            weather: state.weather.status === 'ready' && typeof state.weather.temp === 'number' ? { ...state.weather, temp: state.weather.temp } : null,
+          },
+          Date.now(),
+        )
+        try {
+          writeHandoff(sessionStorage, handoff)
+        } catch {
+          // Blocked storage: v1 starts afresh, as a plain link would.
+        }
+        // The same event as v1's, so that the logs read alike.
+        state.logEvent('System', 'Information', `Version switch: opening ${name} (${url})`)
+        go(url)
+      },
+
       openApp: (app, title, options) => {
         const recent = recentKey(app, options?.extra)
         if (recent) set({ recent: { ...get().recent, [recent]: Date.now() } })
+        // A Visit Site file's real tab opens now, inside the click. See siteToVisit.
+        const site = siteToVisit(app, options?.extra)
+        if (site) window.open(site, '_blank', 'noopener,noreferrer')
         const state = get()
         // Launching an app always closes start/quick-settings/widgets popups.
         if (
@@ -514,6 +625,7 @@ export const useOsStore = create<OsState>()(
           windows: [...state.windows, w],
           focusedWindowId: id,
           nextWindowZ: state.nextWindowZ + 1,
+          windowsOpened: state.windowsOpened + 1,
         })
         // Single System logEvent matches v1's openApp: the logEvent router
         // already records System events, so an explicit track('Open App')
@@ -692,21 +804,25 @@ export const useOsStore = create<OsState>()(
         }
       },
 
-      // Chrome toggles: only one of start/quickSettings/widgets is ever open.
+      // Chrome toggles: only one of start/quickSettings/widgets/calendar is ever open.
       toggleStartMenu: () => {
         const open = !get().startMenuOpen
-        set({ startMenuOpen: open, quickSettingsOpen: false, widgetsOpen: false })
+        set({ startMenuOpen: open, quickSettingsOpen: false, widgetsOpen: false, calendarOpen: false })
       },
       toggleQuickSettings: () => {
         const open = !get().quickSettingsOpen
-        set({ quickSettingsOpen: open, startMenuOpen: false, widgetsOpen: false })
+        set({ quickSettingsOpen: open, startMenuOpen: false, widgetsOpen: false, calendarOpen: false })
       },
       toggleWidgets: () => {
         const open = !get().widgetsOpen
-        set({ widgetsOpen: open, startMenuOpen: false, quickSettingsOpen: false })
+        set({ widgetsOpen: open, startMenuOpen: false, quickSettingsOpen: false, calendarOpen: false })
+      },
+      toggleCalendar: () => {
+        const open = !get().calendarOpen
+        set({ calendarOpen: open, startMenuOpen: false, quickSettingsOpen: false, widgetsOpen: false })
       },
       closeAllPopups: () =>
-        set({ startMenuOpen: false, quickSettingsOpen: false, widgetsOpen: false }),
+        set({ startMenuOpen: false, quickSettingsOpen: false, widgetsOpen: false, calendarOpen: false }),
 
       minimizeAll: () => {
         set({
@@ -754,11 +870,12 @@ export const useOsStore = create<OsState>()(
       showProperties: (entry, path) => set({ properties: { entry, path } }),
       closeProperties: () => set({ properties: null }),
       showToast: (toast) => {
-        set({ toast })
+        set({ toast, notifications: addNotification(get().notifications, toast, Date.now()) })
         window.setTimeout(() => {
           if (get().toast === toast) set({ toast: null })
         }, 3000)
       },
+      clearNotifications: () => set({ notifications: [] }),
       setDesktopIconSize: (desktopIconSize) => set({ desktopIconSize }),
       setDesktopIconsVisible: (desktopIconsVisible) => set({ desktopIconsVisible }),
 

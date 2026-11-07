@@ -94,7 +94,7 @@
                  :aria-label="win.title"
                  :data-state="win.state"
                  class="os-window rounded-lg win-shadow glass animate-window-open"
-                 :class="{ 'window-active': focusedWindowId === win.id }"
+                 :class="{ 'window-active': focusedWindowId === win.id, 'os-window-restored': win.restored }"
                  :style="{ left: win.x + 'px', top: win.y + 'px', width: win.width + 'px', height: win.height + 'px', zIndex: win.z }"
                  x-init="$nextTick(() => { if (!$el.contains(document.activeElement)) $el.focus({ preventScroll: true }) })"
                  @pointerdown.capture="focusWindow(win.id)">
@@ -166,6 +166,8 @@
         </template>
 
         <?php include __DIR__ . '/snap-ui.php'; ?>
+        <?php include __DIR__ . '/task-view.php'; ?>
+        <?php include __DIR__ . '/window-switcher.php'; ?>
     </div>
 
     <!-- Start Menu Overlay -->

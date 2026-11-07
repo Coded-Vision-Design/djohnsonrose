@@ -9,10 +9,12 @@ import {
   normaliseAddress,
   projectTags,
   siteName,
+  siteToVisit,
   tabBack,
   tabForward,
   tabTitle,
 } from '../../../assets/js/windowing/browser.js'
+import filesystem from '../../../data/filesystem.json'
 import portfolio from '../../../data/portfolio.json'
 
 // The rules of the Chrome app both builds share: what an address means, the
@@ -95,5 +97,32 @@ describe('featured projects', () => {
     expect(projectTags({ title: 'No tags' })).toEqual([])
     expect(projectTags({ title: 'Bad tags', tags: 'PHP' })).toEqual([])
     expect(projectTags({ title: 'Tags', tags: ['PHP'] })).toEqual(['PHP'])
+  })
+})
+
+describe('siteToVisit', () => {
+  it('is the real site a Visit Site file opens in a new tab', () => {
+    expect(siteToVisit('edge', { initialUrl: 'https://earthecho.co.uk/' })).toBe('https://earthecho.co.uk/')
+  })
+
+  it('is the site for every Visit Site file in data/filesystem.json', () => {
+    type Entry = { name: string; app?: string; extraData?: { initialUrl?: string } }
+    const files = Object.values(filesystem as unknown as Record<string, Entry[]>)
+      .flat()
+      .filter((entry) => entry.name === 'Visit Site.url')
+    expect(files.length).toBeGreaterThan(0)
+    for (const file of files) expect(siteToVisit(file.app ?? '', file.extraData)).toBe(file.extraData?.initialUrl)
+  })
+
+  it('is null for Chrome on its own home page, or for anything that is not a web address', () => {
+    expect(siteToVisit('edge', undefined)).toBeNull()
+    expect(siteToVisit('edge', {})).toBeNull()
+    expect(siteToVisit('edge', { initialUrl: HOME_URL })).toBeNull()
+    expect(siteToVisit('edge', { initialUrl: 'javascript:alert(1)' })).toBeNull()
+  })
+
+  it('is null for every other app, whatever it was given', () => {
+    expect(siteToVisit('notepad', { initialUrl: 'https://earthecho.co.uk/' })).toBeNull()
+    expect(siteToVisit('explorer', null)).toBeNull()
   })
 })

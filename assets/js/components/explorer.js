@@ -73,6 +73,8 @@ document.addEventListener('alpine:init', () => {
                 const win = Alpine.store('os').windows.find(w => w.id == this.winId);
                 if (win?.initialPath) this.startAt(win.initialPath);
                 if (win?.selectName) this.selected = win.selectName;
+                // The folder on screen goes with a switch to the other build.
+                this.stopSharing = OsWindowing.shareLiveExtras(this.winId, () => ({ initialPath: this.currentPath, selectName: this.selected }));
 
                 // An already open Explorer takes over when something else opens a folder.
                 this.onNavigate = (e) => {
@@ -92,6 +94,7 @@ document.addEventListener('alpine:init', () => {
         destroy() {
             window.removeEventListener('explorer-navigate', this.onNavigate);
             window.removeEventListener('keydown', this.onKey);
+            this.stopSharing?.();
         },
 
         // Where a window opens is its first stop, so there is nothing to go back to.

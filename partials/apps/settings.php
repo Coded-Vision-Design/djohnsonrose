@@ -218,7 +218,8 @@
                     <img alt="" :src="user.avatar" class="w-20 h-20 rounded-full border-4 border-win-blue/20">
                     <div>
                         <h2 class="text-2xl font-bold" x-text="user.name"></h2>
-                        <p class="text-sm text-win-blue font-medium">Applications Support Engineer · Full-Stack Developer</p>
+                        <?php $aboutProfile = load_shared_data('profile'); /* The headline, as on the lock screen and /cv. */ ?>
+                        <p class="text-sm text-win-blue font-medium" data-about-headline><?php echo htmlspecialchars((string)($aboutProfile['headline'] ?? '')); ?></p>
                     </div>
                 </div>
                 

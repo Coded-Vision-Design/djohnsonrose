@@ -5,7 +5,9 @@
 import { entryDate, entrySize, folderPath, parentPath } from './file-ops.js';
 
 export const TERMINAL_HOME = 'C:\\Users\\DeVante';
-export const GITHUB_PROFILE = 'github.com/CodedVisionDesign';
+// LinkedIn, as data/profile.json has it, in the form people read. The owner
+// shows no GitHub account, for now.
+export const LINKEDIN_PROFILE = 'linkedin.com/in/devanté-johnson-rose-b5303a47';
 // Windows 11 2025 Update (25H2).
 export const WINDOWS_VERSION = '10.0.26200.9711';
 
@@ -68,6 +70,20 @@ export function resolvePath(fs, cwd, target) {
   return path;
 }
 
+/**
+ * The file or folder a path names from `cwd`, whatever its case, as
+ * { entry, folder } where `folder` holds it, or null when nothing is there.
+ */
+export function resolveFile(fs, cwd, target) {
+  const path = target.replace(/\//g, '\\').replace(/\\+$/, '');
+  const slash = path.lastIndexOf('\\');
+  const name = path.slice(slash + 1).toLowerCase();
+  if (!name || name === '.' || name === '..' || name === '~' || /^[a-z]:$/i.test(name)) return null;
+  const folder = slash < 0 ? cwd : resolvePath(fs, cwd, path.slice(0, slash + 1));
+  const entry = folder && (fs[folder] ?? []).find((item) => item.name?.toLowerCase() === name);
+  return entry ? { entry, folder } : null;
+}
+
 const two = (n) => String(n).padStart(2, '0');
 
 /** One line of `dir`, as Windows prints it: date, time, then <DIR> or the size. */
@@ -99,6 +115,7 @@ const HELP = [
   '  ver             Show the Windows version',
   '  pwd             Print working directory',
   '  dir / ls        List a folder',
+  '  cat <file>      Print a text file (type <file> works too)',
   '  cd <path>       Change directory (.. goes up, quote paths with spaces)',
   '  date / time     Show date or time',
   '  echo <text>     Print text',
@@ -108,9 +125,14 @@ const HELP = [
   '  ipconfig        Mock network configuration',
   '  systeminfo      Mock system summary',
   '  exit            Close the terminal',
+  '  Tab             Complete a command or a path (Shift+Tab goes back)',
   '',
   'Portfolio commands:',
   '  about           About this portfolio',
+  '  tour            A short tour, one step at a time',
+  '  cv              A short CV, with the current roles',
+  '  skills          Skills, grouped',
+  '  man <page>      A manual page: try "man devante"',
   '  projects        List portfolio projects',
   '  contact         Display contact info',
 ].join('\n');
@@ -136,8 +158,314 @@ function projectList(projects) {
   ].join('\n');
 }
 
+/** Every command the Terminal knows, in order, for Tab to complete. */
+export const TERMINAL_COMMANDS = [
+  'about', 'cat', 'cd', 'chdir', 'clear', 'cls', 'contact', 'cv', 'date', 'dir', 'echo', 'exit',
+  'help', 'ipconfig', 'ls', 'man', 'open', 'ping', 'projects', 'pwd', 'set-location', 'skills',
+  'systeminfo', 'time', 'tour', 'type', 'ver', 'whoami',
+];
+
+// The CV page's names for the skill groups in data/portfolio.json.
+const SKILL_GROUPS = {
+  frameworks: 'Languages and frameworks',
+  tools: 'Data and infrastructure',
+  operations: 'Automation and delivery',
+  apis: 'AI and APIs',
+};
+
+const groupName = (key) => (Object.hasOwn(SKILL_GROUPS, key) ? SKILL_GROUPS[key] : key.charAt(0).toUpperCase() + key.slice(1));
+
+const currentRoles = (portfolio) => (portfolio?.experience ?? []).filter((job) => /present$/i.test(job.period ?? ''));
+
+/** The skills as [group name, skills] pairs, or one unnamed group when the data has none. */
+function skillGroups(skills) {
+  if (Array.isArray(skills)) return skills.length ? [['', skills]] : [];
+  return Object.entries(skills ?? {})
+    .filter(([, list]) => Array.isArray(list) && list.length)
+    .map(([key, list]) => [groupName(key), list]);
+}
+
+/** The headline, location, summary and the roles that are still going, from the shared data. */
+function cvText(profile, portfolio) {
+  const roles = currentRoles(portfolio);
+  const lines = [profile?.name, profile?.headline, profile?.location].filter(Boolean);
+  if (portfolio?.summary) lines.push('', portfolio.summary);
+  if (roles.length) {
+    lines.push('', 'Current roles:', ...roles.map((job) => `  - ${job.role}, ${job.company} (${job.period})`));
+  }
+  if (lines.length) lines.push('');
+  lines.push('The full CV is at /cv. Type "skills" for skills, or "projects" for the work.');
+  return lines.join('\n');
+}
+
+function skillsText(skills) {
+  const groups = skillGroups(skills);
+  if (!groups.length) return 'No skills are listed.';
+  return ['Skills:', ...groups.map(([name, list]) => `  ${name ? `${name}: ` : ''}${list.join(', ')}`)].join('\n');
+}
+
+// Files with no text kept for them that a visitor would still expect to read.
+const TEXT_FILE = /\.(txt|md|log|csv|ini|json)$/i;
+
+const quoteArg = (text) => (/[\s']/.test(text) ? `"${text}"` : text);
+
+/** What cat and type print: the file, or why it cannot. */
+function catText(fs, cwd, command, target) {
+  if (!target) return `Usage: ${command} <file>`;
+  const found = resolveFile(fs, cwd, target);
+  const isFolder = found ? found.entry.type === 'folder' : resolvePath(fs, cwd, target) !== null;
+  if (isFolder) return `${found?.entry.name ?? target} is a folder. Type "dir ${quoteArg(target)}" to list it.`;
+  if (!found) return `The system cannot find the file specified: ${target}`;
+  const { entry } = found;
+  if (entry.type === 'file' && (typeof entry.content === 'string' || TEXT_FILE.test(entry.name))) {
+    return entry.content ?? '';
+  }
+  const run = entry.type === 'app' && entry.app ? ` Type "open ${entry.app}" to run it.` : '';
+  return `${entry.name} is not a text file.${run}`;
+}
+
+/** The tour, one step at a time. It only ever suggests: the visitor types each command. */
+export const TERMINAL_TOUR_STEPS = [
+  {
+    title: 'Who this is',
+    lines: [
+      "This is DeVanté Johnson-Rose's portfolio, built to look and work like Windows 11.",
+      'Type "cv" for a short CV, or "skills" for what he works with.',
+      '"man devante" has the lot, as a manual page.',
+    ],
+  },
+  {
+    title: 'Look around the files',
+    lines: [
+      '"dir" lists this folder, and "cd Documents" goes into one ("cd .." comes back).',
+      '"cat Desktop\\achievements.txt" prints a file. "type" does the same, as in Windows.',
+      'Press Tab to finish a command or a name, and Tab again for the next match.',
+    ],
+  },
+  {
+    title: 'Open the apps',
+    lines: [
+      '"open vscode" shows the source code of this site, read-only.',
+      '"open explorer" browses the same files, and "projects" lists the work.',
+      'The tour never opens anything for you: type a command when you want to.',
+    ],
+  },
+  {
+    title: 'Take it with you',
+    lines: [
+      'The full CV is at /cv, as a plain page.',
+      '"contact" shows how to get in touch, and "help" lists every command.',
+    ],
+  },
+];
+
+function tourText(arg) {
+  const step = arg === undefined ? 1 : Number(arg);
+  if (!Number.isInteger(step) || step < 1 || step > TERMINAL_TOUR_STEPS.length) {
+    return `There are ${TERMINAL_TOUR_STEPS.length} steps. Type "tour" to start again.`;
+  }
+  const { title, lines } = TERMINAL_TOUR_STEPS[step - 1];
+  const next = step < TERMINAL_TOUR_STEPS.length ? `Next: type "tour ${step + 1}".` : 'That is the end of the tour.';
+  return [`Step ${step} of ${TERMINAL_TOUR_STEPS.length}: ${title}`, '', ...lines.map((line) => `  ${line}`), '', next].join('\n');
+}
+
+/** A Unix manual page: a title line, then each section that has something in it, indented. */
+function manPage(title, sections) {
+  const head = `${title.toUpperCase()}(1)`;
+  const lines = [`${head}          Portfolio Manual          ${head}`];
+  for (const [heading, body] of sections) {
+    if (body.length) lines.push('', heading, ...body.map((line) => (line ? `    ${line}` : '')));
+  }
+  return lines.join('\n');
+}
+
+// Pages for the commands that need more than their line in help.
+const MAN_PAGES = {
+  cat: {
+    name: 'cat, type - print a text file',
+    synopsis: ['cat <file>', 'type <file>'],
+    description: [
+      'Prints a text file from the files on this PC. A path starts in the current folder, or at C:\\ or ~.',
+      'Quote a path with spaces, or press Tab to complete it. A folder or a program is named, not printed.',
+    ],
+    seeAlso: 'dir(1), cd(1)',
+  },
+  cv: {
+    name: 'cv - a short CV',
+    synopsis: ['cv'],
+    description: [
+      'Prints the headline, location and summary, and the roles that are still going.',
+      'The full CV is at /cv.',
+    ],
+    seeAlso: 'skills(1), devante(1)',
+  },
+  skills: {
+    name: 'skills - the skills on the CV, grouped',
+    synopsis: ['skills'],
+    description: ['Prints the skills from the CV, in the groups the CV at /cv uses.'],
+    seeAlso: 'cv(1), devante(1)',
+  },
+  tour: {
+    name: 'tour - a short tour of this Terminal',
+    synopsis: ['tour', 'tour <step>'],
+    description: ['Shows one step at a time. Each step suggests commands to try, and opens nothing for you.'],
+    seeAlso: 'help(1)',
+  },
+  man: {
+    name: 'man - the manual pages',
+    synopsis: ['man <page>'],
+    description: ['Shows a manual page. "man devante" is the page about DeVanté, and every command in help has one.'],
+    seeAlso: 'help(1)',
+  },
+};
+const MAN_ALIASES = { type: 'cat', chdir: 'cd', 'set-location': 'cd' };
+
+/** The help table as { names, forms, about } rows, so that man can describe any command in it. */
+const helpRows = () =>
+  HELP.split('\n')
+    .filter((line) => /^ {2}[a-z]/.test(line))
+    .map((line) => {
+      const [usage, about] = line.trim().split(/\s{2,}/);
+      const forms = usage.split(' / ');
+      return { names: forms.map((form) => form.split(' ')[0]), forms, about };
+    });
+
+/** man devante: the person, as a manual page, from data/profile.json and data/portfolio.json only. */
+function devantePage(profile, portfolio) {
+  const name = [profile?.name, profile?.headline].filter(Boolean).join(', ');
+  const where = [
+    profile?.location ? `Based in ${profile.location}.` : '',
+    profile?.alumniOf ? `Studied at ${profile.alumniOf}.` : '',
+  ].filter(Boolean).join(' ');
+  const description = [portfolio?.summary, portfolio?.philosophy, where].filter(Boolean).flatMap((text, i) => (i ? ['', text] : [text]));
+  const jobs = portfolio?.experience ?? [];
+  const width = Math.max(0, ...jobs.map((job) => (job.period ?? '').length));
+  const experience = jobs.map(
+    (job) => `${(job.period ?? '').padEnd(width)}   ${job.role}, ${job.company}${job.location ? `, ${job.location}` : ''}`,
+  );
+  const skills = skillGroups(portfolio?.skills).flatMap(([group, list]) => (group ? [group, `    ${list.join(', ')}`] : [list.join(', ')]));
+  return manPage('devante', [
+    ['NAME', [name ? `devante - ${name}` : 'devante']],
+    ['SYNOPSIS', currentRoles(portfolio).map((job) => `devante --role "${job.role}" --at "${job.company}"`)],
+    ['DESCRIPTION', description],
+    ['EXPERIENCE', experience],
+    ['SKILLS', skills],
+    ['SEE ALSO', ['cv(1), skills(1), and the full CV at /cv']],
+  ]);
+}
+
+function manText(topic, ctx) {
+  if (!topic) return 'What manual page do you want?\nTry "man devante", or "man" and any command in help, such as "man cat".';
+  const key = topic.toLowerCase();
+  if (key === 'devante') return devantePage(ctx.profile, ctx.portfolio);
+  const command = MAN_ALIASES[key] ?? key;
+  const page = Object.hasOwn(MAN_PAGES, command) ? MAN_PAGES[command] : null;
+  if (page) {
+    return manPage(command, [
+      ['NAME', [page.name]],
+      ['SYNOPSIS', page.synopsis],
+      ['DESCRIPTION', page.description],
+      ['SEE ALSO', [page.seeAlso]],
+    ]);
+  }
+  const row = helpRows().find((entry) => entry.names.includes(command));
+  if (!row) return `No manual entry for ${topic}`;
+  return manPage(command, [
+    ['NAME', [`${row.names.join(', ')} - ${row.about}`]],
+    ['SYNOPSIS', row.forms],
+  ]);
+}
+
+/** What man can show, for Tab to complete. */
+const MAN_TOPICS = ['devante', ...TERMINAL_COMMANDS].sort();
+
+/** The word at the end of a line: where it starts, which word it is, and its text without quotes. */
+function lastWord(line) {
+  let start = line.length;
+  let index = -1;
+  let word = '';
+  let quote = null;
+  let inWord = false;
+  for (let i = 0; i < line.length; i++) {
+    const char = line[i];
+    if (quote) {
+      if (char === quote) quote = null;
+      else word += char;
+    } else if (/\s/.test(char)) {
+      inWord = false;
+    } else {
+      if (!inWord) {
+        inWord = true;
+        start = i;
+        word = '';
+        index++;
+      }
+      if (char === '"' || char === "'") quote = char;
+      else word += char;
+    }
+  }
+  return inWord ? { start, index, word } : { start: line.length, index: index + 1, word: '' };
+}
+
+// Commands that only take a folder, so Tab offers them nothing else.
+const FOLDER_COMMANDS = new Set(['cd', 'chdir', 'set-location', 'dir', 'ls']);
+
+/** What the last word of a line could become: a command, an app id after open, or a path. */
+function completions(line, ctx) {
+  const { start, index, word } = lastWord(line);
+  const head = line.slice(0, start);
+  const lower = word.toLowerCase();
+  if (index === 0) return { head, matches: TERMINAL_COMMANDS.filter((name) => name.startsWith(lower)) };
+
+  const command = splitArgs(line)[0].toLowerCase();
+  if (command === 'open') return { head, matches: [...(ctx.apps ?? [])].sort().filter((id) => id.startsWith(lower)) };
+  if (command === 'man') return { head, matches: MAN_TOPICS.filter((topic) => topic.startsWith(lower)) };
+
+  const typed = word.replace(/\//g, '\\');
+  const slash = typed.lastIndexOf('\\');
+  const folderPart = typed.slice(0, slash + 1);
+  const prefix = typed.slice(slash + 1).toLowerCase();
+  const folder = folderPart ? resolvePath(ctx.fileSystem, ctx.cwd, folderPart) : ctx.cwd;
+  if (!folder) return { head, matches: [] };
+  const foldersOnly = FOLDER_COMMANDS.has(command);
+  const matches = (ctx.fileSystem[folder] ?? [])
+    .filter((entry) => entry.name?.toLowerCase().startsWith(prefix) && (!foldersOnly || entry.type === 'folder'))
+    .sort((a, b) => a.name.localeCompare(b.name, 'en', { sensitivity: 'base' }))
+    .map((entry) => quoteArg(folderPart + entry.name + (entry.type === 'folder' ? '\\' : '')));
+  return { head, matches };
+}
+
 /**
- * Runs one command line. `ctx` is { cwd, fileSystem, projects, email, build, now? }.
+ * Which way a key press completes the line: 'next' for Tab, 'back' for Shift+Tab.
+ * On an empty line Tab is left to move focus, so a keyboard user is never trapped.
+ */
+export function completionKey(event, line) {
+  if (event.key !== 'Tab' || event.altKey || event.ctrlKey || event.metaKey || !line.trim()) return null;
+  return event.shiftKey ? 'back' : 'next';
+}
+
+/**
+ * Tab completion, case-insensitive like Windows. Pass back the session from the
+ * last call to cycle: each Tab moves to the next match, and Shift+Tab (`back`)
+ * to the one before. Any change to the line starts again.
+ */
+export function completeTerminalLine(line, ctx, session = null, back = false) {
+  if (session && session.line === line && session.matches.length) {
+    const count = session.matches.length;
+    const index = (session.index + (back ? count - 1 : 1)) % count;
+    const next = session.head + session.matches[index];
+    return { line: next, session: { ...session, index, line: next } };
+  }
+  const { head, matches } = completions(line, ctx);
+  if (!matches.length) return { line, session: null };
+  const index = back ? matches.length - 1 : 0;
+  const next = head + matches[index];
+  return { line: next, session: { head, matches, index, line: next } };
+}
+
+/**
+ * Runs one command line. `ctx` is { cwd, fileSystem, projects, email, build, now? },
+ * with `profile` and `portfolio` (data/profile.json and data/portfolio.json) for cv and skills.
  * The result may hold `res` (text to print), `cwd`, `open` (an app id), `clear` or `exit`.
  */
 export function runTerminalCommand(raw, ctx) {
@@ -168,6 +496,9 @@ export function runTerminalCommand(raw, ctx) {
       const path = args.length ? resolvePath(ctx.fileSystem, ctx.cwd, args.join(' ')) : ctx.cwd;
       return { res: path ? listFolder(ctx.fileSystem, path) : NOT_FOUND };
     }
+    case 'cat':
+    case 'type':
+      return { res: catText(ctx.fileSystem, ctx.cwd, base, args.join(' ')) };
     case 'cd':
     case 'chdir':
     case 'set-location': {
@@ -194,6 +525,14 @@ export function runTerminalCommand(raw, ctx) {
           'Type "projects" to see the work, or "contact" to get in touch.',
         ].join('\n'),
       };
+    case 'tour':
+      return { res: tourText(args[0]) };
+    case 'cv':
+      return { res: cvText(ctx.profile, ctx.portfolio) };
+    case 'skills':
+      return { res: skillsText(ctx.portfolio?.skills) };
+    case 'man':
+      return { res: manText(args[0], ctx) };
     case 'ping': {
       const host = args[0] || 'localhost';
       const ip = '127.0.0.1';
@@ -222,7 +561,7 @@ export function runTerminalCommand(raw, ctx) {
     case 'projects':
       return { res: projectList(ctx.projects ?? []) };
     case 'contact':
-      return { res: ['Contact DeVanté:', `  Email: ${ctx.email}`, `  GitHub: ${GITHUB_PROFILE}`].join('\n') };
+      return { res: ['Contact DeVanté:', `  Email: ${ctx.email}`, `  LinkedIn: ${LINKEDIN_PROFILE}`].join('\n') };
     case 'cls':
     case 'clear':
       return { clear: true };

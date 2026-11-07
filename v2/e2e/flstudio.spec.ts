@@ -178,8 +178,10 @@ for (const build of BUILDS) {
       await app.locator('[data-fl-channel="c2"] [data-fl-step="3"]').click()
       await page.waitForTimeout(700)
       await page.reload()
-      await page.locator('[data-desktop-item="achievements.txt"]').waitFor()
-      const again = await openFl(page)
+      // The address names FL Studio, so the reload opens it again by itself.
+      await expect(page).toHaveURL(/\/app\/flstudio$/)
+      const again = page.locator('.fl-app')
+      await expect(again).toBeVisible({ timeout: 20_000 })
       await expect(again.locator('[data-fl-channel="c2"] [data-fl-step="3"]')).toHaveAttribute('aria-pressed', 'true')
     })
 

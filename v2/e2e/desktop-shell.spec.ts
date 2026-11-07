@@ -562,10 +562,10 @@ for (const build of BUILDS) {
   })
 
   test.describe(`${build.name} Start`, () => {
-    test('pins twelve apps and gives Recommended a real time', async ({ page }) => {
+    test('pins thirteen apps and gives Recommended a real time', async ({ page }) => {
       await boot(page, build)
       await startButton(page).click()
-      await expect(page.locator('[data-pinned-app]')).toHaveCount(12)
+      await expect(page.locator('[data-pinned-app]')).toHaveCount(13)
       await expect(startMenu(page)).not.toContainText('2h ago')
       await page.locator('[data-recommended="cv"]').click()
       await expect(page.locator('.os-window')).toHaveCount(1)
@@ -575,6 +575,26 @@ for (const build of BUILDS) {
   })
 
   test.describe(`${build.name} windows`, () => {
+    test('opened in the same moment each get their own window', async ({ page }) => {
+      await boot(page, build)
+      // As the build switch does when it brings several windows back at once.
+      await page.evaluate(() => {
+        const w = window as unknown as {
+          Alpine?: { store: (n: string) => { openApp: (app: string) => void } }
+          __osStore?: { getState: () => { openApp: (app: string) => void } }
+        }
+        const store = w.Alpine ? w.Alpine.store('os') : w.__osStore!.getState()
+        store.openApp('calculator')
+        store.openApp('notepad')
+        store.openApp('settings')
+      })
+      await expect(windowOf(page, 'Calculator')).toBeVisible()
+      await expect(windowOf(page, 'Notepad')).toBeVisible()
+      await expect(windowOf(page, 'Settings')).toBeVisible()
+      const ids = await page.locator('.os-window').evaluateAll((all) => all.map((el) => el.id))
+      expect(new Set(ids).size).toBe(3)
+    })
+
     test('have an app icon in the title bar and animate as they close and minimise', async ({ page }) => {
       // The animation lasts a fifth of a second, so the page notes each one as it starts.
       await page.addInitScript(() => {
@@ -725,9 +745,11 @@ for (const build of BUILDS) {
 }
 
 test.describe('v2 routing', () => {
-  test('an unknown address still shows the desktop', async ({ page }) => {
+  // As at v1's root. See e2e/address.spec.ts for the rest of the addresses.
+  test('an unknown address is v1’s 404 page', async ({ page }) => {
     await prepare(page)
-    await page.goto(`${BUILDS[1].url}no-such-page`)
-    await expect(startButton(page)).toBeVisible({ timeout: 10_000 })
+    const res = await page.goto(`${BUILDS[1].url}no-such-page`)
+    expect(res?.status()).toBe(404)
+    await expect(page.getByRole('heading', { name: 'Page not found' })).toBeVisible()
   })
 })

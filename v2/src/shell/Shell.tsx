@@ -5,14 +5,19 @@ import { LockScreen } from './LockScreen'
 import { Desktop } from './Desktop'
 import { getApp } from '../apps/registry'
 import { findEntry, sharedPath } from '../../../assets/js/windowing/file-ops.js'
+import {
+  addressedApp,
+  followAddress,
+  readAddress,
+  showAddressed,
+} from '../../../assets/js/windowing/address.js'
+import { appManifest, getManifestEntry } from '../apps/manifest'
 import { openEntry } from './openEntry'
 
-interface ShellProps {
-  // If passed, opens this app once boot+login complete (for /app/:name routes).
-  initialApp?: string
-}
+const BASE = import.meta.env.BASE_URL
+const APP_IDS = Object.keys(appManifest)
 
-export function Shell({ initialApp }: ShellProps) {
+export function Shell() {
   const isBooting = useOsStore((s) => s.isBooting)
   const loggedIn = useOsStore((s) => s.loggedIn)
   const openApp = useOsStore((s) => s.openApp)
@@ -32,9 +37,12 @@ export function Shell({ initialApp }: ShellProps) {
     if (found) openEntry(found.entry, found.path)
   }, [loggedIn])
 
-  // Deep link: open the requested app once we land on the desktop.
+  // Deep link: open the app the address names once we land on the desktop,
+  // after signing in too. Signing out leaves the desktop's address, so signing
+  // in again opens nothing.
   useEffect(() => {
-    if (loggedIn && initialApp) {
+    const initialApp = loggedIn ? readAddress(BASE, window.location.pathname, APP_IDS)?.app : null
+    if (initialApp) {
       const def = getApp(initialApp)
       const t = window.setTimeout(
         () =>
@@ -47,7 +55,29 @@ export function Shell({ initialApp }: ShellProps) {
       )
       return () => window.clearTimeout(t)
     }
-  }, [loggedIn, initialApp, openApp])
+  }, [loggedIn, openApp])
+
+  // The address follows the window in front, and Back and Forward bring
+  // windows back, as v1's shell.js does. See address.js.
+  useEffect(() => {
+    const follower = followAddress({
+      base: BASE,
+      appIds: APP_IDS,
+      titleOf: (app) => getManifestEntry(app)?.title,
+      show: (app) => {
+        const store = useOsStore.getState()
+        if (store.loggedIn) showAddressed(store, app)
+      },
+    })
+    const update = (s: ReturnType<typeof useOsStore.getState>) =>
+      follower.update({ app: addressedApp(s.windows, s.focusedWindowId), opens: s.windowsOpened })
+    update(useOsStore.getState())
+    const unsubscribe = useOsStore.subscribe(update)
+    return () => {
+      unsubscribe()
+      follower.stop()
+    }
+  }, [])
 
   if (isBooting) return <BootScreen />
   // The skip link in App.tsx lands here, as on v1's <main> in partials/shell.php.

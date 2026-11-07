@@ -63,8 +63,16 @@ test.describe('/cv', () => {
     expect(await email.evaluate((el) => el.closest('a'))).toBeNull()
     expect(await email.evaluate((el) => getComputedStyle(el).userSelect)).not.toBe('none')
     await expect(page.locator('a[href="mailto:devante@johnson-rose.co.uk"]')).toBeVisible()
-    await expect(page.locator(`a[href="${profile.github}"]`)).toBeVisible()
-    if (!profile.linkedin) await expect(page.locator('a[href*="linkedin.com"]')).toHaveCount(0)
+    // The phone rings from a phone, and LinkedIn opens his profile.
+    const phone = page.locator('[data-phone]')
+    await expect(phone).toHaveText(profile.phone)
+    await expect(phone).toHaveAttribute('href', `tel:+44${profile.phone.replace(/\D/g, '').slice(1)}`)
+    await expect(page.locator(`main a[href="${profile.linkedin}"]`)).toHaveText(
+      'linkedin.com/in/devanté-johnson-rose-b5303a47 (opens in a new tab)',
+    )
+    // No GitHub account, for now.
+    await expect(page.locator('a[href*="github.com"]')).toHaveCount(0)
+    await expect(page.getByText(/github/i)).toHaveCount(0)
 
     await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', `${profile.url}cv`)
     await expect(page.locator('script:not([type="application/ld+json"])')).toHaveCount(0)
@@ -304,16 +312,10 @@ test.describe('shared metadata', () => {
       )
       people.push(await ldPerson(page))
     }
-    // The job title is the one difference: the desktops keep their meta wording
-    // and /cv uses the CV's headline, until the owner settles on one.
-    const shared = (person: Record<string, unknown>) => {
-      const copy = { ...person }
-      delete copy.jobTitle
-      return copy
-    }
-    expect(shared(people[1])).toEqual(shared(people[0]))
-    expect(shared(people[2])).toEqual(shared(people[0]))
-    expect(people[2].jobTitle).toBe(profile.headline)
+    // One person in all three, job title included, as the owner has settled it.
+    expect(people[1]).toEqual(people[0])
+    expect(people[2]).toEqual(people[0])
+    expect(people[0].jobTitle).toBe(profile.headline)
 
     const image = await request.get(new URL('assets/img/share-card.png', V1).href)
     expect(image.status()).toBe(200)

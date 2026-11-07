@@ -1,100 +1,164 @@
-<!-- partials/apps/taskmanager.php -->
-<div class="h-full flex flex-col bg-white dark:bg-[#1c1c1c] text-black dark:text-white select-none overflow-hidden" x-data="taskManagerApp()">
-    <!-- Header -->
-    <div class="h-10 border-b border-black/10 dark:border-white/10 flex items-center px-4 shrink-0">
-        <div class="flex items-center space-x-3">
-            <img src="<?php echo IMG_PATH; ?>taskmanager.webp" alt="" class="w-5 h-5 object-contain">
-            <h1 class="text-sm font-semibold">Task Manager</h1>
-        </div>
+<!-- partials/apps/taskmanager.php: the same markup as v2's TaskManager.tsx, styled by
+     assets/css/taskmanager.css. Every figure comes from the page or from build.json,
+     through assets/js/windowing/metrics.js (taskManagerApp in components/apps/system.js). -->
+<div class="tm" data-task-manager x-data="taskManagerApp()">
+    <div class="tm-head">
+        <img src="<?php echo IMG_PATH; ?>taskmanager.webp" alt="" class="tm-head-icon">
+        <h1 class="tm-title">Task Manager</h1>
     </div>
 
-    <!-- Stats Bar -->
-    <div class="grid grid-cols-4 border-b border-black/10 dark:border-white/10 shrink-0">
-        <div class="p-4 border-r border-black/10 dark:border-white/10">
-            <div class="text-[10px] text-gray-500 uppercase font-bold tracking-wider mb-1">CPU Usage</div>
-            <div class="flex items-end space-x-2">
-                <span class="text-2xl font-light" x-text="cpu + '%'"></span>
-                <div class="grow h-1.5 bg-black/5 dark:bg-white/5 rounded-full mb-2 overflow-hidden">
-                    <div class="h-full bg-win-blue transition-all duration-1000" :style="`width: ${cpu}%`"></div>
-                </div>
-            </div>
-        </div>
-        <div class="p-4 border-r border-black/10 dark:border-white/10">
-            <div class="text-[10px] text-gray-500 uppercase font-bold tracking-wider mb-1">Memory</div>
-            <div class="flex items-end space-x-2">
-                <span class="text-2xl font-light" x-text="(ram / 1024).toFixed(1) + ' GB'"></span>
-                <div class="grow h-1.5 bg-black/5 dark:bg-white/5 rounded-full mb-2 overflow-hidden">
-                    <div class="h-full bg-win-blue transition-all duration-1000" :style="`width: ${(ram/16384)*100}%`"></div>
-                </div>
-            </div>
-        </div>
-        <div class="p-4 border-r border-black/10 dark:border-white/10">
-            <div class="text-[10px] text-gray-500 uppercase font-bold tracking-wider mb-1">Network</div>
-            <div class="flex items-end space-x-2">
-                <span class="text-2xl font-light" x-text="network + ' Mbps'"></span>
-                <div class="grow h-1.5 bg-black/5 dark:bg-white/5 rounded-full mb-2 overflow-hidden text-right">
-                    <div class="h-full bg-win-blue transition-all duration-500 ml-auto" :style="`width: ${Math.min(100, (network/10)*100)}%`"></div>
-                </div>
-            </div>
-        </div>
-        <div class="p-4">
-            <div class="text-[10px] text-gray-500 uppercase font-bold tracking-wider mb-1">Uptime</div>
-            <div class="text-2xl font-light" x-text="uptime"></div>
-        </div>
-    </div>
-
-    <!-- Process List Header -->
-    <div class="grid grid-cols-12 bg-black/5 dark:bg-white/5 py-2 px-4 text-[11px] font-bold text-gray-500 shrink-0">
-        <div class="col-span-5">Name</div>
-        <div class="col-span-2 text-right">Status</div>
-        <div class="col-span-1 text-right">CPU</div>
-        <div class="col-span-2 text-right">Memory</div>
-        <div class="col-span-2 text-right">Network</div>
-    </div>
-
-    <!-- Process List -->
-    <div class="grow overflow-y-auto custom-scrollbar">
-        <template x-for="p in processes" :key="p.id">
-            <div class="grid grid-cols-12 py-1.5 px-4 text-[12px] hover:bg-win-blue/10 border-b border-black/5 dark:border-white/5 group transition-colors">
-                <div class="col-span-5 flex items-center text-black dark:text-white">
-                    <img :src="p.icon" alt="" class="w-4 h-4 mr-2 object-contain shrink-0">
-                    <span x-text="p.name" class="truncate font-medium"></span>
-                    <button @click="endTask(p.id)" class="ml-2 hidden group-hover:block text-[10px] text-red-500 hover:text-white hover:bg-red-500 font-bold px-1.5 py-0.5 border border-red-500/20 rounded-sm">End Task</button>
-                </div>
-                <div class="col-span-2 text-right opacity-60" x-text="p.status"></div>
-                <div class="col-span-1 text-right opacity-80" x-text="p.cpu + '%'"></div>
-                <div class="col-span-2 text-right opacity-80" x-text="p.ram + ' MB'"></div>
-                <div class="col-span-2 text-right opacity-80 text-win-blue" x-text="p.network > 0 ? p.network + ' Mbps' : '0 Mbps'"></div>
-            </div>
+    <div class="tm-tabs" role="tablist" aria-label="Task Manager views">
+        <template x-for="(item, index) in tabs" :key="item.id">
+            <button type="button" role="tab" class="tm-tab" :id="uid + '-tab-' + item.id" :aria-controls="uid + '-' + item.id"
+                    :aria-selected="String(tab === item.id)" :tabindex="tab === item.id ? 0 : -1" :data-tm-tab="item.id"
+                    @click="select(item.id)" @keydown="onTabKey($event, index)" x-text="item.label"></button>
         </template>
-        
-        <!-- System Processes -->
-        <div class="grid grid-cols-12 py-1.5 px-4 text-[12px] opacity-40 italic border-b border-black/5 dark:border-white/5">
-            <div class="col-span-5">System Idle Process</div>
-            <div class="col-span-2 text-right">Running</div>
-            <div class="col-span-1 text-right" x-text="(100-cpu) + '%'"></div>
-            <div class="col-span-2 text-right">0 MB</div>
-            <div class="col-span-2 text-right">0 Mbps</div>
-        </div>
-        <div class="grid grid-cols-12 py-1.5 px-4 text-[12px] opacity-60 border-b border-black/5 dark:border-white/5 text-black dark:text-white">
-            <div class="col-span-5">Desktop Window Manager</div>
-            <div class="col-span-2 text-right">Running</div>
-            <div class="col-span-1 text-right">1.2%</div>
-            <div class="col-span-2 text-right">42.5 MB</div>
-            <div class="col-span-2 text-right">0.1 Mbps</div>
-        </div>
-        <div class="grid grid-cols-12 py-1.5 px-4 text-[12px] opacity-60 border-b border-black/5 dark:border-white/5 text-black dark:text-white">
-            <div class="col-span-5">Windows Explorer</div>
-            <div class="col-span-2 text-right">Running</div>
-            <div class="col-span-1 text-right">0.5%</div>
-            <div class="col-span-2 text-right">84.1 MB</div>
-            <div class="col-span-2 text-right">0 Mbps</div>
-        </div>
     </div>
-    
-    <!-- Footer -->
-    <div class="h-8 border-t border-black/10 dark:border-white/10 flex items-center px-4 shrink-0 justify-between">
-        <span class="text-[10px] text-gray-500" x-text="'Processes: ' + (processes.length + 42)"></span>
-        <button class="text-[10px] text-win-blue hover:underline">Fewer details</button>
+
+    <div class="tm-body">
+        <section class="tm-panel" role="tabpanel" :id="uid + '-processes'" :aria-labelledby="uid + '-tab-processes'"
+                 data-tm-panel="processes" tabindex="0" :hidden="tab !== 'processes'">
+            <table class="tm-table tm-processes" role="table">
+                <caption class="tm-sr-only">Open windows</caption>
+                <thead role="rowgroup">
+                    <tr role="row">
+                        <th role="columnheader" scope="col">Name</th>
+                        <th role="columnheader" scope="col" class="tm-col-status">Status</th>
+                        <th role="columnheader" scope="col" class="tm-col-files">Own files</th>
+                        <th role="columnheader" scope="col" class="tm-col-actions"><span class="tm-sr-only">Actions</span></th>
+                    </tr>
+                </thead>
+                <tbody role="rowgroup">
+                    <template x-for="row in rows" :key="row.id">
+                        <tr role="row" class="tm-row" :data-tm-process="row.id">
+                            <td role="cell" class="tm-cell-name">
+                                <span class="tm-name">
+                                    <img :src="iconFor(row.app)" alt="" class="tm-icon">
+                                    <span class="tm-name-text" data-tm-name x-text="row.title"></span>
+                                </span>
+                            </td>
+                            <td role="cell" class="tm-cell-status" data-tm-status x-text="row.status"></td>
+                            <td role="cell" class="tm-cell-files" data-tm-files x-text="row.files"></td>
+                            <td role="cell" class="tm-cell-actions">
+                                <button type="button" class="tm-end" :aria-label="'End task: ' + row.title" @click="endTask(row.id)">End task</button>
+                            </td>
+                        </tr>
+                    </template>
+                </tbody>
+            </table>
+            <template x-if="heap">
+                <div class="tm-heap" data-tm-heap>
+                    <h2 class="tm-heading">Page JS heap</h2>
+                    <p class="tm-heap-value" data-tm-heap-value x-text="heap.text"></p>
+                    <p class="tm-note">This page's JavaScript memory as Chromium reports it, rounded by the browser.</p>
+                </div>
+            </template>
+            <p class="tm-note">Own files are the downloads named for an app, such as its code or its page. Shared code and pictures are not counted.</p>
+        </section>
+
+        <section class="tm-panel" role="tabpanel" :id="uid + '-performance'" :aria-labelledby="uid + '-tab-performance'"
+                 data-tm-panel="performance" tabindex="0" :hidden="tab !== 'performance'">
+            <h2 class="tm-heading">Web Vitals for this page load</h2>
+            <ul class="tm-vitals">
+                <template x-for="card in vitals" :key="card.id">
+                    <li class="tm-vital" :data-tm-vital="card.id" :data-state="card.state">
+                        <span class="tm-vital-name" x-text="card.name + ' (' + card.id + ')'"></span>
+                        <span class="tm-vital-row">
+                            <span class="tm-vital-value" data-tm-value x-text="card.value"></span>
+                            <template x-if="card.colour">
+                                <span class="tm-badge" :data-tm-rating="card.rating" :style="{ '--tm-badge': card.colour }" x-text="card.ratingLabel"></span>
+                            </template>
+                        </span>
+                        <span class="tm-vital-scale" data-tm-scale x-text="card.scale"></span>
+                        <span class="tm-vital-note" x-text="card.note"></span>
+                    </li>
+                </template>
+            </ul>
+
+            <h2 class="tm-heading">What this page downloaded</h2>
+            <table class="tm-table tm-downloads">
+                <caption class="tm-sr-only">Downloads by type</caption>
+                <thead>
+                    <tr>
+                        <th scope="col">Type</th>
+                        <th scope="col" class="tm-num">Requests</th>
+                        <th scope="col" class="tm-num">Transferred</th>
+                        <th scope="col" class="tm-num">Size</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <template x-for="group in downloads.groups" :key="group.id">
+                        <tr :data-tm-group="group.id">
+                            <th scope="row" x-text="group.label"></th>
+                            <td class="tm-num" data-tm-requests x-text="group.requests"></td>
+                            <td class="tm-num" data-tm-transferred x-text="group.transferredText"></td>
+                            <td class="tm-num" data-tm-size x-text="group.sizeText"></td>
+                        </tr>
+                    </template>
+                </tbody>
+                <tfoot>
+                    <tr data-tm-group="total">
+                        <th scope="row">Total</th>
+                        <td class="tm-num" data-tm-requests x-text="downloads.total.requests"></td>
+                        <td class="tm-num" data-tm-transferred x-text="downloads.total.transferredText"></td>
+                        <td class="tm-num" data-tm-size x-text="downloads.total.sizeText"></td>
+                    </tr>
+                </tfoot>
+            </table>
+            <p class="tm-note">Transferred is what came over the network, headers included. Size is the files once unpacked.</p>
+
+            <h3 class="tm-subheading">Largest files</h3>
+            <ol class="tm-largest">
+                <template x-for="(file, index) in downloads.largest" :key="index + '-' + file.url">
+                    <li class="tm-file" data-tm-file :data-tm-url="file.url">
+                        <span class="tm-file-name" :title="file.name" x-text="file.name"></span>
+                        <span class="tm-file-group" x-text="file.groupLabel"></span>
+                        <span class="tm-file-size"><span data-tm-file-size x-text="file.sizeText"></span><template x-if="file.cached"><span class="tm-file-cache"> (from cache)</span></template></span>
+                    </li>
+                </template>
+            </ol>
+            <template x-for="note in downloads.notes" :key="note.id">
+                <p class="tm-note" :data-tm-note="note.id" x-text="note.text"></p>
+            </template>
+        </section>
+
+        <section class="tm-panel" role="tabpanel" :id="uid + '-build'" :aria-labelledby="uid + '-tab-build'"
+                 data-tm-panel="build" tabindex="0" :hidden="tab !== 'build'">
+            <h2 class="tm-heading" :data-tm-build-state="info.state" x-text="info.title"></h2>
+            <template x-if="info.message">
+                <p class="tm-text" x-text="info.message"></p>
+            </template>
+            <template x-if="info.state === 'deployed'">
+                <div>
+                    <dl class="tm-build">
+                        <div>
+                            <dt>Commit</dt>
+                            <dd><code data-tm-commit x-text="info.commit"></code></dd>
+                        </div>
+                        <div>
+                            <dt>Deployed</dt>
+                            <dd data-tm-deployed x-text="info.deployed"></dd>
+                        </div>
+                    </dl>
+                    <h3 class="tm-subheading" data-tm-checks-title x-text="info.checksTitle"></h3>
+                    <p class="tm-text" data-tm-checks-summary x-text="info.checksMessage"></p>
+                    <template x-if="info.checks.length">
+                        <ul class="tm-checks">
+                            <template x-for="(check, index) in info.checks" :key="index + '-' + check.name">
+                                <li class="tm-check" data-tm-check>
+                                    <span class="tm-check-name" data-tm-check-name x-text="check.name"></span>
+                                    <span class="tm-badge" :data-tm-tone="check.tone" :style="{ '--tm-badge': toneColour(check.tone) }" x-text="check.label"></span>
+                                </li>
+                            </template>
+                        </ul>
+                    </template>
+                </div>
+            </template>
+        </section>
+    </div>
+
+    <div class="tm-foot">
+        <span data-tm-count x-text="countText"></span>
+        <span>Measured in this browser</span>
     </div>
 </div>

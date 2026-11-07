@@ -12,6 +12,7 @@ require_once __DIR__ . '/../lib/cv.php';
 $profile = load_shared_data('profile');
 $portfolio = load_shared_data('portfolio');
 $email = (string)($config['email'] ?? '');
+$phone = cv_tel((string)($profile['phone'] ?? ''));
 $siteUrl = (string)($profile['url'] ?? 'https://devante.johnson-rose.co.uk/');
 $canonical = $siteUrl . 'cv';
 $shareImage = $siteUrl . 'assets/img/share-card.png';
@@ -296,16 +297,22 @@ if (!headers_sent()) {
                     <dt>Email</dt>
                     <dd><span data-email><?= $e($email) ?></span><span class="print-hide"><br><a href="mailto:<?= $u($email) ?>">Write an email</a></span></dd>
                 </div>
-                <?php if (!empty($profile['github'])): ?>
+                <?php if ($phone !== ''): ?>
                 <div>
-                    <dt>GitHub</dt>
-                    <dd><a class="external" href="<?= $u($profile['github']) ?>" target="_blank" rel="noopener noreferrer"><?= $e(preg_replace('#^https://#', '', $profile['github'])) ?><?= $newTab ?><?= $externalIcon ?></a></dd>
+                    <dt>Phone</dt>
+                    <dd><a href="tel:<?= $u($phone) ?>" data-phone><?= $e($profile['phone']) ?></a></dd>
                 </div>
                 <?php endif; ?>
                 <?php if (!empty($profile['linkedin'])): ?>
                 <div>
                     <dt>LinkedIn</dt>
-                    <dd><a class="external" href="<?= $u($profile['linkedin']) ?>" target="_blank" rel="noopener noreferrer"><?= $e(preg_replace('#^https://(www\.)?#', '', $profile['linkedin'])) ?><?= $newTab ?><?= $externalIcon ?></a></dd>
+                    <dd><a class="external" href="<?= $u($profile['linkedin']) ?>" target="_blank" rel="noopener noreferrer"><?= $e(cv_link_label($profile['linkedin'])) ?><?= $newTab ?><?= $externalIcon ?></a></dd>
+                </div>
+                <?php endif; ?>
+                <?php if (!empty($profile['github'])): ?>
+                <div>
+                    <dt>GitHub</dt>
+                    <dd><a class="external" href="<?= $u($profile['github']) ?>" target="_blank" rel="noopener noreferrer"><?= $e(cv_link_label($profile['github'])) ?><?= $newTab ?><?= $externalIcon ?></a></dd>
                 </div>
                 <?php endif; ?>
                 <div class="print-hide">

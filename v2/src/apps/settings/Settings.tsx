@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
 import { useOsStore, type Settings as SettingsShape } from '../../store/osStore'
-import { useWindowExtras } from '../../windowing/WindowContext'
+import { useLiveExtras, useWindowExtras } from '../../windowing/WindowContext'
 import { cssUrl } from '../../../../assets/js/windowing/shell-core.js'
 import { setConsent, useConsent } from '../../lib/consent'
+import profile from '../../../../data/profile.json'
 
 // 1:1 port of partials/apps/settings.php: five-tab Win11 Settings shell that
 // reads the same data/portfolio.json the PHP version reads. All copy below
@@ -113,6 +114,8 @@ export default function Settings() {
   const isMobile = useOsStore((s) => s.isMobile)
   const { currentTab } = useWindowExtras<{ currentTab?: Tab }>()
   const [tab, setTab] = useState<Tab>(currentTab ?? 'system')
+  // The page on screen goes with a switch to v1, as v1 keeps it on its window.
+  useLiveExtras({ currentTab: tab })
   // The wallpaper being previewed shows on the desktop too, as in v1.
   const preview = useOsStore((s) => s.previewWallpaper)
   const setPreview = useOsStore((s) => s.setPreviewWallpaper)
@@ -453,8 +456,9 @@ export default function Settings() {
                 />
                 <div>
                   <h2 className="text-2xl font-bold">DeVanté Johnson-Rose</h2>
-                  <p className="text-sm text-win-blue font-medium">
-                    Applications Support Engineer · Full-Stack Developer
+                  {/* The headline, as on the lock screen and /cv. */}
+                  <p className="text-sm text-win-blue font-medium" data-about-headline>
+                    {profile.headline}
                   </p>
                 </div>
               </div>

@@ -1,0 +1,566 @@
+/* Task Manager, the same in both builds (partials/apps/taskmanager.php and
+   v2/src/apps/taskmanager/TaskManager.tsx). Its figures and the colours of
+   its badges (--tm-badge) come from assets/js/windowing/metrics.js. */
+
+.tm {
+  container-type: inline-size;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  background: #fff;
+  color: #1b1b1b;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.dark .tm {
+  background: #1c1c1c;
+  color: #f3f3f3;
+}
+
+.tm-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.tm-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 40px;
+  flex-shrink: 0;
+  padding: 0 16px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.tm-head-icon {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+}
+
+.tm-title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.tm-tabs {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+  padding: 0 12px;
+  overflow-x: auto;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.tm-tab {
+  position: relative;
+  min-height: 36px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 4px 4px 0 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-size: 13px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.tm-tab[aria-selected='true'] {
+  font-weight: 600;
+}
+
+.tm-tab[aria-selected='true']::after {
+  content: '';
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: 0;
+  height: 3px;
+  border-radius: 2px;
+  background: #0078d4;
+}
+
+.tm-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+.tm-panel {
+  padding: 12px 16px 16px;
+}
+
+.tm-panel[hidden] {
+  display: none;
+}
+
+.tm-panel:focus-visible {
+  outline: 2px solid #0078d4;
+  outline-offset: -2px;
+}
+
+.tm-heading {
+  margin: 4px 0 8px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.tm-subheading {
+  margin: 16px 0 6px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.tm-text {
+  margin: 0 0 8px;
+}
+
+.tm-note {
+  margin: 8px 0 0;
+  color: #5c5c5c;
+}
+
+/* Tables: processes and downloads. */
+.tm-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.tm-table th,
+.tm-table td {
+  padding: 6px 8px;
+  overflow: hidden;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.07);
+}
+
+.tm-table thead th {
+  background: rgba(0, 0, 0, 0.04);
+  color: #5c5c5c;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.tm-table tbody th,
+.tm-table tfoot th {
+  font-weight: 400;
+}
+
+.tm-table tfoot th,
+.tm-table tfoot td {
+  font-weight: 600;
+  border-bottom: 0;
+}
+
+.tm-table .tm-num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.tm-col-status {
+  width: 18%;
+}
+
+.tm-col-files {
+  width: 24%;
+}
+
+.tm-col-actions {
+  width: 96px;
+}
+
+.tm-name {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.tm-name-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-weight: 500;
+}
+
+.tm-icon {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  object-fit: contain;
+}
+
+.tm-cell-actions {
+  text-align: right !important;
+}
+
+.tm-end {
+  min-height: 28px;
+  padding: 0 10px;
+  border: 1px solid rgba(196, 43, 28, 0.4);
+  border-radius: 4px;
+  background: transparent;
+  color: #c42b1c;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.tm-end:active {
+  background: #c42b1c;
+  color: #fff;
+}
+
+/* Hover shows only where there is a pointer to hover with, so a tap leaves no grey behind. */
+@media (hover: hover) {
+  .tm-tab:hover {
+    background: rgba(0, 0, 0, 0.05);
+  }
+
+  .dark .tm-tab:hover {
+    background: rgba(255, 255, 255, 0.06);
+  }
+
+  .tm-end:hover,
+  .dark .tm-end:hover {
+    background: #c42b1c;
+    color: #fff;
+  }
+}
+
+/* A badge: a rating, or what a check concluded. Dark text reads on every colour. */
+.tm-badge {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  min-height: 20px;
+  padding: 0 8px;
+  border-radius: 10px;
+  background: var(--tm-badge, #c8c8c8);
+  color: #1b1b1b;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.tm-heap {
+  margin-top: 16px;
+  padding: 10px 12px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 6px;
+}
+
+.tm-heap .tm-heading {
+  margin-top: 0;
+}
+
+.tm-heap-value {
+  margin: 0;
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Web Vitals: one card each. */
+.tm-vitals {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tm-vital {
+  display: grid;
+  gap: 4px;
+  align-content: start;
+  min-width: 0;
+  padding: 10px 12px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.02);
+}
+
+.tm-vital-name {
+  font-weight: 600;
+}
+
+.tm-vital-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 30px;
+}
+
+.tm-vital-value {
+  min-width: 0;
+  font-size: 20px;
+  font-weight: 300;
+  font-variant-numeric: tabular-nums;
+}
+
+.tm-vital:not([data-state='measured']) .tm-vital-value {
+  font-size: 13px;
+  font-weight: 400;
+}
+
+.tm-vital-scale,
+.tm-vital-note {
+  color: #5c5c5c;
+}
+
+.tm-vital-note:empty {
+  display: none;
+}
+
+/* Largest files. */
+.tm-largest {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tm-file {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: 12px;
+  align-items: center;
+  padding: 5px 0;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.07);
+}
+
+.tm-file-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tm-file-group,
+.tm-file-cache {
+  color: #5c5c5c;
+}
+
+.tm-file-size {
+  text-align: right;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Build. */
+.tm-build {
+  margin: 0 0 8px;
+}
+
+.tm-build > div {
+  display: flex;
+  gap: 16px;
+  padding: 4px 0;
+}
+
+.tm-build dt {
+  width: 80px;
+  flex-shrink: 0;
+  color: #5c5c5c;
+}
+
+.tm-build dd {
+  margin: 0;
+  min-width: 0;
+}
+
+.tm-build code {
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.06);
+  font-family: 'Cascadia Code', Consolas, 'Courier New', monospace;
+  font-size: 12px;
+}
+
+.tm-checks {
+  margin: 6px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tm-check {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 6px 0;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.07);
+}
+
+.tm-check-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tm-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-shrink: 0;
+  min-height: 32px;
+  padding: 0 16px;
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+  color: #5c5c5c;
+  font-size: 11px;
+}
+
+/* Dark mode: lighter lines and muted text that keeps its contrast. */
+.dark .tm-head,
+.dark .tm-tabs,
+.dark .tm-foot,
+.dark .tm-heap,
+.dark .tm-vital {
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+.dark .tm-table th,
+.dark .tm-table td,
+.dark .tm-file,
+.dark .tm-check {
+  border-bottom-color: rgba(255, 255, 255, 0.08);
+}
+
+.dark .tm-table thead th {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.dark .tm-tab[aria-selected='true']::after {
+  background: #60cdff;
+}
+
+.dark .tm-panel:focus-visible {
+  outline-color: #60cdff;
+}
+
+.dark .tm-vital {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.dark .tm-note,
+.dark .tm-table thead th,
+.dark .tm-vital-scale,
+.dark .tm-vital-note,
+.dark .tm-file-group,
+.dark .tm-file-cache,
+.dark .tm-build dt,
+.dark .tm-foot {
+  color: #b4b4b4;
+}
+
+.dark .tm-build code {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.dark .tm-end {
+  border-color: rgba(255, 153, 164, 0.45);
+  color: #ff99a4;
+}
+
+.dark .tm-end:active {
+  background: #c42b1c;
+  color: #fff;
+}
+
+/* Narrow: each process takes two lines, its name above its state and files. */
+@container (max-width: 560px) {
+  .tm-panel {
+    padding: 12px;
+  }
+
+  .tm-processes thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+  }
+
+  .tm-processes,
+  .tm-processes tbody {
+    display: block;
+  }
+
+  .tm-processes .tm-row {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-areas:
+      'name name action'
+      'status files action';
+    column-gap: 12px;
+    align-items: center;
+    padding: 6px 0;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.07);
+  }
+
+  .dark .tm-processes .tm-row {
+    border-bottom-color: rgba(255, 255, 255, 0.08);
+  }
+
+  .tm-processes .tm-row > td {
+    padding: 0;
+    border: 0;
+  }
+
+  .tm-cell-name {
+    grid-area: name;
+  }
+
+  .tm-cell-status {
+    grid-area: status;
+    color: #5c5c5c;
+  }
+
+  .tm-cell-files {
+    grid-area: files;
+    color: #5c5c5c;
+  }
+
+  .dark .tm-cell-status,
+  .dark .tm-cell-files {
+    color: #b4b4b4;
+  }
+
+  .tm-cell-actions {
+    grid-area: action;
+  }
+
+  .tm-table th,
+  .tm-table td {
+    padding: 6px 4px;
+  }
+}
+
+/* Phones: finger-sized tabs and buttons. */
+html[data-os-mode='phone'] .tm-tab {
+  min-height: 44px;
+}
+
+html[data-os-mode='phone'] .tm-end {
+  min-width: 44px;
+  min-height: 44px;
+}

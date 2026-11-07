@@ -331,8 +331,7 @@ html[data-os-mode='tablet'] .os-taskbar-apps {
   gap: 8px;
 }
 
-.os-snap-assist-item,
-.os-task-card {
+.os-snap-assist-item {
   display: flex;
   align-items: center;
   gap: 10px;
@@ -353,16 +352,14 @@ html[data-os-mode='tablet'] .os-taskbar-apps {
   outline: none;
 }
 
-.os-snap-assist-item img,
-.os-task-card img {
+.os-snap-assist-item img {
   width: 28px;
   height: 28px;
   object-fit: contain;
   flex-shrink: 0;
 }
 
-.os-snap-assist-item span,
-.os-task-card span {
+.os-snap-assist-item span {
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -374,75 +371,7 @@ html[data-os-mode='tablet'] .os-taskbar-apps {
   to { opacity: 1; transform: scale(1); }
 }
 
-/* Task switcher, for phones. */
-
-.os-task-switcher {
-  position: absolute;
-  inset: 0;
-  z-index: 1000000;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  padding: calc(env(safe-area-inset-top, 0px) + 16px) 16px 16px;
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  pointer-events: auto;
-  color: var(--os-flyout-text);
-  background: var(--os-flyout-bg);
-  -webkit-backdrop-filter: blur(30px) saturate(150%);
-  backdrop-filter: blur(30px) saturate(150%);
-}
-
-.os-task-switcher-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  min-height: 44px;
-}
-
-.os-task-switcher-head h2 {
-  margin: 0;
-  font-size: 18px;
-  font-weight: 600;
-}
-
-.os-task-switcher-list {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-  gap: 10px;
-}
-
-.os-task-row {
-  display: flex;
-  min-width: 0;
-  gap: 6px;
-}
-
-.os-task-card {
-  flex: 1 1 auto;
-  min-width: 0;
-  min-height: 64px;
-}
-
-.os-task-close,
-.os-task-clear {
-  min-width: 44px;
-  min-height: 44px;
-  padding: 0 10px;
-  border: 0;
-  border-radius: 8px;
-  color: inherit;
-  background: transparent;
-  font-size: 13px;
-  cursor: pointer;
-}
-
-.os-task-empty {
-  margin: 24px 0;
-  text-align: center;
-  opacity: 0.7;
-}
-
+/* The phones' Open apps button, which opens Task View (see the end of this file). */
 .os-task-button {
   display: none;
 }
@@ -749,4 +678,1862 @@ html[data-os-mode='phone'] .os-consent-actions button {
 /* A file that has been cut, until it is pasted. */
 .file-cut {
     opacity: 0.5;
+}
+
+/* Task View and the Alt+Q switcher, the same in both builds: partials/task-view.php
+   and partials/window-switcher.php in v1, TaskView.tsx and WindowSwitcher.tsx in v2.
+   The order and keys come from assets/js/windowing/switcher.js. Both sit in the
+   windows layer, so the taskbar stays in reach below them, as in Windows. */
+
+:root {
+  --os-task-view-dim: rgba(0, 0, 0, 0.3);
+  /* A window's own colour, as behind .os-window-content. */
+  --os-thumb-bg: #ffffff;
+}
+
+.dark {
+  --os-task-view-dim: rgba(0, 0, 0, 0.45);
+  --os-thumb-bg: #1c1c1c;
+}
+
+/* v1's Alpine wrappers, which take no room, so both builds lay out the same. */
+.os-switching {
+  display: contents;
+}
+
+/* What every window card shows: the app's icon and title, then the icon large
+   on the window's colour in place of a picture of the window. */
+.os-switch-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  min-height: 24px;
+  font-size: 12px;
+  line-height: 16px;
+}
+
+.os-switch-label img {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  object-fit: contain;
+}
+
+.os-switch-label span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.os-switch-thumb {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  aspect-ratio: 16 / 10;
+  overflow: hidden;
+  border: 1px solid var(--os-flyout-edge);
+  border-radius: 4px;
+  background: var(--os-thumb-bg);
+}
+
+.os-switch-thumb img {
+  width: 56px;
+  height: 56px;
+  object-fit: contain;
+}
+
+/* Task View: every open window over a dimmed, blurred desktop. */
+.os-task-view {
+  position: absolute;
+  inset: 0;
+  z-index: 1000000;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  padding: 48px 24px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  outline: none;
+  pointer-events: auto;
+  color: var(--os-flyout-text);
+  background: var(--os-task-view-dim);
+  -webkit-backdrop-filter: blur(24px) saturate(120%);
+  backdrop-filter: blur(24px) saturate(120%);
+  animation: os-task-view-fade 0.15s ease-out;
+}
+
+/* Only phones need a way out on screen, as they have no Esc key. */
+.os-task-view-head {
+  display: none;
+}
+
+/* Centred while the cards fit, and scrolled from the top when they do not. */
+.os-task-view-grid {
+  display: flex;
+  flex-wrap: wrap;
+  align-content: center;
+  justify-content: center;
+  gap: 24px;
+  max-width: 1280px;
+  margin: auto;
+  padding: 0;
+  list-style: none;
+  animation: os-task-view-in 0.18s var(--os-ease);
+}
+
+.os-task-view-card {
+  position: relative;
+  width: 240px;
+  min-width: 0;
+  border: 1px solid var(--os-flyout-edge);
+  border-radius: 8px;
+  background: var(--os-flyout-bg);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+}
+
+.os-task-view-open,
+.os-switcher-card {
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  width: 100%;
+  border-radius: 8px;
+  color: inherit;
+  background: transparent;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.os-task-view-open {
+  gap: 8px;
+  padding: 8px;
+  border: 0;
+}
+
+.os-task-view-open:hover,
+.os-switcher-card:hover {
+  background: var(--os-zone);
+}
+
+/* Clear of the close button. */
+.os-task-view-open .os-switch-label {
+  padding-right: 28px;
+}
+
+.os-task-view-close {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  color: inherit;
+  background: transparent;
+  cursor: pointer;
+  opacity: 0;
+}
+
+.os-task-view-close svg {
+  width: 10px;
+  height: 10px;
+  fill: currentColor;
+}
+
+.os-task-view-card:hover .os-task-view-close,
+.os-task-view-card:focus-within .os-task-view-close {
+  opacity: 1;
+}
+
+.os-task-view-close:hover {
+  color: #ffffff;
+  background: #c42b1c;
+}
+
+/* A finger cannot hover, so the close button always shows. */
+@media (hover: none) {
+  .os-task-view-close {
+    opacity: 1;
+  }
+}
+
+.os-task-view-empty {
+  margin: auto;
+  padding: 12px 20px;
+  border-radius: 8px;
+  background: var(--os-flyout-bg);
+  font-size: 14px;
+}
+
+/* On a phone it is the Open apps switcher: two columns, from the top, with
+   finger-sized controls and a Done button. */
+html[data-os-mode='phone'] .os-task-view {
+  gap: 12px;
+  padding: calc(env(safe-area-inset-top, 0px) + 12px) 12px 16px;
+}
+
+html[data-os-mode='phone'] .os-task-view-head {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: space-between;
+  padding-left: 12px;
+  border-radius: 8px;
+  background: var(--os-flyout-bg);
+}
+
+.os-task-view-head h2 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.os-task-view-done {
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 8px;
+  color: inherit;
+  background: transparent;
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+html[data-os-mode='phone'] .os-task-view-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-content: start;
+  gap: 12px;
+  width: 100%;
+  margin: 0;
+}
+
+html[data-os-mode='phone'] .os-task-view-card {
+  width: auto;
+}
+
+html[data-os-mode='phone'] .os-task-view-open .os-switch-label {
+  min-height: 28px;
+  padding-right: 36px;
+}
+
+html[data-os-mode='phone'] .os-task-view-close {
+  top: 0;
+  right: 0;
+  width: 44px;
+  height: 44px;
+  opacity: 1;
+}
+
+html[data-os-mode='phone'] .os-task-view-empty {
+  margin: 24px auto;
+}
+
+/* The Alt+Q switcher: a centred strip, the selected window ringed. */
+.os-switcher {
+  position: absolute;
+  inset: 0;
+  z-index: 1000001;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  padding: 16px;
+  pointer-events: none;
+}
+
+.os-switcher-panel {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  box-sizing: border-box;
+  max-width: 100%;
+  max-height: 100%;
+  overflow-y: auto;
+  padding: 12px;
+  border: 1px solid var(--os-flyout-edge);
+  border-radius: 8px;
+  pointer-events: auto;
+  color: var(--os-flyout-text);
+  background: var(--os-flyout-bg);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.28);
+  -webkit-backdrop-filter: blur(30px) saturate(150%);
+  backdrop-filter: blur(30px) saturate(150%);
+  animation: os-pop 0.12s ease-out;
+}
+
+.os-switcher-card {
+  gap: 6px;
+  width: 184px;
+  padding: 6px;
+  border: 2px solid transparent;
+}
+
+.os-switcher-card[aria-current='true'] {
+  border-color: var(--os-zone-hover);
+}
+
+.os-switcher-card .os-switch-thumb img {
+  width: 40px;
+  height: 40px;
+}
+
+html[data-os-mode='phone'] .os-switcher-card {
+  width: 136px;
+}
+
+/* Read out as the selection moves, but not shown. */
+.os-switcher-status {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@keyframes os-task-view-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes os-task-view-in {
+  from { opacity: 0; transform: scale(0.96); }
+  to { opacity: 1; transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .os-task-view,
+  .os-task-view-grid,
+  .os-switcher-panel {
+    animation: none !important;
+  }
+}
+
+/* The clock's flyout: notifications above a calendar, as in Windows 11, the
+   same in both builds (partials/calendar-flyout.php and CalendarFlyout.tsx).
+   The flyout itself is a clear frame with room for the panels' shadows. Only
+   the panels take the pointer, so a click beside them still closes it. */
+.os-calendar-flyout {
+  --os-cal-text: #1b1b1b;
+  --os-cal-dim: #5c5c5c;
+  --os-cal-accent: #0078d4;
+  --os-cal-on-accent: #fff;
+  --os-cal-hover: rgba(0, 0, 0, 0.06);
+  --os-cal-card: rgba(255, 255, 255, 0.7);
+  position: fixed;
+  z-index: 10000;
+  right: 0;
+  bottom: var(--os-taskbar-height);
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 384px;
+  max-width: 100%;
+  max-height: calc(100% - var(--os-taskbar-height));
+  padding: 12px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  pointer-events: none;
+  color: var(--os-cal-text);
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.dark .os-calendar-flyout {
+  --os-cal-text: #f3f3f3;
+  --os-cal-dim: #a8a8a8;
+  --os-cal-accent: #60cdff;
+  --os-cal-on-accent: #000;
+  --os-cal-hover: rgba(255, 255, 255, 0.08);
+  --os-cal-card: rgba(255, 255, 255, 0.05);
+}
+
+.os-calendar-panel {
+  flex-shrink: 0;
+  box-sizing: border-box;
+  pointer-events: auto;
+  border: 1px solid var(--os-flyout-edge);
+  border-radius: 8px;
+  background: var(--os-flyout-bg);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.24);
+  -webkit-backdrop-filter: blur(30px) saturate(150%);
+  backdrop-filter: blur(30px) saturate(150%);
+  animation: os-calendar-in 0.2s var(--os-ease);
+}
+
+@keyframes os-calendar-in {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: none; }
+}
+
+.os-calendar-panel h2,
+.os-calendar-panel p {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.os-calendar-panel button {
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 4px;
+  color: inherit;
+  background: transparent;
+  font: inherit;
+  cursor: pointer;
+}
+
+.os-calendar-panel button:hover {
+  background: var(--os-cal-hover);
+}
+
+.os-calendar-text-button {
+  min-height: 32px;
+  padding: 0 10px;
+  font-size: 12px;
+}
+
+.os-calendar-step {
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+}
+
+.os-calendar-step svg {
+  width: 12px;
+  height: 12px;
+}
+
+.os-notify-head,
+.os-calendar-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 48px;
+  padding: 0 8px 0 16px;
+}
+
+.os-calendar-head {
+  border-bottom: 1px solid var(--os-flyout-edge);
+}
+
+.os-notify-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 240px;
+  margin: 0;
+  padding: 0 12px 12px;
+  overflow-y: auto;
+  list-style: none;
+}
+
+.os-notify-item {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid var(--os-flyout-edge);
+  border-radius: 6px;
+  background: var(--os-cal-card);
+}
+
+.os-notify-panel .os-notify-item p {
+  min-width: 0;
+  font-weight: 400;
+  overflow-wrap: anywhere;
+}
+
+.os-notify-item time {
+  flex-shrink: 0;
+  font-size: 12px;
+  color: var(--os-cal-dim);
+}
+
+.os-notify-panel .os-notify-empty {
+  padding: 4px 16px 20px;
+  font-weight: 400;
+  text-align: center;
+  color: var(--os-cal-dim);
+}
+
+.os-calendar-body {
+  padding: 12px 12px 16px;
+}
+
+.os-calendar-nav {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 0 8px 4px;
+}
+
+.os-calendar-nav p {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.os-calendar-grid {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.os-calendar-grid th {
+  height: 32px;
+  padding: 0;
+  font-size: 12px;
+  font-weight: 600;
+  text-align: center;
+}
+
+.os-calendar-day {
+  height: 40px;
+  padding: 0;
+  text-align: center;
+  cursor: pointer;
+}
+
+.os-calendar-day > span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  vertical-align: middle;
+}
+
+.os-calendar-day:hover > span {
+  background: var(--os-cal-hover);
+}
+
+.os-calendar-day[data-outside] {
+  color: var(--os-cal-dim);
+}
+
+.os-calendar-day[aria-selected='true'] > span {
+  box-shadow: inset 0 0 0 1px var(--os-cal-accent);
+}
+
+/* Today is filled with the accent colour, in or out of the month shown. */
+.os-calendar-day[aria-current='date'] > span {
+  background: var(--os-cal-accent);
+  color: var(--os-cal-on-accent);
+  font-weight: 600;
+}
+
+/* The focus ring goes round the day's circle rather than the whole cell. */
+.os-calendar-day:focus-visible {
+  outline: none;
+}
+
+.os-calendar-day:focus-visible > span {
+  outline: 2px solid var(--os-cal-accent);
+  outline-offset: 1px;
+}
+
+/* Phones: one full-width panel above the taskbar, tapped with a finger. */
+html[data-os-mode='phone'] .os-calendar-flyout {
+  left: 0;
+  width: auto;
+  max-height: calc(100% - var(--os-taskbar-height) - env(safe-area-inset-top, 0px));
+  padding: 0;
+  gap: 0;
+}
+
+html[data-os-mode='phone'] .os-calendar-panel {
+  border-width: 1px 0 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+html[data-os-mode='phone'] .os-calendar-panel:first-child {
+  border-radius: 8px 8px 0 0;
+}
+
+html[data-os-mode='phone'] .os-calendar-panel button {
+  min-width: 44px;
+  min-height: 44px;
+}
+
+html[data-os-mode='phone'] .os-calendar-day {
+  height: 44px;
+}
+
+html[data-os-mode='phone'] .os-calendar-day > span {
+  width: 40px;
+  height: 40px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .os-calendar-panel {
+    animation: none !important;
+  }
+}
+
+/* ---- VS Code: a read-only viewer of the site's own source --------------------
+   The same markup in partials/apps/vscode.php and v2/src/apps/vscode/VSCode.tsx.
+   The files, tree, tabs and colouring come from assets/js/windowing/source-viewer.js. */
+.vsc {
+    display: flex;
+    height: 100%;
+    overflow: hidden;
+    background: #1e1e1e;
+    color: #cccccc;
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    font-size: 13px;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+.vsc button {
+    border: 0;
+    background: none;
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+}
+
+.vsc :where(button, select, [tabindex]):focus-visible {
+    outline: 2px solid #3794ff;
+    outline-offset: -2px;
+}
+
+.vsc-activity {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    width: 48px;
+    flex-shrink: 0;
+    padding-top: 4px;
+    background: #333333;
+    color: #858585;
+}
+
+.vsc-activity span {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
+    border-left: 2px solid transparent;
+}
+
+.vsc-activity span:first-child {
+    border-left-color: #ffffff;
+    color: #ffffff;
+}
+
+.vsc-activity svg {
+    width: 24px;
+    height: 24px;
+}
+
+.vsc-explorer {
+    display: flex;
+    flex-direction: column;
+    width: 240px;
+    min-height: 0;
+    flex-shrink: 0;
+    background: #252526;
+}
+
+.vsc-explorer-title {
+    display: flex;
+    align-items: center;
+    height: 35px;
+    margin: 0;
+    padding: 0 20px;
+    flex-shrink: 0;
+    color: #bbbbbb;
+    font-size: 11px;
+    font-weight: 400;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.vsc-tree {
+    flex: 1;
+    min-height: 0;
+    margin: 0;
+    padding: 0 0 8px;
+    overflow-y: auto;
+    list-style: none;
+}
+
+.vsc-tree-row {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    width: 100%;
+    height: 22px;
+    padding: 0 8px;
+    text-align: left;
+    white-space: nowrap;
+}
+
+.vsc-tree-row[data-depth='1'] { padding-left: 20px; }
+.vsc-tree-row[data-depth='2'] { padding-left: 32px; }
+.vsc-tree-row[data-depth='3'] { padding-left: 44px; }
+.vsc-tree-row[data-depth='4'] { padding-left: 56px; }
+
+.vsc-tree-row:hover {
+    background: #2a2d2e;
+}
+
+.vsc-tree-row[aria-current='true'] {
+    background: #37373d;
+    color: #ffffff;
+}
+
+.vsc-chevron {
+    display: flex;
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+}
+
+.vsc-chevron svg {
+    width: 16px;
+    height: 16px;
+}
+
+.vsc-tree-row[aria-expanded='true'] .vsc-chevron svg {
+    transform: rotate(90deg);
+}
+
+.vsc-name {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* The file type, as VS Code's icon theme shows it. Each passes 4.5:1 on the bars. */
+.vsc-badge {
+    width: 18px;
+    flex-shrink: 0;
+    font-family: Consolas, 'Cascadia Mono', 'Courier New', monospace;
+    font-size: 10px;
+    font-weight: 700;
+    text-align: center;
+}
+
+.vsc-badge[data-lang='javascript'],
+.vsc-badge[data-lang='json'] { color: #cbcb41; }
+.vsc-badge[data-lang='typescript'] { color: #6fb3d2; }
+.vsc-badge[data-lang='css'] { color: #6cb6f5; }
+.vsc-badge[data-lang='text'] { color: #cccccc; }
+
+.vsc-main {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+}
+
+/* Phones pick a file here, in place of the explorer. */
+.vsc-picker {
+    display: none;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 12px;
+    flex-shrink: 0;
+    background: #252526;
+    border-bottom: 1px solid #333333;
+    font-size: 11px;
+}
+
+.vsc-picker span {
+    color: #bbbbbb;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.vsc-picker select {
+    flex: 1;
+    min-width: 0;
+    padding: 4px 8px;
+    border: 1px solid #3c3c3c;
+    border-radius: 2px;
+    background: #3c3c3c;
+    color: #cccccc;
+    font: inherit;
+    font-size: 13px;
+}
+
+.vsc-tabs {
+    display: flex;
+    height: 35px;
+    flex-shrink: 0;
+    overflow-x: auto;
+    background: #252526;
+    scrollbar-width: none;
+}
+
+.vsc-tab {
+    display: flex;
+    max-width: 220px;
+    flex-shrink: 0;
+    border-top: 1px solid transparent;
+    border-right: 1px solid #252526;
+    background: #2d2d2d;
+    color: #a0a0a0;
+}
+
+.vsc-tab[data-active] {
+    border-top-color: #0078d4;
+    background: #1e1e1e;
+    color: #ffffff;
+}
+
+.vsc-tab-open {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    min-width: 0;
+    padding: 0 2px 0 10px;
+    white-space: nowrap;
+}
+
+.vsc-tab-close {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    flex-shrink: 0;
+}
+
+.vsc-tab-close svg {
+    width: 16px;
+    height: 16px;
+    padding: 2px;
+    border-radius: 4px;
+}
+
+.vsc-tab-close:hover svg {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.vsc-crumbs {
+    height: 22px;
+    margin: 0;
+    padding: 0 16px;
+    flex-shrink: 0;
+    overflow: hidden;
+    color: #a9a9a9;
+    font-size: 12px;
+    line-height: 22px;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.vsc-editor {
+    flex: 1;
+    min-height: 0;
+    overflow: auto;
+    background: #1e1e1e;
+}
+
+.vsc-code {
+    width: max-content;
+    min-width: 100%;
+    margin: 0;
+    padding: 0 0 12px;
+    color: #d4d4d4;
+    font-family: Consolas, 'Cascadia Mono', 'Courier New', monospace;
+    font-size: 13px;
+    line-height: 19px;
+    white-space: pre;
+    tab-size: 4;
+    user-select: text;
+    -webkit-user-select: text;
+}
+
+.vsc-code code {
+    display: block;
+    font: inherit;
+}
+
+.vsc-row {
+    display: flex;
+    min-height: 19px;
+}
+
+/* The line numbers stay put while a long line scrolls sideways. */
+.vsc-ln {
+    position: sticky;
+    left: 0;
+    width: 64px;
+    flex-shrink: 0;
+    padding-right: 20px;
+    background: #1e1e1e;
+    color: #858585;
+    text-align: right;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+.vsc-src {
+    padding-right: 24px;
+}
+
+/* VS Code's Dark Modern colours. Each passes 4.5:1 on the editor. */
+.tok-comment { color: #6a9955; }
+.tok-string { color: #ce9178; }
+.tok-number { color: #b5cea8; }
+.tok-keyword,
+.tok-literal { color: #569cd6; }
+.tok-type { color: #4ec9b0; }
+.tok-function { color: #dcdcaa; }
+.tok-regex { color: #d16969; }
+.tok-property { color: #9cdcfe; }
+.tok-selector { color: #d7ba7d; }
+.tok-at-rule { color: #c586c0; }
+
+.vsc-message {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 24px;
+    color: #a9a9a9;
+    text-align: center;
+}
+
+.vsc-message p {
+    margin: 0;
+}
+
+.vsc-message button {
+    padding: 6px 14px;
+    border-radius: 2px;
+    background: #0e639c;
+    color: #ffffff;
+}
+
+.vsc-status {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    height: 22px;
+    padding: 0 10px;
+    flex-shrink: 0;
+    overflow: hidden;
+    background: #0078d4;
+    color: #ffffff;
+    font-size: 12px;
+    white-space: nowrap;
+}
+
+.vsc-status div {
+    display: flex;
+    gap: 14px;
+    min-width: 0;
+}
+
+@media (max-width: 767px) {
+    .vsc-activity,
+    .vsc-explorer {
+        display: none;
+    }
+
+    .vsc-picker {
+        display: flex;
+    }
+
+    .vsc-picker select {
+        min-height: 44px;
+    }
+
+    .vsc-tabs {
+        height: auto;
+    }
+
+    .vsc-tab-open,
+    .vsc-tab-close {
+        min-width: 44px;
+        min-height: 44px;
+    }
+
+    .vsc-code {
+        font-size: 12px;
+    }
+
+    .vsc-ln {
+        width: 44px;
+        padding-right: 12px;
+    }
+}
+
+/* ---- Widgets: Testimonials and Recent changes to this site ----
+   partials/widgets.php and v2's Widgets.tsx. */
+
+/* The quote's marks are drawn, so the data holds only the words. */
+.os-testimonial-quote::before {
+    content: '\201C';
+}
+
+.os-testimonial-quote::after {
+    content: '\201D';
+}
+
+/* Previous and next testimonial. A finger-sized target on a phone or tablet. */
+.os-widget-step {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 9999px;
+    color: inherit;
+    background: transparent;
+    cursor: pointer;
+    transition: background-color 0.15s linear;
+}
+
+.os-widget-step:hover {
+    background: rgba(0, 0, 0, 0.06);
+}
+
+.dark .os-widget-step:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+html[data-os-mode='phone'] .os-widget-step,
+html[data-os-mode='tablet'] .os-widget-step {
+    width: 44px;
+    height: 44px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .os-widget-step {
+        transition: none;
+    }
+}
+
+/* A long word, such as a file path, wraps rather than widening the panel. */
+.os-activity-message {
+    overflow-wrap: anywhere;
+}
+
+/* The guided tour (tour.js): a toast like a Windows notification that points at
+   part of the desktop, and a ring around that part, which stays usable. Both
+   builds place them with positionTour. On a phone the toast docks above the
+   taskbar, clear of the cookie bar, and its buttons take a finger. */
+.os-tour-toast {
+  position: fixed;
+  z-index: 14000;
+  box-sizing: border-box;
+  width: 360px;
+  max-width: calc(100% - 32px);
+  padding: 12px 16px 16px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  background: #fff;
+  color: #1b1b1b;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.28);
+  font-size: 13px;
+  line-height: 18px;
+  animation: os-tour-in 200ms var(--os-ease);
+  transition: left 250ms var(--os-ease), top 250ms var(--os-ease);
+}
+
+.dark .os-tour-toast {
+  border-color: rgba(255, 255, 255, 0.1);
+  background: #2b2b2b;
+  color: #fff;
+}
+
+.os-tour-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  font-size: 12px;
+  line-height: 16px;
+}
+
+.os-tour-logo {
+  width: 16px;
+  height: 16px;
+}
+
+.os-tour-app {
+  flex: 1;
+}
+
+.os-tour-count {
+  opacity: 0.75;
+}
+
+.os-tour-title {
+  margin: 0 0 4px;
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 600;
+}
+
+.os-tour-text {
+  margin: 0;
+}
+
+.os-tour-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.os-tour-button {
+  min-height: 32px;
+  min-width: 96px;
+  padding: 0 12px;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.03);
+  color: inherit;
+  font-size: 12px;
+}
+
+.os-tour-button:hover {
+  background: rgba(0, 0, 0, 0.08);
+}
+
+.dark .os-tour-button {
+  border-color: rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.dark .os-tour-button:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.os-tour-button.os-tour-primary {
+  border-color: #0078d4;
+  background: #0078d4;
+  color: #fff;
+  font-weight: 600;
+}
+
+.os-tour-button.os-tour-primary:hover {
+  background: #106ebe;
+}
+
+.os-tour-ring {
+  position: fixed;
+  z-index: 13900;
+  border: 2px solid #0078d4;
+  border-radius: 8px;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.85), 0 0 18px 4px rgba(0, 120, 212, 0.55);
+  pointer-events: none;
+  animation: os-tour-pulse 2s ease-in-out infinite;
+  transition: left 250ms var(--os-ease), top 250ms var(--os-ease), width 250ms var(--os-ease), height 250ms var(--os-ease);
+}
+
+.dark .os-tour-ring {
+  border-color: #60cdff;
+}
+
+@keyframes os-tour-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+@keyframes os-tour-pulse {
+  50% {
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.85), 0 0 26px 8px rgba(0, 120, 212, 0.35);
+  }
+}
+
+/* Start, Quick Settings and Widgets cover the tour, which waits behind them. */
+[data-tour-covered='true'] :is(.os-tour-toast, .os-tour-ring) {
+  visibility: hidden;
+}
+
+html[data-os-mode='phone'] .os-tour-toast {
+  left: 0;
+  right: 0;
+  bottom: calc(var(--os-taskbar-height) + var(--os-banner-inset, 0px));
+  width: auto;
+  max-width: none;
+  border-width: 1px 0 0;
+  border-radius: 0;
+}
+
+/* At the top instead when above the taskbar it would cover what it points at. */
+html[data-os-mode='phone'] .os-tour-toast[data-tour-side='dock-top'] {
+  top: 0;
+  bottom: auto;
+  padding-top: calc(12px + env(safe-area-inset-top, 0px));
+  border-width: 0 0 1px;
+}
+
+html[data-os-mode='phone'] .os-tour-button {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .os-tour-toast,
+  .os-tour-ring {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+/* Copilot, the same in both builds (partials/apps/copilot.php and
+   v2/src/apps/copilot/Copilot.tsx). It is a container, so a narrow window lays
+   out like a phone whatever the screen. The tailored CV has its own styles, in
+   assets/js/windowing/copilot.js, as it is a document of its own. */
+.copilot {
+    --copilot-bg: #ffffff;
+    --copilot-surface: #f5f7fa;
+    --copilot-text: #1b1b1b;
+    --copilot-muted: #595959;
+    --copilot-border: #d5dbe3;
+    --copilot-accent: #0f6cbd;
+    --copilot-accent-text: #ffffff;
+    --copilot-link: #0f5ea8;
+    --copilot-bubble: #eef2f7;
+    --copilot-error-bg: #fdf3f4;
+    --copilot-error-border: #f1bbbc;
+    --copilot-error-text: #8a1c22;
+    --copilot-generated-bg: #f7f3ff;
+    --copilot-generated-border: #9b7bea;
+    --copilot-generated-text: #5b2fc9;
+    --copilot-strong-bg: #dff6dd;
+    --copilot-strong-text: #0b5a0a;
+    --copilot-partial-bg: #fff4ce;
+    --copilot-partial-text: #6b4d00;
+    --copilot-none-bg: #f0f0f0;
+    --copilot-none-text: #4a4a4a;
+    container-type: inline-size;
+    /* Clipped, so nothing inside can scroll the window itself. */
+    position: relative;
+    overflow: clip;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+    background: var(--copilot-bg);
+    color: var(--copilot-text);
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.dark .copilot {
+    --copilot-bg: #1c1c1c;
+    --copilot-surface: #232323;
+    --copilot-text: #f3f3f3;
+    --copilot-muted: #b8b8b8;
+    --copilot-border: #3b3b3b;
+    --copilot-accent: #1f6fbf;
+    --copilot-link: #60cdff;
+    --copilot-bubble: #2b2b2b;
+    --copilot-error-bg: #3b1d20;
+    --copilot-error-border: #6e2b30;
+    --copilot-error-text: #ffb3b8;
+    --copilot-generated-bg: #2a2340;
+    --copilot-generated-border: #8c6ff0;
+    --copilot-generated-text: #cdbcff;
+    --copilot-strong-bg: #173d19;
+    --copilot-strong-text: #a5e3a2;
+    --copilot-partial-bg: #3d3100;
+    --copilot-partial-text: #ffd966;
+    --copilot-none-bg: #2f2f2f;
+    --copilot-none-text: #cccccc;
+}
+
+.copilot p {
+    margin: 0;
+}
+
+.copilot-visually-hidden {
+    position: absolute !important;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    clip-path: inset(50%);
+    white-space: nowrap;
+}
+
+.copilot-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--copilot-border);
+    background: var(--copilot-surface);
+    flex-shrink: 0;
+}
+
+.copilot-logo {
+    width: 32px;
+    height: 32px;
+    flex-shrink: 0;
+}
+
+.copilot-title {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+    line-height: 1.3;
+}
+
+.copilot-subtitle {
+    font-size: 12px;
+    color: var(--copilot-muted);
+}
+
+.copilot-tabs {
+    display: flex;
+    gap: 4px;
+    padding: 0 12px;
+    border-bottom: 1px solid var(--copilot-border);
+    flex-shrink: 0;
+}
+
+.copilot-tab {
+    min-height: 44px;
+    padding: 0 14px;
+    border: 0;
+    border-bottom: 3px solid transparent;
+    background: none;
+    color: var(--copilot-muted);
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.copilot-tab[aria-selected='true'] {
+    color: var(--copilot-text);
+    border-bottom-color: var(--copilot-accent);
+}
+
+.copilot-notice {
+    padding: 8px 16px;
+    border-bottom: 1px solid var(--copilot-border);
+    background: var(--copilot-surface);
+    font-size: 13px;
+    flex-shrink: 0;
+}
+
+.copilot-notice:empty {
+    display: none;
+}
+
+.copilot-panel {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-height: 0;
+}
+
+.copilot-panel[hidden] {
+    display: none;
+}
+
+/* The two scrolling areas are positioned, so the text kept for screen readers
+   inside them scrolls with them rather than stretching the window. */
+.copilot-log {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    flex: 1 1 auto;
+    min-height: 0;
+    margin: 0;
+    padding: 16px;
+    overflow-y: auto;
+    list-style: none;
+}
+
+.copilot-message {
+    max-width: min(640px, 88%);
+    padding: 10px 14px;
+    border-radius: 12px;
+    overflow-wrap: anywhere;
+}
+
+.copilot-message-text {
+    white-space: pre-line;
+}
+
+.copilot-message-user {
+    align-self: flex-end;
+    border-bottom-right-radius: 4px;
+    background: var(--copilot-accent);
+    color: var(--copilot-accent-text);
+}
+
+.copilot-message-assistant {
+    align-self: flex-start;
+    border-bottom-left-radius: 4px;
+    background: var(--copilot-bubble);
+}
+
+.copilot-message-error {
+    align-self: flex-start;
+    border: 1px solid var(--copilot-error-border);
+    background: var(--copilot-error-bg);
+    color: var(--copilot-error-text);
+}
+
+.copilot-thinking {
+    color: var(--copilot-muted);
+    font-style: italic;
+}
+
+.copilot-note {
+    margin-top: 8px !important;
+    font-size: 12px;
+    color: var(--copilot-muted);
+}
+
+.copilot-sources {
+    margin-top: 10px;
+}
+
+.copilot-sources-title {
+    margin-bottom: 4px !important;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--copilot-muted);
+}
+
+.copilot-citations {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.copilot-citation {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    max-width: 100%;
+    min-height: 32px;
+    padding: 4px 10px;
+    border: 1px solid var(--copilot-border);
+    border-radius: 999px;
+    background: var(--copilot-bg);
+    color: var(--copilot-link);
+    font: inherit;
+    font-size: 12px;
+    line-height: 1.3;
+    text-align: left;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.copilot-citation:hover {
+    background: var(--copilot-surface);
+    text-decoration: underline;
+}
+
+.copilot-citation-kind {
+    flex-shrink: 0;
+    color: var(--copilot-muted);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.copilot-suggestions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 0 16px 12px;
+    flex-shrink: 0;
+}
+
+.copilot-suggestion {
+    min-height: 36px;
+    padding: 6px 12px;
+    border: 1px solid var(--copilot-border);
+    border-radius: 999px;
+    background: var(--copilot-bg);
+    color: var(--copilot-text);
+    font: inherit;
+    font-size: 13px;
+    text-align: left;
+    cursor: pointer;
+}
+
+.copilot-suggestion:hover {
+    background: var(--copilot-surface);
+}
+
+.copilot-composer {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 12px 16px;
+    border-top: 1px solid var(--copilot-border);
+    background: var(--copilot-surface);
+    flex-shrink: 0;
+}
+
+.copilot-label {
+    font-weight: 600;
+}
+
+.copilot-field {
+    display: block;
+    width: 100%;
+    min-height: 64px;
+    max-height: 240px;
+    padding: 10px 12px;
+    border: 1px solid var(--copilot-border);
+    border-bottom: 2px solid var(--copilot-muted);
+    border-radius: 6px;
+    background: var(--copilot-bg);
+    color: var(--copilot-text);
+    font: inherit;
+    resize: vertical;
+}
+
+.copilot-field:focus {
+    outline: none;
+    border-bottom-color: var(--copilot-accent);
+}
+
+.copilot-field-job {
+    min-height: 160px;
+    max-height: 400px;
+}
+
+.copilot-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px 12px;
+}
+
+.copilot-count {
+    color: var(--copilot-muted);
+    font-size: 12px;
+}
+
+.copilot-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    min-height: 36px;
+    padding: 0 16px;
+    border: 1px solid var(--copilot-border);
+    border-radius: 6px;
+    background: var(--copilot-bg);
+    color: var(--copilot-text);
+    font: inherit;
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.copilot-button-primary {
+    border-color: var(--copilot-accent);
+    background: var(--copilot-accent);
+    color: var(--copilot-accent-text);
+}
+
+.copilot-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.copilot-disclaimer {
+    padding: 0 16px 10px;
+    background: var(--copilot-surface);
+    color: var(--copilot-muted);
+    font-size: 11px;
+    flex-shrink: 0;
+}
+
+.copilot-disclaimer a,
+.copilot-link {
+    color: var(--copilot-link);
+}
+
+.copilot-scroll {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    flex: 1 1 auto;
+    min-height: 0;
+    padding: 16px;
+    overflow-y: auto;
+}
+
+.copilot-job {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.copilot-loading {
+    padding: 16px;
+    color: var(--copilot-muted);
+}
+
+.copilot-error {
+    padding: 10px 12px;
+    border: 1px solid var(--copilot-error-border);
+    border-radius: 6px;
+    background: var(--copilot-error-bg);
+    color: var(--copilot-error-text);
+}
+
+.copilot-results {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.copilot-results:focus {
+    outline: none;
+}
+
+.copilot-heading {
+    margin: 8px 0 0;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.copilot-subheading {
+    margin: 4px 0 0;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.copilot-counts {
+    color: var(--copilot-muted);
+    font-size: 13px;
+}
+
+.copilot-generated {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 12px;
+    border: 1px dashed var(--copilot-generated-border);
+    border-radius: 8px;
+    background: var(--copilot-generated-bg);
+}
+
+.copilot-generated-label {
+    color: var(--copilot-generated-text);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+.copilot-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+
+.copilot-table th,
+.copilot-table td {
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--copilot-border);
+    text-align: left;
+    vertical-align: top;
+}
+
+.copilot-table thead th {
+    color: var(--copilot-muted);
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.copilot-table tbody th {
+    font-weight: 600;
+}
+
+.copilot-table td > * + * {
+    margin-top: 6px !important;
+}
+
+.copilot-strength {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.copilot-strength[data-strength='strong'] {
+    background: var(--copilot-strong-bg);
+    color: var(--copilot-strong-text);
+}
+
+.copilot-strength[data-strength='partial'] {
+    background: var(--copilot-partial-bg);
+    color: var(--copilot-partial-text);
+}
+
+.copilot-strength[data-strength='none'] {
+    background: var(--copilot-none-bg);
+    color: var(--copilot-none-text);
+}
+
+.copilot-gaps {
+    margin: 0;
+    padding-left: 20px;
+}
+
+.copilot-cv-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.copilot-cv-frame {
+    display: block;
+    width: 100%;
+    height: 640px;
+    border: 1px solid var(--copilot-border);
+    border-radius: 8px;
+    background: #ffffff;
+}
+
+.copilot-off {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    flex: 1 1 auto;
+    padding: 24px;
+    text-align: center;
+}
+
+.copilot-off-logo {
+    width: 64px;
+    height: 64px;
+}
+
+.copilot-off-title {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.copilot-off p {
+    max-width: 420px;
+    color: var(--copilot-muted);
+}
+
+/* A narrow window: smaller gutters, and each requirement as a card. */
+@container (max-width: 560px) {
+    .copilot-header,
+    .copilot-composer {
+        padding: 10px 12px;
+    }
+
+    .copilot-log,
+    .copilot-scroll {
+        padding: 12px;
+    }
+
+    .copilot-suggestions {
+        padding: 0 12px 10px;
+    }
+
+    .copilot-disclaimer {
+        padding: 0 12px 10px;
+    }
+
+    .copilot-message {
+        max-width: 94%;
+    }
+
+    .copilot-table thead {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip: rect(0 0 0 0);
+        clip-path: inset(50%);
+    }
+
+    .copilot-table,
+    .copilot-table tbody {
+        display: block;
+    }
+
+    .copilot-table tbody tr {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 4px 8px;
+        margin-bottom: 8px;
+        padding: 10px;
+        border: 1px solid var(--copilot-border);
+        border-radius: 8px;
+    }
+
+    .copilot-table tbody th,
+    .copilot-table tbody td {
+        padding: 0;
+        border: 0;
+    }
+
+    .copilot-table tbody td:last-child {
+        grid-column: 1 / -1;
+    }
+
+    .copilot-cv-frame {
+        height: 520px;
+    }
+}
+
+/* Finger-sized controls on a phone. */
+html[data-os-mode='phone'] .copilot :is(.copilot-button, .copilot-suggestion, .copilot-citation) {
+    min-height: 44px;
+}
+
+/* Build switch: the windows the other build had open are already on screen, so
+   they appear at once instead of playing the opening animation. See handoff.js. */
+.os-window.os-window-restored {
+    animation: none;
 }

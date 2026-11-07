@@ -10,6 +10,7 @@ $e = fn($value) => htmlspecialchars((string)$value, ENT_QUOTES, 'UTF-8');
 $email = (string)($config['email'] ?? 'devante@johnson-rose.co.uk');
 $place = (string)($config['weather']['city'] ?? 'Essex');
 $days = TELEMETRY_RETENTION_DAYS;
+$messageDays = EMAIL_LOG_RETENTION_DAYS;
 
 $pageTitle = 'Privacy notice';
 $pageDescription = 'What DeVanté Johnson-Rose\'s portfolio records about visitors, why, and for how long.';
@@ -22,7 +23,7 @@ ob_start();
         <p class="lead">This portfolio is run by DeVanté Johnson-Rose. This page sets out exactly what the site records about visitors, why, and for how long.</p>
 
         <div class="note">
-            <p><strong>In short:</strong> nothing is recorded unless you accept. If you accept, the site records which apps you open and a shortened IP address, and may load Google Analytics. Records are kept for <?php echo $days; ?> days.</p>
+            <p><strong>In short:</strong> nothing is recorded unless you accept. If you accept, the site records which apps you open and a shortened IP address, and may load Google Analytics. Records are kept for <?php echo $days; ?> days. A message you send me through the Outlook app is kept for 12 months.</p>
         </div>
 
         <h2 id="consent">Nothing is recorded until you accept</h2>
@@ -48,8 +49,9 @@ ob_start();
         <p>The site does not store your full IP address, your location, your internet provider or your browser's full identifying string, and it never looks up where an IP address is.</p>
         <p>To stop abuse, the server counts how often each address sends records, sends messages or tries to sign in to the Admin Console. While it counts, it keeps a scrambled, one-way form (a hash) of your full IP address. That is never stored with your records.</p>
 
-        <h2 id="retention">How long records are kept</h2>
-        <p>Records are deleted automatically once they are <?php echo $days; ?> days old. The clean-up runs at most once a day, so a record can last up to a day longer.</p>
+        <h2 id="retention">How long records and messages are kept</h2>
+        <p>Records are deleted automatically once they are <?php echo $days; ?> days old. The copy of a message you send me (see <a href="#messages">If you send me a message</a>) is deleted automatically once it is 12 months (<?php echo $messageDays; ?> days) old.</p>
+        <p>The clean-up runs at most once a day, the next time a visitor who has accepted uses the site, so a record or a message can last a little longer than that.</p>
 
         <h2 id="access">Who sees them</h2>
         <p>Only me. Records are kept in the site's own database at its web host. At most once a day I receive one summary email with counts only: how many events and visits there were, which apps were used and which version of the site. It contains no IP addresses and nothing about any one visitor. The Admin Console shows the same totals, and only I can sign in to it.</p>
@@ -61,7 +63,10 @@ ob_start();
         <p>The weather in the taskbar is always for one fixed place, <?php echo $e($place); ?>. Your IP address and location are never used for it, and nothing about you is sent to the weather service: the site's server asks Open-Meteo for the forecast for that one place and shows the same answer to every visitor.</p>
 
         <h2 id="messages">If you send me a message</h2>
-        <p>If you use the Outlook app to send me a message, I receive your email address, your subject, your message and any attachments by email. A copy of the message, without attachments, is kept in the site's database with a shortened IP address so that I can reply and deal with abuse. Ask me and I will delete it.</p>
+        <p>If you use the Outlook app to send me a message, I receive your email address, your subject, your message and any attachments by email. A copy of the message, without attachments, is kept in the site's database with a shortened IP address so that I can reply and deal with abuse. That copy is deleted automatically after 12 months, or sooner if you ask me.</p>
+
+        <h2 id="copilot">Copilot</h2>
+        <p>The Copilot app answers questions about my work and matches job descriptions against my CV. When you send it a question or a job description, the site's server passes it to Anthropic, whose Claude models write the answer, together with your last few messages in that chat and the site's own CV data. Nothing else about you goes with it: not your IP address, not a cookie and not a name. The site does not keep your questions, job descriptions or Copilot's answers; your chat stays in that window until you close it. To stop overuse, the server counts requests against a hashed copy of your shortened IP address and forgets each count within a day. Anthropic handles what it receives under its own <a href="https://www.anthropic.com/legal/privacy">privacy policy</a>, so please do not paste anything private into Copilot.</p>
 
         <h2 id="device">What stays on your device</h2>
         <p>Your settings (such as theme and wallpaper), your answer to the cookie banner and any files you make on the desktop are saved in your browser's local storage, on your own device. They are not sent to the site, except where an event above mentions them, such as the name of a file you move to the Recycle Bin.</p>
@@ -75,7 +80,7 @@ ob_start();
         <h2 id="rights">Your rights</h2>
         <p>You can ask what the site holds about you, ask me to delete it, or object to it being kept, by emailing <a href="mailto:<?php echo $e($email); ?>"><?php echo $e($email); ?></a>. Records are not linked to a name, so to find yours I may need the date, the time and the apps you used. You can also complain to the Information Commissioner's Office at <a href="https://ico.org.uk/make-a-complaint/">ico.org.uk</a>.</p>
 
-        <p><small>Last updated 6 November 2026.</small></p>
+        <p><small>Last updated 7 November 2026.</small></p>
 <?php
 $pageContent = ob_get_clean();
 include __DIR__ . '/layout.php';

@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { useOsStore } from './osStore'
 
 const reset = () => {
@@ -476,6 +476,36 @@ describe('osStore', () => {
           { title: 'B', link: 'http://b', description: '' },
         ])
       expect(useOsStore.getState().news).toHaveLength(2)
+    })
+  })
+
+  describe('the address hooks', () => {
+    it('counts each new window, so that the address can tell an open from a focus', () => {
+      const before = useOsStore.getState().windowsOpened
+      useOsStore.getState().openApp('calculator')
+      useOsStore.getState().openApp('notepad')
+      expect(useOsStore.getState().windowsOpened).toBe(before + 2)
+    })
+
+    it('does not count bringing an open app forward again', () => {
+      useOsStore.getState().openApp('calculator')
+      const before = useOsStore.getState().windowsOpened
+      useOsStore.getState().openApp('notepad')
+      useOsStore.getState().openApp('calculator')
+      expect(useOsStore.getState().windowsOpened).toBe(before + 1)
+    })
+
+    it('opens a Visit Site file’s real tab at once, and nothing else', () => {
+      const open = vi.spyOn(window, 'open').mockReturnValue(null)
+      try {
+        useOsStore.getState().openApp('edge', 'Visit Site.url', { extra: { initialUrl: 'https://earthecho.co.uk/' } })
+        expect(open).toHaveBeenCalledExactlyOnceWith('https://earthecho.co.uk/', '_blank', 'noopener,noreferrer')
+        useOsStore.getState().openApp('edge')
+        useOsStore.getState().openApp('notepad', 'a.txt', { extra: { initialUrl: 'https://earthecho.co.uk/' } })
+        expect(open).toHaveBeenCalledOnce()
+      } finally {
+        open.mockRestore()
+      }
     })
   })
 })

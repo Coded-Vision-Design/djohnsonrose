@@ -65,25 +65,3 @@ export function quickconnectLog(host, user, port, remotePath) {
 }
 
 export const transferSize = (entry) => (entry.type === 'dir' ? '' : entry.size.toLocaleString('en-GB'));
-
-/** VS Code's terminal when it opens. */
-export const VSCODE_TERMINAL_START = [
-  { type: 'command', text: 'PS C:\\Users\\DeVante\\Projects> git status' },
-  { type: 'info', text: 'On branch main' },
-  { type: 'info', text: "Your branch is up to date with 'origin/main'." },
-  { type: 'info', text: 'nothing to commit, working tree clean' },
-];
-
-/** The lines VS Code's Build button prints, one at a time. */
-export function vscodeBuildLog(project) {
-  return [
-    { type: 'command', text: 'PS C:\\Users\\DeVante\\Projects> npm run build' },
-    { type: 'info', text: '> vite build' },
-    { type: 'info', text: 'transforming...' },
-    { type: 'info', text: '✓ 248 modules transformed.' },
-    { type: 'info', text: 'rendering chunks...' },
-    { type: 'success', text: 'dist/assets/index.js   142.31 kB │ gzip: 46.02 kB' },
-    { type: 'success', text: '✓ built in 1.84s' },
-    { type: 'success', text: `Deployed ${project || 'the project'} to staging` },
-  ];
-}

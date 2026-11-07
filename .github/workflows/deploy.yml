@@ -274,6 +274,13 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    # Read-only. checks, statuses and pull-requests let "Write build.json"
+    # read what the checks on the deployed code concluded.
+    permissions:
+      contents: read
+      checks: read
+      statuses: read
+      pull-requests: read
 
     steps:
       # The checkout is only read (deploy-config.json). The files that ship
@@ -363,6 +370,123 @@ jobs:
             exit 1
           fi
           echo "Release OK: $(find site -type f | wc -l) files"
+
+      # ── 6a. Record what is going live ──────────────────────────────────────
+      # build.json tells Task Manager which commit is live, when it went out,
+      # and what the checks on it concluded: those on the pull request that was
+      # merged, or on the commit itself when it was pushed or rolled back to.
+      # It names no account or repository and holds nothing secret; the token
+      # only reads check results, and goes nowhere but gh. A read that fails is
+      # written down as unreadable, so the site never shows a guess.
+      - name: Set up Node.js for build.json
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "22"
+
+      - name: Write build.json
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          RUN_ID: ${{ github.run_id }}
+        run: |
+          SHA=$(git rev-parse HEAD)
+          if ! [[ "$SHA" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "::error::Could not tell which commit is being deployed"
+            exit 1
+          fi
+          WORK="${RUNNER_TEMP}/build-info"
+          OUT="${RUNNER_TEMP}/release/site/build.json"
+          rm -rf "$WORK"
+          mkdir -p "$WORK"
+
+          # Turns gh's replies into build.json. Check names are kept as plain
+          # text, and nothing from a reply is ever run.
+          cat > "$WORK/build-info.cjs" <<'NODE'
+          const fs = require('fs')
+          const SHA = /^[0-9a-f]{40}$/
+          const read = (file) => JSON.parse(fs.readFileSync(file, 'utf8'))
+          const [mode, ...args] = process.argv.slice(2)
+
+          if (mode === 'head') {
+            // The head of the pull request that was merged into this commit.
+            const [file, sha] = args
+            const pulls = read(file)
+            if (!Array.isArray(pulls)) throw new Error('not a list of pull requests')
+            const merged = pulls.find((pull) => pull && pull.merged_at && pull.merge_commit_sha === sha)
+            const head = merged && merged.head && merged.head.sha
+            if (typeof head === 'string' && SHA.test(head)) process.stdout.write(head)
+            process.exit(0)
+          }
+
+          const env = process.env
+          let state = env.STATE
+          const found = []
+          if (state === 'read') {
+            try {
+              const pages = read(`${env.WORK}/check-runs.json`)
+              const status = read(`${env.WORK}/status.json`)
+              if (!Array.isArray(pages) || !pages.every((page) => page && Array.isArray(page.check_runs))) throw new Error('check runs')
+              if (!status || !Array.isArray(status.statuses)) throw new Error('statuses')
+              // This deploy's own jobs say nothing about the code it ships.
+              const own = `/actions/runs/${env.RUN_ID}/`
+              for (const run of pages.flatMap((page) => page.check_runs)) {
+                if (String(run.details_url || '').includes(own)) continue
+                found.push({ name: run.name, result: run.status === 'completed' ? run.conclusion : 'pending' })
+              }
+              for (const item of status.statuses) found.push({ name: item.context, result: item.state })
+            } catch (err) {
+              console.log(`::warning::Check results could not be read: ${err.message}`)
+              state = 'unreadable'
+            }
+          }
+
+          const results = []
+          for (const { name, result } of found) {
+            const text = String(name ?? '').replace(/[\u0000-\u001f\u007f]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 100).trim()
+            if (!text || results.some((check) => check.name === text)) continue
+            results.push({ name: text, result: typeof result === 'string' && /^[a-z_]{1,32}$/.test(result) ? result : 'unknown' })
+          }
+          results.sort((a, b) => a.name.localeCompare(b.name, 'en'))
+          if (state === 'read' && results.length === 0) state = 'none'
+
+          if (!SHA.test(env.SHA) || !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/.test(env.DEPLOYED_AT)) throw new Error('bad commit or time')
+          const build = {
+            schema: 1,
+            commit: env.SHA,
+            shortCommit: env.SHA.slice(0, 7),
+            deployedAt: env.DEPLOYED_AT,
+            checks: state === 'unreadable'
+              ? { state, results: [] }
+              : { state, ranOn: env.RAN_ON === 'pull-request' ? 'pull-request' : 'commit', results: state === 'read' ? results.slice(0, 100) : [] },
+          }
+          fs.writeFileSync(env.OUT, JSON.stringify(build, null, 2) + '\n')
+          console.log(`build.json: commit ${build.shortCommit}, checks ${state}${state === 'read' ? ` (${build.checks.results.length})` : ''}`)
+          NODE
+
+          # The checks that count ran on the head of the pull request that was
+          # merged, or on this commit when there was none.
+          STATE=read
+          RAN_ON=commit
+          CHECK_SHA="$SHA"
+          HEAD_SHA=""
+          if gh api "repos/${REPO}/commits/${SHA}/pulls" > "$WORK/pulls.json"; then
+            HEAD_SHA=$(node "$WORK/build-info.cjs" head "$WORK/pulls.json" "$SHA") || STATE=unreadable
+          else
+            STATE=unreadable
+          fi
+          if [ -n "$HEAD_SHA" ]; then
+            RAN_ON=pull-request
+            CHECK_SHA="$HEAD_SHA"
+          fi
+          if [ "$STATE" = read ]; then
+            gh api --paginate --slurp "repos/${REPO}/commits/${CHECK_SHA}/check-runs?per_page=100" > "$WORK/check-runs.json" || STATE=unreadable
+          fi
+          if [ "$STATE" = read ]; then
+            gh api "repos/${REPO}/commits/${CHECK_SHA}/status?per_page=100" > "$WORK/status.json" || STATE=unreadable
+          fi
+
+          SHA="$SHA" STATE="$STATE" RAN_ON="$RAN_ON" WORK="$WORK" OUT="$OUT" RUN_ID="$RUN_ID" \
+            DEPLOYED_AT="$(date -u +%Y-%m-%dT%H:%M:%SZ)" node "$WORK/build-info.cjs" write
 
       # ── 7. Setup SSH (picks Hostinger or VPS secrets automatically) ────────
       # With the *_KNOWN_HOSTS secret set, the server's host key is pinned and

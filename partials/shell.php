@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content">
-    <title>DeVanté Johnson-Rose | Full Stack Developer & Systems Engineer · Portfolio OS</title>
-    <meta name="description" content="DeVanté Johnson-Rose is a Senior Full Stack Developer and Systems Engineer in the UK building scalable web platforms, enterprise infrastructure, and developer tooling. Explore the interactive Windows-style portfolio.">
+    <title>DeVanté Johnson-Rose | Full Stack Developer · Portfolio OS</title>
+    <meta name="description" content="DeVanté Johnson-Rose is a Full Stack Developer in the UK building scalable web platforms, enterprise infrastructure and developer tooling. Explore the interactive Windows-style portfolio.">
     <meta name="author" content="DeVanté Johnson-Rose">
     <meta name="keywords" content="DeVanté Johnson-Rose, full stack developer UK, systems engineer, PHP developer, React developer, portfolio, SCCM, JAMF, automation, devante.johnson-rose.co.uk">
     <meta name="robots" content="index, follow, max-image-preview:large">
@@ -14,7 +14,7 @@
     <!-- Open Graph (Facebook, LinkedIn, etc.) -->
     <meta property="og:type" content="website">
     <meta property="og:site_name" content="DeVanté Johnson-Rose · Portfolio OS">
-    <meta property="og:title" content="DeVanté Johnson-Rose | Full Stack Developer & Systems Engineer">
+    <meta property="og:title" content="DeVanté Johnson-Rose | Full Stack Developer">
     <meta property="og:description" content="Interactive Windows 11-styled portfolio. Open the apps, browse the projects, drop into the CV. Every desktop tile is a real, working surface.">
     <meta property="og:url" content="https://devante.johnson-rose.co.uk/">
     <meta property="og:image" content="https://devante.johnson-rose.co.uk/assets/img/share-card.png">
@@ -26,7 +26,7 @@
 
     <!-- Twitter / X card -->
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="DeVanté Johnson-Rose | Portfolio OS">
+    <meta name="twitter:title" content="DeVanté Johnson-Rose | Full Stack Developer">
     <meta name="twitter:description" content="Interactive Windows-style portfolio with working Paint, Terminal, Explorer, Outlook, FL Studio, and more.">
     <meta name="twitter:image" content="https://devante.johnson-rose.co.uk/assets/img/share-card.png">
     <meta name="twitter:image:alt" content="Portrait of DeVanté Johnson-Rose beside his name and devante.johnson-rose.co.uk">
@@ -42,8 +42,8 @@
     <link rel="preload" as="image" href="<?php echo IMG_PATH; ?>wallpaper-bloom.webp">
 
     <!-- JSON-LD: Person + WebSite for rich Google results. The same in v2/index.html,
-         and worksFor, alumniOf, knowsAbout and sameAs follow data/profile.json, which
-         /cv reads (v2/src/data/profile.test.ts checks all three). -->
+         and jobTitle, worksFor, alumniOf, knowsAbout and sameAs follow data/profile.json,
+         which /cv reads (v2/src/data/profile.test.ts checks all three). -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
@@ -54,8 +54,9 @@
           "name": "DeVanté Johnson-Rose",
           "url": "https://devante.johnson-rose.co.uk/",
           "image": "https://devante.johnson-rose.co.uk/assets/img/profile.webp",
-          "jobTitle": "Senior Full Stack Developer & Systems Engineer",
+          "jobTitle": "Full Stack Developer",
           "email": "mailto:devante@johnson-rose.co.uk",
+          "telephone": "+447429490333",
           "worksFor": [
             { "@type": "Organization", "name": "Killik & Co" },
             { "@type": "Organization", "name": "Coded Vision Design" }
@@ -67,7 +68,7 @@
             "Automation", "SCCM", "JAMF", "Active Directory", "Docker", "AI integration"
           ],
           "sameAs": [
-            "https://github.com/CodedVisionDesign"
+            "https://www.linkedin.com/in/devant%C3%A9-johnson-rose-b5303a47/"
           ]
         },
         {
@@ -110,7 +111,18 @@
         import * as devtools from '<?php echo BASE_PATH; ?>assets/js/windowing/devtools.js?v=<?php echo @filemtime(__DIR__ . '/../assets/js/windowing/devtools.js'); ?>';
         import * as references from '<?php echo BASE_PATH; ?>assets/js/windowing/references.js?v=<?php echo @filemtime(__DIR__ . '/../assets/js/windowing/references.js'); ?>';
         import * as weather from '<?php echo BASE_PATH; ?>assets/js/windowing/weather.js?v=<?php echo @filemtime(__DIR__ . '/../assets/js/windowing/weather.js'); ?>';
-        window.OsWindowing = { ...windowing, ...shellCore, ...fileOps, ...textOps, ...shellUi, ...calculator, ...terminal, ...browser, ...media, ...sql, ...devtools, ...references, ...weather };
+        import * as switcher from '<?php echo BASE_PATH; ?>assets/js/windowing/switcher.js?v=<?php echo @filemtime(__DIR__ . '/../assets/js/windowing/switcher.js'); ?>';
+        import * as calendar from '<?php echo BASE_PATH; ?>assets/js/windowing/calendar.js?v=<?php echo @filemtime(__DIR__ . '/../assets/js/windowing/calendar.js'); ?>';
+        import * as address from '<?php echo BASE_PATH; ?>assets/js/windowing/address.js?v=<?php echo @filemtime(__DIR__ . '/../assets/js/windowing/address.js'); ?>';
+        import * as sourceViewer from '<?php echo BASE_PATH; ?>assets/js/windowing/source-viewer.js?v=<?php echo @filemtime(__DIR__ . '/../assets/js/windowing/source-viewer.js'); ?>';
+        import * as widgets from '<?php echo BASE_PATH; ?>assets/js/windowing/widgets.js?v=<?php echo @filemtime(__DIR__ . '/../assets/js/windowing/widgets.js'); ?>';
+        import * as tour from '<?php echo BASE_PATH; ?>assets/js/windowing/tour.js?v=<?php echo @filemtime(__DIR__ . '/../assets/js/windowing/tour.js'); ?>';
+        import * as copilot from '<?php echo BASE_PATH; ?>assets/js/windowing/copilot.js?v=<?php echo @filemtime(__DIR__ . '/../assets/js/windowing/copilot.js'); ?>';
+        import * as metrics from '<?php echo BASE_PATH; ?>assets/js/windowing/metrics.js?v=<?php echo @filemtime(__DIR__ . '/../assets/js/windowing/metrics.js'); ?>';
+        import * as handoff from '<?php echo BASE_PATH; ?>assets/js/windowing/handoff.js?v=<?php echo @filemtime(__DIR__ . '/../assets/js/windowing/handoff.js'); ?>';
+        window.OsWindowing = { ...windowing, ...shellCore, ...fileOps, ...textOps, ...shellUi, ...calculator, ...terminal, ...browser, ...media, ...sql, ...devtools, ...references, ...weather, ...switcher, ...calendar, ...address, ...sourceViewer, ...widgets, ...tour, ...copilot, ...metrics, ...handoff };
+        // Task Manager's Web Vitals are watched from the start, so that early interactions count.
+        metrics.startVitals();
         window.FlStudio = flStudio;
         window.OfficeApps = officeApps;
         window.Drawing = drawing;
@@ -363,6 +375,7 @@
             <div x-show="loggedIn && !isBooting && !loggingIn" x-cloak class="h-full w-full absolute inset-0 z-1">
                 <?php include __DIR__ . '/desktop.php'; ?>
                 <?php include __DIR__ . '/file-dialogs.php'; ?>
+                <?php include __DIR__ . '/tour.php'; ?>
             </div>
         </main>
 
@@ -408,6 +421,9 @@
         'os/filesystem',
         'os/store',
         'os/shell',
+        'os/switching',
+        'os/calendar',
+        'os/tour',
         'paint',
         'photoshop',
         'calculator',
@@ -421,7 +437,9 @@
         'apps/system',
         'apps/tools',
         'apps/admin',
-        'flstudio'
+        'apps/copilot',
+        'flstudio',
+        'widgets'
     ];
     // Versioned by file time like the stylesheet, so browsers keep each script
     // until it changes instead of fetching all of them on every visit.

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useWindowExtras } from '../../windowing/WindowContext'
 import {
   HOME_URL,
@@ -41,17 +41,9 @@ export default function Edge() {
   const [draft, setDraft] = useState<string | null>(null)
   const [refreshing, setRefreshing] = useState(false)
   const [projects, setProjects] = useState<PortfolioItem[] | null>(null)
-  const startUrl = useRef(tabs[0].url)
-  const openedSite = useRef(false)
 
-  // A Visit Site file opens the project in a real tab as well. Once only, as
-  // React runs effects twice in development.
-  useEffect(() => {
-    if (openedSite.current || !isExternal(startUrl.current)) return
-    openedSite.current = true
-    window.open(startUrl.current, '_blank', 'noopener,noreferrer')
-  }, [])
-
+  // A Visit Site file's real tab is opened by openApp, inside the visitor's
+  // click, before this window loads. See siteToVisit in browser.js.
   useEffect(() => {
     let cancelled = false
     fetch('/data/portfolio.json')

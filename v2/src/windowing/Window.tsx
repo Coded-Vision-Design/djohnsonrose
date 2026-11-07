@@ -52,7 +52,7 @@ export function Window({ win, children }: Props) {
       data-state={win.state}
       className={`os-window win-shadow glass animate-window-open rounded-lg ${
         isFocused ? 'window-active' : ''
-      }`}
+      }${win.restored ? ' os-window-restored' : ''}`}
       style={{ left: win.x, top: win.y, width: win.width, height: win.height, zIndex: win.z }}
       onPointerDownCapture={() => focusWindow(win.id)}
       role="dialog"
