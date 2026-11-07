@@ -275,6 +275,9 @@ document.addEventListener('alpine:init', () => {
                 this.playSound('error');
                 return;
             }
+            // A Visit Site file's real tab opens now, inside the click. See siteToVisit.
+            const site = OsWindowing.siteToVisit(appHandle, extraData);
+            if (site) window.open(site, '_blank', 'noopener,noreferrer');
 
             const existing = this.windows.find(w => w.app === appHandle);
             if (existing) {

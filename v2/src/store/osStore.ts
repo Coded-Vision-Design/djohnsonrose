@@ -42,6 +42,8 @@ import {
 } from '../../../assets/js/windowing/shell-ui.js'
 import { filesystem, type FileSystem, type FsEntry } from '../data/filesystem'
 import { forgetReferences } from '../../../assets/js/windowing/references.js'
+import { siteToVisit } from '../../../assets/js/windowing/browser.js'
+
 const prefersDark = () => !!window.matchMedia?.('(prefers-color-scheme: dark)').matches
 
 /** Plays the close or minimise animation on a copy of the window. See shell-ui.js. */
@@ -461,6 +463,9 @@ export const useOsStore = create<OsState>()(
       openApp: (app, title, options) => {
         const recent = recentKey(app, options?.extra)
         if (recent) set({ recent: { ...get().recent, [recent]: Date.now() } })
+        // A Visit Site file's real tab opens now, inside the click. See siteToVisit.
+        const site = siteToVisit(app, options?.extra)
+        if (site) window.open(site, '_blank', 'noopener,noreferrer')
         const state = get()
         // Launching an app always closes start/quick-settings/widgets popups.
         if (

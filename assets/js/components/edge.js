@@ -17,13 +17,15 @@ document.addEventListener('alpine:init', () => {
             this.$watch('win.urlRevision', () => this.openAddress(this.win?.initialUrl));
         },
 
-        /** Starts again on `address`, and opens another site in a real tab as well. */
+        /**
+         * Starts again on `address`. A Visit Site file's real tab is opened by
+         * openApp, inside the visitor's click, before this loads. See siteToVisit.
+         */
         openAddress(address) {
             const tab = OsWindowing.newTab(Date.now(), address || OsWindowing.HOME_URL);
             this.tabs = [tab];
             this.activeTabId = tab.id;
             this.draft = null;
-            if (OsWindowing.isExternal(tab.url)) window.open(tab.url, '_blank', 'noopener,noreferrer');
         },
 
         activeTab() {

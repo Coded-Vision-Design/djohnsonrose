@@ -19,6 +19,7 @@ export function isExternal(url: string): boolean
 export function normaliseAddress(text: string): string
 export function siteName(url: string): string
 export function tabTitle(url: string): string
+export function siteToVisit(app: string, extra: { initialUrl?: unknown } | null | undefined): string | null
 export function newTab(id: number, address?: string): BrowserTab
 export function navigateTab(tab: BrowserTab, address: string): BrowserTab
 export function tabBack(tab: BrowserTab): BrowserTab

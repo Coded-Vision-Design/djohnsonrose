@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { useOsStore } from './osStore'
 
 const reset = () => {
@@ -493,6 +493,19 @@ describe('osStore', () => {
       useOsStore.getState().openApp('notepad')
       useOsStore.getState().openApp('calculator')
       expect(useOsStore.getState().windowsOpened).toBe(before + 1)
+    })
+
+    it('opens a Visit Site file’s real tab at once, and nothing else', () => {
+      const open = vi.spyOn(window, 'open').mockReturnValue(null)
+      try {
+        useOsStore.getState().openApp('edge', 'Visit Site.url', { extra: { initialUrl: 'https://earthecho.co.uk/' } })
+        expect(open).toHaveBeenCalledExactlyOnceWith('https://earthecho.co.uk/', '_blank', 'noopener,noreferrer')
+        useOsStore.getState().openApp('edge')
+        useOsStore.getState().openApp('notepad', 'a.txt', { extra: { initialUrl: 'https://earthecho.co.uk/' } })
+        expect(open).toHaveBeenCalledOnce()
+      } finally {
+        open.mockRestore()
+      }
     })
   })
 })

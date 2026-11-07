@@ -1,8 +1,8 @@
 import { test, expect, type Page } from '@playwright/test'
 
 // The address bar in both builds: it follows the window in front, Back and
-// Forward bring windows back, deep links and reloads open their app, and
-// unknown addresses are a 404 in both builds.
+// Forward bring windows back, deep links and reloads open their app, unknown
+// addresses are a 404, and a Visit Site file opens its real tab from the click.
 // The rules are unit tested in src/windowing/address.test.ts.
 
 const BUILDS = [
@@ -224,6 +224,59 @@ for (const build of BUILDS) {
       await expect(taskbarApp(page, 'edge')).toBeVisible({ timeout: 10_000 })
       await page.waitForTimeout(400)
       expect((await windows(page)).open).toEqual({})
+    })
+  })
+
+  test.describe(`${build.name} Visit Site`, () => {
+    test.beforeEach(async ({ page }) => {
+      // Notes which event, if any, each new tab was opened inside of.
+      await page.addInitScript(() => {
+        const opened: { url: string; during: string | null }[] = []
+        const open = window.open.bind(window)
+        ;(window as unknown as { __opened: typeof opened }).__opened = opened
+        window.open = (url?: string | URL, ...rest: string[]) => {
+          opened.push({ url: String(url), during: window.event?.type ?? null })
+          return open(url, ...rest)
+        }
+      })
+      await boot(page, build.url)
+    })
+
+    const opened = (page: Page) => page.evaluate(() => (window as unknown as { __opened: unknown[] }).__opened)
+    const chrome = (page: Page) => page.locator('.os-window').filter({ has: page.locator('[data-chrome]') })
+
+    test('opens the real site in a new tab inside the double-click, and still shows it in Chrome', async ({ page }) => {
+      const folder = 'C:\\Users\\DeVante\\Projects\\Freelance\\Earth Echo'
+      if (build.name === 'v1') await call(page, 'openApp', 'explorer', 'Earth Echo', { initialPath: folder })
+      else await call(page, 'openApp', 'explorer', 'Earth Echo', { extra: { initialPath: folder } })
+      const file = page.locator('[data-explorer-file="Visit Site.url"]')
+      await expect(file).toBeVisible({ timeout: 15_000 })
+
+      const popup = page.waitForEvent('popup')
+      await file.dblclick()
+      expect((await popup).url()).toBe('https://earthecho.co.uk/')
+      await expect(chrome(page).getByRole('link', { name: 'Open earthecho.co.uk in a new tab' })).toBeVisible({
+        timeout: 15_000,
+      })
+      // Chrome has loaded, and opened no second tab of its own.
+      await page.waitForTimeout(300)
+      expect(await opened(page)).toEqual([{ url: 'https://earthecho.co.uk/', during: 'dblclick' }])
+    })
+
+    test('does the same when Chrome is already open', async ({ page }) => {
+      await openFromTaskbar(page, 'edge', 'Chrome')
+      const folder = 'C:\\Users\\DeVante\\Projects\\Freelance\\Earth Echo'
+      if (build.name === 'v1') await call(page, 'openApp', 'explorer', 'Earth Echo', { initialPath: folder })
+      else await call(page, 'openApp', 'explorer', 'Earth Echo', { extra: { initialPath: folder } })
+      const file = page.locator('[data-explorer-file="Visit Site.url"]')
+      await expect(file).toBeVisible({ timeout: 15_000 })
+
+      const popup = page.waitForEvent('popup')
+      await file.dblclick()
+      expect((await popup).url()).toBe('https://earthecho.co.uk/')
+      await expect(chrome(page).getByRole('link', { name: 'Open earthecho.co.uk in a new tab' })).toBeVisible()
+      await page.waitForTimeout(300)
+      expect(await opened(page)).toEqual([{ url: 'https://earthecho.co.uk/', during: 'dblclick' }])
     })
   })
 }
