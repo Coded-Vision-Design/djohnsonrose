@@ -7,10 +7,14 @@
 // references.json is an array of { from, role, company, body } objects.
 // The output is a small JSON envelope { v, salt, iv, ciphertext } where each
 // value is base64. The browser-side ReferencesVault uses Web Crypto with the
-// same AES-256-GCM + PBKDF2(SHA-256, 200k) parameters to decrypt.
+// same AES-256-GCM + PBKDF2-SHA-256 parameters to decrypt, reading the iteration
+// count from the file, so older files still open.
 
 import { readFileSync } from 'node:fs'
 import { webcrypto as crypto } from 'node:crypto'
+
+// OWASP's figure for PBKDF2 with SHA-256 (2023 password storage cheat sheet).
+const ITERATIONS = 600000
 
 async function main() {
   const inputPath = process.argv[2]
@@ -36,7 +40,7 @@ async function main() {
     ['deriveKey'],
   )
   const key = await crypto.subtle.deriveKey(
-    { name: 'PBKDF2', salt, iterations: 200000, hash: 'SHA-256' },
+    { name: 'PBKDF2', salt, iterations: ITERATIONS, hash: 'SHA-256' },
     keyMaterial,
     { name: 'AES-GCM', length: 256 },
     false,
@@ -50,7 +54,7 @@ async function main() {
     v: 1,
     alg: 'AES-256-GCM',
     kdf: 'PBKDF2-SHA256',
-    iterations: 200000,
+    iterations: ITERATIONS,
     salt: b64(salt),
     iv: b64(iv),
     ciphertext: b64(ciphertext),

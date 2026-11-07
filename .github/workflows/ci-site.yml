@@ -57,7 +57,7 @@ jobs:
       # Keeps images, sounds and bundles within their size budget.
       - name: Asset sizes
         run: |
-          node --test scripts/check-asset-sizes.test.mjs
+          node --test scripts/*.test.mjs
           node scripts/check-asset-sizes.mjs
 
   browser-tests:
