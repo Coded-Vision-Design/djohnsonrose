@@ -86,12 +86,23 @@ export function tourRing(rect: Pick<TourRect, 'left' | 'top' | 'width' | 'height
   width: number
   height: number
 } | null
+export function phoneDock(
+  anchor: Pick<TourRect, 'top' | 'bottom'> | null,
+  docked: Pick<TourRect, 'top' | 'bottom'> | null,
+): 'dock' | 'dock-top'
 export function positionTour(
   toast: HTMLElement | null,
   ring: HTMLElement | null,
   step: TourStep | null,
   mode: TourMode,
 ): void
+/** Places the toast now and again whenever it, its anchor or the window changes size. Returns a stop function. */
+export function followTour(
+  toast: HTMLElement | null,
+  ring: HTMLElement | null,
+  step: TourStep | null,
+  mode: TourMode,
+): () => void
 export function createTour(options?: {
   storage?: TourStorage | null
   stepMs?: number

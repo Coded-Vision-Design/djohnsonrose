@@ -7,7 +7,10 @@ import {
   TOUR_STEP_MS,
   createTour,
   findTourAnchor,
+  followTour,
+  phoneDock,
   placeTourToast,
+  positionTour,
   rememberTourOffered,
   shouldOfferTour,
   tourRing,
@@ -175,6 +178,15 @@ describe('placing the toast', () => {
     expect(placeTourToast(rect(100, 50, 100, 100), size, tiny).side).toBe('corner')
   })
 
+  it('docks a phone toast above the taskbar unless it would cover what it points at', () => {
+    const docked = { top: 446, bottom: 616 }
+    expect(phoneDock({ top: 236, bottom: 311 }, docked)).toBe('dock')
+    expect(phoneDock({ top: 620, bottom: 660 }, docked)).toBe('dock')
+    expect(phoneDock({ top: 456, bottom: 531 }, docked)).toBe('dock-top')
+    expect(phoneDock({ top: 400, bottom: 450 }, docked)).toBe('dock-top')
+    expect(phoneDock(null, docked)).toBe('dock')
+  })
+
   it('draws the ring a little outside the element', () => {
     expect(tourRing(rect(10, 20, 40, 40))).toEqual({ left: 6, top: 16, width: 48, height: 48 })
     expect(tourRing(null)).toBeNull()
@@ -211,6 +223,103 @@ describe('finding what a step points at', () => {
     expect(findTourAnchor({ anchor: '[data-start-button]' })).toBeNull()
     expect(findTourAnchor({ anchor: null })).toBeNull()
     expect(findTourAnchor(null)).toBeNull()
+  })
+})
+
+describe('moving the toast and ring into place', () => {
+  const box = (left: number, top: number, width: number, height: number) =>
+    ({ left, top, width, height, right: left + width, bottom: top + height, x: left, y: top }) as DOMRect
+
+  /** A desktop with a taskbar at 852, an icon at (16, 236) and a 360 by 150 toast. jsdom lays nothing out. */
+  function scene() {
+    document.body.innerHTML =
+      '<div class="os-taskbar"></div><div data-desktop-item="Terminal"></div><section data-tour-toast></section><div data-tour-ring hidden></div>'
+    const taskbar = document.querySelector('.os-taskbar') as HTMLElement
+    const icon = document.querySelector('[data-desktop-item]') as HTMLElement
+    const toast = document.querySelector('[data-tour-toast]') as HTMLElement
+    const ring = document.querySelector('[data-tour-ring]') as HTMLElement
+    taskbar.getBoundingClientRect = () => box(0, 852, 1440, 48)
+    icon.getBoundingClientRect = () => box(16, 236, 110, 96)
+    icon.getClientRects = () => [{}] as unknown as DOMRectList
+    Object.defineProperty(toast, 'offsetWidth', { value: 360 })
+    Object.defineProperty(toast, 'offsetHeight', { value: 150 })
+    Object.defineProperty(document.documentElement, 'clientWidth', { value: 1440, configurable: true })
+    return { icon, toast, ring }
+  }
+  const terminal = TOUR_STEPS.find((step) => step.id === 'terminal') as TourStep
+
+  afterEach(() => {
+    document.body.innerHTML = ''
+    vi.unstubAllGlobals()
+  })
+
+  it('puts the toast beside the icon and the ring round it', () => {
+    const { toast, ring } = scene()
+    positionTour(toast, ring, terminal, 'desktop')
+    expect([toast.style.left, toast.style.top, toast.dataset.tourSide]).toEqual(['138px', '236px', 'right'])
+    expect(ring.hidden).toBe(false)
+    expect([ring.style.left, ring.style.top, ring.style.width, ring.style.height]).toEqual(['12px', '232px', '118px', '104px'])
+  })
+
+  it('leaves a phone toast to the stylesheet, which docks it above the taskbar', () => {
+    const { toast, ring } = scene()
+    toast.style.left = '5px'
+    Object.defineProperty(toast, 'offsetTop', { value: 470 })
+    positionTour(toast, ring, terminal, 'phone')
+    expect([toast.style.left, toast.style.top, toast.dataset.tourSide]).toEqual(['', '', 'dock'])
+    expect(ring.hidden).toBe(false)
+  })
+
+  it('docks a phone toast at the top when above the taskbar it would cover the icon', () => {
+    const { icon, toast, ring } = scene()
+    icon.getBoundingClientRect = () => box(126, 456, 110, 75)
+    Object.defineProperty(toast, 'offsetTop', { value: 446 })
+    positionTour(toast, ring, terminal, 'phone')
+    expect(toast.dataset.tourSide).toBe('dock-top')
+  })
+
+  it('hides the ring and uses the corner when there is nothing to point at', () => {
+    const { toast, ring } = scene()
+    ring.hidden = false
+    positionTour(toast, ring, null, 'desktop')
+    expect(ring.hidden).toBe(true)
+    expect([toast.style.left, toast.style.top, toast.dataset.tourSide]).toEqual(['1064px', '686px', 'corner'])
+  })
+
+  it('places it again when the icon changes size or the window resizes, until stopped', () => {
+    const { icon, toast, ring } = scene()
+    const watched: Element[] = []
+    let resized = () => {}
+    vi.stubGlobal(
+      'ResizeObserver',
+      class {
+        constructor(callback: () => void) {
+          resized = callback
+        }
+        observe(el: Element) {
+          watched.push(el)
+        }
+        disconnect() {
+          watched.length = 0
+        }
+      },
+    )
+    const stop = followTour(toast, ring, terminal, 'desktop')
+    expect(watched).toEqual([toast, icon])
+    expect(ring.style.height).toBe('104px')
+
+    icon.getBoundingClientRect = () => box(16, 236, 110, 120)
+    resized()
+    expect(ring.style.height).toBe('128px')
+    icon.getBoundingClientRect = () => box(16, 300, 110, 120)
+    window.dispatchEvent(new Event('resize'))
+    expect(toast.style.top).toBe('300px')
+
+    stop()
+    expect(watched).toEqual([])
+    icon.getBoundingClientRect = () => box(16, 400, 110, 120)
+    window.dispatchEvent(new Event('resize'))
+    expect(toast.style.top).toBe('300px')
   })
 })
 

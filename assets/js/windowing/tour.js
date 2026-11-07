@@ -158,9 +158,17 @@ export function tourRing(rect) {
 }
 
 /**
+ * Where a phone's full-width toast docks: above the taskbar, or at the top of
+ * the screen when there it would cover what it points at.
+ */
+export function phoneDock(anchor, docked) {
+  if (!anchor || !docked) return 'dock'
+  return anchor.bottom > docked.top && anchor.top < docked.bottom ? 'dock-top' : 'dock'
+}
+
+/**
  * Moves the toast and its ring to the step's anchor. On a phone the stylesheet
- * docks the toast above the taskbar instead. Both builds call this after the
- * toast draws, and again when the window changes size.
+ * docks the toast instead. Both builds call this through followTour.
  */
 export function positionTour(toast, ring, step, mode) {
   const anchor = findTourAnchor(step)
@@ -176,6 +184,9 @@ export function positionTour(toast, ring, step, mode) {
     toast.style.left = ''
     toast.style.top = ''
     toast.dataset.tourSide = 'dock'
+    // Where it docks, without the slide it shows with. A fixed element's offsets are from the viewport.
+    const docked = { top: toast.offsetTop, bottom: toast.offsetTop + toast.offsetHeight }
+    if (anchor) toast.dataset.tourSide = phoneDock(anchor.getBoundingClientRect(), docked)
     return
   }
   const taskbar = document.querySelector('.os-taskbar')
@@ -188,6 +199,27 @@ export function positionTour(toast, ring, step, mode) {
   toast.style.left = `${Math.round(place.left)}px`
   toast.style.top = `${Math.round(place.top)}px`
   toast.dataset.tourSide = place.side
+}
+
+/**
+ * Keeps the toast and its ring in place: now, whenever the toast or what it
+ * points at changes size (as when a picture or a font loads, or the toast first
+ * shows), and when the window resizes. Returns a stop function.
+ */
+export function followTour(toast, ring, step, mode) {
+  const place = () => positionTour(toast, ring, step, mode)
+  const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(place)
+  if (observer && toast) {
+    observer.observe(toast)
+    const anchor = findTourAnchor(step)
+    if (anchor) observer.observe(anchor)
+  }
+  window.addEventListener('resize', place)
+  place()
+  return () => {
+    observer?.disconnect()
+    window.removeEventListener('resize', place)
+  }
 }
 
 const IDLE = Object.freeze({
