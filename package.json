@@ -7,7 +7,7 @@
     "watch:css": "tailwindcss -i assets/css/input.css -o assets/css/app.css --watch",
     "test:php": "php tests/php/run.php",
     "check:assets": "node scripts/check-asset-sizes.mjs",
-    "test:scripts": "node --test scripts/check-asset-sizes.test.mjs"
+    "test:scripts": "node --test scripts/*.test.mjs"
   },
   "devDependencies": {
     "@tailwindcss/cli": "^4.3.4",
