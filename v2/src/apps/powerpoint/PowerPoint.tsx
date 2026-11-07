@@ -147,7 +147,7 @@ export default function PowerPoint() {
   useEffect(() => watchFit(stageRef.current, SLIDE_SIZE, setFit), [])
   useEffect(() => watchFit(showStageRef.current, SLIDE_SIZE, setShowFit, { max: SHOW_MAX_ZOOM }), [])
 
-  const step = (by: number) => setActive((index) => stepSlide(index, by, live.current.count))
+  const step = (by: number) => setActive((index) => stepSlide(index, by, count))
 
   // A finger swiped across the slide, in the window or in the show.
   useEffect(() => {
