@@ -114,6 +114,25 @@ for (const build of BUILDS) {
   })
 }
 
+for (const build of BUILDS) {
+  test(`${build.name} GitHub fits a phone, with no tab cut off`, async ({ browser }) => {
+    const context = await browser.newContext({ viewport: { width: 375, height: 812 } })
+    const page = await context.newPage()
+    await boot(page, build.url)
+    const app = await openGitHub(page)
+    const strip = (await app.locator('[data-github-tabs]').boundingBox())!
+    const tabs = app.locator('[data-github-tab]').filter({ visible: true })
+    expect(await tabs.allInnerTexts()).toEqual(['Code', 'Issues\n0', 'Pull requests\n0'])
+    for (const tab of await tabs.all()) {
+      const box = (await tab.boundingBox())!
+      expect(box.x + box.width).toBeLessThanOrEqual(strip.x + strip.width)
+    }
+    const sideways = await app.locator('[data-github-app]').evaluate((el) => el.scrollWidth - el.clientWidth)
+    expect(sideways).toBeLessThanOrEqual(0)
+    await context.close()
+  })
+}
+
 test('the pages and files the site serves name no GitHub account', async ({ request }) => {
   const v1 = BUILDS[0].url
   for (const path of ['', 'cv', 'privacy', 'llms.txt', 'llm.txt', 'manifest.json', 'sitemap.xml', 'robots.txt', 'data/portfolio.json', 'data/cv.php']) {

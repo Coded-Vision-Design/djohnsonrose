@@ -38,10 +38,10 @@ $ghLink = fn(string $text) =>
         </div>
     </div>
 
-    <!-- Tabs -->
-    <div class="shrink-0 bg-[#0d1117] border-b border-[#30363d] flex items-center px-3 sm:px-4 overflow-hidden">
-        <?php foreach ([['Code', null, true], ['Issues', 0, false], ['Pull requests', 0, false], ['Actions', null, false], ['Projects', null, false], ['Security', null, false], ['Insights', null, false]] as [$label, $count, $active]): ?>
-            <span class="flex items-center gap-2 px-3 py-2 text-[13px] whitespace-nowrap border-b-2 <?php echo $active ? 'border-[#fd8c73] text-white font-semibold' : 'border-transparent text-[#e6edf3]/80'; ?>"><?php echo $label; ?><?php if ($count !== null): ?><span class="text-[11px] bg-[#30363d] rounded-full px-1.5 leading-4"><?php echo $count; ?></span><?php endif; ?></span>
+    <!-- Tabs. Those that only fit from 640px wide are left out on phones rather than cut off. -->
+    <div class="shrink-0 bg-[#0d1117] border-b border-[#30363d] flex items-center px-3 sm:px-4 overflow-hidden" data-github-tabs>
+        <?php foreach ([['Code', null, true, false], ['Issues', 0, false, false], ['Pull requests', 0, false, false], ['Actions', null, false, true], ['Projects', null, false, true], ['Security', null, false, true], ['Insights', null, false, true]] as [$label, $count, $active, $wide]): ?>
+            <span data-github-tab class="<?php echo $wide ? 'hidden sm:flex' : 'flex'; ?> items-center gap-2 px-3 py-2 text-[13px] whitespace-nowrap border-b-2 <?php echo $active ? 'border-[#fd8c73] text-white font-semibold' : 'border-transparent text-[#e6edf3]/80'; ?>"><?php echo $label; ?><?php if ($count !== null): ?><span class="text-[11px] bg-[#30363d] rounded-full px-1.5 leading-4"><?php echo $count; ?></span><?php endif; ?></span>
         <?php endforeach; ?>
     </div>
 

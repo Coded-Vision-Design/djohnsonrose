@@ -31,14 +31,15 @@ function Icon({ path, className = 'w-4 h-4' }: { path: keyof typeof ICONS; class
   )
 }
 
+// Tabs that only fit from 640px wide are left out on phones rather than cut off.
 const TABS = [
   { label: 'Code', active: true },
   { label: 'Issues', count: 0 },
   { label: 'Pull requests', count: 0 },
-  { label: 'Actions' },
-  { label: 'Projects' },
-  { label: 'Security' },
-  { label: 'Insights' },
+  { label: 'Actions', wide: true },
+  { label: 'Projects', wide: true },
+  { label: 'Security', wide: true },
+  { label: 'Insights', wide: true },
 ]
 
 const COUNTERS = [
@@ -77,11 +78,12 @@ export default function GitHub() {
       </div>
 
       {/* Tabs */}
-      <div className="shrink-0 bg-[#0d1117] border-b border-[#30363d] flex items-center px-3 sm:px-4 overflow-hidden">
+      <div className="shrink-0 bg-[#0d1117] border-b border-[#30363d] flex items-center px-3 sm:px-4 overflow-hidden" data-github-tabs>
         {TABS.map((tab) => (
           <span
             key={tab.label}
-            className={`flex items-center gap-2 px-3 py-2 text-[13px] whitespace-nowrap border-b-2 ${
+            data-github-tab
+            className={`${tab.wide ? 'hidden sm:flex' : 'flex'} items-center gap-2 px-3 py-2 text-[13px] whitespace-nowrap border-b-2 ${
               tab.active ? 'border-[#fd8c73] text-white font-semibold' : 'border-transparent text-[#e6edf3]/80'
             }`}
           >

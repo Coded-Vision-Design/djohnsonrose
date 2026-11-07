@@ -416,6 +416,21 @@ test('Settings Qualifications lays out the same in both builds', async ({ browse
   expect(v1).toEqual(v2)
 })
 
+test('Settings About shows the headline in the same place in both builds', async ({ browser }) => {
+  const [v1, v2] = await inBothBuilds(browser, async (page) => {
+    await call(page, 'openApp', 'settings')
+    const settings = page.locator('.os-window').last()
+    await settings.locator('[data-settings-nav="about"]').click()
+    const headline = settings.locator('[data-about-headline]')
+    await expect(headline).toHaveText(profile.headline)
+    // Past the tab's slide-in, so both are measured at rest.
+    await page.waitForTimeout(400)
+    const [box, frame] = [(await headline.boundingBox())!, (await settings.boundingBox())!]
+    return [box.x - frame.x, box.y - frame.y, box.width, box.height].map(Math.round)
+  })
+  expect(v2).toEqual(v1)
+})
+
 test.describe('right-click menus in both builds', () => {
   /** What the open menu shows, down to each icon. */
   const readMenu = (page: Page) =>
