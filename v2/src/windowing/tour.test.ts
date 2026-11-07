@@ -57,7 +57,7 @@ describe('the tour steps', () => {
       expect(sentences.length, step.id).toBeLessThanOrEqual(2)
       expect(step.text.length, step.id).toBeLessThanOrEqual(120)
       expect(step.title.length, step.id).toBeLessThanOrEqual(20)
-      expect(`${step.title} ${step.text}`, step.id).not.toMatch(/[–—]|--/)
+      expect(`${step.title} ${step.text}`, step.id).not.toMatch(/[\u2013\u2014]|--/)
     }
   })
 
