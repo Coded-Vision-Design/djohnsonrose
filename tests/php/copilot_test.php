@@ -91,6 +91,24 @@ check('sources: no GitHub account is given to the model', !preg_match('/github\.
 check('sources: the contact email is in the profile', str_contains($sources['profile']['text'], $email));
 check('sources: empty data gives a few sections, not a crash', is_array(copilot_sources([], [], [], '', '')));
 
+// Every place a citation opens is really there, so a renamed heading on /cv
+// or a removed app is caught here rather than by a visitor.
+$cvPage = (string)file_get_contents(__DIR__ . '/../../partials/cv-page.php');
+$anchors = array_unique(array_map(fn($s) => $s['target']['anchor'], array_filter($sources, fn($s) => $s['target']['type'] === 'cv')));
+foreach ($anchors as $anchor) {
+    check("targets: /cv has #{$anchor}", str_contains($cvPage, "id=\"{$anchor}\""));
+}
+$appIds = array_column(load_app_manifest()['apps'], 'id');
+foreach (array_filter($sources, fn($s) => $s['target']['type'] === 'app') as $id => $source) {
+    check("targets: {$id} opens an app that exists", in_array($source['target']['app'], $appIds, true));
+}
+foreach (array_filter($sources, fn($s) => in_array($s['target']['type'], ['file', 'folder'], true)) as $id => $source) {
+    $path = $source['target']['path'];
+    $parent = substr($path, 0, strrpos($path, '\\'));
+    $name = substr($path, strrpos($path, '\\') + 1);
+    check("targets: {$id} opens a {$source['target']['type']} that exists", in_array($name, array_column($fileSystem[$parent] ?? [], 'name'), true));
+}
+
 // ---- copilot_word_cv_text ----
 check('word cv: a missing file is empty', copilot_word_cv_text(__DIR__ . '/no-such-file.php') === '');
 check('word cv: entities are decoded', str_contains($wordCv, 'Killik & Co') && !str_contains($wordCv, '&amp;'));
