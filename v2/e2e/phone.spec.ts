@@ -414,6 +414,30 @@ for (const build of BUILDS) {
       await page.keyboard.press('Enter')
       await expect(page.locator('[data-terminal-output]').last()).toContainText('SEE ALSO')
     })
+
+    test('Task Manager fits the phone and works by touch', async ({ page }) => {
+      await page.evaluate(() => {
+        const w = window as unknown as {
+          Alpine?: { store: (n: string) => { openApp: (app: string) => void } }
+          __osStore?: { getState: () => { openApp: (app: string) => void } }
+        }
+        ;(w.Alpine ? w.Alpine.store('os') : w.__osStore!.getState()).openApp('taskmanager')
+      })
+      const manager = page.locator('[data-task-manager]')
+      await manager.waitFor({ timeout: 20_000 })
+      // Tabs and End task are finger-sized, and nothing runs off the side.
+      const small = await manager.locator('[role="tab"], [data-tm-process] button').evaluateAll((all) =>
+        all.filter((el) => el.getBoundingClientRect().height < 44).length,
+      )
+      expect(small).toBe(0)
+      expect(await manager.evaluate((el) => el.scrollWidth - el.clientWidth)).toBeLessThanOrEqual(0)
+      await manager.getByRole('tab', { name: 'Performance', exact: true }).tap()
+      await expect(manager.locator('[data-tm-panel="performance"]')).toBeVisible()
+      await expect(manager.locator('[data-tm-vital]')).toHaveCount(5)
+      await manager.getByRole('tab', { name: 'Processes', exact: true }).tap()
+      await manager.getByRole('button', { name: 'End task: Task Manager' }).tap()
+      await expect(page.getByRole('dialog', { name: 'Task Manager', exact: true })).toHaveCount(0)
+    })
   })
 }
 

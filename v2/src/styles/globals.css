@@ -4,6 +4,7 @@
 @import '../../../assets/css/office.css';
 @import '../../../assets/css/drawing.css';
 @import '../../../assets/css/fonts.css';
+@import '../../../assets/css/taskmanager.css';
 
 @custom-variant dark (&:is(.dark *));
 
