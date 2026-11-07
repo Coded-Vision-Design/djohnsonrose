@@ -1,11 +1,6 @@
 import { useEffect } from 'react'
+import { clockDate, clockTime } from '../../../assets/js/windowing/shell-core.js'
 import { useOsStore } from '../store/osStore'
-
-const formatTime = (d: Date) =>
-  d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })
-
-const formatDate = (d: Date) =>
-  d.toLocaleDateString(undefined, { day: '2-digit', month: '2-digit', year: 'numeric' })
 
 // Drives the taskbar clock. Updates every second.
 export function useClock() {
@@ -14,7 +9,7 @@ export function useClock() {
   useEffect(() => {
     const tick = () => {
       const d = new Date()
-      setClock({ time: formatTime(d), date: formatDate(d) })
+      setClock({ time: clockTime(d), date: clockDate(d) })
     }
     tick()
     const id = window.setInterval(tick, 1000)

@@ -1,25 +1,22 @@
 <?php
-// router.php
+// router.php - decides what index.php renders. The list of real paths lives
+// in lib/routes.php (pages such as /privacy and /cv go in SITE_PAGES there);
+// any other path is a 404.
 require_once __DIR__ . '/bootstrap.php';
+require_once __DIR__ . '/lib/routes.php';
 
-$path = getRequestPath();
-$htmx = isHtmx();
+$match = route_match(getRequestPath(), array_column(load_app_manifest()['apps'], 'id'));
 
-// Route mapping
-if ($path === '/' || $path === '/login') {
-    $route = 'login';
-} elseif ($path === '/desktop' || strpos($path, '/app/') === 0) {
-    $route = 'desktop';
-} else {
-    // Default to desktop or 404
-    $route = 'desktop'; 
+// A page whose template is not there yet (such as /cv before its page lands)
+// shows the desktop, as every unknown path used to.
+$template = $match['route'] === 'page' ? page_template($match['page']) : null;
+if ($match['route'] === 'page' && $template === null) {
+    $match['route'] = 'desktop';
 }
 
-// Handle deep links for apps
-$appToOpen = app_from_path($path, array_column(load_app_manifest()['apps'], 'id'));
-
 return [
-    'route' => $route,
-    'htmx' => $htmx,
-    'appToOpen' => $appToOpen
+    'route' => $match['route'],
+    'htmx' => isHtmx(),
+    'appToOpen' => $match['app'],
+    'template' => $match['route'] === 'not_found' ? page_template('not-found') : $template,
 ];

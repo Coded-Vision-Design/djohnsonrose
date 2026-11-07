@@ -245,7 +245,7 @@ export default function GitHub() {
               </div>
               <div className="p-5 sm:p-8 text-[14px] leading-relaxed">
                 <h1 className="text-2xl font-bold border-b border-[#30363d] pb-3 mb-4">
-                  Portfolio OS — DeVanté Johnson-Rose
+                  Portfolio OS - DeVanté Johnson-Rose
                 </h1>
                 <p className="mb-3">
                   A pixel-faithful Windows 11 desktop, in the browser, as a portfolio.

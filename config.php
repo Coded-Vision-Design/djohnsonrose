@@ -1,5 +1,5 @@
 <?php
-// config.php — environment loader + structured config.
+// config.php - environment loader + structured config.
 
 function getEnvVar($key, $default = null) {
     $val = getenv($key);
@@ -9,7 +9,7 @@ function getEnvVar($key, $default = null) {
     return $val;
 }
 
-// Basic .env loader — supports quoted values, ignores comments / blank lines.
+// Basic .env loader - supports quoted values, ignores comments / blank lines.
 if (file_exists(__DIR__ . '/.env')) {
     $lines = file(__DIR__ . '/.env', FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
     foreach ($lines as $line) {
@@ -30,8 +30,16 @@ if (file_exists(__DIR__ . '/.env')) {
     }
 }
 
+// Email addresses are compared without case, so the list is lowercased once here.
 $adminEmailsRaw = getEnvVar('ADMIN_EMAILS', '');
-$adminEmails = array_values(array_filter(array_map('trim', explode(',', $adminEmailsRaw))));
+$adminEmails = array_values(array_filter(array_map(
+    fn($email) => strtolower(trim($email)),
+    explode(',', $adminEmailsRaw)
+)));
+
+// Comma-separated addresses or CIDR blocks of proxies in front of the site.
+// Only requests from these may name the visitor in X-Forwarded-For.
+$trustedProxies = array_values(array_filter(array_map('trim', explode(',', getEnvVar('TRUSTED_PROXIES', '')))));
 
 return [
     'email' => getEnvVar('PORTFOLIO_EMAIL', 'devante@johnson-rose.co.uk'),
@@ -39,6 +47,7 @@ return [
     'env'   => getEnvVar('APP_ENV', 'production'),
     'db'    => [
         'host' => getEnvVar('DB_HOST', 'localhost'),
+        'port' => getEnvVar('DB_PORT', ''),
         'name' => getEnvVar('DB_NAME', 'portfolio_db'),
         'user' => getEnvVar('DB_USER', 'root'),
         'pass' => getEnvVar('DB_PASS', ''),
@@ -58,4 +67,14 @@ return [
     'oauth_client_secret' => getEnvVar('GOOGLE_OAUTH_CLIENT_SECRET', ''),
     'admin_emails'        => $adminEmails,
     'admin_session_secret' => getEnvVar('ADMIN_SESSION_SECRET', ''),
+    'trusted_proxies'     => $trustedProxies,
+    // Rate limits, daily jobs, admin sign-outs and the weather cache. Empty
+    // means a folder in the system temp directory. See lib/state.php.
+    'state_dir'           => getEnvVar('APP_STATE_DIR', ''),
+    // The taskbar weather is always for this one place, never the visitor's.
+    'weather' => [
+        'latitude'  => (float)getEnvVar('WEATHER_LATITUDE', '51.87'),
+        'longitude' => (float)getEnvVar('WEATHER_LONGITUDE', '0.56'),
+        'city'      => getEnvVar('WEATHER_CITY', 'Essex'),
+    ],
 ];

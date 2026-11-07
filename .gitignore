@@ -22,7 +22,7 @@ ehthumbs.db
 .env.production
 .env.development
 
-# Local Claude / agent config — kept on disk, never pushed.
+# Local Claude / agent config - kept on disk, never pushed.
 CLAUDE.md
 .claude/
 .githooks/
@@ -30,7 +30,7 @@ CLAUDE.md
 # Logs
 *.log
 
-# Original camera-roll uploads — committed as transcoded WebM/MP4 instead.
+# Original camera-roll uploads - committed as transcoded WebM/MP4 instead.
 *.MOV
 *.mov
 
@@ -49,14 +49,14 @@ v2/test-results/
 v2/playwright-report/
 coverage/
 
-# Private files (CV PDF stays on the server only — the binary printable).
+# Private files (CV PDF stays on the server only - the binary printable).
 # cv.php (HTML rendering for the Word app) lives in git because the
 # Word app's content is already public on the live site; treating it as
 # private just makes maintenance impossible.
 data/cv.pdf
 data/weather_cache.json
 
-# References plaintext only — only the encrypted envelope is committed.
+# References plaintext only - only the encrypted envelope is committed.
 data/references.json
 data/references.sample.json
 

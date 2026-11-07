@@ -21,7 +21,7 @@ const formatUptime = (ms: number) => {
   return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`
 }
 
-// Pseudo-RAM allocation per app — same vibe as v1, just deterministic.
+// Pseudo-RAM allocation per app - same vibe as v1, just deterministic.
 const ramFor = (w: WinWindow) =>
   Math.round(120 + ((w.id * 31) % 380))
 
@@ -55,9 +55,7 @@ export default function TaskManager() {
       {/* Header */}
       <div className="h-10 border-b border-black/10 dark:border-white/10 flex items-center px-4 shrink-0">
         <div className="flex items-center space-x-3">
-          <div className="w-5 h-5 bg-win-blue rounded-sm flex items-center justify-center text-white text-xs">
-            📊
-          </div>
+          <img src="/assets/img/taskmanager.webp" alt="" className="w-5 h-5 object-contain" />
           <h1 className="text-sm font-semibold">Task Manager</h1>
         </div>
       </div>
@@ -139,7 +137,7 @@ export default function TaskManager() {
                 className="grid grid-cols-12 py-1.5 px-4 text-xs hover:bg-win-blue/10 border-b border-black/5 dark:border-white/5 group transition-colors items-center"
               >
                 <div className="col-span-5 flex items-center text-black dark:text-white min-w-0">
-                  {def && <img src={def.icon} alt="" className="w-4 h-4 mr-2 shrink-0" />}
+                  <img src={def?.icon ?? '/assets/img/win11/taskmgr.webp'} alt="" className="w-4 h-4 mr-2 object-contain shrink-0" />
                   <span className="truncate font-medium">{w.title}</span>
                   <button
                     type="button"

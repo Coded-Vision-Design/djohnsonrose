@@ -1,0 +1,31 @@
+{
+    "name": "DeVanté Johnson-Rose",
+    "headline": "Applications Support Engineer · Full-Stack Developer",
+    "location": "Essex, UK",
+    "url": "https://devante.johnson-rose.co.uk/",
+    "image": "https://devante.johnson-rose.co.uk/assets/img/profile.webp",
+    "github": "https://github.com/CodedVisionDesign",
+    "linkedin": "",
+    "worksFor": ["Killik & Co", "Coded Vision Design"],
+    "alumniOf": "University of East Anglia",
+    "knowsAbout": [
+        "Applications support",
+        "Full-stack development",
+        "PHP",
+        "Laravel",
+        "JavaScript",
+        "TypeScript",
+        "React",
+        "Next.js",
+        "Node.js",
+        "MySQL",
+        "MS SQL Server",
+        "PowerShell",
+        "Automation",
+        "SCCM",
+        "JAMF",
+        "Active Directory",
+        "Docker",
+        "AI integration"
+    ]
+}

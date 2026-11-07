@@ -1,6 +1,6 @@
 import { useEffect, useRef, useMemo } from 'react'
 import { useOsStore, type WinWindow } from '../store/osStore'
-import { playSound } from '../lib/sounds'
+import { getApp } from '../apps/registry'
 import { useWindowGestures } from './useWindowGestures'
 import { cancelSnapFlyoutHover, hoverMaximize, leaveSnapFlyout } from './snapFlyoutHover'
 import { resizableEdges } from '../../../assets/js/windowing/windowing.js'
@@ -24,13 +24,10 @@ export function Window({ win, children }: Props) {
 
   const element = useRef<HTMLDivElement>(null)
   const { startDrag, startResize, easeNextChange } = useWindowGestures(win.id, element)
-  const playedOpen = useRef(false)
+  const icon = getApp(win.app)?.icon
 
+  // Windows makes no sound when a window opens, so neither does this.
   useEffect(() => {
-    if (!playedOpen.current) {
-      playSound('open')
-      playedOpen.current = true
-    }
     // Leave focus alone if the app has already taken it, such as a text field.
     if (element.current && !element.current.contains(document.activeElement)) {
       element.current.focus({ preventScroll: true })
@@ -61,7 +58,7 @@ export function Window({ win, children }: Props) {
       role="dialog"
       aria-label={win.title}
     >
-      {/* Title bar — Edge hides its title because it has its own tab strip */}
+      {/* Title bar - Edge hides its title because it has its own tab strip */}
       <div
         className={`os-titlebar ${titleBarHeight} flex items-center justify-between px-3 select-none bg-white/10 dark:bg-black/10 cursor-default overflow-hidden`}
         onPointerDown={(e) => {
@@ -83,6 +80,7 @@ export function Window({ win, children }: Props) {
           </svg>
         </button>
         <div className="flex items-center space-x-2 pointer-events-none min-w-0 grow">
+          {win.app !== 'edge' && icon && <img className="os-window-icon" src={icon} alt="" />}
           {win.app !== 'edge' && (
             <span className="os-window-title text-sm font-medium dark:text-white truncate">{win.title}</span>
           )}

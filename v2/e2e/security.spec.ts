@@ -82,15 +82,34 @@ test.describe('security headers', () => {
     expect(res.headers().location).toBe('https://devante.johnson-rose.co.uk/app/word?x=1')
   })
 
+  test('llms.txt is served as UTF-8, so the accent in DeVanté survives', async ({ request }) => {
+    const res = await request.get(`${BASE}/llms.txt`)
+    expect(res.status()).toBe(200)
+    expect(res.headers()['content-type']).toMatch(/^text\/plain;\s*charset=utf-8$/i)
+  })
+
   for (const [path, status] of [
     ['/lib/security.php', 403],
+    ['/lib/migrate.php', 403],
+    ['/pages/privacy.php', 403],
     ['/tests/php/security_test.php', 403],
     ['/.env', 403],
+    ['/nonexistent-page', 404],
+    ['/sitemaps.php', 404],
+    ['/api/database_query.php', 404],
   ] as const) {
     test(`${path} stays blocked`, async ({ request }) => {
       expect((await request.get(BASE + path)).status()).toBe(status)
     })
   }
+
+  test('the privacy page runs no scripts', async ({ request }) => {
+    const res = await request.get(`${BASE}/privacy`)
+    expect(res.status()).toBe(200)
+    expect(res.headers()['content-security-policy']).toContain("default-src 'none'")
+    expect(res.headers()['x-frame-options']).toBe('SAMEORIGIN')
+    expect(await res.text()).not.toContain('<script')
+  })
 })
 
 test.describe('deep link injection', () => {
@@ -110,11 +129,13 @@ test.describe('deep link injection', () => {
         void d.dismiss()
       })
       await prepare(page, [])
-      await page.goto(BASE + payload, { waitUntil: 'domcontentloaded' })
-      await page.waitForFunction(() => document.documentElement.dataset.osMode)
+      // An unknown app is a plain 404 page now, with no script at all.
+      const res = await page.goto(BASE + payload, { waitUntil: 'domcontentloaded' })
+      expect(res?.status()).toBe(404)
+      await expect(page.getByRole('heading', { name: 'Page not found' })).toBeVisible()
       await page.waitForTimeout(300)
       expect(dialog).toBe(false)
-      expect(await page.evaluate(() => (window as unknown as { portfolioConfig: { appToOpen: string } }).portfolioConfig.appToOpen)).toBe('')
+      expect(await page.locator('script').count()).toBe(0)
     })
   }
 

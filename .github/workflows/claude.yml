@@ -1,9 +1,15 @@
-# Per-repo caller for the org-level reusable Claude Code Action.
-# Deployed to every active CVD repo by scripts/install-triage-claude.ps1
-# in cdv-vps-ops.
+# Claude Code on request. Mention @neil-debuggin-typin in an issue, an issue
+# or PR comment, or a PR review comment, or assign an issue to NeilDeBuggin.
 #
-# Trigger by commenting "@claude please fix this" on any issue or PR
-# review comment, or by adding "@claude" to a new issue body.
+# This used to call Coded-Vision-Design/.github's reusable-claude-code.yml
+# (installed by scripts/install-triage-claude.ps1 in cdv-vps-ops). That
+# repository is private and this one is public, and GitHub does not let a
+# public repository use a private repository's reusable workflows, so every
+# run failed at startup with "workflow was not found". The same job is now
+# written out here instead.
+#
+# Only the owner, organisation members and collaborators can start it. Every
+# other comment, including bot comments, is skipped without starting a runner.
 name: Claude
 
 on:
@@ -15,14 +21,89 @@ on:
     types: [opened, assigned]
 
 permissions:
-  contents: write
-  pull-requests: write
-  issues: write
-  id-token: write   # required by anthropics/claude-code-action OIDC handshake
+  contents: read
 
 jobs:
   claude:
-    uses: Coded-Vision-Design/.github/.github/workflows/reusable-claude-code.yml@main
-    secrets:
-      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-      DISCORD_ISSUE_TRIAGE_WEBHOOK: ${{ secrets.DISCORD_ISSUE_TRIAGE_WEBHOOK }}
+    # contains() is case-insensitive, so any capitalisation of the mention works.
+    if: >-
+      (
+        (github.event_name == 'issue_comment' || github.event_name == 'pull_request_review_comment') &&
+        contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.comment.author_association) &&
+        contains(github.event.comment.body, '@neil-debuggin-typin')
+      ) || (
+        github.event_name == 'issues' &&
+        contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.issue.author_association) &&
+        (
+          (github.event.action == 'opened' && contains(github.event.issue.body, '@neil-debuggin-typin')) ||
+          (github.event.action == 'assigned' && github.event.assignee.login == 'NeilDeBuggin')
+        )
+      )
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    # OIDC token + repo write access required by anthropics/claude-code-action.
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+      id-token: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 1
+
+      # The model is the action's default unless the CLAUDE_MODEL repository
+      # variable names another one.
+      - name: Run Claude Code Action
+        id: claude
+        uses: anthropics/claude-code-action@61a9c274fa7110a66dfafc1bbbced03833eb25fe # v1.0.269
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          trigger_phrase: "@neil-debuggin-typin"
+          claude_args: ${{ vars.CLAUDE_MODEL && format('--model {0}', vars.CLAUDE_MODEL) || '' }}
+
+      # Posts to the #issue-triage channel whether the action succeeded or
+      # failed, so Discord readers see both. Skips quietly if no webhook is
+      # configured.
+      - name: Post a summary to Discord
+        if: always()
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_ISSUE_TRIAGE_WEBHOOK }}
+          REPO: ${{ github.repository }}
+          TRIGGER_URL: ${{ github.event.issue.html_url || github.event.pull_request.html_url || github.event.comment.html_url }}
+          TRIGGER_TITLE: ${{ github.event.issue.title || github.event.pull_request.title || 'PR review comment' }}
+          REQUESTED_BY: ${{ github.event.sender.login }}
+          STATUS: ${{ steps.claude.outcome }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          if [ -z "$DISCORD_WEBHOOK" ]; then
+            echo "No DISCORD_ISSUE_TRIAGE_WEBHOOK, skipping the Discord post."
+            exit 0
+          fi
+          case "$STATUS" in
+            success) COLOUR=3066993;  STATUS_TXT="Done" ;;
+            failure) COLOUR=15158332; STATUS_TXT="Failed" ;;
+            *)       COLOUR=10070709; STATUS_TXT="$STATUS" ;;
+          esac
+          payload=$(jq -n \
+            --arg title "$TRIGGER_TITLE" \
+            --arg url "$TRIGGER_URL" \
+            --arg repo "$REPO" \
+            --arg user "$REQUESTED_BY" \
+            --arg run "$RUN_URL" \
+            --arg status "$STATUS_TXT" \
+            --argjson colour "$COLOUR" '{
+              embeds: [{
+                title: ("Neil DeBuggin Typin: " + $status),
+                url: $url,
+                description: ("Tagged on **" + $title + "** in `" + $repo + "` by `" + $user + "`."),
+                color: $colour,
+                fields: [
+                  {name: "Workflow run", value: $run, inline: false}
+                ],
+                footer: {text: "@neil-debuggin-typin via Claude Code Action"}
+              }]
+            }')
+          curl -sS -X POST -H "Content-Type: application/json" \
+               -d "$payload" "$DISCORD_WEBHOOK"

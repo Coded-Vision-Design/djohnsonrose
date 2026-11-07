@@ -1,4 +1,4 @@
-<!-- partials/apps/github.php — 1:1 with v2/src/apps/github/GitHub.tsx.
+<!-- partials/apps/github.php - 1:1 with v2/src/apps/github/GitHub.tsx.
      Recognisable repo-page layout (dark navbar, breadcrumb, Star/Watch/
      Fork bar, file tree, README pane, sidebar with language bar). Every
      "live" action defers to the real GitHub via window.open so nothing
@@ -159,7 +159,7 @@ $topics = ['portfolio', 'windows-11', 'react', 'php', 'typescript', 'alpinejs', 
                         <span class="font-semibold">README.md</span>
                     </div>
                     <div class="p-5 sm:p-8 text-[14px] leading-relaxed">
-                        <h1 class="text-2xl font-bold border-b border-[#30363d] pb-3 mb-4">Portfolio OS — DeVanté Johnson-Rose</h1>
+                        <h1 class="text-2xl font-bold border-b border-[#30363d] pb-3 mb-4">Portfolio OS - DeVanté Johnson-Rose</h1>
                         <p class="mb-3">A pixel-faithful Windows 11 desktop, in the browser, as a portfolio.</p>
                         <p class="mb-4">Live: <a href="https://devante.johnson-rose.co.uk" target="_blank" rel="noopener noreferrer" class="text-[#2f81f7] hover:underline">https://devante.johnson-rose.co.uk</a></p>
                         <p class="mb-4 opacity-90">Two parallel builds of the same OS ship from the same repo and the same <code class="bg-[#161b22] px-1 py-0.5 rounded-sm text-[12px]">assets/</code>:</p>

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" class="h-full">
+<html lang="en-GB" class="h-full">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content">
@@ -15,16 +15,21 @@
     <meta property="og:type" content="website">
     <meta property="og:site_name" content="DeVanté Johnson-Rose · Portfolio OS">
     <meta property="og:title" content="DeVanté Johnson-Rose | Full Stack Developer & Systems Engineer">
-    <meta property="og:description" content="Interactive Windows 11-styled portfolio. Open the apps, browse the projects, drop into the CV — every desktop tile is a real, working surface.">
+    <meta property="og:description" content="Interactive Windows 11-styled portfolio. Open the apps, browse the projects, drop into the CV. Every desktop tile is a real, working surface.">
     <meta property="og:url" content="https://devante.johnson-rose.co.uk/">
-    <meta property="og:image" content="https://devante.johnson-rose.co.uk/assets/img/favicon.webp">
+    <meta property="og:image" content="https://devante.johnson-rose.co.uk/assets/img/share-card.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:type" content="image/png">
+    <meta property="og:image:alt" content="Portrait of DeVanté Johnson-Rose beside his name and devante.johnson-rose.co.uk">
     <meta property="og:locale" content="en_GB">
 
     <!-- Twitter / X card -->
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="DeVanté Johnson-Rose | Portfolio OS">
     <meta name="twitter:description" content="Interactive Windows-style portfolio with working Paint, Terminal, Explorer, Outlook, FL Studio, and more.">
-    <meta name="twitter:image" content="https://devante.johnson-rose.co.uk/assets/img/favicon.webp">
+    <meta name="twitter:image" content="https://devante.johnson-rose.co.uk/assets/img/share-card.png">
+    <meta name="twitter:image:alt" content="Portrait of DeVanté Johnson-Rose beside his name and devante.johnson-rose.co.uk">
 
     <!-- Favicon -->
     <link rel="icon" type="image/x-icon" href="<?php echo BASE_PATH; ?>favicon.ico">
@@ -34,8 +39,11 @@
     <link rel="manifest" href="<?php echo BASE_PATH; ?>manifest.json">
     <link rel="preload" as="image" href="<?php echo IMG_PATH; ?>startmenu.webp">
     <link rel="preload" as="image" href="<?php echo IMG_PATH; ?>settings.webp">
+    <link rel="preload" as="image" href="<?php echo IMG_PATH; ?>wallpaper-bloom.webp">
 
-    <!-- JSON-LD: Person + WebSite for rich Google results -->
+    <!-- JSON-LD: Person + WebSite for rich Google results. The same in v2/index.html,
+         and worksFor, alumniOf, knowsAbout and sameAs follow data/profile.json, which
+         /cv reads (v2/src/data/profile.test.ts checks all three). -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
@@ -48,6 +56,16 @@
           "image": "https://devante.johnson-rose.co.uk/assets/img/profile.webp",
           "jobTitle": "Senior Full Stack Developer & Systems Engineer",
           "email": "mailto:devante@johnson-rose.co.uk",
+          "worksFor": [
+            { "@type": "Organization", "name": "Killik & Co" },
+            { "@type": "Organization", "name": "Coded Vision Design" }
+          ],
+          "alumniOf": { "@type": "CollegeOrUniversity", "name": "University of East Anglia" },
+          "knowsAbout": [
+            "Applications support", "Full-stack development", "PHP", "Laravel", "JavaScript",
+            "TypeScript", "React", "Next.js", "Node.js", "MySQL", "MS SQL Server", "PowerShell",
+            "Automation", "SCCM", "JAMF", "Active Directory", "Docker", "AI integration"
+          ],
           "sameAs": [
             "https://github.com/CodedVisionDesign"
           ]
@@ -63,11 +81,39 @@
       ]
     }
     </script>
+    <?php
+    // Every shared module's plain address points at its current version, so a
+    // module that imports another (terminal.js imports file-ops.js) gets the
+    // same copy as the page below, never a second, stale one from the cache.
+    $sharedModules = [];
+    foreach (glob(__DIR__ . '/../assets/js/windowing/*.js') ?: [] as $moduleFile) {
+        $moduleUrl = BASE_PATH . 'assets/js/windowing/' . basename($moduleFile);
+        $sharedModules[$moduleUrl] = $moduleUrl . '?v=' . filemtime($moduleFile);
+    }
+    ?>
+    <script type="importmap" nonce="<?php echo $cspNonce; ?>"><?php echo json_encode(['imports' => $sharedModules], JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP); ?></script>
     <!-- Window manager core, shared with v2. Runs before Alpine, as both are deferred. -->
     <script type="module" nonce="<?php echo $cspNonce; ?>">
         import * as windowing from '<?php echo BASE_PATH; ?>assets/js/windowing/windowing.js?v=<?php echo @filemtime(__DIR__ . '/../assets/js/windowing/windowing.js') ?: time(); ?>';
         import * as shellCore from '<?php echo BASE_PATH; ?>assets/js/windowing/shell-core.js?v=<?php echo @filemtime(__DIR__ . '/../assets/js/windowing/shell-core.js'); ?>';
-        window.OsWindowing = { ...windowing, ...shellCore };
+        import * as fileOps from '<?php echo BASE_PATH; ?>assets/js/windowing/file-ops.js?v=<?php echo @filemtime(__DIR__ . '/../assets/js/windowing/file-ops.js'); ?>';
+        import * as textOps from '<?php echo BASE_PATH; ?>assets/js/windowing/text-ops.js?v=<?php echo @filemtime(__DIR__ . '/../assets/js/windowing/text-ops.js'); ?>';
+        import * as flStudio from '<?php echo BASE_PATH; ?>assets/js/windowing/fl-studio.js?v=<?php echo @filemtime(__DIR__ . '/../assets/js/windowing/fl-studio.js'); ?>';
+        import * as officeApps from '<?php echo BASE_PATH; ?>assets/js/windowing/office.js?v=<?php echo @filemtime(__DIR__ . '/../assets/js/windowing/office.js'); ?>';
+        import * as drawing from '<?php echo BASE_PATH; ?>assets/js/windowing/drawing.js?v=<?php echo @filemtime(__DIR__ . '/../assets/js/windowing/drawing.js'); ?>';
+        import * as shellUi from '<?php echo BASE_PATH; ?>assets/js/windowing/shell-ui.js?v=<?php echo @filemtime(__DIR__ . '/../assets/js/windowing/shell-ui.js'); ?>';
+        import * as calculator from '<?php echo BASE_PATH; ?>assets/js/windowing/calculator.js?v=<?php echo @filemtime(__DIR__ . '/../assets/js/windowing/calculator.js'); ?>';
+        import * as terminal from '<?php echo BASE_PATH; ?>assets/js/windowing/terminal.js?v=<?php echo @filemtime(__DIR__ . '/../assets/js/windowing/terminal.js'); ?>';
+        import * as browser from '<?php echo BASE_PATH; ?>assets/js/windowing/browser.js?v=<?php echo @filemtime(__DIR__ . '/../assets/js/windowing/browser.js'); ?>';
+        import * as media from '<?php echo BASE_PATH; ?>assets/js/windowing/media.js?v=<?php echo @filemtime(__DIR__ . '/../assets/js/windowing/media.js'); ?>';
+        import * as sql from '<?php echo BASE_PATH; ?>assets/js/windowing/sql.js?v=<?php echo @filemtime(__DIR__ . '/../assets/js/windowing/sql.js'); ?>';
+        import * as devtools from '<?php echo BASE_PATH; ?>assets/js/windowing/devtools.js?v=<?php echo @filemtime(__DIR__ . '/../assets/js/windowing/devtools.js'); ?>';
+        import * as references from '<?php echo BASE_PATH; ?>assets/js/windowing/references.js?v=<?php echo @filemtime(__DIR__ . '/../assets/js/windowing/references.js'); ?>';
+        import * as weather from '<?php echo BASE_PATH; ?>assets/js/windowing/weather.js?v=<?php echo @filemtime(__DIR__ . '/../assets/js/windowing/weather.js'); ?>';
+        window.OsWindowing = { ...windowing, ...shellCore, ...fileOps, ...textOps, ...shellUi, ...calculator, ...terminal, ...browser, ...media, ...sql, ...devtools, ...references, ...weather };
+        window.FlStudio = flStudio;
+        window.OfficeApps = officeApps;
+        window.Drawing = drawing;
     </script>
     <!-- Alpine.js -->
     <script defer src="<?php echo BASE_PATH; ?>assets/js/alpine/alpine-3.17.5.min.js"></script>
@@ -75,32 +121,46 @@
     <!-- Google Tag Manager (Conditional) -->
     <script nonce="<?php echo $cspNonce; ?>">
         window.initGTM = function() {
+            window['ga-disable-G-64PRMY8EKD'] = false;
             if (window.gtmInitialized) return;
             window.gtmInitialized = true;
-            
+
             var script = document.createElement('script');
             script.async = true;
             script.src = "https://www.googletagmanager.com/gtag/js?id=G-64PRMY8EKD";
             document.head.appendChild(script);
-            
+
             window.dataLayer = window.dataLayer || [];
             function gtag(){dataLayer.push(arguments);}
             gtag('js', new Date());
             gtag('config', 'G-64PRMY8EKD');
             console.log('GTM Initialized');
         };
-        
-        // Auto-init if consent already given
-        if (localStorage.getItem('cookie.consent') === 'true') {
-            window.initGTM();
-        }
+
+        // Consent withdrawn: Google's own switch stops Analytics sending, and its
+        // script and cookies go.
+        window.disableGTM = function() {
+            window['ga-disable-G-64PRMY8EKD'] = true;
+            document.querySelectorAll('script[src*="googletagmanager.com"]').forEach(function(script) { script.remove(); });
+            document.cookie.split(';').forEach(function(cookie) {
+                var name = cookie.split('=')[0].trim();
+                if (name.indexOf('_ga') !== 0) return;
+                document.cookie = name + '=; Max-Age=0; path=/';
+                document.cookie = name + '=; Max-Age=0; path=/; domain=.' + location.hostname.replace(/^www\./, '');
+            });
+        };
+
+        // Auto-init if consent already given. Storage can be blocked, which throws.
+        try {
+            if (localStorage.getItem('cookie.consent') === 'true') window.initGTM();
+        } catch (e) {}
     </script>
 
     <!-- Custom CSS -->
     <?php
     // Cache-bust on file mtime so a fresh CSS bundle invalidates the
     // browser + Hostinger CDN cache immediately (default Cache-Control on
-    // /assets is max-age=604800 — without this the URL never changes and
+    // /assets is max-age=604800, and without this the URL never changes and
     // the old bundle keeps serving for a week after each deploy).
     $cssPath = __DIR__ . '/../assets/css/app.css';
     $cssVer  = @filemtime($cssPath) ?: time();
@@ -124,6 +184,8 @@
     .wallpaper-bg {
         background: linear-gradient(135deg, #004a80 0%, #0078d4 100%);
         background-image: var(--wallpaper);
+        /* The default wallpaper's average colour, shown until it loads or if it fails. */
+        background-color: #381759;
         background-size: cover;
         background-position: center;
     }
@@ -132,19 +194,31 @@
 <body class="h-full w-full overflow-hidden transition-[filter] duration-300" 
       x-data="os" 
       :class="{ 'dark': settings.theme === 'dark' }"
-      :style="`--wallpaper: url(${Alpine.store('os').previewWallpaper || settings.wallpaper}); filter: brightness(${settings.brightness}%) ${settings.nightLight ? 'sepia(40%) saturate(120%)' : ''} ${settings.accessibility ? 'contrast(120%) brightness(110%)' : ''};`"
+      :style="`--wallpaper: ${OsWindowing.cssUrl(Alpine.store('os').previewWallpaper || settings.wallpaper)}; filter: ${OsWindowing.displayFilter(settings)};`"
       @keydown.window="handleGlobalKeys($event)"
       @keyup.window="handleGlobalKeyUp($event)">
 
+    <a href="#main-content" class="os-skip-link">Skip to main content</a>
+
+    <!-- The same notice as v2/index.html. Styled inline, as no stylesheet is certain to load. -->
+    <noscript>
+        <div data-noscript style="position:fixed;inset:0;z-index:2147483647;display:flex;align-items:center;justify-content:center;padding:24px;background:#381759;color:#fff;font:16px/1.5 'Segoe UI',Selawik,system-ui,sans-serif;text-align:center">
+            <p style="max-width:32rem;margin:0">This desktop needs JavaScript. <a href="<?php echo BASE_PATH; ?>cv" style="color:#fff;text-decoration:underline">Read the CV</a> instead, which works without it.</p>
+        </div>
+    </noscript>
+
     <div id="os-root" class="h-full w-full relative overflow-hidden flex flex-col wallpaper-bg">
-        <!-- Boot Screen -->
-        <div x-show="isBooting" 
+        <!-- Boot Screen, the same in v2 (BootScreen.tsx) -->
+        <div x-show="isBooting"
              x-cloak
-             class="fixed inset-0 z-20000 bg-black flex flex-col items-center justify-center transition-opacity duration-1000"
+             data-boot-screen
+             role="status"
+             aria-label="Starting up"
+             class="fixed inset-0 z-20000 bg-black text-white flex flex-col items-center justify-center transition-opacity duration-1000"
              x-transition:leave="opacity-0">
             <!-- Windows 11 Style Logo -->
             <div class="mb-24 scale-150">
-                <img src="<?php echo IMG_PATH; ?>startmenu.webp" class="w-16 h-16">
+                <img src="<?php echo IMG_PATH; ?>startmenu.webp" alt="" class="w-16 h-16">
             </div>
             
             <!-- Realistic Windows 11 Dots Loader -->
@@ -160,16 +234,18 @@
         <!-- Login Animation Screen -->
         <div x-show="loggingIn" 
              x-cloak
-             class="fixed inset-0 z-15000 flex flex-col items-center justify-center transition-opacity duration-500 wallpaper-bg"
+             role="status"
+             aria-label="Signing in"
+             class="fixed inset-0 z-15000 flex flex-col items-center justify-center text-white transition-opacity duration-500 wallpaper-bg"
              x-transition:enter="opacity-0"
              x-transition:enter-end="opacity-100"
              x-transition:leave="opacity-100"
              x-transition:leave-end="opacity-0">
-            
+
             <div class="flex flex-col items-center space-y-8">
                 <!-- User Avatar -->
                 <div class="w-32 h-32 rounded-full border-4 border-white/20 overflow-hidden shadow-2xl scale-110">
-                    <img :src="user.avatar" alt="User" class="w-full h-full object-cover">
+                    <img :src="user.avatar" :alt="user.name" class="w-full h-full object-cover">
                 </div>
                 
                 <div class="flex flex-col items-center space-y-4">
@@ -230,7 +306,7 @@
                                 <span class="w-4 h-4 mr-3 flex items-center justify-center text-sm context-menu-icon"><img :src="item.icon" alt="" class="w-4 h-4"></span>
                                 <span class="context-menu-label" x-text="item.label"></span>
                             </div>
-                            <span x-show="item.shortcut" data-menu-shortcut class="text-[10px] opacity-50 ml-4 font-mono" x-text="item.shortcut"></span>
+                            <span x-show="item.shortcut" data-menu-shortcut class="text-xs opacity-60 ml-4 font-mono" x-text="item.shortcut"></span>
                         </div>
                     </template>
                 </div>
@@ -239,7 +315,7 @@
 
 
         <!-- Main Content Area -->
-        <main id="main-content" class="grow relative h-full w-full" @contextmenu.prevent="showDesktopContextMenu($event)">
+        <main id="main-content" tabindex="-1" class="grow relative h-full w-full outline-hidden" @contextmenu="onDesktopContextMenu($event)">
             <!-- Windows Error Dialog (Modal) -->
             <div x-show="$store.os.errorDialog.open" 
                  x-cloak
@@ -265,7 +341,7 @@
                         </div>
                         <div class="flex flex-col space-y-1">
                             <p class="text-sm font-semibold text-black dark:text-white" x-text="$store.os.errorDialog.message"></p>
-                            <p class="text-[11px] opacity-60 font-mono break-all" x-text="$store.os.errorDialog.path"></p>
+                            <p class="text-xs opacity-60 font-mono break-all" x-text="$store.os.errorDialog.path"></p>
                         </div>
                     </div>
                     <!-- Footer -->
@@ -286,12 +362,15 @@
             <!-- Desktop Environment -->
             <div x-show="loggedIn && !isBooting && !loggingIn" x-cloak class="h-full w-full absolute inset-0 z-1">
                 <?php include __DIR__ . '/desktop.php'; ?>
+                <?php include __DIR__ . '/file-dialogs.php'; ?>
             </div>
         </main>
 
-        <!-- Windows 11 Cookie Notification -->
-        <div x-show="$store.os.showCookieNotification && !isBooting && !loggingIn" 
+        <!-- Windows 11 Cookie Notification, the same in v2 (CookieBanner.tsx). On a
+             phone it is a slim bar that windows keep clear of (windowing.css). -->
+        <div x-show="$store.os.showCookieNotification && loggedIn && !isBooting && !loggingIn"
              x-cloak
+             x-init="reserveConsentSpace($el)"
              x-transition:enter="transition ease-out duration-300"
              x-transition:enter-start="opacity-0 translate-y-10"
              x-transition:enter-end="opacity-100 translate-y-0"
@@ -300,19 +379,22 @@
              x-transition:leave-end="opacity-0 scale-90"
              role="dialog"
              aria-label="Cookie consent"
-             class="fixed bottom-16 left-4 right-4 md:left-auto md:right-4 z-20000 md:w-[360px] glass dark:bg-[#1c1c1c]/90 border border-white/20 dark:border-white/10 rounded-xl shadow-2xl overflow-hidden">
-            <div class="p-4 flex flex-col space-y-3">
-                <div class="font-semibold text-sm">Cookies &amp; telemetry</div>
-                <p class="text-[11px] leading-relaxed opacity-80">
-                    This portfolio uses a tiny telemetry call to <code class="opacity-90">/api/log.php</code> so I can see which apps visitors actually open. No personal data, no third-party scripts. Decline and the call won't fire &mdash; you can change your mind any time in Settings.
+             data-cookie-banner
+             class="os-consent glass dark:bg-[#1c1c1c]/90 border border-white/20 dark:border-white/10 shadow-2xl overflow-hidden text-black dark:text-white">
+            <div class="os-consent-body p-4 flex flex-col gap-3">
+                <div class="os-consent-title font-semibold text-sm">Cookies &amp; telemetry</div>
+                <p class="text-xs leading-relaxed">
+                    If you accept, the site records which apps you open and a shortened IP address, and may load Google Analytics. Records are kept for 90 days.
+                    Decline and none of this happens. You can change your mind at any time in Settings.
+                    <a href="<?php echo BASE_PATH; ?>privacy" target="_blank" rel="noopener" class="underline text-win-blue dark:text-[#60cdff]">Privacy notice</a>
                 </p>
-                <div class="flex items-center justify-end space-x-2">
-                    <button @click="$store.os.setCookieConsent(false)"
-                            class="px-3 py-1 rounded-sm text-[11px] hover:bg-black/5 dark:hover:bg-white/10 transition-colors">
+                <div class="os-consent-actions flex items-center justify-end gap-2">
+                    <button type="button" @click="$store.os.setCookieConsent(false)"
+                            class="px-4 rounded-sm text-xs hover:bg-black/5 dark:hover:bg-white/10 transition-colors">
                         Decline
                     </button>
-                    <button @click="$store.os.setCookieConsent(true)"
-                            class="px-4 py-1 rounded-sm bg-win-blue text-white text-[11px] font-medium hover:opacity-90 transition-opacity">
+                    <button type="button" @click="$store.os.setCookieConsent(true)"
+                            class="px-4 rounded-sm bg-win-blue text-white text-xs font-medium hover:opacity-90 transition-opacity">
                         Accept
                     </button>
                 </div>
@@ -327,12 +409,12 @@
         'os/store',
         'os/shell',
         'paint',
+        'photoshop',
         'calculator',
         'terminal',
         'explorer',
         'photos',
         'edge',
-        'apps/database-sql',
         'apps/office',
         'apps/dev',
         'apps/media',
@@ -341,8 +423,11 @@
         'apps/admin',
         'flstudio'
     ];
+    // Versioned by file time like the stylesheet, so browsers keep each script
+    // until it changes instead of fetching all of them on every visit.
     foreach ($components as $component) {
-        echo '<script src="' . BASE_PATH . 'assets/js/components/' . $component . '.js?v=' . time() . '"></script>' . "\n    ";
+        $version = @filemtime(__DIR__ . '/../assets/js/components/' . $component . '.js');
+        echo '<script src="' . BASE_PATH . 'assets/js/components/' . $component . '.js?v=' . $version . '"></script>' . "\n    ";
     }
     ?>
 </body>

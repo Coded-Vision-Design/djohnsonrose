@@ -1,126 +1,179 @@
 document.addEventListener('alpine:init', () => {
     Alpine.data('explorerApp', () => ({
         currentPath: 'C:\\Users\\DeVante',
-        selected: null,
+        selectedByPath: {},
         history: ['C:\\Users\\DeVante'],
         historyStep: 0,
         searchQuery: '',
         manualPath: 'C:\\Users\\DeVante',
         addressBarActive: false,
-        sidebar: [
-            { label: 'Quick access', type: 'header' },
-            { id: 'desktop', label: 'Desktop', path: 'C:\\Users\\DeVante\\Desktop', icon: window.portfolioConfig.imgPath + 'desktop.webp' },
-            { id: 'projects', label: 'Projects', path: 'C:\\Users\\DeVante\\Projects', icon: window.portfolioConfig.imgPath + 'folder.webp' },
-            { id: 'downloads', label: 'Downloads', path: 'C:\\Users\\DeVante\\Downloads', icon: window.portfolioConfig.imgPath + 'downloads.webp' },
-            { id: 'documents', label: 'Documents', path: 'C:\\Users\\DeVante\\Documents', icon: window.portfolioConfig.imgPath + 'documents.webp' },
-            { id: 'pictures', label: 'Pictures', path: 'C:\\Users\\DeVante\\Pictures', icon: window.portfolioConfig.imgPath + 'pictures.webp' },
-            { id: 'recycle', label: 'Recycle Bin', path: 'C:\\Recycle Bin', icon: '' }, // Handled dynamically
-            { id: 'thispc', label: 'This PC', path: 'C:\\', icon: window.portfolioConfig.imgPath + 'thispc.webp' },
-            { id: 'c-drive', label: 'Local Disk (C:)', path: 'C:\\', icon: window.portfolioConfig.imgPath + 'cdrive.webp', indent: true }
-        ],
-        
-        get sidebarWithIcons() {
-            const osStore = Alpine.store('os');
-            return this.sidebar.map(item => {
-                if (item.id === 'recycle') {
-                    const items = osStore.fileSystem['C:\\Recycle Bin'] || [];
-                    const imgPath = window.portfolioConfig.imgPath;
-                    const iconName = items.length > 0 ? 'recyclebinfull.webp' : 'recyclebinempty.webp';
-                    const icon = imgPath + iconName;
-                    return { ...item, icon };
-                }
-                return item;
-            });
+        viewMode: 'grid',
+        sortKey: 'name',
+        sortDir: 'asc',
+        detailsOpen: false,
+        winId: null,
+
+        get isRecycle() {
+            return this.currentPath === 'C:\\Recycle Bin';
+        },
+
+        get sidebarItems() {
+            const os = Alpine.store('os');
+            return OsWindowing.explorerSidebar(os.fileSystem, os.favourites, window.portfolioConfig.imgPath);
+        },
+
+        get selected() {
+            return this.selectedByPath[this.currentPath] ?? null;
+        },
+
+        set selected(name) {
+            this.selectedByPath[this.currentPath] = name;
+        },
+
+        // A search result can come from below this folder, so it says where it is.
+        pathOf(file) {
+            return file.location ?? this.currentPath;
         },
 
         get currentFiles() {
-            const osStore = Alpine.store('os');
-            const path = this.currentPath;
-            
-            if (this.searchQuery.trim().length > 0) {
-                const results = [];
-                const query = this.searchQuery.toLowerCase();
-                Object.entries(osStore.fileSystem).forEach(([p, files]) => {
-                    files.forEach(file => {
-                        if (file.name.toLowerCase().includes(query)) {
-                            results.push({ ...file, path: p });
-                        }
-                    });
-                });
-                return results;
-            }
-            
-            // Standardise path for lookup
-            let lookupPath = path;
-            if (lookupPath.length > 3 && lookupPath.endsWith('\\')) {
-                lookupPath = lookupPath.slice(0, -1);
-            }
-            
-            return osStore.fileSystem[lookupPath] || 
-                   osStore.fileSystem[lookupPath + '\\'] || 
-                   [];
+            const fs = Alpine.store('os').fileSystem;
+            const list = this.searchQuery
+                ? OsWindowing.searchFolder(fs, this.currentPath, this.searchQuery)
+                : fs[this.currentPath] ?? [];
+            return OsWindowing.sortEntries(list, this.sortKey, this.sortDir);
+        },
+
+        get selectedFile() {
+            return this.currentFiles.find(file => file.name === this.selected) ?? null;
+        },
+
+        get selectedRows() {
+            const file = this.selectedFile;
+            return file ? OsWindowing.entryProperties(Alpine.store('os').fileSystem, file, this.pathOf(file)) : [];
+        },
+
+        get cutName() {
+            const clip = Alpine.store('os').fileClipboard;
+            return clip?.mode === 'cut' && clip.fromPath === this.currentPath ? clip.name : null;
+        },
+
+        get renamingName() {
+            const renaming = Alpine.store('os').renaming;
+            return renaming?.path === this.currentPath ? renaming.name : null;
+        },
+
+        get sortArrow() {
+            return this.sortDir === 'asc' ? ' ↑' : ' ↓';
         },
 
         init() {
-            // Get our window ID immediately
             this.$nextTick(() => {
-                const myWinId = this.$el.closest('[id^="win-"]')?.id.replace('win-', '');
-                
-                // Check initial path
-                const win = Alpine.store('os').windows.find(w => w.id == myWinId);
-                if (win && win.initialPath) {
-                    this.navigate(win.initialPath);
-                }
+                this.winId = this.$el.closest('[id^="win-"]')?.id.replace('win-', '');
 
-                // Global listener for navigation
-                window.addEventListener('explorer-navigate', (e) => {
-                    const osStore = Alpine.store('os');
-                    const focusedWin = osStore.windows.find(w => w.app === 'explorer');
-                    
-                    // If we are the focused window, or if we were just opened
-                    if (e.detail && e.detail.path && focusedWin && focusedWin.id == myWinId) {
+                const win = Alpine.store('os').windows.find(w => w.id == this.winId);
+                if (win?.initialPath) this.startAt(win.initialPath);
+                if (win?.selectName) this.selected = win.selectName;
+
+                // An already open Explorer takes over when something else opens a folder.
+                this.onNavigate = (e) => {
+                    const explorer = Alpine.store('os').windows.find(w => w.app === 'explorer');
+                    if (e.detail?.path && explorer?.id == this.winId) {
                         this.navigate(e.detail.path);
+                        if (e.detail.selectName) this.selected = e.detail.selectName;
                     }
-                });
+                };
+                window.addEventListener('explorer-navigate', this.onNavigate);
+
+                this.onKey = (e) => this.handleKey(e);
+                window.addEventListener('keydown', this.onKey);
             });
         },
 
+        destroy() {
+            window.removeEventListener('explorer-navigate', this.onNavigate);
+            window.removeEventListener('keydown', this.onKey);
+        },
+
+        // Where a window opens is its first stop, so there is nothing to go back to.
+        startAt(path) {
+            const start = path.length > 3 && path.endsWith('\\') ? path.slice(0, -1) : path;
+            if (!Alpine.store('os').fileSystem[start]) return;
+            this.currentPath = start;
+            this.manualPath = start;
+            this.history = [start];
+            this.historyStep = 0;
+        },
+
+        handleKey(e) {
+            const os = Alpine.store('os');
+            if (os.focusedWindowId != this.winId) return;
+            const active = document.activeElement;
+            if (active && ['INPUT', 'TEXTAREA'].includes(active.tagName)) return;
+
+            const file = this.selectedFile;
+            const fileOs = this.explorerOs();
+            const actions = file && OsWindowing.fileMenuHandlers(fileOs, file, this.pathOf(file));
+            const command = e.ctrlKey || e.metaKey ? e.key.toLowerCase() : '';
+
+            if (command === 'c' || command === 'x') {
+                if (actions && !this.isRecycle) {
+                    e.preventDefault();
+                    if (command === 'c') actions.copy();
+                    else actions.cut();
+                }
+            } else if (command === 'v') {
+                if (!this.isRecycle && os.fileClipboard) {
+                    e.preventDefault();
+                    OsWindowing.folderMenuHandlers(fileOs, this.currentPath).paste();
+                }
+            } else if (e.key === 'Backspace') {
+                e.preventDefault();
+                this.goBack();
+            } else if (e.key === 'Delete') {
+                if (actions) {
+                    e.preventDefault();
+                    if (this.isRecycle) actions.deleteForever();
+                    else actions.delete();
+                    this.selected = null;
+                }
+            } else if (e.key === 'Enter') {
+                if (file) {
+                    e.preventDefault();
+                    this.openItem(file);
+                }
+            } else if (e.key === 'F2') {
+                if (file && !this.isRecycle) {
+                    e.preventDefault();
+                    fileOs.beginRename(file, this.pathOf(file));
+                }
+            }
+        },
+
         navigate(path) {
-            console.log('Navigating to:', path);
+            const target = path.length > 3 && path.endsWith('\\') ? path.slice(0, -1) : path;
+            const os = Alpine.store('os');
+            if (!os.fileSystem[target]) return;
+
             this.searchQuery = '';
             this.addressBarActive = false;
-            
-            // Standardise path: Ensure C:\ always has the trailing slash, others don't
-            let cleanPath = path;
-            if (cleanPath === 'C:' || cleanPath === 'C') {
-                cleanPath = 'C:\\';
-            } else if (cleanPath.length > 3 && cleanPath.endsWith('\\')) {
-                cleanPath = cleanPath.slice(0, -1);
-            }
-            
-            if (this.currentPath === cleanPath) {
-                this.selected = null;
-                this.manualPath = cleanPath;
-                return;
-            }
-            
-            this.currentPath = cleanPath;
-            this.manualPath = cleanPath;
-            this.selected = null;
+            this.manualPath = target;
+            os.renaming = null;
+            if (this.currentPath === target) return;
+
+            this.currentPath = target;
             this.historyStep++;
             this.history = this.history.slice(0, this.historyStep);
-            this.history.push(cleanPath);
-            
-            Alpine.store('os').logEvent('Explorer', 'Information', `Navigated to ${cleanPath}`);
+            this.history.push(target);
+            os.logEvent('Explorer', 'Information', `Navigated to ${target}`);
         },
 
         submitPath() {
-            if (!this.manualPath) {
-                this.manualPath = this.currentPath;
-                this.addressBarActive = false;
-                return;
+            const target = (this.manualPath || '').trim();
+            if (target && Alpine.store('os').fileSystem[target]) {
+                this.navigate(target);
             }
-            this.navigate(this.manualPath);
+            this.addressBarActive = false;
+            this.manualPath = this.currentPath;
         },
 
         goBack() {
@@ -128,6 +181,7 @@ document.addEventListener('alpine:init', () => {
             if (this.historyStep > 0) {
                 this.historyStep--;
                 this.currentPath = this.history[this.historyStep];
+                this.manualPath = this.currentPath;
             }
         },
 
@@ -136,74 +190,108 @@ document.addEventListener('alpine:init', () => {
             if (this.historyStep < this.history.length - 1) {
                 this.historyStep++;
                 this.currentPath = this.history[this.historyStep];
+                this.manualPath = this.currentPath;
             }
         },
 
-        openItem(item) {
-            const osStore = Alpine.store('os');
-            // Locked entries (References vault) launch the references app
-            // which prompts for the shared password and decrypts client-side.
-            if (item.extraData && item.extraData.locked) {
-                osStore.openApp('references', item.name, item.extraData || {});
-                return;
+        goUp() {
+            if (this.currentPath === 'C:\\' || this.isRecycle) return;
+            this.navigate(OsWindowing.parentPath(this.currentPath));
+        },
+
+        toggleSort(key) {
+            if (this.sortKey === key) {
+                this.sortDir = this.sortDir === 'asc' ? 'desc' : 'asc';
+            } else {
+                this.sortKey = key;
+                this.sortDir = 'asc';
             }
-            if (this.currentPath === 'C:\\Recycle Bin') {
-                osStore.playSound('error');
-                return;
+        },
+
+        openItem(item, path = this.pathOf(item)) {
+            if (this.isRecycle) {
+                Alpine.store('os').properties = { entry: item, path };
+            } else if (item.type === 'folder') {
+                this.navigate(OsWindowing.folderPath(item, path));
+            } else {
+                this.openFile(item, path);
             }
-            if (item.type === 'folder') {
-                let newPath;
-                if (item.path) {
-                    newPath = item.path;
-                } else {
-                    newPath = this.currentPath.endsWith('\\') ? 
-                              `${this.currentPath}${item.name}` : 
-                              `${this.currentPath}\\${item.name}`;
-                }
-                this.navigate(newPath);
-            } else if (item.app === 'pdfreader') {
-                osStore.openApp('pdfreader', item.name, { pdfUrl: item.pdfUrl || (item.extraData ? item.extraData.pdfUrl : (window.portfolioConfig.basePath + 'data/cv.pdf')) });
-            } else if (item.type === 'app') {
-                osStore.openApp(item.app, item.name, item.extraData || {});
-            } else if (item.type === 'image') {
-                osStore.openApp('photos', item.name, { imageName: item.name, folderPath: this.currentPath });
-            } else if (item.type === 'video') {
-                osStore.openApp('video', item.name, { videoUrl: item.url });
-            } else if (item.type === 'file' && item.name.endsWith('.txt')) {
-                osStore.openApp('notepad', item.name, { fileContent: item.content });
+        },
+
+        // The Recycle Bin, in the sidebar or the phone's place chips, takes a dropped file.
+        recycleOver(e, item) {
+            if (item.id !== 'recycle') return;
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+            e.currentTarget.classList.add('bg-blue-100', 'dark:bg-blue-900/40');
+        },
+
+        recycleLeave(e, item) {
+            if (item.id === 'recycle') e.currentTarget.classList.remove('bg-blue-100', 'dark:bg-blue-900/40');
+        },
+
+        recycleDrop(e, item) {
+            if (item.id !== 'recycle') return;
+            e.preventDefault();
+            e.currentTarget.classList.remove('bg-blue-100', 'dark:bg-blue-900/40');
+            try {
+                const data = JSON.parse(e.dataTransfer.getData('application/json'));
+                if (data && data.item) this.deleteItem(data.item, data.fromPath);
+            } catch {
+                // Something other than a file was dropped.
             }
+        },
+
+        openSidebarItem(item) {
+            if (!item.entry) {
+                if (item.path) this.navigate(item.path);
+            } else if (item.entry.type === 'folder') {
+                this.navigate(OsWindowing.folderPath(item.entry, item.path));
+            } else {
+                this.openFile(item.entry, item.path);
+            }
+        },
+
+        explorerOs() {
+            return this.fileOs({ openEntry: (entry, path) => this.openItem(entry, path) });
         },
 
         showExplorerItemMenu(e, file) {
-            if (this.currentPath !== 'C:\\Recycle Bin') {
-                this.showFileContextMenu(e, file, this.currentPath);
-                return;
-            }
-            this.openMenu('recycledFile', e, {
-                open: () => this.openItem(file),
-                restore: () => this.restoreItem(file),
-                classic: () => this.showClassicDesktopContextMenu(e)
+            this.selected = file.name;
+            this.showFileContextMenu(e, file, this.pathOf(file), this.explorerOs());
+        },
+
+        showExplorerPaneMenu(e) {
+            const fileOs = this.explorerOs();
+            this.openMenu('explorerPane', e, {
+                view: () => { this.viewMode = this.viewMode === 'grid' ? 'details' : 'grid'; },
+                details: () => { this.detailsOpen = !this.detailsOpen; },
+                sortName: () => { this.sortKey = 'name'; },
+                sortType: () => { this.sortKey = 'type'; },
+                sortDate: () => { this.sortKey = 'date'; },
+                sortSize: () => { this.sortKey = 'size'; },
+                ...OsWindowing.folderMenuHandlers(fileOs, this.currentPath)
+            }, {
+                ...OsWindowing.folderMenuOverrides(fileOs),
+                view: { label: this.viewMode === 'grid' ? 'View as details' : 'View as grid' },
+                details: { label: this.detailsOpen ? 'Hide details pane' : 'Show details pane' },
+                // The Recycle Bin only takes what is deleted into it.
+                ...(this.isRecycle && {
+                    paste: { hidden: true },
+                    pasteShortcut: { hidden: true },
+                    newFolder: { hidden: true },
+                    newTextFile: { hidden: true }
+                })
             });
         },
 
         restoreItem(item) {
-            const osStore = Alpine.store('os');
-            const recycleBin = osStore.fileSystem['C:\\Recycle Bin'];
-            
-            // Find item in recycle bin
-            const index = recycleBin.findIndex(f => f.name === item.name);
-            if (index > -1) {
-                const fileToRestore = recycleBin.splice(index, 1)[0];
-                const targetPath = fileToRestore.originalPath || 'C:\\Users\\DeVante\\Desktop';
-                
-                if (!osStore.fileSystem[targetPath]) {
-                    osStore.fileSystem[targetPath] = [];
-                }
-                
-                osStore.fileSystem[targetPath].push(fileToRestore);
-                osStore.saveFileSystem();
-                this.playSound('click'); // Feedback
-            }
+            OsWindowing.fileMenuHandlers(this.explorerOs(), item, this.pathOf(item)).restore();
+            this.playSound('click');
+        },
+
+        emptyBin() {
+            this.emptyRecycleBin();
         }
     }));
 });

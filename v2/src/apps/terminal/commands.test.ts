@@ -23,7 +23,7 @@ describe('terminal commands', () => {
 
   it('whoami / ver / pwd are fixed strings', () => {
     expect(runCommand('whoami', ctx()).res).toBe('johnson-rose\\devante')
-    expect(runCommand('ver', ctx()).res).toMatch(/Microsoft Windows/)
+    expect(runCommand('ver', ctx()).res).toMatch(/Microsoft Windows \[Version 10\.0\.26200\./)
     expect(runCommand('pwd', ctx()).res).toBe('C:\\Users\\DeVante')
   })
 
@@ -90,9 +90,20 @@ describe('terminal commands', () => {
     expect(out.cwd).toBe('C:\\Users\\DeVante')
   })
 
-  it('cd .. at the drive root is a no-op', () => {
+  it('cd .. from C:\\Users reaches C:\\, not C:', () => {
+    const out = runCommand('cd ..', { cwd: 'C:\\Users', store: useOsStore.getState() })
+    expect(out.cwd).toBe('C:\\')
+  })
+
+  it('cd takes a quoted path with spaces', () => {
+    const out = runCommand('cd "Program Files"', { cwd: 'C:\\', store: useOsStore.getState() })
+    expect(out.cwd).toBe('C:\\Program Files')
+  })
+
+  it('cd .. at the drive root stays there', () => {
     const out = runCommand('cd ..', { cwd: 'C:\\', store: useOsStore.getState() })
-    expect(out.cwd).toBeUndefined()
+    expect(out.cwd).toBe('C:\\')
+    expect(out.res).toBeUndefined()
   })
 
   it('cd into a missing folder reports the Windows error', () => {

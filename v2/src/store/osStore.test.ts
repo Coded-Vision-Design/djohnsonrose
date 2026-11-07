@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { useOsStore } from './osStore'
 
 const reset = () => {
-  // Reset to factory defaults — Zustand persists `loggedIn` + `settings`,
+  // Reset to factory defaults - Zustand persists `loggedIn` + `settings`,
   // so we clear localStorage too.
   localStorage.clear()
   useOsStore.setState({
@@ -134,7 +134,7 @@ describe('osStore', () => {
       const [paint, calc] = useOsStore.getState().windows
       focusWindow(calc.id)
       toggleMinimize(paint.id) // minimize paint
-      toggleMinimize(paint.id) // restore — should refocus paint
+      toggleMinimize(paint.id) // restore - should refocus paint
       expect(useOsStore.getState().focusedWindowId).toBe(paint.id)
     })
   })
@@ -177,12 +177,23 @@ describe('osStore', () => {
       openApp('paint')
       openApp('calculator')
       openApp('notepad')
-      const [paint, calc, notepad] = useOsStore.getState().windows
+      const [, calc, notepad] = useOsStore.getState().windows
       focusWindow(notepad.id)
       closeWindow(notepad.id)
-      // Next visible (highest z) should be calc (opened after paint).
-      const focus = useOsStore.getState().focusedWindowId
-      expect([calc.id, paint.id]).toContain(focus!)
+      // The next visible window is the one on top: calc, opened after paint.
+      expect(useOsStore.getState().focusedWindowId).toBe(calc.id)
+    })
+
+    it('refocuses the window last on top, not the one opened last', () => {
+      const { openApp, closeWindow, focusWindow } = useOsStore.getState()
+      openApp('paint')
+      openApp('calculator')
+      openApp('notepad')
+      const [paint, , notepad] = useOsStore.getState().windows
+      focusWindow(paint.id)
+      focusWindow(notepad.id)
+      closeWindow(notepad.id)
+      expect(useOsStore.getState().focusedWindowId).toBe(paint.id)
     })
 
     it('sets focus to null when closing the only window', () => {

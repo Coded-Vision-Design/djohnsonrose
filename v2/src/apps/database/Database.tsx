@@ -1,48 +1,39 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { EXAMPLES, execute, parse, ParseError, type Row } from './sql'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import {
+  SQL_EXAMPLES as EXAMPLES,
+  SQL_TABLES as TABLES,
+  latestQuery,
+  runSql,
+  sqlElapsedLabel,
+  type Row,
+  type SqlOutcome,
+  type SqlTable as Table,
+} from '../../../../assets/js/windowing/sql.js'
 
-// SSMS-styled SQL viewer over the CV. The server-side endpoint
-// (api/cv_data.php) only ever returns whole tables — every WHERE / ORDER BY /
-// LIMIT is parsed and applied in the browser via ./sql.ts, so no user-typed
-// SQL ever reaches MySQL. This keeps the UX interactive while leaving zero
-// injection surface.
-
-type Table = 'experience' | 'projects' | 'certifications' | 'education' | 'skills' | 'achievements' | 'interests'
-
-const TABLES: { id: Table; label: string }[] = [
-  { id: 'experience',     label: 'dbo.Experience' },
-  { id: 'projects',       label: 'dbo.Projects' },
-  { id: 'certifications', label: 'dbo.Certifications' },
-  { id: 'education',      label: 'dbo.Education' },
-  { id: 'skills',         label: 'dbo.Skills' },
-  { id: 'achievements',   label: 'dbo.Achievements' },
-  { id: 'interests',      label: 'dbo.Interests' },
-]
-
-const COLUMNS_BY_TABLE: Record<Table, string[]> = {
-  experience:     ['id', 'role', 'company', 'period', 'location', 'highlights'],
-  projects:       ['id', 'title', 'description', 'tags', 'url', 'location', 'country'],
-  certifications: ['id', 'name', 'issuer', 'year'],
-  education:      ['id', 'title', 'issuer'],
-  skills:         ['id', 'category', 'name'],
-  achievements:   ['id', 'title', 'result', 'category', 'date'],
-  interests:      ['id', 'name'],
-}
+// SQL Server Management Studio over the CV. The server (api/cv_data.php) only
+// ever returns whole tables; every WHERE, ORDER BY and LIMIT is parsed and
+// applied in the browser by assets/js/windowing/sql.js, shared with v1, so no
+// typed SQL reaches MySQL.
 
 interface Cache {
   loadedAt: number
   rows: Row[]
 }
 
+const wideScreen = () => window.matchMedia('(min-width: 768px)').matches
+
 export default function Database() {
   const [activeTable, setActiveTable] = useState<Table>('experience')
   const [query, setQuery] = useState<string>('SELECT * FROM [Portfolio_DB].[dbo].[experience]')
-  const [executed, setExecuted] = useState<{ rows: Row[]; columns: string[]; elapsed: number } | null>(null)
-  const [loading, setLoading] = useState(false)
+  const [executed, setExecuted] = useState<SqlOutcome['executed']>(null)
+  const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [resultsTab, setResultsTab] = useState<'results' | 'messages'>('results')
   const [helpOpen, setHelpOpen] = useState(false)
+  // The Object Explorer folds away on phones, where it would crush the results.
+  const [explorerOpen, setExplorerOpen] = useState(wideScreen)
   const cacheRef = useRef<Partial<Record<Table, Cache>>>({})
+  const queriesRef = useRef(latestQuery())
 
   const loadTable = useCallback(async (table: Table): Promise<Row[]> => {
     const hit = cacheRef.current[table]
@@ -55,91 +46,72 @@ export default function Database() {
     return body.data ?? []
   }, [])
 
-  const runQuery = useCallback(async () => {
-    setLoading(true)
-    setError(null)
-    const started = performance.now()
-    try {
-      const ast = parse(query)
-      if (!TABLES.some((t) => t.id === ast.table)) {
-        throw new ParseError(
-          `Unknown table '${ast.table}'. Known tables: ${TABLES.map((t) => t.id).join(', ')}.`,
-        )
-      }
-      const rows = await loadTable(ast.table as Table)
-      const out = execute(ast, rows)
-      const columns = ast.columns.includes('*')
-        ? COLUMNS_BY_TABLE[ast.table as Table]
-        : ast.columns
-      setExecuted({ rows: out, columns, elapsed: performance.now() - started })
-      setActiveTable(ast.table as Table)
-    } catch (e) {
-      setExecuted(null)
-      setError((e as Error).message)
-    } finally {
-      setLoading(false)
-    }
-  }, [query, loadTable])
-
-  // Run the default query on mount + whenever the user picks a table from the
-  // tree (this also overwrites the editor so the visible SQL matches state).
-  useEffect(() => {
-    runQuery()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+  const show = useCallback((outcome: SqlOutcome) => {
+    setExecuted(outcome.executed)
+    setError(outcome.error)
+    if (outcome.table) setActiveTable(outcome.table)
+    setLoading(false)
   }, [])
 
+  /** Runs a query. A slower, older query never replaces the newest one's results. */
+  const execute = useCallback(
+    (sql: string) => {
+      const ticket = queriesRef.current.start()
+      return runSql(sql, loadTable).then((outcome) => {
+        if (queriesRef.current.isLatest(ticket)) show(outcome)
+      })
+    },
+    [loadTable, show],
+  )
+
+  const runQueryWith = useCallback(
+    (sql: string) => {
+      setLoading(true)
+      setError(null)
+      return execute(sql)
+    },
+    [execute],
+  )
+
+  const runQuery = useCallback(() => runQueryWith(query), [runQueryWith, query])
+
+  // Run the default query on mount.
+  useEffect(() => {
+    void execute('SELECT * FROM [Portfolio_DB].[dbo].[experience]')
+  }, [execute])
+
+  // Picking a table overwrites the editor, so that the visible SQL matches.
   const pickTable = (t: Table) => {
     const next = `SELECT * FROM [Portfolio_DB].[dbo].[${t}]`
     setQuery(next)
-    // Defer to next tick so query state has updated before runQuery reads it.
-    setTimeout(() => {
-      setActiveTable(t)
-      runQueryWith(next)
-    }, 0)
+    if (!wideScreen()) setExplorerOpen(false)
+    void runQueryWith(next)
   }
 
-  const runQueryWith = useCallback(
-    async (sql: string) => {
-      setLoading(true)
-      setError(null)
-      const started = performance.now()
-      try {
-        const ast = parse(sql)
-        if (!TABLES.some((t) => t.id === ast.table)) {
-          throw new ParseError(`Unknown table '${ast.table}'.`)
-        }
-        const rows = await loadTable(ast.table as Table)
-        const out = execute(ast, rows)
-        const columns = ast.columns.includes('*')
-          ? COLUMNS_BY_TABLE[ast.table as Table]
-          : ast.columns
-        setExecuted({ rows: out, columns, elapsed: performance.now() - started })
-      } catch (e) {
-        setExecuted(null)
-        setError((e as Error).message)
-      } finally {
-        setLoading(false)
-      }
-    },
-    [loadTable],
-  )
-
   const rowCount = executed?.rows.length ?? 0
-  const elapsedLabel = useMemo(() => {
-    if (!executed) return '00:00:00'
-    const ms = executed.elapsed
-    if (ms < 1000) return `00:00:${(ms / 1000).toFixed(3).padStart(6, '0')}`
-    return `00:00:${Math.floor(ms / 1000).toString().padStart(2, '0')}`
-  }, [executed])
+  const elapsedLabel = sqlElapsedLabel(executed?.elapsed)
 
   return (
     <div
       className="h-full flex flex-col bg-[#f0f0f0] dark:bg-[#1c1c1c] text-black dark:text-white select-none overflow-hidden"
       style={{ fontFamily: 'Segoe UI, sans-serif' }}
+      data-ssms
     >
       {/* SSMS toolbar */}
-      <div className="h-9 bg-white dark:bg-[#2b2b2b] border-b border-gray-300 dark:border-gray-800 flex items-center px-2 space-x-1 shrink-0">
-        <button type="button" className="p-1.5 rounded-sm hover:bg-gray-100 dark:hover:bg-white/5 flex items-center space-x-1">
+      <div className="h-9 bg-white dark:bg-[#2b2b2b] border-b border-gray-300 dark:border-gray-800 flex items-center px-2 space-x-1 shrink-0 overflow-x-auto scrollbar-none">
+        <button
+          type="button"
+          onClick={() => setExplorerOpen((open) => !open)}
+          aria-expanded={explorerOpen}
+          aria-label="Object Explorer"
+          title="Object Explorer"
+          className="p-1.5 rounded-sm hover:bg-gray-100 dark:hover:bg-white/5 flex items-center shrink-0"
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+          </svg>
+        </button>
+        <button type="button" className="p-1.5 rounded-sm hover:bg-gray-100 dark:hover:bg-white/5 flex items-center space-x-1 shrink-0">
           <span className="text-[10px] font-semibold">New Query</span>
         </button>
         <div className="w-px h-6 bg-gray-300 dark:bg-gray-700 mx-1" />
@@ -192,12 +164,21 @@ export default function Database() {
       )}
 
       {/* Workspace */}
-      <div className="grow flex min-h-0">
-        {/* Object Explorer */}
-        <div className="w-64 border-r border-gray-300 dark:border-gray-800 flex flex-col bg-[#f0f0f0] dark:bg-[#252526] shrink-0 overflow-hidden">
+      <div className="grow flex min-h-0 relative">
+        {/* Object Explorer: beside the query on wide screens, over it on phones */}
+        <div
+          className={`${explorerOpen ? 'flex' : 'hidden'} w-64 max-w-[85%] border-r border-gray-300 dark:border-gray-800 flex-col bg-[#f0f0f0] dark:bg-[#252526] shrink-0 overflow-hidden absolute md:static inset-y-0 left-0 z-30 shadow-xl md:shadow-none`}
+        >
           <div className="p-2 bg-gray-200 dark:bg-[#333333] text-[11px] font-semibold border-b border-gray-300 dark:border-gray-800 flex items-center justify-between">
             <span>Object Explorer</span>
-            <button type="button" className="opacity-60">✕</button>
+            <button
+              type="button"
+              className="opacity-60 hover:opacity-100 px-1"
+              aria-label="Close Object Explorer"
+              onClick={() => setExplorerOpen(false)}
+            >
+              ✕
+            </button>
           </div>
           <div className="grow overflow-y-auto p-2 text-[11px]">
             <div className="flex items-center space-x-1 cursor-default">

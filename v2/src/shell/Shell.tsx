@@ -4,6 +4,8 @@ import { BootScreen } from './BootScreen'
 import { LockScreen } from './LockScreen'
 import { Desktop } from './Desktop'
 import { getApp } from '../apps/registry'
+import { findEntry, sharedPath } from '../../../assets/js/windowing/file-ops.js'
+import { openEntry } from './openEntry'
 
 interface ShellProps {
   // If passed, opens this app once boot+login complete (for /app/:name routes).
@@ -16,10 +18,19 @@ export function Shell({ initialApp }: ShellProps) {
   const openApp = useOsStore((s) => s.openApp)
   const finishBoot = useOsStore((s) => s.finishBoot)
 
-  // If already logged in (persisted), skip boot screen entirely — matches v1.
+  // If already logged in (persisted), skip boot screen entirely - matches v1.
   useEffect(() => {
     if (loggedIn && isBooting) finishBoot()
   }, [loggedIn, isBooting, finishBoot])
+
+  // A shared link: open that file once we land on the desktop.
+  useEffect(() => {
+    const shared = sharedPath(window.location.hash)
+    if (!loggedIn || !shared) return
+    window.history.replaceState(null, '', window.location.pathname)
+    const found = findEntry(useOsStore.getState().fileSystem, shared)
+    if (found) openEntry(found.entry, found.path)
+  }, [loggedIn])
 
   // Deep link: open the requested app once we land on the desktop.
   useEffect(() => {
@@ -39,6 +50,10 @@ export function Shell({ initialApp }: ShellProps) {
   }, [loggedIn, initialApp, openApp])
 
   if (isBooting) return <BootScreen />
-  if (!loggedIn) return <LockScreen />
-  return <Desktop />
+  // The skip link in App.tsx lands here, as on v1's <main> in partials/shell.php.
+  return (
+    <main id="main-content" tabIndex={-1} className="outline-hidden">
+      {loggedIn ? <Desktop /> : <LockScreen />}
+    </main>
+  )
 }

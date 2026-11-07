@@ -149,7 +149,7 @@ export default function Outlook() {
       </div>
 
       <div className="grow p-6 space-y-4 overflow-y-auto">
-        {/* Honeypot — hidden from real users, bots fill it. */}
+        {/* Honeypot - hidden from real users, bots fill it. */}
         <input
           type="text"
           value={honeypot}

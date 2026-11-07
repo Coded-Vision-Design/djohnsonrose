@@ -13,7 +13,7 @@ import {
 } from 'chart.js'
 import { Bar, Doughnut, Line } from 'react-chartjs-2'
 
-// Admin Console — Google Sign-In gated dashboard for visitor analytics +
+// Admin Console - Google Sign-In gated dashboard for visitor analytics +
 // Outlook enquiries. Reads admin-only /api/stats.php (cookie auth, see
 // requireAdmin() in bootstrap.php).
 
@@ -69,7 +69,6 @@ interface StatsPayload {
   per_app: CountedRow[]
   os: CountedRow[]
   browser: CountedRow[]
-  country: CountedRow[]
   per_day: PerDayRow[]
   screen_time: ScreenTimeRow[]
   enquiries: EnquiryRow[]
@@ -163,51 +162,73 @@ function classifyDevice(os: string | null): 'Desktop' | 'Mobile' | 'Tablet' | 'O
   return 'Other'
 }
 
+type StatsResult =
+  | { status: 'ok'; stats: StatsPayload }
+  | { status: 'signed-out' }
+  | { status: 'failed'; message: string }
+
+async function fetchMe(): Promise<MeResponse> {
+  try {
+    const r = await fetch('/api/admin_me.php', { credentials: 'same-origin' })
+    return (await r.json()) as MeResponse
+  } catch {
+    return { authenticated: false }
+  }
+}
+
+async function fetchStats(): Promise<StatsResult> {
+  try {
+    const r = await fetch('/api/stats.php', { credentials: 'same-origin' })
+    if (r.status === 401) return { status: 'signed-out' }
+    if (!r.ok) throw new Error(`Stats request failed (${r.status})`)
+    return { status: 'ok', stats: (await r.json()) as StatsPayload }
+  } catch (e) {
+    return { status: 'failed', message: (e as Error).message }
+  }
+}
+
 export default function AdminConsole() {
   const [me, setMe] = useState<MeResponse | null>(null)
   const [stats, setStats] = useState<StatsPayload | null>(null)
   const [authError, setAuthError] = useState<string | null>(null)
+  const [statsError, setStatsError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [tab, setTab] = useState<'dashboard' | 'enquiries'>('dashboard')
   const [selectedEnquiry, setSelectedEnquiry] = useState<EnquiryRow | null>(null)
   const buttonRef = useRef<HTMLDivElement>(null)
 
-  const refreshMe = useCallback(async () => {
-    try {
-      const r = await fetch('/api/admin_me.php', { credentials: 'same-origin' })
-      const body = (await r.json()) as MeResponse
-      setMe(body)
-    } catch {
-      setMe({ authenticated: false })
-    }
-  }, [])
+  const refreshMe = useCallback(() => fetchMe().then(setMe), [])
+
+  const showStats = useCallback(
+    (result: StatsResult) => {
+      if (result.status === 'signed-out') {
+        // The session expired. Ask the server again, so the sign-in button
+        // comes back with its client id rather than a false "not configured".
+        setStats(null)
+        void refreshMe()
+      } else if (result.status === 'failed') {
+        setStatsError(result.message)
+      } else {
+        setStatsError(null)
+        setStats(result.stats)
+      }
+    },
+    [refreshMe],
+  )
 
   const loadStats = useCallback(async () => {
     setBusy(true)
-    try {
-      const r = await fetch('/api/stats.php', { credentials: 'same-origin' })
-      if (r.status === 401) {
-        setMe({ authenticated: false })
-        setStats(null)
-        return
-      }
-      if (!r.ok) throw new Error(`Stats request failed (${r.status})`)
-      const body = (await r.json()) as StatsPayload
-      setStats(body)
-    } catch (e) {
-      setAuthError((e as Error).message)
-    } finally {
-      setBusy(false)
-    }
+    showStats(await fetchStats())
+    setBusy(false)
+  }, [showStats])
+
+  useEffect(() => {
+    void fetchMe().then(setMe)
   }, [])
 
   useEffect(() => {
-    refreshMe()
-  }, [refreshMe])
-
-  useEffect(() => {
-    if (me?.authenticated) loadStats()
-  }, [me?.authenticated, loadStats])
+    if (me?.authenticated) void fetchStats().then(showStats)
+  }, [me?.authenticated, showStats])
 
   const handleCredential = useCallback(
     async (credential: string) => {
@@ -307,7 +328,8 @@ export default function AdminConsole() {
     <Dashboard
       me={me}
       stats={stats}
-      busy={busy}
+      busy={busy || (Boolean(me?.authenticated) && !stats && !statsError)}
+      error={statsError}
       tab={tab}
       onTab={setTab}
       onRefresh={loadStats}
@@ -322,6 +344,8 @@ interface DashboardProps {
   me: MeResponse
   stats: StatsPayload | null
   busy: boolean
+  /** Why the stats could not be loaded, if they could not. */
+  error: string | null
   tab: 'dashboard' | 'enquiries'
   onTab: (t: 'dashboard' | 'enquiries') => void
   onRefresh: () => void
@@ -334,6 +358,7 @@ function Dashboard({
   me,
   stats,
   busy,
+  error,
   tab,
   onTab,
   onRefresh,
@@ -356,12 +381,7 @@ function Dashboard({
     [stats],
   )
 
-  const countryBreakdown = useMemo(
-    () => (stats ? toCountMap(stats.country, 'country') : { labels: [], values: [] }),
-    [stats],
-  )
-
-  // Roll OS rows into Desktop / Mobile / Tablet buckets — much more useful
+  // Roll OS rows into Desktop / Mobile / Tablet buckets - much more useful
   // for the dashboard than 8 separate Windows variants.
   const deviceTypes = useMemo(() => {
     if (!stats) return { labels: [] as string[], values: [] as number[] }
@@ -464,6 +484,11 @@ function Dashboard({
       </header>
 
       <div className="grow overflow-auto p-4 md:p-6 space-y-6">
+        {error && (
+          <div role="alert" data-stats-error className="rounded-lg border border-red-300 bg-red-50 text-red-800 dark:border-red-800 dark:bg-red-950/40 dark:text-red-200 px-4 py-3 text-sm">
+            Could not load the stats: {error}
+          </div>
+        )}
         {busy && !stats && (
           <div className="flex items-center justify-center py-20">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-win-blue" />
@@ -614,8 +639,8 @@ function Dashboard({
               </ChartCard>
             </section>
 
-            {/* Browser + country */}
-            <section className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            {/* Browser. There is no country chart: no location is stored (see /privacy). */}
+            <section className="grid grid-cols-1 gap-4">
               <ChartCard title="Browser breakdown">
                 {browserBreakdown.labels.length === 0 ? (
                   <Empty />
@@ -637,33 +662,6 @@ function Dashboard({
                       maintainAspectRatio: false,
                       plugins: { legend: { display: false } },
                       scales: { y: { beginAtZero: true, ticks: { precision: 0 } } },
-                    }}
-                  />
-                )}
-              </ChartCard>
-
-              <ChartCard title="Top countries">
-                {countryBreakdown.labels.length === 0 ? (
-                  <Empty />
-                ) : (
-                  <Bar
-                    data={{
-                      labels: countryBreakdown.labels,
-                      datasets: [
-                        {
-                          label: 'Events',
-                          data: countryBreakdown.values,
-                          backgroundColor: '#8b5cf6',
-                          borderRadius: 6,
-                        },
-                      ],
-                    }}
-                    options={{
-                      responsive: true,
-                      maintainAspectRatio: false,
-                      indexAxis: 'y',
-                      plugins: { legend: { display: false } },
-                      scales: { x: { beginAtZero: true, ticks: { precision: 0 } } },
                     }}
                   />
                 )}

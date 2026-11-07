@@ -1,1263 +1,881 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react'
+import {
+  FL_FOLDER,
+  FL_HELP,
+  FL_ICONS,
+  FL_MENUS,
+  FL_PANELS,
+  FL_PANEL_LABELS,
+  FL_PROJECT_KEY,
+  FL_START_VIEWS,
+  INSTRUMENTS,
+  MAX_BPM,
+  MIN_BPM,
+  SONG_BARS,
+  TRACKS,
+  beginPianoGesture,
+  beginPlaylistGesture,
+  createEngine,
+  flCommands,
+  flShortcut,
+  instrumentFor,
+  isBlackKey,
+  menuItemState,
+  noteName,
+  patternSteps,
+  positionLabel,
+  projectFiles,
+  recordEdit,
+  removeChannel,
+  renamePattern,
+  renameProject,
+  serialiseProject,
+  setMasterVolume,
+  setTempo,
+  soloChannel,
+  startPainter,
+  startingProject,
+  stepOn,
+  toggleStep,
+  typingKeyPitch,
+  updateChannel,
+  type FlCommands,
+  type FlEngine,
+  type FlHistory,
+  type FlMenuItem,
+  type FlMode,
+  type FlPanel,
+  type FlProject,
+  type FlViews,
+} from '../../../../assets/js/windowing/fl-studio.js'
+import { useOsStore } from '../../store/osStore'
+import { useCurrentWindow } from '../../windowing/WindowContext'
 
-// 1:1 port of partials/apps/flstudio.php + assets/js/components/flstudio.js.
-// Top hint bar, main toolbar (transport / BPM / mode / time / window
-// toggles / visualizer), browser sidebar, MDI area with floating Channel
-// Rack + Piano Roll windows, full-bleed Playlist with draggable clips, and
-// a bottom Mixer with vertical faders + VU meters.
+// FL Studio. Everything it does lives in assets/js/windowing/fl-studio.js,
+// which v1 shares, so this file only draws the screen and keeps React state.
 
-type ChannelType = 'drum' | 'synth' | 'bass'
+const IMG = '/assets/img/'
+const ICONS = { folder: `${IMG}win11/folder.webp`, file: `${IMG}fl%20studio.webp` }
+const TOP_PITCH = 96
+const BOTTOM_PITCH = 24
+const PITCHES = Array.from({ length: TOP_PITCH - BOTTOM_PITCH + 1 }, (_, i) => TOP_PITCH - i)
+const BARS = Array.from({ length: SONG_BARS }, (_, i) => i)
+const TRACK_LIST = Array.from({ length: TRACKS }, (_, i) => i)
 
-interface Channel {
-  name: string
-  type: ChannelType
-  note: number
-  color: string
-  steps: number[] // 0 or 1, length 16
-  volume: number
-  muted: boolean
-  panned: number
-  sampleUrl: string | null
+const vars = (values: Record<string, string | number>) => values as CSSProperties
+
+function Icon({ path }: { path: string }) {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" fillRule="evenodd">
+      <path d={path} />
+    </svg>
+  )
 }
 
-interface PlaylistClip {
-  id: number
-  name: string
-  track: number
-  startStep: number
-  length: number
-  type: 'pattern' | 'audio' | 'automation'
-  color: string
+function MenuEntry({
+  entry,
+  state,
+  onRun,
+}: {
+  entry: FlMenuItem
+  state: { checked?: boolean; disabled?: boolean }
+  onRun: (id: string) => void
+}) {
+  return (
+    <button
+      type="button"
+      role={state.checked === undefined ? 'menuitem' : 'menuitemcheckbox'}
+      aria-checked={state.checked}
+      className="fl-menu-item"
+      data-fl-command={entry.id}
+      disabled={state.disabled}
+      onClick={() => onRun(entry.id!)}
+    >
+      <span>{state.checked ? '✓' : ''}</span>
+      <span>{entry.label}</span>
+      <span className="fl-menu-key">{entry.shortcut}</span>
+    </button>
+  )
 }
 
-const DEFAULT_CHANNELS: Channel[] = [
-  { name: 'Kick', type: 'drum', note: 40, color: '#ff6600', steps: [1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0], volume: 0.8, muted: false, panned: 0, sampleUrl: null },
-  { name: 'Clap', type: 'drum', note: 60, color: '#00ccff', steps: [0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0], volume: 0.7, muted: false, panned: 0, sampleUrl: null },
-  { name: 'Hat',  type: 'drum', note: 1000, color: '#ffff00', steps: [0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0], volume: 0.5, muted: false, panned: 0, sampleUrl: null },
-  { name: 'Snare', type: 'drum', note: 200, color: '#ff00ff', steps: [0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0], volume: 0.6, muted: false, panned: 0, sampleUrl: null },
-  { name: 'Piano', type: 'synth', note: 261.63, color: '#ffffff', steps: [1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0], volume: 0.5, muted: false, panned: 0, sampleUrl: null },
-  { name: 'Guitar', type: 'synth', note: 196.00, color: '#00ff00', steps: [0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0], volume: 0.4, muted: false, panned: 0, sampleUrl: null },
-  { name: 'Sub Bass', type: 'bass', note: 55, color: '#ff0000', steps: [1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0], volume: 0.8, muted: false, panned: 0, sampleUrl: null },
-]
-
-const PIANO_NOTES = [261.63, 277.18, 293.66, 311.13, 329.63, 349.23, 369.99, 392.0, 415.30, 440.00, 466.16, 493.88] as const
-const BLACK_NOTES = new Set([277.18, 311.13, 369.99, 415.30, 466.16])
-
-const BROWSER_SAMPLES = [
-  { name: 'Studio Kick', url: 'https://cdn.freesound.org/previews/171/171104_2392966-lq.mp3' },
-  { name: 'Snare Snap', url: 'https://cdn.freesound.org/previews/387/387186_7263311-lq.mp3' },
-  { name: 'Closed Hat', url: 'https://cdn.freesound.org/previews/448/448572_9159116-lq.mp3' },
-  { name: 'Deep Bass', url: 'https://cdn.freesound.org/previews/264/264828_4931603-lq.mp3' },
-]
-
-const BROWSER_PACK = ['Kick 808', 'Snare 909', 'HiHat Closed', 'HiHat Open', 'Clap Tight', 'Perc Wood', 'Sub Bass A', 'Piano C4', 'Guitar Clean'] as const
+function readSaved() {
+  try {
+    return localStorage.getItem(FL_PROJECT_KEY)
+  } catch {
+    return null
+  }
+}
 
 export default function FLStudio() {
-  const [channels, setChannels] = useState<Channel[]>(DEFAULT_CHANNELS)
-  const [playlistClips, setPlaylistClips] = useState<PlaylistClip[]>([
-    { id: 1, name: 'Pattern 1', track: 1, startStep: 0, length: 32, type: 'pattern', color: '#ff6600' },
-    { id: 2, name: 'Impact_FX_01.wav', track: 5, startStep: 16, length: 48, type: 'audio', color: '#00ccff' },
-  ])
+  const win = useCurrentWindow()
+  const opened = win.extra as { content?: string } | undefined
+  const fileSystem = useOsStore((s) => s.fileSystem)
 
+  const [project, setProject] = useState<FlProject>(() => startingProject(opened?.content ?? null, readSaved()))
+  const [history, setHistory] = useState<FlHistory>({ past: [], future: [] })
+  const [mode, setMode] = useState<FlMode>('pattern')
+  const [patternId, setPatternId] = useState(() => project.patterns[0].id)
+  const [channelId, setChannelId] = useState(() => project.channels[0].id)
+  const [views, setViews] = useState<FlViews>(FL_START_VIEWS)
+  const [tab, setTab] = useState<FlPanel>('rack')
+  const [menu, setMenu] = useState<string | null>(null)
+  const [hint, setHint] = useState('Press Space to play. Click the steps to change the beat.')
   const [playing, setPlaying] = useState(false)
-  const [mode, setMode] = useState<'pattern' | 'song'>('pattern')
-  const [bpm, setBpm] = useState(128)
-  const [currentStep, setCurrentStep] = useState(0)
-  const [songStep, setSongStep] = useState(0)
-  const [masterVolume, setMasterVolume] = useState(0.8)
-  const [hintText, setHintText] = useState('Hint: Click steps to toggle sounds')
-  const [clock, setClock] = useState(() => new Date())
+  const [dialog, setDialog] = useState<'open' | 'saveAs' | 'help' | null>(null)
+  const [saveName, setSaveName] = useState('')
+  const [fileName, setFileName] = useState<string | null>(() => (opened?.content ? win.title : null))
+  const [noteLength, setNoteLength] = useState(2)
 
-  const [showChannelRack, setShowChannelRack] = useState(true)
-  const [showMixer, setShowMixer] = useState(true)
-  const [showPlaylist, setShowPlaylist] = useState(true)
-  const [showBrowser] = useState(true)
-  const [showPianoRoll, setShowPianoRoll] = useState(false)
-  const [pianoRollChannelIdx, setPianoRollChannelIdx] = useState<number | null>(null)
+  // The engine and the gestures read the latest state through these.
+  const live = useRef({ project, mode, patternId, channelId, history, views, fileName, noteLength })
+  useLayoutEffect(() => {
+    live.current = { project, mode, patternId, channelId, history, views, fileName, noteLength }
+  })
 
-  // Audio refs — kept out of state because they don't drive renders.
-  const audioCtxRef = useRef<AudioContext | null>(null)
-  const masterGainRef = useRef<GainNode | null>(null)
-  const audioBuffersRef = useRef<Record<string, AudioBuffer>>({})
+  const root = useRef<HTMLDivElement>(null)
+  const engineRef = useRef<FlEngine | null>(null)
+  const commandsRef = useRef<FlCommands | null>(null)
 
-  // ---- Audio engine ----
-  const setupAudio = useCallback(() => {
-    if (audioCtxRef.current) return audioCtxRef.current
-    const Ctor =
-      window.AudioContext ??
-      (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext
-    const ctx = new Ctor()
-    const master = ctx.createGain()
-    master.gain.setValueAtTime(masterVolume, ctx.currentTime)
-    master.connect(ctx.destination)
-    audioCtxRef.current = ctx
-    masterGainRef.current = master
-    return ctx
-  }, [masterVolume])
-
+  // Keeps working through a reload.
   useEffect(() => {
-    const master = masterGainRef.current
-    const ctx = audioCtxRef.current
-    if (master && ctx) master.gain.setValueAtTime(masterVolume, ctx.currentTime)
-  }, [masterVolume])
-
-  const playChannelSound = useCallback(
-    (channel: Channel, time: number | null = null) => {
-      const ctx = setupAudio()
-      const startTime = time ?? ctx.currentTime
-      const gain = ctx.createGain()
-      const vol = channel.volume
-      gain.connect(masterGainRef.current!)
-
-      if (channel.sampleUrl && audioBuffersRef.current[channel.sampleUrl]) {
-        const src = ctx.createBufferSource()
-        src.buffer = audioBuffersRef.current[channel.sampleUrl]
-        src.connect(gain)
-        gain.gain.setValueAtTime(vol, startTime)
-        src.start(startTime)
-        return
+    const timer = window.setTimeout(() => {
+      try {
+        localStorage.setItem(FL_PROJECT_KEY, serialiseProject(project))
+      } catch {
+        // Private windows can refuse storage, which only loses the autosave.
       }
+    }, 400)
+    return () => window.clearTimeout(timer)
+  }, [project])
 
-      const lower = channel.name.toLowerCase()
-      if (channel.type === 'drum') {
-        if (lower.includes('kick')) {
-          const osc = ctx.createOscillator()
-          osc.connect(gain)
-          osc.frequency.setValueAtTime(150, startTime)
-          osc.frequency.exponentialRampToValueAtTime(0.01, startTime + 0.1)
-          gain.gain.setValueAtTime(vol, startTime)
-          gain.gain.exponentialRampToValueAtTime(0.01, startTime + 0.1)
-          osc.start(startTime)
-          osc.stop(startTime + 0.1)
-        } else if (lower.includes('hat')) {
-          const noise = ctx.createBufferSource()
-          const size = ctx.sampleRate * 0.05
-          const buf = ctx.createBuffer(1, size, ctx.sampleRate)
-          const data = buf.getChannelData(0)
-          for (let i = 0; i < size; i++) data[i] = Math.random() * 2 - 1
-          noise.buffer = buf
-          const filter = ctx.createBiquadFilter()
-          filter.type = 'highpass'
-          filter.frequency.value = 7000
-          noise.connect(filter)
-          filter.connect(gain)
-          gain.gain.setValueAtTime(vol, startTime)
-          gain.gain.exponentialRampToValueAtTime(0.01, startTime + 0.05)
-          noise.start(startTime)
-          noise.stop(startTime + 0.05)
-        } else {
-          const osc = ctx.createOscillator()
-          osc.type = 'triangle'
-          osc.connect(gain)
-          osc.frequency.setValueAtTime(lower.includes('clap') ? 200 : 150, startTime)
-          gain.gain.setValueAtTime(vol, startTime)
-          gain.gain.exponentialRampToValueAtTime(0.01, startTime + 0.1)
-          osc.start(startTime)
-          osc.stop(startTime + 0.1)
-        }
-      } else if (lower.includes('piano')) {
-        const osc1 = ctx.createOscillator()
-        const osc2 = ctx.createOscillator()
-        osc1.type = 'triangle'
-        osc2.type = 'sine'
-        osc1.frequency.setValueAtTime(channel.note, startTime)
-        osc2.frequency.setValueAtTime(channel.note * 2, startTime)
-        osc1.connect(gain)
-        osc2.connect(gain)
-        gain.gain.setValueAtTime(vol * 0.4, startTime)
-        gain.gain.exponentialRampToValueAtTime(0.01, startTime + 0.5)
-        osc1.start(startTime)
-        osc2.start(startTime)
-        osc1.stop(startTime + 0.5)
-        osc2.stop(startTime + 0.5)
-      } else if (lower.includes('guitar')) {
-        const osc = ctx.createOscillator()
-        osc.type = 'sawtooth'
-        osc.frequency.setValueAtTime(channel.note, startTime)
-        const filter = ctx.createBiquadFilter()
-        filter.type = 'lowpass'
-        filter.frequency.setValueAtTime(2000, startTime)
-        filter.frequency.exponentialRampToValueAtTime(400, startTime + 0.3)
-        osc.connect(filter)
-        filter.connect(gain)
-        gain.gain.setValueAtTime(vol * 0.3, startTime)
-        gain.gain.exponentialRampToValueAtTime(0.01, startTime + 0.4)
-        osc.start(startTime)
-        osc.stop(startTime + 0.4)
-      } else {
-        const osc = ctx.createOscillator()
-        osc.connect(gain)
-        osc.type = channel.type === 'synth' ? 'sawtooth' : 'sine'
-        osc.frequency.setValueAtTime(channel.note || (channel.type === 'bass' ? 55 : 440), startTime)
-        gain.gain.setValueAtTime(vol * (channel.type === 'bass' ? 0.6 : 0.3), startTime)
-        gain.gain.exponentialRampToValueAtTime(0.01, startTime + 0.2)
-        osc.start(startTime)
-        osc.stop(startTime + 0.2)
-      }
-    },
-    [setupAudio],
-  )
-
-  // Step scheduler — rAF + lookahead like v1's startPlayback. Refs keep the
-  // callback reading the latest state without re-creating the loop.
-  const channelsRef = useRef(channels); channelsRef.current = channels
-  const bpmRef = useRef(bpm); bpmRef.current = bpm
-  const modeRef = useRef(mode); modeRef.current = mode
-
-  useEffect(() => {
-    if (!playing) {
-      setCurrentStep(0)
-      setSongStep(0)
-      return
-    }
-    const ctx = setupAudio()
-    if (ctx.state === 'suspended') ctx.resume()
-
-    let nextStepTime = ctx.currentTime
-    let raf = 0
-    let stepLocal = 0
-    let songLocal = 0
-
-    const scheduler = () => {
-      const stepDuration = 60 / bpmRef.current / 4
-      while (nextStepTime < ctx.currentTime + 0.1) {
-        const stepIdx = modeRef.current === 'pattern' ? stepLocal : songLocal % 16
-        for (const ch of channelsRef.current) {
-          if (ch.steps[stepIdx] === 1 && !ch.muted) playChannelSound(ch, nextStepTime)
-        }
-        nextStepTime += stepDuration
-        if (modeRef.current === 'pattern') {
-          stepLocal = (stepLocal + 1) % 16
-          setCurrentStep(stepLocal)
-        } else {
-          songLocal = (songLocal + 1) % 512
-          stepLocal = songLocal % 16
-          setSongStep(songLocal)
-          setCurrentStep(stepLocal)
-        }
-      }
-      raf = requestAnimationFrame(scheduler)
-    }
-    raf = requestAnimationFrame(scheduler)
-    return () => cancelAnimationFrame(raf)
-  }, [playing, setupAudio, playChannelSound])
-
-  // ---- Channel mutators ----
-  const toggleStep = (ci: number, si: number) => {
-    setChannels((prev) => {
-      const next = prev.map((c, idx) => {
-        if (idx !== ci) return c
-        const steps = c.steps.slice()
-        steps[si] = steps[si] === 1 ? 0 : 1
-        return { ...c, steps }
-      })
-      const ch = next[ci]
-      if (ch.steps[si] === 1 && !playing) playChannelSound(ch)
-      setHintText(`Step ${si + 1} ${ch.steps[si] ? 'On' : 'Off'} - ${ch.name}`)
-      return next
-    })
-  }
-
-  const addChannel = () => {
-    setChannels((prev) => {
-      const colors = ['#ff6600', '#00ccff', '#ffff00', '#ff00ff', '#00ff00', '#ff0000', '#ffffff', '#888888']
-      const next: Channel[] = [
-        ...prev,
-        {
-          name: `Sampler ${prev.length + 1}`,
-          type: 'synth',
-          note: 440,
-          color: colors[prev.length % colors.length],
-          steps: new Array(16).fill(0),
-          volume: 0.5,
-          muted: false,
-          panned: 0,
-          sampleUrl: null,
-        },
-      ]
-      setHintText(`Added new channel: Sampler ${next.length}`)
-      return next
-    })
-  }
-
-  const removeChannel = (ci: number) => {
-    setChannels((prev) => {
-      if (prev.length <= 1) return prev
-      const name = prev[ci].name
-      setHintText(`Removed channel: ${name}`)
-      return prev.filter((_, i) => i !== ci)
-    })
-  }
-
-  const soloChannel = (ci: number) => {
-    setChannels((prev) => {
-      const target = prev[ci]
-      const alreadySoloed = prev.every((c, i) => i === ci || c.muted)
-      if (alreadySoloed) {
-        setHintText('Unmuted all channels')
-        return prev.map((c) => ({ ...c, muted: false }))
-      }
-      setHintText(`Soloed channel: ${target.name}`)
-      return prev.map((c, i) => ({ ...c, muted: i !== ci }))
-    })
-  }
-
-  const setChannelField = <K extends keyof Channel>(ci: number, field: K, value: Channel[K]) => {
-    setChannels((prev) => prev.map((c, i) => (i === ci ? { ...c, [field]: value } : c)))
-  }
-
-  // ---- Mixer ----
-  const mixerTracks = useMemo(
-    () => [
-      { name: 'MASTER', volume: masterVolume, muted: false, index: 0 } as const,
-      ...channels.map((c, i) => ({ name: c.name, volume: c.volume, muted: c.muted, index: i + 1 } as const)),
-    ],
-    [channels, masterVolume],
-  )
-
-  const setTrackVolume = (index: number, value: number) => {
-    if (index === 0) {
-      setMasterVolume(value)
-      setHintText(`MASTER Volume: ${Math.round(value * 100)}%`)
-    } else {
-      setChannelField(index - 1, 'volume', value)
-      setHintText(`${channels[index - 1]?.name ?? '?'} Volume: ${Math.round(value * 100)}%`)
-    }
-  }
-
-  // ---- Clip dragging in the playlist ----
-  const playlistGridRef = useRef<HTMLDivElement>(null)
-  const dragClipRef = useRef<{ id: number; offX: number; offY: number } | null>(null)
-  const [activeDragId, setActiveDragId] = useState<number | null>(null)
-
-  const startClipDrag = (e: React.MouseEvent, clip: PlaylistClip) => {
-    const grid = playlistGridRef.current
-    if (!grid) return
-    const rect = grid.getBoundingClientRect()
-    dragClipRef.current = {
-      id: clip.id,
-      offX: e.clientX - (rect.left + clip.startStep * 12),
-      offY: e.clientY - (rect.top + (clip.track - 1) * 32),
-    }
-    setActiveDragId(clip.id)
-    setHintText(`Dragging: ${clip.name}`)
-    e.stopPropagation()
-  }
-
-  useEffect(() => {
-    if (activeDragId === null) return
-    const onMove = (e: MouseEvent) => {
-      const d = dragClipRef.current
-      const grid = playlistGridRef.current
-      if (!d || !grid) return
-      const rect = grid.getBoundingClientRect()
-      const x = e.clientX - rect.left - d.offX
-      const y = e.clientY - rect.top - d.offY
-      setPlaylistClips((prev) =>
-        prev.map((c) =>
-          c.id === d.id
-            ? {
-                ...c,
-                startStep: Math.max(0, Math.round(x / 12)),
-                track: Math.max(1, Math.min(20, Math.round(y / 32) + 1)),
-              }
-            : c,
-        ),
-      )
-    }
-    const onUp = () => {
-      dragClipRef.current = null
-      setActiveDragId(null)
-    }
-    window.addEventListener('mousemove', onMove)
-    window.addEventListener('mouseup', onUp)
-    return () => {
-      window.removeEventListener('mousemove', onMove)
-      window.removeEventListener('mouseup', onUp)
-    }
-  }, [activeDragId])
-
-  // ---- Clock + cleanup ----
-  useEffect(() => {
-    const id = window.setInterval(() => setClock(new Date()), 30_000)
-    return () => window.clearInterval(id)
+  const commit = useCallback((next: FlProject, record = true) => {
+    const current = live.current.project
+    if (next === current) return
+    if (record) setHistory((past) => recordEdit(past, current))
+    live.current = { ...live.current, project: next }
+    setProject(next)
   }, [])
 
-  useEffect(
-    () => () => {
-      const ctx = audioCtxRef.current
-      if (ctx) {
-        ctx.close().catch(() => {})
-        audioCtxRef.current = null
-      }
-    },
-    [],
-  )
-
-  const pianoRollChannel = pianoRollChannelIdx !== null ? channels[pianoRollChannelIdx] : null
-
-  const timeDisplay =
-    mode === 'pattern'
-      ? `${Math.floor(currentStep / 4) + 1}:${(currentStep % 4) + 1}:00`
-      : `${Math.floor(songStep / 16) + 1}:${Math.floor((songStep % 16) / 4) + 1}:${(songStep % 4) + 1}`
-
-  const exportProject = () => {
-    setHintText('Exporting project... (recording requires MediaRecorder support)')
-    const ctx = setupAudio()
-    if (!('MediaRecorder' in window)) return
-    const dest = ctx.createMediaStreamDestination()
-    masterGainRef.current?.connect(dest)
-    const recorder = new MediaRecorder(dest.stream)
-    const chunks: Blob[] = []
-    recorder.ondataavailable = (e) => e.data.size > 0 && chunks.push(e.data)
-    recorder.onstop = () => {
-      const blob = new Blob(chunks, { type: 'audio/wav' })
-      const a = document.createElement('a')
-      a.href = URL.createObjectURL(blob)
-      a.download = 'My_FL_Project.wav'
-      a.click()
-      setHintText('Export complete!')
+  // The audio engine and the commands exist while FL Studio is open.
+  useEffect(() => {
+    const engine = createEngine(() => live.current, { onChange: (state) => setPlaying(state.playing) })
+    engineRef.current = engine
+    commandsRef.current = flCommands({
+        read: () => live.current,
+        commit,
+        load: (next, name) => {
+          live.current = { ...live.current, project: next, patternId: next.patterns[0].id, channelId: next.channels[0].id }
+          setProject(next)
+          setHistory({ past: [], future: [] })
+          setPatternId(next.patterns[0].id)
+          setChannelId(next.channels[0].id)
+          setFileName(name)
+        },
+        restore: (next, past) => {
+          live.current = { ...live.current, project: next }
+          setProject(next)
+          setHistory(past)
+        },
+        selectPattern: (id) => {
+          live.current = { ...live.current, patternId: id }
+          setPatternId(id)
+        },
+        selectChannel: (id) => {
+          live.current = { ...live.current, channelId: id }
+          setChannelId(id)
+        },
+        setViews: (next: FlViews) => {
+          live.current = { ...live.current, views: next }
+          setViews(next)
+        },
+        setTab: (panel: FlPanel) => setTab(panel),
+        dialog: (name) => {
+          if (name === 'saveAs') setSaveName(live.current.project.name)
+          setDialog(name)
+        },
+        hint: setHint,
+        setFileName,
+        changeFiles: (change) => useOsStore.getState().changeFiles(change),
+        icons: ICONS,
+        engine,
+      })
+    const stopPainting = startPainter(root.current!, engine)
+    return () => {
+      stopPainting()
+      engine.dispose()
+      engineRef.current = null
+      commandsRef.current = null
     }
-    recorder.start()
-    setPlaying(true)
-    setMode('song')
-    window.setTimeout(() => recorder.stop(), (60 / bpm) * 32 * 1000)
+  }, [commit])
+
+  const run = useCallback((id: string) => {
+    setMenu(null)
+    commandsRef.current?.[id]?.()
+  }, [])
+
+  // FL Studio's shortcuts and typing keyboard, while its window has focus.
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      if (useOsStore.getState().focusedWindowId !== win.id) return
+      if ((event.target as Element).closest?.('input, select, textarea')) return
+      const command = flShortcut(event)
+      if (command) {
+        event.preventDefault()
+        run(command)
+        return
+      }
+      if (event.ctrlKey || event.metaKey || event.altKey || event.repeat) return
+      const pitch = typingKeyPitch(event.key, 5)
+      if (pitch !== null) engineRef.current?.preview(live.current.channelId, pitch)
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [run, win.id])
+
+  const pattern = project.patterns.find((item) => item.id === patternId) ?? project.patterns[0]
+  const channel = project.channels.find((item) => item.id === channelId) ?? project.channels[0]
+  const steps = Array.from({ length: patternSteps(pattern) }, (_, i) => i)
+  const savedFiles = projectFiles(fileSystem) as { name: string; content?: string }[]
+
+  // The piano roll opens at the channel's own pitch.
+  const pianoBody = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    const body = pianoBody.current
+    if (!body || (!views.piano && tab !== 'piano')) return
+    const row = parseFloat(getComputedStyle(body).getPropertyValue('--fl-row-h')) || 14
+    body.scrollTop = (TOP_PITCH - instrumentFor(channel).root) * row - body.clientHeight / 2
+  }, [channel, views.piano, tab])
+
+  const openPiano = (id: string) => {
+    setChannelId(id)
+    live.current = { ...live.current, channelId: id }
+    setViews((current) => ({ ...current, piano: true }))
+    setTab('piano')
+    engineRef.current?.preview(id)
   }
+
+  const step = (id: string, index: number) => {
+    const next = toggleStep(project, pattern.id, id, index)
+    commit(next)
+    if (!playing && stepOn(next.patterns.find((item) => item.id === pattern.id), id, index)) engineRef.current?.preview(id)
+  }
+
+  const grid = useRef<HTMLDivElement>(null)
+  const lanes = useRef<HTMLDivElement>(null)
 
   return (
     <div
-      className="h-full flex flex-col bg-[#202529] text-[#7c868e] select-none overflow-hidden"
-      style={{ fontFamily: 'Segoe UI, sans-serif' }}
-      onClick={() => {
-        const ctx = audioCtxRef.current
-        if (ctx && ctx.state === 'suspended') ctx.resume()
-      }}
+      ref={root}
+      className="fl-app"
+      data-fl-tab={tab}
+      onPointerDown={() => engineRef.current?.unlock()}
+      onContextMenu={(event) => event.preventDefault()}
     >
-      {/* Hint / menu bar */}
-      <div className="h-6 bg-[#181c1f] border-b border-black/40 flex items-center px-2 text-[11px] justify-between shrink-0">
-        <div className="flex items-center space-x-4">
-          <div className="flex items-center space-x-2 text-gray-400">
-            <span className="font-bold text-[#ff6600] cursor-default">FL</span>
-            <button
-              type="button"
-              onClick={exportProject}
-              className="hover:text-white cursor-pointer px-1 bg-win-blue/20 rounded-sm border border-win-blue/30 text-win-blue"
-            >
-              EXPORT WAV
-            </button>
-            {['FILE', 'EDIT', 'ADD', 'VIEW'].map((m) => (
-              <span key={m} className="hover:text-white cursor-default">
-                {m}
-              </span>
-            ))}
-            <span className="hover:text-white cursor-default text-[#00ccff]">HELP</span>
-          </div>
-          <div className="h-3 w-px bg-white/10" />
-          <div className="text-[10px] text-gray-500 italic truncate max-w-[300px]">{hintText}</div>
-        </div>
-        <div className="flex items-center space-x-3 text-[10px]">
-          <span>{clock.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-        </div>
+      <div className="fl-menubar">
+        <span className="fl-logo">FL</span>
+        <nav className="fl-menus" aria-label="FL Studio menu">
+          {FL_MENUS.map((item) => (
+            <div key={item.id} className="fl-menu">
+              <button
+                type="button"
+                className="fl-menu-button"
+                data-fl-menu={item.label}
+                aria-haspopup="menu"
+                aria-expanded={menu === item.id}
+                onClick={() => setMenu(menu === item.id ? null : item.id)}
+              >
+                {item.label}
+              </button>
+              {menu === item.id && (
+                <>
+                  <div className="fl-menu-shield" onPointerDown={() => setMenu(null)} />
+                  <div className="fl-menu-list" role="menu">
+                    {item.items.map((entry, index) =>
+                      entry.separator ? (
+                        <div key={index} className="fl-menu-sep" role="separator" />
+                      ) : (
+                        <MenuEntry
+                          key={entry.id}
+                          entry={entry}
+                          state={menuItemState(entry.id!, { project, patternId: pattern.id, history, views })}
+                          onRun={run}
+                        />
+                      ),
+                    )}
+                  </div>
+                </>
+              )}
+            </div>
+          ))}
+        </nav>
+        <input
+          key={project.name}
+          className="fl-project-name"
+          aria-label="Project name"
+          defaultValue={project.name}
+          onBlur={(event) => commit(renameProject(project, event.target.value))}
+          onKeyDown={(event) => event.key === 'Enter' && event.currentTarget.blur()}
+        />
+        <span className="fl-hint" role="status">
+          {hint}
+        </span>
       </div>
 
-      {/* Main toolbar */}
-      <div className="h-16 bg-[#252a2e] border-b border-black/60 flex items-center px-2 space-x-2 shrink-0 shadow-lg relative z-10">
-        {/* Transport */}
-        <div className="flex items-center space-x-1 bg-black/30 p-1.5 rounded-xs border border-white/5 shadow-inner h-12">
+      <div className="fl-toolbar">
+        <div className="fl-group">
           <button
             type="button"
-            onClick={() => setPlaying((p) => !p)}
-            className={`p-1.5 transition-all ${
-              playing
-                ? 'text-[#00ff00] drop-shadow-[0_0_8px_rgba(0,255,0,0.5)]'
-                : 'text-gray-500 hover:text-white'
-            }`}
+            className="fl-tool fl-play"
+            data-fl-play=""
+            aria-pressed={playing}
             aria-label={playing ? 'Pause' : 'Play'}
+            title="Play or pause (Space)"
+            onClick={() => engineRef.current?.toggle()}
           >
-            <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M8 5v14l11-7z" />
-            </svg>
+            <Icon path={playing ? FL_ICONS.pause : FL_ICONS.play} />
           </button>
-          <button
-            type="button"
-            onClick={() => setPlaying(false)}
-            className="p-1.5 text-gray-500 hover:text-white transition-all"
-            aria-label="Pause"
-          >
-            <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" />
-            </svg>
+          <button type="button" className="fl-tool" data-fl-stop="" aria-label="Stop" title="Stop" onClick={() => engineRef.current?.stop()}>
+            <Icon path={FL_ICONS.stop} />
           </button>
-          <button
-            type="button"
-            onClick={() => {
-              setPlaying(false)
-              setCurrentStep(0)
-              setSongStep(0)
-            }}
-            className="p-1.5 text-gray-500 hover:text-white transition-all"
-            aria-label="Stop"
-          >
-            <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M6 6h12v12H6z" />
-            </svg>
-          </button>
-          <div className="w-px h-8 bg-white/10 mx-1" />
-          <div className="flex flex-col items-center justify-center px-2 min-w-[60px]">
-            <div className="text-[9px] text-[#ff6600] font-bold opacity-70 leading-none">BPM</div>
-            <input
-              type="number"
-              value={bpm}
-              min={40}
-              max={999}
-              step={1}
-              onChange={(e) => setBpm(Math.max(40, Math.min(999, Number(e.target.value) || 128)))}
-              className="bg-transparent text-lg font-mono text-[#ff6600] w-12 text-center focus:outline-hidden focus:bg-black/20 rounded-sm"
-            />
-          </div>
         </div>
-
-        {/* PAT / SONG */}
-        <div className="flex flex-col space-y-0.5 bg-black/20 p-1 rounded-sm border border-white/5 h-12 justify-center px-3">
-          {(['pattern', 'song'] as const).map((m) => (
+        <div className="fl-group" role="group" aria-label="Play mode">
+          {(['pattern', 'song'] as const).map((value) => (
             <button
-              key={m}
+              key={value}
               type="button"
+              className="fl-tool"
+              data-fl-mode={value}
+              aria-pressed={mode === value}
               onClick={() => {
-                setMode(m)
-                setHintText(`Switched to ${m === 'pattern' ? 'Pattern' : 'Song'} mode`)
+                setMode(value)
+                engineRef.current?.seek(0)
               }}
-              className="flex items-center space-x-2 cursor-pointer"
             >
-              <div
-                className={`w-2 h-2 rounded-full transition-colors ${
-                  mode === m ? 'bg-[#ff6600]' : 'bg-gray-600'
-                }`}
-              />
-              <span
-                className={`text-[10px] font-bold ${
-                  mode === m ? 'text-gray-300' : 'text-gray-500'
-                }`}
-              >
-                {m === 'pattern' ? 'PAT' : 'SONG'}
-              </span>
+              {value === 'pattern' ? 'PAT' : 'SONG'}
             </button>
           ))}
         </div>
-
-        {/* Time display */}
-        <div className="bg-black/50 px-4 h-12 rounded-sm border border-white/10 shadow-inner flex items-center justify-center min-w-[120px]">
-          <div className="text-2xl font-mono text-[#00ccff] tracking-widest">{timeDisplay}</div>
-        </div>
-
-        {/* Window switchers */}
-        <div className="flex items-center space-x-1 bg-black/20 p-1 rounded-sm border border-white/5 h-12">
-          <button
-            type="button"
-            onClick={() => setShowPlaylist((v) => !v)}
-            className={`p-2 hover:bg-white/10 rounded transition-colors ${
-              showPlaylist ? 'bg-white/10' : ''
-            }`}
-            title="Playlist"
-          >
-            <svg
-              className={`w-5 h-5 ${showPlaylist ? 'text-[#00ccff]' : 'text-gray-500'}`}
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              aria-hidden="true"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" />
-            </svg>
+        <div className="fl-group fl-tempo">
+          <button type="button" className="fl-tool" aria-label="Slower" onClick={() => commit(setTempo(project, project.bpm - 1), false)}>
+            −
           </button>
-          <button
-            type="button"
-            onClick={() => setShowChannelRack((v) => !v)}
-            className={`p-2 hover:bg-white/10 rounded transition-colors ${
-              showChannelRack ? 'bg-white/10' : ''
-            }`}
-            title="Channel Rack"
-          >
-            <svg
-              className={`w-5 h-5 ${showChannelRack ? 'text-[#ff6600]' : 'text-gray-500'}`}
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              aria-hidden="true"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1v-2z" />
-            </svg>
-          </button>
-          <button
-            type="button"
-            onClick={() => setShowMixer((v) => !v)}
-            className={`p-2 hover:bg-white/10 rounded transition-colors ${
-              showMixer ? 'bg-white/10' : ''
-            }`}
-            title="Mixer"
-          >
-            <svg
-              className={`w-5 h-5 ${showMixer ? 'text-gray-300' : 'text-gray-500'}`}
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              aria-hidden="true"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
-            </svg>
+          <input
+            key={project.bpm}
+            type="number"
+            min={MIN_BPM}
+            max={MAX_BPM}
+            defaultValue={project.bpm}
+            aria-label="Tempo in beats per minute"
+            data-fl-bpm=""
+            onBlur={(event) => commit(setTempo(project, event.target.value), false)}
+            onKeyDown={(event) => event.key === 'Enter' && event.currentTarget.blur()}
+          />
+          <button type="button" className="fl-tool" aria-label="Faster" onClick={() => commit(setTempo(project, project.bpm + 1), false)}>
+            +
           </button>
         </div>
+        <output className="fl-lcd" data-fl-position="" aria-label="Song position">
+          {positionLabel(0)}
+        </output>
+        <label className="fl-group">
+          <span className="fl-label">Master</span>
+          <input
+            type="range"
+            className="fl-range"
+            min={0}
+            max={1}
+            step={0.01}
+            value={project.masterVolume}
+            aria-label="Master volume"
+            onChange={(event) => commit(setMasterVolume(project, event.target.value), false)}
+          />
+        </label>
+        <div className="fl-group">
+          <select
+            className="fl-select"
+            aria-label="Pattern"
+            data-fl-pattern=""
+            value={pattern.id}
+            onChange={(event) => setPatternId(event.target.value)}
+          >
+            {project.patterns.map((item) => (
+              <option key={item.id} value={item.id}>
+                {item.name}
+              </option>
+            ))}
+          </select>
+          <button type="button" className="fl-tool" aria-label="New pattern" title="New pattern (F4)" onClick={() => run('newPattern')}>
+            +
+          </button>
+        </div>
+        <div className="fl-group fl-views" role="group" aria-label="Windows">
+          {FL_PANELS.map((panel) => (
+            <button
+              key={panel}
+              type="button"
+              className="fl-tool"
+              data-fl-view={panel}
+              aria-pressed={views[panel]}
+              aria-label={FL_PANEL_LABELS[panel]}
+              title={FL_PANEL_LABELS[panel]}
+              onClick={() => run(`view:${panel}`)}
+            >
+              <Icon path={FL_ICONS[panel]} />
+            </button>
+          ))}
+        </div>
+      </div>
 
-        {/* Visualizer */}
-        <div className="grow flex items-center justify-end px-4 space-x-4">
-          <div className="flex items-center space-x-1 opacity-40">
-            {Array.from({ length: 20 }).map((_, i) => (
-              <Bar key={i} playing={playing} />
+      <div className="fl-tabs" role="tablist" aria-label="Windows">
+        {FL_PANELS.map((panel) => (
+          <button
+            key={panel}
+            type="button"
+            role="tab"
+            className="fl-tab"
+            data-fl-tab-button={panel}
+            aria-selected={tab === panel}
+            onClick={() => setTab(panel)}
+          >
+            {FL_PANEL_LABELS[panel]}
+          </button>
+        ))}
+      </div>
+
+      <div className="fl-body">
+        <aside className="fl-panel fl-browser" data-fl-panel="browser" data-open={views.browser} aria-label="Browser">
+          <div className="fl-panel-head">Browser</div>
+          <div className="fl-browser-list">
+            <p className="fl-browser-group">Instruments</p>
+            {INSTRUMENTS.map((instrument) => (
+              <div key={instrument.id} className="fl-browser-item">
+                <button
+                  type="button"
+                  className="fl-browser-preview"
+                  data-fl-instrument={instrument.id}
+                  title={`Hear ${instrument.name}`}
+                  onClick={() => {
+                    const existing = project.channels.find((item) => item.instrument === instrument.id)
+                    if (existing) engineRef.current?.preview(existing.id)
+                    else setHint(`Press + to add ${instrument.name} to the channel rack`)
+                  }}
+                >
+                  <span className="fl-swatch" style={vars({ '--c': instrument.colour })} />
+                  {instrument.name}
+                </button>
+                <button
+                  type="button"
+                  className="fl-browser-add"
+                  data-fl-add={instrument.id}
+                  aria-label={`Add ${instrument.name} to the channel rack`}
+                  onClick={() => run(`add:${instrument.id}`)}
+                >
+                  +
+                </button>
+              </div>
+            ))}
+            <p className="fl-browser-group">Projects</p>
+            <button type="button" className="fl-browser-file" onClick={() => run('openDemo')}>
+              Demo
+            </button>
+            {savedFiles.map((entry) => (
+              <button key={entry.name} type="button" className="fl-browser-file" data-fl-file={entry.name} onClick={() => commandsRef.current?.openFile(entry)}>
+                {entry.name}
+              </button>
             ))}
           </div>
+        </aside>
+
+        <div className="fl-workspace">
+          <section className="fl-panel fl-rack" data-fl-panel="rack" data-open={views.rack} aria-label="Channel rack">
+            <div className="fl-panel-head">
+              <span>Channel rack</span>
+              <input
+                key={pattern.id + pattern.name}
+                className="fl-select"
+                aria-label="Pattern name"
+                defaultValue={pattern.name}
+                onBlur={(event) => commit(renamePattern(project, pattern.id, event.target.value))}
+                onKeyDown={(event) => event.key === 'Enter' && event.currentTarget.blur()}
+              />
+              <select
+                className="fl-select fl-push"
+                aria-label="Pattern length"
+                data-fl-bars=""
+                value={pattern.bars}
+                onChange={(event) => run(`bars:${event.target.value}`)}
+              >
+                {[1, 2, 4].map((bars) => (
+                  <option key={bars} value={bars}>
+                    {bars} bar{bars > 1 ? 's' : ''}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="fl-rack-body">
+              {project.channels.map((item) => {
+                const colour = instrumentFor(item).colour
+                return (
+                  <div key={item.id} className="fl-row" data-fl-channel={item.id} data-selected={item.id === channel.id}>
+                    <div className="fl-row-head">
+                      <button
+                        type="button"
+                        className="fl-led"
+                        aria-pressed={!item.mute}
+                        aria-label={`${item.name} on`}
+                        title="Mute"
+                        onClick={() => commit(updateChannel(project, item.id, { mute: !item.mute }))}
+                      />
+                      <input
+                        type="range"
+                        className="fl-knob"
+                        min={0}
+                        max={1}
+                        step={0.01}
+                        value={item.volume}
+                        aria-label={`${item.name} volume`}
+                        onChange={(event) => commit(updateChannel(project, item.id, { volume: Number(event.target.value) }), false)}
+                      />
+                      <button
+                        type="button"
+                        className="fl-channel-name"
+                        style={vars({ '--c': colour })}
+                        data-fl-channel-name={item.id}
+                        title="Open in the piano roll"
+                        onClick={() => openPiano(item.id)}
+                      >
+                        {item.name}
+                      </button>
+                    </div>
+                    <div className="fl-steps">
+                      {steps.map((index) => (
+                        <button
+                          key={index}
+                          type="button"
+                          className="fl-step"
+                          data-fl-step={index}
+                          data-fl-col={mode === 'pattern' ? index : undefined}
+                          data-beat={Math.floor(index / 4) % 2}
+                          aria-pressed={stepOn(pattern, item.id, index)}
+                          aria-label={`${item.name} step ${index + 1}`}
+                          onClick={() => step(item.id, index)}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+            <div className="fl-panel-foot">
+              <select
+                className="fl-select"
+                aria-label="Add a channel"
+                value=""
+                onChange={(event) => event.target.value && run(`add:${event.target.value}`)}
+              >
+                <option value="">Add a channel...</option>
+                {INSTRUMENTS.map((instrument) => (
+                  <option key={instrument.id} value={instrument.id}>
+                    {instrument.name}
+                  </option>
+                ))}
+              </select>
+              <button
+                type="button"
+                className="fl-button"
+                disabled={project.channels.length <= 1}
+                onClick={() => commit(removeChannel(project, channel.id))}
+              >
+                Remove {channel.name}
+              </button>
+              <span className="fl-count">{project.channels.length} channels</span>
+            </div>
+          </section>
+
+          <section className="fl-panel fl-piano" data-fl-panel="piano" data-open={views.piano} aria-label="Piano roll">
+            <div className="fl-panel-head">
+              <span>Piano roll</span>
+              <span className="fl-label">Channel</span>
+              <select
+                className="fl-select"
+                aria-label="Piano roll channel"
+                value={channel.id}
+                onChange={(event) => setChannelId(event.target.value)}
+              >
+                {project.channels.map((item) => (
+                  <option key={item.id} value={item.id}>
+                    {item.name}
+                  </option>
+                ))}
+              </select>
+              <span className="fl-label">Sound</span>
+              <select
+                className="fl-select"
+                aria-label="Instrument"
+                value={channel.instrument}
+                onChange={(event) => commit(updateChannel(project, channel.id, { instrument: event.target.value }))}
+              >
+                {INSTRUMENTS.map((instrument) => (
+                  <option key={instrument.id} value={instrument.id}>
+                    {instrument.name}
+                  </option>
+                ))}
+              </select>
+              <span className="fl-panel-sub fl-push">{pattern.name}</span>
+            </div>
+            <div ref={pianoBody} className="fl-piano-body">
+              <div className="fl-keys">
+                {PITCHES.map((pitch) => (
+                  <button
+                    key={pitch}
+                    type="button"
+                    className="fl-key"
+                    data-black={isBlackKey(pitch)}
+                    aria-label={noteName(pitch)}
+                    onPointerDown={() => engineRef.current?.preview(channel.id, pitch)}
+                  >
+                    {pitch % 12 === 0 ? noteName(pitch) : ''}
+                  </button>
+                ))}
+              </div>
+              <div
+                ref={grid}
+                className="fl-grid"
+                data-fl-grid=""
+                style={vars({ '--steps': steps.length, '--rows': PITCHES.length })}
+                onPointerDown={(event) =>
+                  beginPianoGesture(event.nativeEvent, grid.current!, {
+                    read: () => ({ project: live.current.project, patternId: pattern.id, channelId: channel.id }),
+                    write: (next, record) => commit(next, record),
+                    top: TOP_PITCH,
+                    length: () => live.current.noteLength,
+                    setLength: setNoteLength,
+                    preview: (pitch) => engineRef.current?.preview(channel.id, pitch),
+                  })
+                }
+              >
+                <div className="fl-playhead" />
+                {(pattern.notes[channel.id] ?? [])
+                  .filter((note) => note.pitch >= BOTTOM_PITCH && note.pitch <= TOP_PITCH)
+                  .map((note) => (
+                    <div
+                      key={`${note.step}:${note.pitch}`}
+                      className="fl-note"
+                      data-fl-note={`${note.step}:${note.pitch}`}
+                      style={vars({ '--s': note.step, '--l': note.length, '--r': TOP_PITCH - note.pitch })}
+                    >
+                      {noteName(note.pitch)}
+                      <span className="fl-note-edge" data-fl-edge="" />
+                    </div>
+                  ))}
+              </div>
+            </div>
+          </section>
+
+          <section className="fl-panel fl-playlist" data-fl-panel="playlist" data-open={views.playlist} aria-label="Playlist">
+            <div className="fl-panel-head">
+              <span>Playlist</span>
+              <span className="fl-panel-sub">Click a bar to place {pattern.name}</span>
+            </div>
+            <div className="fl-playlist-body">
+              <div className="fl-corner" />
+              <div className="fl-ruler">
+                {BARS.map((bar) => (
+                  <button
+                    key={bar}
+                    type="button"
+                    className="fl-bar-number"
+                    aria-label={`Play the song from bar ${bar + 1}`}
+                    onClick={() => {
+                      setMode('song')
+                      engineRef.current?.seek(bar * 16)
+                    }}
+                  >
+                    {bar + 1}
+                  </button>
+                ))}
+              </div>
+              <div className="fl-tracks">
+                {TRACK_LIST.map((track) => (
+                  <div key={track} className="fl-track-name">
+                    Track {track + 1}
+                  </div>
+                ))}
+              </div>
+              <div
+                ref={lanes}
+                className="fl-lanes"
+                data-fl-lanes=""
+                style={vars({ '--bars': SONG_BARS, '--tracks': TRACKS })}
+                onPointerDown={(event) =>
+                  beginPlaylistGesture(event.nativeEvent, lanes.current!, {
+                    read: () => ({ project: live.current.project, patternId: pattern.id }),
+                    write: (next, record) => commit(next, record),
+                  })
+                }
+              >
+                <div className="fl-playhead" />
+                {project.playlist.map((clip) => {
+                  const clipPattern = project.patterns.find((item) => item.id === clip.patternId)
+                  if (!clipPattern) return null
+                  return (
+                    <div
+                      key={clip.id}
+                      className="fl-clip"
+                      data-fl-clip={clip.id}
+                      title={`${clipPattern.name}: drag to move, click to remove`}
+                      style={vars({ '--t': clip.track, '--b': clip.bar, '--w': clipPattern.bars, '--c': clipPattern.colour })}
+                    >
+                      {clipPattern.name}
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          </section>
         </div>
       </div>
 
-      {/* Workspace */}
-      <div className="grow flex min-h-0 overflow-hidden relative">
-        {showBrowser && (
-          <div className="w-48 bg-[#1a1f22] border-r border-black/40 flex flex-col shrink-0 text-[11px]">
-            <div className="h-7 bg-[#252a2e] flex items-center px-2 font-bold border-b border-black/40 text-gray-400">
-              BROWSER
-            </div>
-            <div className="grow overflow-y-auto p-1 space-y-0.5 text-gray-500">
-              <div className="flex items-center space-x-2 p-1 hover:bg-white/5 cursor-default text-gray-300">
-                <span>📁</span>
-                <span>Samples</span>
-              </div>
-              <div className="pl-4 space-y-0.5">
-                {BROWSER_SAMPLES.map((s) => (
-                  <div
-                    key={s.name}
-                    className="flex items-center space-x-2 p-1 hover:bg-white/10 hover:text-white cursor-grab transition-colors rounded-sm"
-                    title={s.url}
-                  >
-                    <span>🔊</span>
-                    <span>{s.name}</span>
-                  </div>
-                ))}
-              </div>
-              <div className="flex items-center space-x-2 p-1 hover:bg-white/5 cursor-default text-gray-300">
-                <span>📁</span>
-                <span>Packs</span>
-              </div>
-              <div className="pl-4 space-y-0.5">
-                {BROWSER_PACK.map((p) => (
-                  <div
-                    key={p}
-                    className="flex items-center space-x-2 p-1 hover:bg-white/10 hover:text-white cursor-grab transition-colors rounded-sm"
-                  >
-                    <span>🔊</span>
-                    <span>{p}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
+      <section className="fl-panel fl-mixer" data-fl-panel="mixer" data-open={views.mixer} aria-label="Mixer">
+        <div className="fl-panel-head">Mixer</div>
+        <div className="fl-mixer-body">
+          <div className="fl-strip fl-strip-master">
+            <span className="fl-strip-name">Master</span>
+            <input
+              type="range"
+              className="fl-fader"
+              min={0}
+              max={1}
+              step={0.01}
+              value={project.masterVolume}
+              aria-label="Master fader"
+              onChange={(event) => commit(setMasterVolume(project, event.target.value), false)}
+            />
+            <div className="fl-meter" data-fl-meter="master" />
           </div>
-        )}
+          {project.channels.map((item) => (
+            <div key={item.id} className="fl-strip" data-fl-strip={item.id}>
+              <span className="fl-strip-name" style={vars({ '--c': instrumentFor(item).colour })}>
+                {item.name}
+              </span>
+              <input
+                type="range"
+                className="fl-fader"
+                min={0}
+                max={1}
+                step={0.01}
+                value={item.volume}
+                aria-label={`${item.name} fader`}
+                onChange={(event) => commit(updateChannel(project, item.id, { volume: Number(event.target.value) }), false)}
+              />
+              <div className="fl-meter" data-fl-meter={item.id} />
+              <input
+                type="range"
+                className="fl-pan"
+                min={-1}
+                max={1}
+                step={0.05}
+                value={item.pan}
+                aria-label={`${item.name} pan`}
+                onChange={(event) => commit(updateChannel(project, item.id, { pan: Number(event.target.value) }), false)}
+              />
+              <div className="fl-strip-buttons">
+                <button
+                  type="button"
+                  className="fl-mute"
+                  aria-pressed={item.mute}
+                  aria-label={`Mute ${item.name}`}
+                  onClick={() => commit(updateChannel(project, item.id, { mute: !item.mute }))}
+                >
+                  M
+                </button>
+                <button
+                  type="button"
+                  className="fl-solo"
+                  aria-pressed={item.solo}
+                  aria-label={`Solo ${item.name}`}
+                  onClick={() => commit(soloChannel(project, item.id))}
+                >
+                  S
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
 
-        <div className="grow flex flex-col min-w-0 bg-[#121518] relative">
-          {showChannelRack && (
-            <ChannelRack
-              channels={channels}
-              currentStep={currentStep}
-              playing={playing}
-              onClose={() => setShowChannelRack(false)}
-              onToggleStep={toggleStep}
-              onRemove={removeChannel}
-              onSolo={soloChannel}
-              onChannelField={setChannelField}
-              onAdd={addChannel}
-              onOpenPianoRoll={(idx) => {
-                setPianoRollChannelIdx(idx)
-                setShowPianoRoll(true)
-                setHintText(`Opening Piano Roll for ${channels[idx].name}`)
-              }}
-            />
+      {dialog && (
+        <div className="fl-dialog-backdrop" onPointerDown={(event) => event.target === event.currentTarget && setDialog(null)}>
+          {dialog === 'help' && (
+            <div className="fl-dialog" role="dialog" aria-label="Keyboard shortcuts">
+              <h2>Using FL Studio</h2>
+              <ul>
+                {FL_HELP.map((line) => (
+                  <li key={line}>{line}</li>
+                ))}
+              </ul>
+              <div className="fl-dialog-actions">
+                <button type="button" className="fl-button" onClick={() => setDialog(null)}>
+                  Close
+                </button>
+              </div>
+            </div>
           )}
-
-          {showPianoRoll && pianoRollChannel && pianoRollChannelIdx !== null && (
-            <PianoRoll
-              channel={pianoRollChannel}
-              onClose={() => setShowPianoRoll(false)}
-              onSetNote={(note) => setChannelField(pianoRollChannelIdx, 'note', note)}
-              onSetStep={(stepIdx, value) => {
-                const steps = pianoRollChannel.steps.slice()
-                steps[stepIdx] = value
-                setChannelField(pianoRollChannelIdx, 'steps', steps)
-              }}
-              onPreview={() => playChannelSound(pianoRollChannel)}
-            />
+          {dialog === 'open' && (
+            <div className="fl-dialog" role="dialog" aria-label="Open project">
+              <h2>Open a project from Documents\FL Studio</h2>
+              {savedFiles.length ? (
+                savedFiles.map((entry) => (
+                  <button
+                    key={entry.name}
+                    type="button"
+                    className="fl-browser-file"
+                    data-fl-file={entry.name}
+                    onClick={() => {
+                      setDialog(null)
+                      commandsRef.current?.openFile(entry)
+                    }}
+                  >
+                    {entry.name}
+                  </button>
+                ))
+              ) : (
+                <p className="fl-empty">Nothing saved yet. Use File, Save to keep a project here.</p>
+              )}
+              <div className="fl-dialog-actions">
+                <button type="button" className="fl-button" onClick={() => setDialog(null)}>
+                  Cancel
+                </button>
+              </div>
+            </div>
           )}
-
-          {showPlaylist && (
-            <Playlist
-              clips={playlistClips}
-              activeDragId={activeDragId}
-              playing={playing}
-              currentStep={currentStep}
-              songStep={songStep}
-              mode={mode}
-              gridRef={playlistGridRef}
-              onStartDrag={startClipDrag}
-            />
+          {dialog === 'saveAs' && (
+            <form
+              className="fl-dialog"
+              role="dialog"
+              aria-label="Save project as"
+              onSubmit={(event) => {
+                event.preventDefault()
+                setDialog(null)
+                commit(renameProject(project, saveName))
+                commandsRef.current?.saveNamed(saveName)
+              }}
+            >
+              <h2>Save as, in {FL_FOLDER}</h2>
+              <input aria-label="File name" value={saveName} autoFocus onChange={(event) => setSaveName(event.target.value)} />
+              <div className="fl-dialog-actions">
+                <button type="button" className="fl-button" onClick={() => setDialog(null)}>
+                  Cancel
+                </button>
+                <button type="submit" className="fl-button">
+                  Save
+                </button>
+              </div>
+            </form>
           )}
         </div>
-      </div>
-
-      {/* Mixer */}
-      {showMixer && (
-        <Mixer
-          tracks={mixerTracks}
-          playing={playing}
-          channels={channels}
-          onClose={() => setShowMixer(false)}
-          onSetVolume={setTrackVolume}
-          onToggleMute={(idx) => {
-            if (idx === 0) return
-            const ci = idx - 1
-            setChannelField(ci, 'muted', !channels[ci].muted)
-          }}
-          onSolo={(idx) => idx > 0 && soloChannel(idx - 1)}
-        />
       )}
     </div>
   )
 }
 
-// ---- Sub-components ----
-
-function Bar({ playing }: { playing: boolean }) {
-  const [h, setH] = useState(20)
-  useEffect(() => {
-    if (!playing) {
-      setH(8)
-      return
-    }
-    const id = window.setInterval(() => setH(Math.random() * 40 + 5), 120)
-    return () => window.clearInterval(id)
-  }, [playing])
-  return <div className="w-1 bg-[#00ff00]" style={{ height: h, opacity: playing ? 1 : 0.2 }} />
-}
-
-function ChannelRack({
-  channels,
-  currentStep,
-  playing,
-  onClose,
-  onToggleStep,
-  onRemove,
-  onSolo,
-  onChannelField,
-  onAdd,
-  onOpenPianoRoll,
-}: {
-  channels: Channel[]
-  currentStep: number
-  playing: boolean
-  onClose: () => void
-  onToggleStep: (ci: number, si: number) => void
-  onRemove: (ci: number) => void
-  onSolo: (ci: number) => void
-  onChannelField: <K extends keyof Channel>(ci: number, field: K, value: Channel[K]) => void
-  onAdd: () => void
-  onOpenPianoRoll: (ci: number) => void
-}) {
-  return (
-    <div className="absolute top-10 left-10 w-[580px] h-[450px] bg-[#2b3339] rounded-sm border border-white/10 shadow-2xl flex flex-col overflow-hidden z-20">
-      <div className="h-8 bg-[#32393f] flex items-center px-3 text-[10px] font-bold border-b border-black/40 text-gray-300 justify-between shrink-0">
-        <div className="flex items-center space-x-2">
-          <span className="text-[#ff6600]">■</span>
-          <span>CHANNEL RACK</span>
-        </div>
-        <div className="flex space-x-2">
-          <button type="button" onClick={onClose} className="hover:text-white" aria-label="Minimize">_</button>
-          <button type="button" onClick={onClose} className="hover:text-white text-red-500" aria-label="Close">×</button>
-        </div>
-      </div>
-      <div className="grow overflow-y-auto p-3 space-y-1 bg-[#1e2327]">
-        {channels.map((channel, ci) => (
-          <div
-            key={ci}
-            className="flex items-center space-x-3 group hover:bg-white/2 p-1 rounded-xs transition-colors"
-            onDoubleClick={() => channel.type !== 'drum' && onOpenPianoRoll(ci)}
-          >
-            <div className="flex items-center space-x-1 shrink-0">
-              <div className="flex flex-col space-y-1 mr-1">
-                <button
-                  type="button"
-                  onClick={() => onChannelField(ci, 'muted', !channel.muted)}
-                  title="Mute"
-                  className="w-2 h-2 rounded-full bg-black/40 border border-white/5 flex items-center justify-center"
-                >
-                  <div
-                    className={`w-1 h-1 rounded-full ${
-                      channel.muted ? 'bg-gray-600' : 'bg-[#00ff00] shadow-[0_0_4px_rgba(0,255,0,0.8)]'
-                    }`}
-                  />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => onSolo(ci)}
-                  title="Solo"
-                  className="w-2 h-2 rounded-full bg-black/40 border border-white/5 flex items-center justify-center"
-                >
-                  <div
-                    className={`w-1 h-1 rounded-full ${
-                      channels.every((c, i) => i === ci || c.muted) && !channel.muted
-                        ? 'bg-[#ff6600] shadow-[0_0_4px_rgba(255,102,0,0.8)]'
-                        : 'bg-gray-600'
-                    }`}
-                  />
-                </button>
-              </div>
-
-              <input
-                type="text"
-                value={channel.name}
-                onChange={(e) => onChannelField(ci, 'name', e.target.value)}
-                className="w-24 bg-[#32393f] h-7 px-2 text-[10px] rounded-sm border border-black/40 text-gray-300 hover:bg-[#3d454c] focus:bg-black/40 focus:outline-hidden shadow-xs transition-colors font-bold"
-                style={{ borderLeft: `4px solid ${channel.color}` }}
-              />
-
-              <div className="flex flex-col items-center">
-                <select
-                  value={channel.type}
-                  onChange={(e) => onChannelField(ci, 'type', e.target.value as ChannelType)}
-                  className="bg-transparent text-[9px] text-gray-500 focus:outline-hidden cursor-pointer hover:text-gray-300 ml-1 font-bold"
-                >
-                  <option value="drum">DRUM</option>
-                  <option value="synth">SYNTH</option>
-                  <option value="bass">BASS</option>
-                </select>
-                {channel.type !== 'drum' && (
-                  <input
-                    type="number"
-                    value={channel.note}
-                    onChange={(e) => onChannelField(ci, 'note', Number(e.target.value))}
-                    step={10}
-                    min={20}
-                    max={2000}
-                    className="w-10 bg-black/20 rounded-sm text-[8px] text-win-blue focus:outline-hidden text-center h-4 mt-0.5"
-                  />
-                )}
-              </div>
-
-              <button
-                type="button"
-                onClick={() => onRemove(ci)}
-                className="opacity-0 group-hover:opacity-100 text-red-500 hover:text-red-400 p-1 transition-opacity"
-                title="Delete track"
-              >
-                <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                  <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
-                </svg>
-              </button>
-            </div>
-
-            {/* Steps grid */}
-            <div className="flex space-x-1.5">
-              {channel.steps.map((step, si) => {
-                const evenBlock = Math.floor(si / 4) % 2 === 0
-                const base =
-                  step === 1
-                    ? evenBlock
-                      ? 'bg-[#ff6600]'
-                      : 'bg-[#ff8533]'
-                    : evenBlock
-                      ? 'bg-[#3d454c]'
-                      : 'bg-[#2b3339]'
-                const playingHere = playing && currentStep === si
-                return (
-                  <button
-                    key={si}
-                    type="button"
-                    onClick={() => onToggleStep(ci, si)}
-                    aria-label={`${channel.name} step ${si + 1}`}
-                    aria-pressed={step === 1}
-                    className={`w-7 h-6 rounded-xs cursor-pointer hover:brightness-125 transition-all active:scale-90 shadow-xs ${base} ${
-                      step === 1 ? 'shadow-[inset_0_0_8px_rgba(255,255,255,0.3)]' : ''
-                    } ${playingHere ? 'ring-2 ring-white/40 brightness-150 z-10' : 'ring-1 ring-black/20'}`}
-                  />
-                )
-              })}
-            </div>
-          </div>
-        ))}
-      </div>
-      <div className="h-8 bg-[#1a1f22] border-t border-black/40 flex items-center px-3 justify-between shrink-0">
-        <button
-          type="button"
-          onClick={onAdd}
-          className="h-5 px-3 bg-black/40 border border-white/10 rounded-xs flex items-center justify-center text-[10px] hover:bg-white/10 transition-colors text-gray-400 font-bold"
-        >
-          + ADD CHANNEL
-        </button>
-        <div className="text-[9px] text-gray-600 font-bold">{channels.length} CHANNELS</div>
-      </div>
-    </div>
-  )
-}
-
-function PianoRoll({
-  channel,
-  onClose,
-  onSetNote,
-  onSetStep,
-  onPreview,
-}: {
-  channel: Channel
-  onClose: () => void
-  onSetNote: (n: number) => void
-  onSetStep: (stepIdx: number, value: number) => void
-  onPreview: () => void
-}) {
-  return (
-    <div className="absolute top-20 left-20 w-[600px] h-[400px] bg-[#2b3339] rounded-sm border border-white/10 shadow-2xl flex flex-col overflow-hidden z-30">
-      <div className="h-8 bg-[#32393f] flex items-center px-3 text-[10px] font-bold border-b border-black/40 text-gray-300 justify-between shrink-0">
-        <div className="flex items-center space-x-2">
-          <span className="text-[#00ff00]">■</span>
-          <span>PIANO ROLL — {channel.name}</span>
-        </div>
-        <div className="flex space-x-2">
-          <button type="button" onClick={onClose} className="hover:text-white">_</button>
-          <button type="button" onClick={onClose} className="hover:text-white">×</button>
-        </div>
-      </div>
-      <div className="grow flex overflow-hidden">
-        <div className="w-12 bg-[#1a1f22] border-r border-black flex flex-col-reverse">
-          {PIANO_NOTES.map((note) => (
-            <div
-              key={note}
-              className={`h-6 border-b border-black flex items-center justify-end px-1 text-[8px] ${
-                BLACK_NOTES.has(note) ? 'bg-black text-white' : 'bg-white text-black'
-              }`}
-            >
-              {Math.round(note)}Hz
-            </div>
-          ))}
-        </div>
-        <div
-          className="grow overflow-auto bg-[#121518] relative"
-          style={{
-            backgroundImage:
-              'linear-gradient(#1e2327 1px, transparent 1px), linear-gradient(90deg, #1e2327 1px, transparent 1px)',
-            backgroundSize: '24px 24px',
-          }}
-        >
-          <div className="absolute inset-0 flex flex-col-reverse">
-            {PIANO_NOTES.map((note) => (
-              <div key={note} className="h-6 flex">
-                {Array.from({ length: 16 }).map((_, si) => (
-                  <button
-                    key={si}
-                    type="button"
-                    onClick={() => {
-                      onSetNote(note)
-                      onSetStep(si, 1)
-                      onPreview()
-                    }}
-                    className="w-6 h-full border-r border-b border-white/5 hover:bg-white/5"
-                  >
-                    {channel.note === note && channel.steps[si] === 1 && (
-                      <div className="w-full h-full bg-[#00ff00]/60 border border-[#00ff00]" />
-                    )}
-                  </button>
-                ))}
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-function Playlist({
-  clips,
-  activeDragId,
-  playing,
-  currentStep,
-  songStep,
-  mode,
-  gridRef,
-  onStartDrag,
-}: {
-  clips: PlaylistClip[]
-  activeDragId: number | null
-  playing: boolean
-  currentStep: number
-  songStep: number
-  mode: 'pattern' | 'song'
-  gridRef: React.RefObject<HTMLDivElement | null>
-  onStartDrag: (e: React.MouseEvent, clip: PlaylistClip) => void
-}) {
-  return (
-    <div className="absolute inset-0 bg-[#121518] flex flex-col overflow-hidden">
-      <div className="h-8 bg-[#1a1f22] flex items-center px-3 text-[10px] font-bold border-b border-black/40 text-gray-500 shrink-0">
-        <div className="flex items-center space-x-2">
-          <span className="text-[#00ccff]">■</span>
-          <span>PLAYLIST — ARRANGEMENT</span>
-        </div>
-      </div>
-      <div
-        className="grow relative overflow-auto playlist-grid-container"
-        style={{
-          backgroundImage:
-            'linear-gradient(#1e2327 1px, transparent 1px), linear-gradient(90deg, #1e2327 1px, transparent 1px)',
-          backgroundSize: '48px 32px',
-          backgroundAttachment: 'local',
-        }}
-      >
-        <div className="absolute left-0 top-0 bottom-0 w-24 bg-[#1a1f22]/80 border-r border-black/40 z-10 pointer-events-none">
-          {Array.from({ length: 20 }).map((_, i) => (
-            <div
-              key={i}
-              className="h-8 border-b border-black/20 flex items-center px-2 text-[9px] text-gray-500 font-bold"
-            >
-              Track {i + 1}
-            </div>
-          ))}
-        </div>
-
-        <div ref={gridRef} className="ml-24 min-w-[2000px] h-[640px] relative playlist-grid">
-          {clips.map((clip) => (
-            <div
-              key={clip.id}
-              role="button"
-              tabIndex={0}
-              onMouseDown={(e) => onStartDrag(e, clip)}
-              title={clip.name}
-              className={`absolute h-7 flex items-center px-2 text-[9px] text-white font-bold rounded-xs border cursor-grab active:cursor-grabbing shadow-lg overflow-hidden ${
-                activeDragId === clip.id ? 'z-50 ring-1 ring-white/50 opacity-90' : 'z-10'
-              }`}
-              style={{
-                top: (clip.track - 1) * 32 + 2,
-                left: clip.startStep * 12,
-                width: clip.length * 12,
-                backgroundColor: `${clip.color}44`,
-                borderColor: `${clip.color}88`,
-              }}
-            >
-              {clip.type === 'pattern' && (
-                <div
-                  className="absolute inset-0 opacity-10 pointer-events-none"
-                  style={{
-                    backgroundImage:
-                      'repeating-linear-gradient(90deg, transparent, transparent 12px, white 12px, white 14px)',
-                  }}
-                />
-              )}
-              {clip.type === 'audio' && (
-                <svg className="absolute inset-0 w-full h-full opacity-30" preserveAspectRatio="none" viewBox="0 0 100 100">
-                  <path
-                    d="M0,50 Q5,20 10,50 T20,50 T30,50 T40,50 T50,50 T60,50 T70,50 T80,50 T90,50 T100,50"
-                    stroke="white"
-                    fill="none"
-                    strokeWidth={1}
-                  />
-                </svg>
-              )}
-              {clip.type === 'automation' && (
-                <svg className="absolute inset-0 w-full h-full opacity-30" preserveAspectRatio="none" viewBox="0 0 100 100">
-                  <path d="M0,80 L20,60 L40,70 L60,30 L80,40 L100,10" stroke="white" fill="none" strokeWidth={2} />
-                </svg>
-              )}
-              <span className="relative z-10 truncate">{clip.name}</span>
-            </div>
-          ))}
-
-          {playing && (
-            <div
-              className="absolute inset-y-0 w-px bg-white/60 shadow-[0_0_10px_rgba(255,255,255,0.8)] z-20 pointer-events-none"
-              style={{ left: (mode === 'pattern' ? currentStep : songStep) * 12 }}
-            >
-              <div className="w-3 h-3 bg-white rotate-45 -translate-x-1.5 -translate-y-1.5 shadow-lg" />
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-  )
-}
-
-function Mixer({
-  tracks,
-  playing,
-  channels,
-  onClose,
-  onSetVolume,
-  onToggleMute,
-  onSolo,
-}: {
-  tracks: ReadonlyArray<{ name: string; volume: number; muted: boolean; index: number }>
-  playing: boolean
-  channels: Channel[]
-  onClose: () => void
-  onSetVolume: (index: number, value: number) => void
-  onToggleMute: (index: number) => void
-  onSolo: (index: number) => void
-}) {
-  return (
-    <div className="h-64 bg-[#1a1f22] border-t border-black flex flex-col shrink-0">
-      <div className="h-7 bg-[#252a2e] flex items-center px-3 text-[10px] font-bold border-b border-black/40 text-gray-400 justify-between shrink-0">
-        <div className="flex items-center space-x-2">
-          <span className="text-gray-500">■</span>
-          <span>MIXER — MASTER</span>
-        </div>
-        <div className="flex space-x-2">
-          <button type="button" onClick={onClose} className="hover:text-white">_</button>
-          <button type="button" className="hover:text-white">□</button>
-          <button type="button" onClick={onClose} className="hover:text-white">×</button>
-        </div>
-      </div>
-      <div className="grow flex overflow-x-auto p-1 space-x-0.5 bg-[#121518]">
-        {tracks.map((track) => (
-          <MixerLane
-            key={track.index}
-            track={track}
-            playing={playing}
-            channels={channels}
-            onSetVolume={(v) => onSetVolume(track.index, v)}
-            onToggleMute={() => onToggleMute(track.index)}
-            onSolo={() => onSolo(track.index)}
-          />
-        ))}
-      </div>
-    </div>
-  )
-}
-
-function MixerLane({
-  track,
-  playing,
-  channels,
-  onSetVolume,
-  onToggleMute,
-  onSolo,
-}: {
-  track: { name: string; volume: number; muted: boolean; index: number }
-  playing: boolean
-  channels: Channel[]
-  onSetVolume: (value: number) => void
-  onToggleMute: () => void
-  onSolo: () => void
-}) {
-  const isMaster = track.index === 0
-  const dragRef = useRef<{ rect: DOMRect } | null>(null)
-
-  const onMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
-    const rect = e.currentTarget.getBoundingClientRect()
-    dragRef.current = { rect }
-    onSetVolume(Math.max(0, Math.min(1, 1 - (e.clientY - rect.top) / rect.height)))
-  }
-
-  useEffect(() => {
-    const onMove = (e: MouseEvent) => {
-      const d = dragRef.current
-      if (!d) return
-      onSetVolume(Math.max(0, Math.min(1, 1 - (e.clientY - d.rect.top) / d.rect.height)))
-    }
-    const onUp = () => {
-      dragRef.current = null
-    }
-    window.addEventListener('mousemove', onMove)
-    window.addEventListener('mouseup', onUp)
-    return () => {
-      window.removeEventListener('mousemove', onMove)
-      window.removeEventListener('mouseup', onUp)
-    }
-  }, [onSetVolume])
-
-  const soloed =
-    !isMaster &&
-    channels.every((c, i) => i === track.index - 1 || c.muted) &&
-    channels[track.index - 1] &&
-    !channels[track.index - 1].muted
-
-  return (
-    <div className="w-[52px] h-full bg-[#202529] flex flex-col items-center border border-black/60 shadow-inner shrink-0 relative overflow-hidden">
-      <div className="absolute right-0 top-1 bottom-10 w-2 flex flex-col-reverse space-y-px px-px">
-        {Array.from({ length: 15 }).map((_, i) => {
-          const colour = i > 12 ? 'bg-red-500' : i > 9 ? 'bg-yellow-500' : 'bg-green-500'
-          const dim = i > 12 ? 'bg-red-500/20' : i > 9 ? 'bg-yellow-500/20' : 'bg-green-500/20'
-          const lit = playing && Math.random() * 15 > i
-          return (
-            <div
-              key={i}
-              className={`grow w-full rounded-xs transition-all duration-75 ${lit ? colour : dim}`}
-            />
-          )
-        })}
-      </div>
-
-      <div
-        className={`text-[8px] font-bold mt-1 tracking-tighter ${
-          isMaster ? 'text-[#ff6600]' : 'text-gray-500'
-        }`}
-      >
-        {track.name}
-      </div>
-
-      <div className="grow flex items-center justify-center py-4 w-full px-2">
-        <div className="w-6 h-full flex flex-col items-center relative">
-          <div
-            className="w-1.5 h-full bg-black/60 rounded-full border border-white/5 relative overflow-hidden cursor-pointer"
-            onMouseDown={onMouseDown}
-          >
-            <div
-              className="absolute bottom-0 left-0 right-0 bg-[#00ccff]/20 transition-all duration-200"
-              style={{ height: `${track.volume * 100}%` }}
-            />
-          </div>
-          <div
-            className="absolute w-8 h-4 bg-[#3d454c] border border-black/60 rounded-xs shadow-lg pointer-events-none flex flex-col items-center justify-center space-y-0.5 z-10"
-            style={{ bottom: `calc(${track.volume * 100}% - 8px)` }}
-          >
-            <div className="w-5 h-px bg-white/20" />
-            <div className="w-5 h-px bg-[#00ccff]" />
-            <div className="w-5 h-px bg-white/20" />
-          </div>
-        </div>
-      </div>
-
-      <div className="w-full flex justify-center space-x-1 pb-2">
-        <button
-          type="button"
-          onClick={onToggleMute}
-          title="Mute"
-          className="w-4 h-4 rounded-full bg-black/40 border border-white/5 flex items-center justify-center hover:border-[#00ff00]/50"
-        >
-          <div
-            className={`w-1.5 h-1.5 rounded-full ${
-              track.muted ? 'bg-gray-600' : 'bg-[#00ff00] shadow-[0_0_4px_rgba(0,255,0,0.8)]'
-            }`}
-          />
-        </button>
-        {!isMaster && (
-          <button
-            type="button"
-            onClick={onSolo}
-            title="Solo"
-            className="w-4 h-4 rounded-full bg-black/40 border border-white/5 flex items-center justify-center hover:border-[#ff6600]/50"
-          >
-            <div
-              className={`w-1.5 h-1.5 rounded-full ${
-                soloed ? 'bg-[#ff6600] shadow-[0_0_4px_rgba(255,102,0,0.8)]' : 'bg-gray-600'
-              }`}
-            />
-          </button>
-        )}
-      </div>
-
-      <div className="w-full bg-black/40 py-0.5 text-center border-t border-white/5">
-        <span className="text-[8px] font-bold text-gray-600">{isMaster ? 'M' : track.index}</span>
-      </div>
-    </div>
-  )
-}

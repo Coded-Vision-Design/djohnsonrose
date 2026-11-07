@@ -1,5 +1,5 @@
 <!-- partials/desktop.php -->
-<div class="h-full w-full relative flex flex-col overflow-hidden wallpaper-bg touch-none" 
+<div data-os-desktop class="h-full w-full relative flex flex-col overflow-hidden wallpaper-bg touch-none"
      x-show="loggedIn"
      x-cloak
      x-transition:enter="transition ease-out duration-500"
@@ -8,34 +8,36 @@
      @touchstart="handleTouchStart($event)"
      @touchmove="handleTouchMove($event)"
      @touchend="handleTouchEnd($event)"
-     @contextmenu.prevent="contextMenu.open = true; contextMenu.x = $event.clientX; contextMenu.y = $event.clientY"
+     @touchcancel="handleTouchEnd($event)"
      @click="contextMenu.open = false">
     
     <!-- Desktop Icons Layer -->
     <div class="absolute inset-0 p-4 pointer-events-none transition-transform duration-75 origin-center"
          :style="`transform: scale(${$store.os.desktopZoom});`"
+         :data-icon-size="$store.os.desktopIconSize"
+         x-show="$store.os.desktopIconsVisible"
          id="desktop-icons-container">
         
         <!-- PC Icon (Always present) -->
         <div @mousedown="startIconDrag({name: 'DeVanté\'s PC'}, $event)"
              data-desktop-item="DeVanté's PC"
-             @touchstart.stop="handleTouchStart($event, (pos) => showFileContextMenu(pos, {name: 'DeVanté\'s PC', type: 'folder'}, 'C:\\'))"
+             @touchstart.stop="handleTouchStart($event, (pos) => showComputerMenu(pos))"
              @touchmove="handleTouchMove($event)"
              @touchend="handleTouchEnd($event)"
              @click="if(!dragMoved && !touchData.isLongPress) openApp('explorer', 'This PC', { initialPath: 'C:\\' })"
              @dblclick="if(!dragMoved) openApp('explorer', 'This PC', { initialPath: 'C:\\' })" 
              class="desktop-icon-container absolute pointer-events-auto flex flex-col items-center justify-start hover:bg-white/10 rounded-md cursor-pointer group p-2 text-center w-[110px] transition-all duration-75"
-             :style="`left: ${desktopIconPositions['DeVanté\'s PC']?.x || 16}px; top: ${desktopIconPositions['DeVanté\'s PC']?.y || 16}px;`"
-             @contextmenu.prevent.stop="showFileContextMenu($event, {name: 'DeVanté\'s PC', type: 'folder'}, 'C:\\')">
-            <div class="mb-1 drop-shadow-md w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center">
-                <img src="<?php echo IMG_PATH; ?>thispc.webp" class="w-full h-full object-contain group-hover:scale-110 transition-transform">
+             :style="`left: ${pcPosition.x}px; top: ${pcPosition.y}px;`"
+             @contextmenu.prevent.stop="showComputerMenu($event)">
+            <div class="desktop-tile-icon mb-1 drop-shadow-md w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center">
+                <img src="<?php echo IMG_PATH; ?>thispc.webp" alt="" class="w-full h-full object-contain group-hover:scale-110 transition-transform">
             </div>
-            <span class="text-white text-[10px] sm:text-[11px] drop-shadow-lg w-full px-1 line-clamp-2 leading-tight overflow-hidden wrap-break-word text-wrap">DeVanté's PC</span>
+            <span class="text-white text-xs drop-shadow-lg w-full px-1 line-clamp-2 leading-tight overflow-hidden wrap-break-word text-wrap">DeVanté's PC</span>
         </div>
 
         <!-- Dynamic Desktop Icons -->
         <template x-for="(icon, index) in desktopIcons" :key="icon.name">
-            <div @mousedown="startIconDrag(icon, $event)"
+            <div @mousedown="if (!isRenamingOnDesktop(icon)) startIconDrag(icon, $event)"
                  :data-desktop-item="icon.name"
                  @touchstart.stop="handleTouchStart($event, (pos) => showFileContextMenu(pos, icon, 'C:\\Users\\DeVante\\Desktop'))"
                  @touchmove="handleTouchMove($event)"
@@ -47,6 +49,7 @@
                  :title="icon.name"
                  class="desktop-icon-container absolute pointer-events-auto flex flex-col items-center justify-start hover:bg-white/10 rounded-md cursor-pointer group p-2 text-center w-[110px] min-w-0 transition-all duration-75"
                  :class="{
+                    'file-cut': isCutOnDesktop(icon),
                     'recycle-bin-icon': icon.name === 'Recycle Bin',
                     'bg-white/20 scale-110 shadow-lg border-win-blue/50!': icon.name === 'Recycle Bin' && hoveredOverRecycleBin
                  }"
@@ -61,9 +64,9 @@
                         deleteItem(data.item, data.fromPath);
                     }
                  }">
-                <div class="mb-1 drop-shadow-md w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center">
+                <div class="desktop-tile-icon mb-1 drop-shadow-md w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center">
                     <template x-if="icon.icon.includes('.')">
-                        <img :src="icon.icon" class="w-full h-full object-contain group-hover:scale-110 transition-transform">
+                        <img :src="icon.icon" alt="" class="w-full h-full object-contain group-hover:scale-110 transition-transform">
                     </template>
                     <template x-if="!icon.icon.includes('.')">
                         <div class="w-full h-full flex items-center justify-center">
@@ -71,7 +74,13 @@
                         </div>
                     </template>
                 </div>
-                <span class="text-white text-[10px] sm:text-[11px] drop-shadow-lg w-full px-1 line-clamp-2 leading-tight overflow-hidden wrap-break-word text-wrap" x-text="icon.name"></span>
+                <template x-if="isRenamingOnDesktop(icon)">
+                    <input type="text" aria-label="New name" data-rename-input x-data="renameInput(icon.name)" x-model="value" @keydown.stop="onKey($event)" @blur="commit()" @click.stop @mousedown.stop @dblclick.stop
+                           class="w-full rounded-sm border border-win-blue bg-white px-1 text-center text-xs text-black outline-hidden">
+                </template>
+                <template x-if="!isRenamingOnDesktop(icon)">
+                    <span class="text-white text-xs drop-shadow-lg w-full px-1 line-clamp-2 leading-tight overflow-hidden wrap-break-word text-wrap" x-text="icon.name"></span>
+                </template>
             </div>
         </template>
     </div>
@@ -100,6 +109,9 @@
                         <svg class="w-4 h-4 fill-current" viewBox="0 0 16 16" aria-hidden="true"><path d="M10.7 2.3 5 8l5.7 5.7 1-1L7 8l4.7-4.7z"/></svg>
                     </button>
                     <div class="flex items-center space-x-2 pointer-events-none min-w-0 grow">
+                        <template x-if="win.app !== 'edge'">
+                            <img class="os-window-icon" :src="appIcon(win.app)" alt="">
+                        </template>
                         <template x-if="win.app !== 'edge'">
                             <span class="os-window-title text-sm font-medium dark:text-white truncate" x-text="win.title"></span>
                         </template>
@@ -132,8 +144,15 @@
 
                 <!-- Window Content -->
                 <div class="os-window-content bg-white dark:bg-[#1c1c1c]">
-                    <div x-show="win.loading" class="absolute inset-0 flex items-center justify-center">
-                        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-win-blue"></div>
+                    <!-- The same loading dots as v2's WindowLoader, in the text colour. -->
+                    <div x-show="win.loading" role="status" aria-label="Loading" class="absolute inset-0 flex items-center justify-center text-black/70 dark:text-white/80">
+                        <div class="win-loader">
+                            <div class="dot"></div>
+                            <div class="dot"></div>
+                            <div class="dot"></div>
+                            <div class="dot"></div>
+                            <div class="dot"></div>
+                        </div>
                     </div>
                     <!-- Not x-html: it initialises apps inside its reactive effect, so any value an
                          app reads in init() would rebuild the whole app whenever that value changed. -->

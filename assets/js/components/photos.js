@@ -1,4 +1,7 @@
 // assets/js/components/photos.js
+// Photos shows a folder of the shared file system, Pictures by default, which
+// holds the portfolio screenshots and the competition photos. Which pictures,
+// and which one is open, is worked out in assets/js/windowing/media.js, shared with v2.
 document.addEventListener('alpine:init', () => {
     Alpine.data('photosApp', () => ({
         allImages: [],
@@ -6,67 +9,53 @@ document.addEventListener('alpine:init', () => {
         currentPath: '',
         zoom: 1,
         rotation: 0,
+        _opened: '',
 
         init() {
             this.updateFromStore();
             this.$watch('$store.os.windows', () => this.updateFromStore(), { deep: true });
 
-            // Watch currentIndex to update the window title and store state
+            // Keep the window title, and the picture the store remembers, in step.
             this.$watch('currentIndex', (newIdx) => {
-                const win = Alpine.store('os').windows.find(w => w.app === 'photos');
-                if (win && this.allImages[newIdx]) {
-                    const img = this.allImages[newIdx];
+                const win = this.win;
+                const img = this.allImages[newIdx];
+                if (win && img) {
                     win.title = img.name;
-                    win.imageName = img.name; // Keep store in sync to prevent revert
+                    win.imageName = img.name;
+                    this._opened = this.openKey(win);
                 }
-            });
-
-            // Handle arrow keys
-            window.addEventListener('keydown', (e) => {
-                const osStore = Alpine.store('os');
-                const win = osStore.windows.find(w => w.app === 'photos');
-                if (!win || win.id !== osStore.focusedWindowId) return;
-                if (e.key === 'ArrowRight') this.next();
-                if (e.key === 'ArrowLeft') this.prev();
             });
         },
 
+        openKey(win) {
+            return [win.folderPath, win.imageName, win.imageUrl].join('|');
+        },
+
         updateFromStore() {
-            // Get the imageName passed from the window object
-            const win = Alpine.store('os').windows.find(w => w.app === 'photos');
+            const win = this.win;
             if (!win) return;
-
-            const folderPath = win.folderPath || 'C:\\Users\\DeVante\\Pictures';
-            if (this.currentPath !== folderPath) {
-                this.currentPath = folderPath;
-                this.allImages = (Alpine.store('os').fileSystem[folderPath] || []).filter(f => f.type === 'image' || (f.name && (f.name.endsWith('.webp') || f.name.endsWith('.png') || f.name.endsWith('.jpg'))));
+            // Only a new file or folder sent to this window moves it.
+            const key = this.openKey(win);
+            if (key === this._opened) return;
+            this._opened = key;
+            const album = OsWindowing.photoAlbum(Alpine.store('os').fileSystem, {
+                folderPath: win.folderPath,
+                imageName: win.imageName,
+                imageUrl: win.imageUrl,
+            });
+            this.currentPath = album.path;
+            this.allImages = album.images;
+            if (album.index !== this.currentIndex) {
+                this.currentIndex = album.index;
+                this.resetView();
             }
-            
-            const targetName = win.imageName;
-            
-            if (targetName) {
-                let idx = this.allImages.findIndex(img => img.name === targetName);
-                
-                // If not found in current folder, search all folders (fallback)
-                if (idx === -1) {
-                    const fs = Alpine.store('os').fileSystem;
-                    for (const path in fs) {
-                        const folderItems = fs[path];
-                        const found = folderItems.find(f => f.name === targetName && (f.type === 'image' || f.name?.endsWith('.webp') || f.name?.endsWith('.png')));
-                        if (found) {
-                            this.currentPath = path;
-                            this.allImages = folderItems.filter(f => f.type === 'image' || f.name?.endsWith('.webp') || f.name?.endsWith('.png'));
-                            idx = this.allImages.findIndex(img => img.name === targetName);
-                            break;
-                        }
-                    }
-                }
+        },
 
-                if (idx !== -1 && idx !== this.currentIndex) {
-                    this.currentIndex = idx;
-                    this.resetView();
-                }
-            }
+        handleKey(e) {
+            if (this.win?.id !== Alpine.store('os').focusedWindowId) return;
+            if (e.target.closest?.('input, textarea')) return;
+            if (e.key === 'ArrowRight') this.next();
+            if (e.key === 'ArrowLeft') this.prev();
         },
 
         get currentImage() {

@@ -20,33 +20,14 @@ document.addEventListener('alpine:init', () => {
         },
         updateStats() {
             const osStore = Alpine.store('os');
+            const imgPath = window.portfolioConfig.imgPath;
             this.processes = osStore.windows.map(win => {
-                let icon = '⚙️';
-                const imgPath = window.portfolioConfig.imgPath;
-                if (win.app === 'vscode') icon = `<img src="${imgPath}vscode.webp" class="w-4 h-4 object-contain">`;
-                else if (win.app === 'edge') icon = `<img src="${imgPath}chrome.webp" class="w-4 h-4 object-contain">`;
-                else if (win.app === 'outlook') icon = `<img src="${imgPath}outlook.webp" class="w-4 h-4 object-contain">`;
-                else if (win.app === 'word') icon = `<img src="${imgPath}word.webp" class="w-4 h-4 object-contain">`;
-                else if (win.app === 'pdfreader') icon = `<img src="${imgPath}pdf.webp" class="w-4 h-4 object-contain">`;
-                else if (win.app === 'explorer') icon = `<img src="${imgPath}explorer.webp" class="w-4 h-4 object-contain">`;
-                else if (win.app === 'terminal') icon = `<img src="${imgPath}terminal.webp" class="w-4 h-4 object-contain">`;
-                else if (win.app === 'settings') icon = `<img src="${imgPath}settings.webp" class="w-4 h-4 object-contain">`;
-                else if (win.app === 'taskmanager') icon = `<img src="${imgPath}taskmanager.webp" class="w-4 h-4 object-contain">`;
-                else if (win.app === 'excel') icon = `<img src="${imgPath}excel.webp" class="w-4 h-4 object-contain">`;
-                else if (win.app === 'powerpoint') icon = `<img src="${imgPath}powerpoint.webp" class="w-4 h-4 object-contain">`;
-                else if (win.app === 'photoshop') icon = `<img src="${imgPath}photoshop.webp" class="w-4 h-4 object-contain">`;
-                else if (win.app === 'filezilla') icon = `<img src="${imgPath}filezilla.webp" class="w-4 h-4 object-contain">`;
-                else if (win.app === 'calculator') icon = `<img src="${imgPath}calculator.webp" class="w-4 h-4 object-contain">`;
-                else if (win.app === 'database') icon = `<img src="${imgPath}mssql.webp" class="w-4 h-4 object-contain">`;
-                else if (win.app === 'putty') icon = `<img src="${imgPath}putty.webp" class="w-4 h-4 object-contain">`;
-                else if (win.app === 'flstudio') icon = `<img src="${imgPath}fl studio.webp" class="w-4 h-4 object-contain">`;
-                else if (win.app === 'references') icon = `<img src="${imgPath}notepad++.webp" class="w-4 h-4 object-contain">`;
-                else if (win.app === 'admin') icon = `<img src="${imgPath}mssql.webp" class="w-4 h-4 object-contain">`;
-
+                // Each app's own picture from data/apps.json, as in v2.
+                const icon = imgPath + (window.portfolioConfig.apps[win.app]?.icon ?? 'win11/taskmgr.webp');
                 return {
                     id: win.id,
                     name: win.title,
-                    icon: icon,
+                    icon,
                     cpu: Math.floor(Math.random() * 5) + (win.id === osStore.focusedWindowId ? 2 : 0),
                     ram: Math.floor(Math.random() * 100) + 150,
                     network: Math.random() > 0.7 ? (Math.random() * 2).toFixed(1) : 0,
@@ -102,21 +83,24 @@ document.addEventListener('alpine:init', () => {
             name: 'DeVanté Johnson-Rose',
             avatar: window.portfolioConfig.imgPath + 'profile.webp'
         },
+        // Windows 11 icons, the same as v2's Settings.tsx.
         nav: [
-            { id: 'system', label: 'System', icon: '💻' },
-            { id: 'personalisation', label: 'Personalisation', icon: '🎨' },
-            { id: 'experience', label: 'Experience', icon: '🏢' },
-            { id: 'qualifications', label: 'Qualifications', icon: '🎓' },
-            { id: 'about', label: 'About', icon: 'ℹ️' }
+            { id: 'system', label: 'System', icon: 'win11/display.webp' },
+            { id: 'personalisation', label: 'Personalisation', icon: 'win11/personalize.webp' },
+            { id: 'experience', label: 'Experience', icon: 'win11/documents.webp' },
+            { id: 'qualifications', label: 'Qualifications', icon: 'win11/star.svg' },
+            { id: 'about', label: 'About', icon: 'win11/thispc.webp' }
         ],
-        summary: "An ambitious, self-motivated IT Systems Administrator with a proven track record in supporting Microsoft and Apple systems. Expert in root cause analysis, ITIL processes, and high-pressure problem solving. Senior Desktop Developer specialising in SCCM, JAMF, and enterprise-scale deployments.",
-        philosophy: "Technique over brute force. Whether managing >8000 devices at UEA or competing at the highest levels of Brazilian Jiu-Jitsu, I prioritize precision, efficient troubleshooting, and clear communication of complex technical concepts.",
+        // Replaced by data/portfolio.json, as in v2, once it loads.
+        summary: 'Applications Support Engineer and Full-Stack Developer with enterprise infrastructure experience across finance, education, and global technology.',
+        philosophy: 'Technique over brute force. I prioritise precision, efficient troubleshooting, and clear communication of complex technical concepts.',
         experience: [],
         certs: [],
         education: [],
+        interests: [],
         skills: { frameworks: [], tools: [], operations: [], apis: [] },
         wallpapers: [
-            { id: 'Bloom', url: 'https://images.unsplash.com/photo-1620641788421-7a1c342ea42e?q=80&w=1974&auto=format&fit=crop' },
+            { id: 'Bloom', url: window.portfolioConfig.imgPath + 'wallpaper-bloom.webp' },
             { id: 'Flow', url: 'https://images.unsplash.com/photo-1635776062127-d379bfcba9f8?q=80&w=1974&auto=format&fit=crop' },
             { id: 'Glow', url: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=1974&auto=format&fit=crop' },
             { id: 'Sunrise', url: 'https://images.unsplash.com/photo-1477346611705-65d1883cee1e?q=80&w=1970&auto=format&fit=crop' },
@@ -136,6 +120,9 @@ document.addEventListener('alpine:init', () => {
                 this.certs = data.certifications;
                 this.skills = data.skills;
                 this.education = data.education || [];
+                this.interests = data.interests || [];
+                if (data.summary) this.summary = data.summary;
+                if (data.philosophy) this.philosophy = data.philosophy;
             } catch (e) {
                 console.error('Failed to load portfolio data for settings:', e);
             }
@@ -155,6 +142,11 @@ document.addEventListener('alpine:init', () => {
             if (!this.selectedWallpaper) return;
             Alpine.store('os').setWallpaper(this.selectedWallpaper);
             Alpine.store('os').logEvent('Settings', 'Information', 'Desktop wallpaper saved');
+        },
+        // Reset drops the preview on the desktop as well as in Settings.
+        resetWallpaper() {
+            this.selectedWallpaper = Alpine.store('os').settings.wallpaper;
+            Alpine.store('os').previewWallpaper = null;
         },
         toggleTheme() {
             const newTheme = Alpine.store('os').settings.theme === 'dark' ? 'light' : 'dark';

@@ -85,11 +85,11 @@
                         <span class="text-gray-600">AI Fluency Framework &amp; Foundations · Model Context Protocol · Claude Code in Action · Intro to Agent Skills · Intro to Subagents · Intro to Claude Cowork · Claude Code 101 · Claude 101</span>
                     </div>
                     <div>
-                        <span class="font-semibold">CompTIA</span> · 2011–2025<br>
+                        <span class="font-semibold">CompTIA</span> · 2011-2025<br>
                         <span class="text-gray-600">Server+ ce (2025) · Server+ · Network+ · A+</span>
                     </div>
                     <div>
-                        <span class="font-semibold">Microsoft</span> · 2012–2013<br>
+                        <span class="font-semibold">Microsoft</span> · 2012-2013<br>
                         <span class="text-gray-600">MCSA: Windows 7 · MCITP: Enterprise Desktop Technician · PRO: Windows 7 Enterprise Desktop · MCTS: Windows 7 Configuration · MTA: Networking Fundamentals · MTA: Windows OS Fundamentals</span>
                     </div>
                     <div>
@@ -106,7 +106,7 @@
             <section class="mb-8">
                 <h2 class="text-sm font-bold border-b border-black mb-3">ACHIEVEMENTS</h2>
                 <ul class="text-[10px] text-gray-700 space-y-1">
-                    <li>★ World #1, AJP &amp; IBJJF (2022–2024), Represented GBR internationally</li>
+                    <li>★ World #1, AJP &amp; IBJJF (2022-2024), Represented GBR internationally</li>
                     <li>★ GB Judo Squad, Veteran category</li>
                     <li>★ 4× NAGA World Champion</li>
                     <li>★ 4× AJP Grand Slam Champion</li>
@@ -134,8 +134,8 @@
                 <!-- Killik & Co -->
                 <div class="mb-6">
                     <div class="flex justify-between font-bold text-sm">
-                        <span>Killik &amp; Co — Applications Support Engineer</span>
-                        <span class="text-gray-500">Apr 2025 – Present</span>
+                        <span>Killik &amp; Co - Applications Support Engineer</span>
+                        <span class="text-gray-500">Apr 2025 - Present</span>
                     </div>
                     <p class="text-[11px] italic text-gray-600 mb-1">Ipswich</p>
                     <ul class="text-xs list-disc list-inside text-gray-700 space-y-1">
@@ -148,8 +148,8 @@
                 <!-- Coded Vision Design -->
                 <div class="mb-6">
                     <div class="flex justify-between font-bold text-sm">
-                        <span>Coded Vision Design — Freelance Full-Stack Developer</span>
-                        <span class="text-gray-500">2013 – Present</span>
+                        <span>Coded Vision Design - Freelance Full-Stack Developer</span>
+                        <span class="text-gray-500">2013 - Present</span>
                     </div>
                     <p class="text-[11px] italic text-gray-600 mb-1">Remote</p>
                     <ul class="text-xs list-disc list-inside text-gray-700 space-y-1">
@@ -164,8 +164,8 @@
                 <!-- UEA -->
                 <div class="mb-6">
                     <div class="flex justify-between font-bold text-sm">
-                        <span>UEA — Desktop Developer / 3rd Line Engineer</span>
-                        <span class="text-gray-500">Nov 2021 – Apr 2025</span>
+                        <span>UEA - Desktop Developer / 3rd Line Engineer</span>
+                        <span class="text-gray-500">Nov 2021 - Apr 2025</span>
                     </div>
                     <p class="text-[11px] italic text-gray-600 mb-1">Norwich</p>
                     <ul class="text-xs list-disc list-inside text-gray-700 space-y-1">
@@ -178,8 +178,8 @@
                 <!-- Skyscanner -->
                 <div class="mb-6">
                     <div class="flex justify-between font-bold text-sm">
-                        <span>Skyscanner — Systems Engineer II</span>
-                        <span class="text-gray-500">Mar 2020 – Nov 2021</span>
+                        <span>Skyscanner - Systems Engineer II</span>
+                        <span class="text-gray-500">Mar 2020 - Nov 2021</span>
                     </div>
                     <p class="text-[11px] italic text-gray-600 mb-1">Global</p>
                     <ul class="text-xs list-disc list-inside text-gray-700 space-y-1">
@@ -192,8 +192,8 @@
                 <!-- Shawbrook Bank -->
                 <div class="mb-6">
                     <div class="flex justify-between font-bold text-sm">
-                        <span>Shawbrook Bank — Desk Side Engineer</span>
-                        <span class="text-gray-500">Mar 2017 – Mar 2020</span>
+                        <span>Shawbrook Bank - Desk Side Engineer</span>
+                        <span class="text-gray-500">Mar 2017 - Mar 2020</span>
                     </div>
                     <p class="text-[11px] italic text-gray-600 mb-1">Essex</p>
                     <ul class="text-xs list-disc list-inside text-gray-700 space-y-1">
@@ -202,33 +202,33 @@
                     </ul>
                 </div>
 
-                <h3 class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3 mt-8">Earlier roles · 2011–2017</h3>
+                <h3 class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3 mt-8">Earlier roles · 2011-2017</h3>
 
                 <!-- Earlier roles condensed -->
                 <div class="space-y-3 text-xs text-gray-700">
                     <div class="flex justify-between">
-                        <span><span class="font-semibold">FRP Advisory</span> — 2nd Line Engineer</span>
-                        <span class="text-gray-500">Aug 2016 – Feb 2017</span>
+                        <span><span class="font-semibold">FRP Advisory</span> - 2nd Line Engineer</span>
+                        <span class="text-gray-500">Aug 2016 - Feb 2017</span>
                     </div>
                     <div class="flex justify-between">
-                        <span><span class="font-semibold">Alexander Knight Business Solutions</span> — Senior Network Engineer</span>
-                        <span class="text-gray-500">Jul 2015 – Aug 2016</span>
+                        <span><span class="font-semibold">Alexander Knight Business Solutions</span> - Senior Network Engineer</span>
+                        <span class="text-gray-500">Jul 2015 - Aug 2016</span>
                     </div>
                     <div class="flex justify-between">
-                        <span><span class="font-semibold">Ontraq IT</span> — IT Support / 2nd Line Field</span>
-                        <span class="text-gray-500">Nov 2014 – Jul 2015</span>
+                        <span><span class="font-semibold">Ontraq IT</span> - IT Support / 2nd Line Field</span>
+                        <span class="text-gray-500">Nov 2014 - Jul 2015</span>
                     </div>
                     <div class="flex justify-between">
-                        <span><span class="font-semibold">Pensar IT</span> — Service Desk / 2nd Line</span>
-                        <span class="text-gray-500">Jun 2014 – Nov 2014</span>
+                        <span><span class="font-semibold">Pensar IT</span> - Service Desk / 2nd Line</span>
+                        <span class="text-gray-500">Jun 2014 - Nov 2014</span>
                     </div>
                     <div class="flex justify-between">
-                        <span><span class="font-semibold">Databarracks</span> — IT Support, 1st Line</span>
-                        <span class="text-gray-500">Jun 2013 – Jun 2014</span>
+                        <span><span class="font-semibold">Databarracks</span> - IT Support, 1st Line</span>
+                        <span class="text-gray-500">Jun 2013 - Jun 2014</span>
                     </div>
                     <div class="flex justify-between">
-                        <span><span class="font-semibold">Blueprint Collections</span> — IT Systems Administrator</span>
-                        <span class="text-gray-500">Sep 2011 – Jun 2013</span>
+                        <span><span class="font-semibold">Blueprint Collections</span> - IT Systems Administrator</span>
+                        <span class="text-gray-500">Sep 2011 - Jun 2013</span>
                     </div>
                 </div>
             </section>

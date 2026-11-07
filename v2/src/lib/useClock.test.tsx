@@ -28,7 +28,7 @@ describe('useClock', () => {
       vi.advanceTimersByTime(1000)
     })
 
-    // The format is HH:MM so it may not actually change within 1s — instead
+    // The format is HH:MM so it may not actually change within 1s - instead
     // confirm the setter was invoked again by checking the store object got
     // replaced. We can't easily check that, so just sanity-check the time is
     // still a populated HH:MM string.

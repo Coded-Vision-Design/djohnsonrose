@@ -19,8 +19,8 @@
     <!-- Display -->
     <div class="flex flex-col justify-end items-end px-6 py-4 shrink-0 min-h-[120px]">
         <div class="text-xs text-gray-500 dark:text-gray-400 mb-1 h-5 overflow-hidden text-right break-all" x-text="expression"></div>
-        <div class="text-5xl font-semibold overflow-hidden text-right w-full" 
-             :class="display.length > 10 ? 'text-3xl' : (display.length > 15 ? 'text-xl' : 'text-5xl')"
+        <div class="font-semibold overflow-hidden text-right w-full" data-calc-display aria-live="polite"
+             :class="displaySize"
              x-text="display">0</div>
     </div>
 
@@ -36,8 +36,9 @@
 
     <!-- Keypad -->
     <div class="grow grid grid-cols-4 gap-0.5 p-1 pb-2">
-        <template x-for="btn in buttons">
-            <button @click="press(btn.val)" 
+        <template x-for="btn in buttons" :key="btn.val">
+            <button type="button" @click="press(btn.val)"
+                    :aria-label="btn.name"
                     :class="btn.class"
                     class="h-full flex items-center justify-center text-sm rounded-sm transition-all hover:bg-gray-200 dark:hover:bg-white/10 border border-transparent active:scale-95 active:bg-gray-300 dark:active:bg-white/20"
                     x-html="btn.label">
@@ -45,7 +46,4 @@
         </template>
     </div>
 
-    <script>
-        // App scripts moved to alpine-init.js for global availability
-    </script>
 </div>

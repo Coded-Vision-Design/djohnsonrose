@@ -4,7 +4,7 @@ interface Props {
   className?: string
 }
 
-// Win11-style speaker icon with three wave fragments — fades waves out as volume
+// Win11-style speaker icon with three wave fragments - fades waves out as volume
 // drops, matching partials/volume-icon.php.
 export function VolumeIcon({ className = 'w-4 h-4' }: Props) {
   const volume = useOsStore((s) => s.settings.volume)

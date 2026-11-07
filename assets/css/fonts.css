@@ -1,0 +1,44 @@
+/*
+  Selawik, Microsoft's open-source stand-in for Segoe UI (SIL Open Font
+  Licence, see ../fonts/selawik/LICENSE.txt), from the official release at
+  https://github.com/microsoft/Selawik. Shared by both builds: v1 imports it
+  from input.css, v2 from globals.css.
+
+  Windows has Segoe UI, which comes first in the font stack, so browsers there
+  never download these. Macs and phones get Selawik instead of falling back to
+  Tahoma or Verdana. swap shows the fallback until a face has loaded.
+
+  The URLs are from the site root, like v2's /assets/img paths: v2's build
+  inlines this file into its own stylesheet without rebasing relative URLs.
+*/
+@font-face {
+    font-family: 'Selawik';
+    font-style: normal;
+    font-weight: 300;
+    font-display: swap;
+    src: url('/assets/fonts/selawik/selawkl.woff2') format('woff2');
+}
+
+@font-face {
+    font-family: 'Selawik';
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    src: url('/assets/fonts/selawik/selawk.woff2') format('woff2');
+}
+
+@font-face {
+    font-family: 'Selawik';
+    font-style: normal;
+    font-weight: 600;
+    font-display: swap;
+    src: url('/assets/fonts/selawik/selawksb.woff2') format('woff2');
+}
+
+@font-face {
+    font-family: 'Selawik';
+    font-style: normal;
+    font-weight: 700;
+    font-display: swap;
+    src: url('/assets/fonts/selawik/selawkb.woff2') format('woff2');
+}

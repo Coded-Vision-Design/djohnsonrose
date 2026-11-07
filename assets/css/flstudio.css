@@ -1,0 +1,1042 @@
+/* FL Studio, shared by both builds. Both render the same markup with these
+   classes, so the two look identical. Grid sizes are custom properties, which
+   fl-studio.js also reads to turn a pointer position into a step or a bar. */
+
+.fl-app {
+    --fl-bg: #262b30;
+    --fl-panel: #30363c;
+    --fl-head: #3b4248;
+    --fl-deep: #1c2024;
+    --fl-line: #15181b;
+    --fl-text: #c9d1d8;
+    --fl-dim: #8a959f;
+    --fl-orange: #f28c28;
+    --fl-green: #8fd14f;
+    --fl-blue: #3fb4e6;
+    --fl-step-w: 22px;
+    --fl-step-h: 26px;
+    --fl-row-h: 14px;
+    --fl-note-w: 20px;
+    --fl-bar: 64px;
+    --fl-track: 34px;
+    container: fl / inline-size;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-width: 0;
+    overflow: hidden;
+    background: var(--fl-bg);
+    color: var(--fl-text);
+    font: 12px/1.3 'Segoe UI Variable', 'Segoe UI', system-ui, sans-serif;
+    user-select: none;
+    -webkit-user-select: none;
+    outline: none;
+}
+
+.fl-app button,
+.fl-app select,
+.fl-app input {
+    font: inherit;
+    color: inherit;
+}
+
+.fl-app button {
+    cursor: pointer;
+    touch-action: manipulation;
+}
+
+.fl-app :focus-visible {
+    outline: 2px solid var(--fl-orange);
+    outline-offset: 1px;
+}
+
+.fl-sr {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+}
+
+/* ---- Menu bar ----------------------------------------------------------- */
+
+.fl-menubar {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    min-height: 30px;
+    padding: 0 6px;
+    background: var(--fl-deep);
+    border-bottom: 1px solid var(--fl-line);
+    min-width: 0;
+}
+
+.fl-logo {
+    padding: 0 8px 0 2px;
+    color: var(--fl-orange);
+    font-weight: 800;
+    letter-spacing: 0.02em;
+}
+
+.fl-menus {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1px;
+}
+
+/* Closes an open menu on a click anywhere else in FL Studio. */
+.fl-menu-shield {
+    position: fixed;
+    inset: 0;
+    z-index: 39;
+}
+
+.fl-menu {
+    position: relative;
+}
+
+.fl-menu-button {
+    position: relative;
+    z-index: 41;
+    min-height: 26px;
+    padding: 0 9px;
+    border: 0;
+    border-radius: 3px;
+    background: transparent;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    font-size: 11px;
+}
+
+.fl-menu-button:hover,
+.fl-menu-button[aria-expanded='true'] {
+    background: var(--fl-head);
+    color: #fff;
+}
+
+.fl-menu-list {
+    position: absolute;
+    top: calc(100% + 2px);
+    left: 0;
+    z-index: 40;
+    min-width: 230px;
+    max-height: 70cqh;
+    overflow-y: auto;
+    padding: 4px 0;
+    background: #3a4046;
+    border: 1px solid var(--fl-line);
+    border-radius: 4px;
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.5);
+}
+
+/* The last menus open leftwards, so they stay inside a narrow window. */
+.fl-menu:nth-last-of-type(-n + 2) .fl-menu-list {
+    right: 0;
+    left: auto;
+}
+
+.fl-menu-item {
+    display: grid;
+    grid-template-columns: 18px 1fr auto;
+    align-items: center;
+    gap: 6px;
+    width: 100%;
+    min-height: 28px;
+    padding: 0 12px 0 6px;
+    border: 0;
+    background: transparent;
+    text-align: left;
+}
+
+.fl-menu-item:hover:not(:disabled) {
+    background: var(--fl-orange);
+    color: #1b1b1b;
+}
+
+.fl-menu-item:disabled {
+    opacity: 0.4;
+    cursor: default;
+}
+
+.fl-menu-key {
+    opacity: 0.65;
+    font-size: 11px;
+}
+
+.fl-menu-sep {
+    height: 1px;
+    margin: 4px 0;
+    background: var(--fl-line);
+}
+
+.fl-project-name {
+    width: 150px;
+    min-width: 0;
+    margin-left: 8px;
+    padding: 3px 6px;
+    border: 1px solid var(--fl-line);
+    border-radius: 3px;
+    background: var(--fl-panel);
+}
+
+.fl-hint {
+    flex: 1;
+    min-width: 0;
+    padding-left: 10px;
+    overflow: hidden;
+    color: var(--fl-dim);
+    font-style: italic;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* ---- Toolbar ------------------------------------------------------------- */
+
+.fl-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 8px;
+    background: linear-gradient(#353b41, #2c3237);
+    border-bottom: 1px solid var(--fl-line);
+}
+
+.fl-group {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    padding: 3px;
+    background: var(--fl-deep);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 4px;
+}
+
+.fl-tool {
+    display: inline-grid;
+    place-items: center;
+    min-width: 32px;
+    height: 32px;
+    padding: 0 8px;
+    border: 0;
+    border-radius: 3px;
+    background: transparent;
+    font-weight: 700;
+    font-size: 11px;
+}
+
+.fl-tool:hover {
+    background: var(--fl-head);
+}
+
+.fl-tool[aria-pressed='true'] {
+    background: var(--fl-head);
+    color: var(--fl-orange);
+}
+
+.fl-tool svg {
+    width: 18px;
+    height: 18px;
+    fill: currentColor;
+}
+
+.fl-play[aria-pressed='true'] {
+    color: var(--fl-green);
+}
+
+.fl-tempo input {
+    width: 54px;
+    padding: 2px 4px;
+    border: 0;
+    border-radius: 3px;
+    background: #101316;
+    color: var(--fl-orange);
+    font: 600 17px/1 Consolas, 'Cascadia Mono', monospace;
+    text-align: center;
+}
+
+.fl-label {
+    padding: 0 4px;
+    color: var(--fl-dim);
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.fl-lcd {
+    min-width: 92px;
+    padding: 5px 10px;
+    border-radius: 4px;
+    background: #101316;
+    color: var(--fl-blue);
+    font: 600 19px/1 Consolas, 'Cascadia Mono', monospace;
+    letter-spacing: 0.06em;
+    text-align: center;
+}
+
+.fl-range {
+    width: 90px;
+    accent-color: var(--fl-orange);
+}
+
+.fl-select {
+    max-width: 140px;
+    height: 28px;
+    padding: 0 6px;
+    border: 1px solid var(--fl-line);
+    border-radius: 3px;
+    background: var(--fl-panel);
+}
+
+/* ---- Narrow windows show one panel at a time ------------------------------- */
+
+.fl-tabs {
+    display: none;
+    gap: 2px;
+    padding: 4px 6px;
+    overflow-x: auto;
+    background: var(--fl-deep);
+    border-bottom: 1px solid var(--fl-line);
+}
+
+.fl-tab {
+    flex: 1 0 auto;
+    min-height: 40px;
+    padding: 0 12px;
+    border: 0;
+    border-radius: 4px;
+    background: transparent;
+    font-weight: 600;
+}
+
+.fl-tab[aria-selected='true'] {
+    background: var(--fl-head);
+    color: var(--fl-orange);
+}
+
+/* ---- Body and panels -------------------------------------------------------- */
+
+.fl-body {
+    display: flex;
+    flex: 1;
+    min-height: 0;
+}
+
+.fl-workspace {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 4px;
+}
+
+.fl-panel {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    min-height: 0;
+    overflow: hidden;
+    background: var(--fl-panel);
+    border: 1px solid var(--fl-line);
+    border-radius: 4px;
+}
+
+.fl-app [data-fl-panel][data-open='false'] {
+    display: none;
+}
+
+.fl-panel-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    min-height: 30px;
+    padding: 2px 8px;
+    background: var(--fl-head);
+    border-bottom: 1px solid var(--fl-line);
+    font-weight: 700;
+}
+
+.fl-panel-sub {
+    color: var(--fl-dim);
+    font-weight: 400;
+}
+
+.fl-panel-head .fl-select {
+    height: 24px;
+}
+
+.fl-push {
+    margin-left: auto;
+}
+
+.fl-panel-foot {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 8px;
+    background: var(--fl-deep);
+    border-top: 1px solid var(--fl-line);
+}
+
+.fl-button {
+    min-height: 28px;
+    padding: 0 10px;
+    border: 1px solid var(--fl-line);
+    border-radius: 3px;
+    background: var(--fl-head);
+    font-weight: 600;
+}
+
+.fl-button:hover {
+    background: #4a5258;
+}
+
+.fl-count {
+    margin-left: auto;
+    color: var(--fl-dim);
+}
+
+/* ---- Browser ------------------------------------------------------------------ */
+
+.fl-browser {
+    flex: 0 0 168px;
+    margin: 4px 0 4px 4px;
+}
+
+.fl-browser-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 4px;
+}
+
+.fl-browser-group {
+    margin: 6px 4px 2px;
+    color: var(--fl-dim);
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.fl-browser-item {
+    display: flex;
+    align-items: center;
+}
+
+.fl-browser-preview,
+.fl-browser-file {
+    display: flex;
+    flex: 1;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+    min-height: 28px;
+    padding: 0 6px;
+    border: 0;
+    border-radius: 3px;
+    background: transparent;
+    text-align: left;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.fl-browser-preview:hover,
+.fl-browser-file:hover {
+    background: var(--fl-head);
+}
+
+.fl-browser-add {
+    width: 28px;
+    height: 28px;
+    border: 0;
+    border-radius: 3px;
+    background: transparent;
+    color: var(--fl-dim);
+    font-size: 16px;
+    font-weight: 700;
+}
+
+.fl-browser-add:hover {
+    background: var(--fl-head);
+    color: var(--fl-orange);
+}
+
+.fl-swatch {
+    flex: none;
+    width: 8px;
+    height: 8px;
+    border-radius: 2px;
+    background: var(--c);
+}
+
+/* ---- Channel rack --------------------------------------------------------------- */
+
+/* The rack keeps its rows, up to just under half the space; the piano roll
+   and playlist share the rest and scroll inside themselves. */
+.fl-rack {
+    flex: 0 0 auto;
+    max-height: 45%;
+}
+
+.fl-rack-body {
+    flex: 1;
+    overflow: auto;
+    padding: 4px 0;
+}
+
+.fl-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: max-content;
+    min-width: 100%;
+    padding: 1px 8px 1px 0;
+}
+
+.fl-row[data-selected='true'] .fl-channel-name {
+    box-shadow: inset 0 0 0 1px var(--fl-orange);
+}
+
+.fl-row-head {
+    position: sticky;
+    left: 0;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0 6px 0 8px;
+    background: var(--fl-panel);
+}
+
+.fl-led {
+    width: 14px;
+    height: 14px;
+    border: 1px solid #000;
+    border-radius: 50%;
+    background: #3b4248;
+}
+
+.fl-led[aria-pressed='true'] {
+    background: var(--fl-green);
+    box-shadow: 0 0 6px rgba(143, 209, 79, 0.7);
+}
+
+.fl-knob {
+    width: 54px;
+    accent-color: var(--fl-orange);
+}
+
+.fl-channel-name {
+    width: 104px;
+    height: var(--fl-step-h);
+    padding: 0 8px;
+    border: 1px solid #000;
+    border-left: 4px solid var(--c);
+    border-radius: 3px;
+    background: linear-gradient(#4a5258, #3d4449);
+    overflow: hidden;
+    font-weight: 600;
+    text-align: left;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.fl-channel-name:hover {
+    background: linear-gradient(#566068, #474f55);
+}
+
+.fl-steps {
+    display: flex;
+    gap: 3px;
+}
+
+.fl-step {
+    flex: none;
+    width: var(--fl-step-w);
+    height: var(--fl-step-h);
+    padding: 0;
+    border: 1px solid #000;
+    border-radius: 3px;
+    background: #4d555c;
+}
+
+.fl-step[data-beat='1'] {
+    background: #5e676f;
+}
+
+.fl-step:nth-of-type(4n) {
+    margin-right: 4px;
+}
+
+.fl-step[aria-pressed='true'] {
+    background: linear-gradient(#ffb15c, var(--fl-orange));
+    box-shadow: inset 0 0 6px rgba(255, 255, 255, 0.35);
+}
+
+.fl-step[data-now] {
+    outline: 2px solid rgba(255, 255, 255, 0.7);
+    outline-offset: -2px;
+}
+
+/* ---- Piano roll ---------------------------------------------------------------------- */
+
+.fl-piano {
+    flex: 1 1 0;
+    min-height: 170px;
+}
+
+.fl-piano-body {
+    display: flex;
+    flex: 1;
+    overflow: auto;
+}
+
+.fl-keys {
+    position: sticky;
+    left: 0;
+    z-index: 3;
+    flex: none;
+    width: 46px;
+    height: max-content;
+    background: #f1f1f1;
+    border-right: 1px solid #000;
+    touch-action: pan-y;
+}
+
+.fl-key {
+    display: block;
+    width: 100%;
+    height: var(--fl-row-h);
+    padding: 0 3px;
+    border: 0;
+    border-bottom: 1px solid #c9c9c9;
+    background: #f4f4f4;
+    color: #444;
+    font-size: 9px;
+    line-height: var(--fl-row-h);
+    text-align: right;
+}
+
+.fl-key[data-black='true'] {
+    background: #26292c;
+    color: #ddd;
+}
+
+.fl-grid {
+    position: relative;
+    flex: none;
+    width: calc(var(--steps) * var(--fl-note-w));
+    height: calc(var(--rows) * var(--fl-row-h));
+    background-color: #2a3035;
+    background-image:
+        linear-gradient(90deg, rgba(0, 0, 0, 0.55) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 0, 0, 0.25) 1px, transparent 1px),
+        linear-gradient(rgba(0, 0, 0, 0.3) 1px, transparent 1px);
+    background-size:
+        calc(var(--fl-note-w) * 4) 100%,
+        var(--fl-note-w) 100%,
+        100% var(--fl-row-h);
+    touch-action: pan-y;
+    cursor: crosshair;
+}
+
+.fl-note {
+    position: absolute;
+    top: calc(var(--r) * var(--fl-row-h));
+    left: calc(var(--s) * var(--fl-note-w));
+    width: calc(var(--l) * var(--fl-note-w) - 1px);
+    height: calc(var(--fl-row-h) - 1px);
+    overflow: hidden;
+    background: linear-gradient(#a6e86a, #79b941);
+    border: 1px solid #2c4a15;
+    border-radius: 2px;
+    color: #1e3010;
+    font-size: 9px;
+    line-height: calc(var(--fl-row-h) - 3px);
+    padding-left: 2px;
+    touch-action: none;
+    cursor: move;
+}
+
+.fl-note-edge {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 7px;
+    cursor: ew-resize;
+}
+
+.fl-playhead {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    z-index: 4;
+    width: 2px;
+    background: rgba(255, 255, 255, 0.75);
+    pointer-events: none;
+}
+
+.fl-grid .fl-playhead {
+    left: calc(var(--fl-pos, 0) * var(--fl-note-w));
+}
+
+/* ---- Playlist -------------------------------------------------------------------------- */
+
+.fl-playlist {
+    flex: 1 1 0;
+    min-height: 170px;
+}
+
+.fl-playlist-body {
+    position: relative;
+    display: grid;
+    grid-template-columns: 76px max-content;
+    grid-template-rows: 24px max-content;
+    flex: 1;
+    overflow: auto;
+    background: #22272b;
+}
+
+.fl-corner {
+    position: sticky;
+    top: 0;
+    left: 0;
+    z-index: 6;
+    background: var(--fl-head);
+}
+
+.fl-ruler {
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    display: flex;
+    background: var(--fl-head);
+    border-bottom: 1px solid var(--fl-line);
+}
+
+.fl-bar-number {
+    flex: none;
+    width: var(--fl-bar);
+    height: 24px;
+    padding: 0 0 0 4px;
+    border: 0;
+    border-left: 1px solid var(--fl-line);
+    background: transparent;
+    color: var(--fl-dim);
+    font-size: 10px;
+    text-align: left;
+}
+
+.fl-bar-number:hover {
+    color: #fff;
+}
+
+.fl-tracks {
+    position: sticky;
+    left: 0;
+    z-index: 4;
+    background: var(--fl-panel);
+}
+
+.fl-track-name {
+    display: flex;
+    align-items: center;
+    height: var(--fl-track);
+    padding: 0 8px;
+    border-bottom: 1px solid var(--fl-line);
+    color: var(--fl-dim);
+    font-size: 11px;
+}
+
+.fl-lanes {
+    position: relative;
+    width: calc(var(--bars) * var(--fl-bar));
+    height: calc(var(--tracks) * var(--fl-track));
+    background-image:
+        linear-gradient(90deg, rgba(0, 0, 0, 0.5) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+        linear-gradient(var(--fl-line) 1px, transparent 1px);
+    background-size:
+        var(--fl-bar) 100%,
+        calc(var(--fl-bar) / 4) 100%,
+        100% var(--fl-track);
+    cursor: copy;
+}
+
+.fl-lanes .fl-playhead {
+    left: calc(var(--fl-pos, 0) * var(--fl-bar) / 16);
+}
+
+.fl-clip {
+    position: absolute;
+    top: calc(var(--t) * var(--fl-track) + 2px);
+    left: calc(var(--b) * var(--fl-bar) + 1px);
+    width: calc(var(--w) * var(--fl-bar) - 2px);
+    height: calc(var(--fl-track) - 4px);
+    overflow: hidden;
+    padding: 2px 5px;
+    background: color-mix(in srgb, var(--c) 70%, #000);
+    border: 1px solid color-mix(in srgb, var(--c) 60%, #fff);
+    border-radius: 3px;
+    color: #fff;
+    font-size: 11px;
+    font-weight: 600;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    touch-action: none;
+    cursor: grab;
+}
+
+.fl-clip:active {
+    cursor: grabbing;
+}
+
+/* ---- Mixer -------------------------------------------------------------------------------- */
+
+.fl-mixer {
+    flex: 0 0 auto;
+    margin: 0 4px 4px;
+}
+
+.fl-mixer-body {
+    display: flex;
+    gap: 3px;
+    padding: 6px;
+    overflow-x: auto;
+    background: var(--fl-deep);
+}
+
+.fl-strip {
+    display: grid;
+    flex: none;
+    grid-template-columns: 1fr 10px;
+    grid-template-rows: auto 96px auto auto;
+    gap: 4px;
+    width: 68px;
+    padding: 4px;
+    background: #2b3136;
+    border: 1px solid #000;
+    border-radius: 3px;
+}
+
+.fl-strip-master {
+    background: #343a40;
+}
+
+.fl-strip-name {
+    grid-column: 1 / -1;
+    overflow: hidden;
+    border-bottom: 2px solid var(--c, var(--fl-orange));
+    font-size: 10px;
+    font-weight: 700;
+    text-align: center;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.fl-fader {
+    justify-self: center;
+    width: 28px;
+    height: 96px;
+    writing-mode: vertical-lr;
+    direction: rtl;
+    accent-color: var(--fl-blue);
+}
+
+.fl-meter {
+    position: relative;
+    overflow: hidden;
+    background: #0d0f11;
+    border-radius: 2px;
+}
+
+.fl-meter::after {
+    content: '';
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    height: calc(var(--level, 0) * 100%);
+    background: linear-gradient(to top, #4fd14f 0%, #4fd14f 65%, #e6d23f 85%, #e64a3f 100%);
+    background-size: 100% 96px;
+    background-position: bottom;
+}
+
+.fl-pan {
+    grid-column: 1 / -1;
+    width: 100%;
+    accent-color: var(--fl-orange);
+}
+
+.fl-strip-buttons {
+    grid-column: 1 / -1;
+    display: flex;
+    gap: 3px;
+}
+
+.fl-strip-buttons button {
+    flex: 1;
+    height: 22px;
+    padding: 0;
+    border: 1px solid #000;
+    border-radius: 3px;
+    background: #3b4248;
+    font-size: 10px;
+    font-weight: 700;
+}
+
+.fl-mute[aria-pressed='true'] {
+    background: #6b2b2b;
+    color: #ffb3b3;
+}
+
+.fl-solo[aria-pressed='true'] {
+    background: var(--fl-orange);
+    color: #1b1b1b;
+}
+
+/* ---- Dialogs ---------------------------------------------------------------------------------- */
+
+.fl-dialog-backdrop {
+    position: absolute;
+    inset: 0;
+    z-index: 60;
+    display: grid;
+    place-items: center;
+    padding: 16px;
+    background: rgba(0, 0, 0, 0.45);
+}
+
+.fl-dialog {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: min(420px, 100%);
+    max-height: 100%;
+    overflow: auto;
+    padding: 14px;
+    background: var(--fl-panel);
+    border: 1px solid var(--fl-line);
+    border-radius: 6px;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6);
+}
+
+.fl-dialog h2 {
+    margin: 0;
+    font-size: 14px;
+}
+
+.fl-dialog ul {
+    display: grid;
+    gap: 6px;
+    margin: 0;
+    padding-left: 18px;
+}
+
+.fl-dialog input {
+    padding: 6px 8px;
+    border: 1px solid var(--fl-line);
+    border-radius: 3px;
+    background: var(--fl-deep);
+}
+
+.fl-dialog-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
+.fl-empty {
+    color: var(--fl-dim);
+}
+
+/* ---- Narrow windows: tabs instead of side-by-side panels ---------------------------------------- */
+
+@container fl (max-width: 760px) {
+    .fl-tabs {
+        display: flex;
+    }
+
+    .fl-app [data-fl-panel],
+    .fl-app [data-fl-panel][data-open='false'] {
+        display: none;
+    }
+
+    .fl-app[data-fl-tab='browser'] [data-fl-panel='browser'],
+    .fl-app[data-fl-tab='rack'] [data-fl-panel='rack'],
+    .fl-app[data-fl-tab='piano'] [data-fl-panel='piano'],
+    .fl-app[data-fl-tab='playlist'] [data-fl-panel='playlist'],
+    .fl-app[data-fl-tab='mixer'] [data-fl-panel='mixer'] {
+        display: flex;
+        flex: 1 1 auto;
+        max-height: none;
+        margin: 4px;
+    }
+
+    .fl-body {
+        flex: 1;
+    }
+
+    .fl-workspace {
+        padding: 0;
+    }
+
+    .fl-app[data-fl-tab='mixer'] .fl-body {
+        display: none;
+    }
+
+    .fl-views,
+    .fl-hint,
+    .fl-project-name {
+        display: none;
+    }
+
+    .fl-app[data-fl-tab='browser'] .fl-workspace {
+        display: none;
+    }
+
+    .fl-browser {
+        flex-basis: auto;
+    }
+
+    /* Bigger targets for fingers. A container query cannot style the container
+       itself, so these go on its children, which pass them down. */
+    .fl-app > * {
+        --fl-step-w: 34px;
+        --fl-step-h: 40px;
+        --fl-row-h: 22px;
+        --fl-note-w: 30px;
+        --fl-track: 44px;
+    }
+
+    /* The mixer has every volume, so the rack gives its width to the steps. */
+    .fl-knob {
+        display: none;
+    }
+
+    .fl-channel-name {
+        width: 86px;
+    }
+
+    .fl-browser-preview,
+    .fl-browser-file,
+    .fl-browser-add,
+    .fl-button,
+    .fl-select,
+    .fl-tool {
+        min-height: 44px;
+    }
+
+    .fl-browser-add {
+        width: 44px;
+    }
+}

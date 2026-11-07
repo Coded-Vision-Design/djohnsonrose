@@ -27,9 +27,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - uses: actions/setup-node@v7
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: "22"
           cache: npm
@@ -38,6 +38,10 @@ jobs:
       - name: Install v2
         working-directory: v2
         run: npm ci --ignore-scripts --no-audit --no-fund
+
+      - name: Lint
+        working-directory: v2
+        run: npm run lint
 
       - name: Unit tests
         working-directory: v2
@@ -48,28 +52,33 @@ jobs:
         run: npm run build
 
       - name: PHP tests
+        run: php tests/php/run.php
+
+      # Keeps images, sounds and bundles within their size budget.
+      - name: Asset sizes
         run: |
-          php tests/php/contact_test.php
-          php tests/php/security_test.php
+          node --test scripts/check-asset-sizes.test.mjs
+          node scripts/check-asset-sizes.mjs
 
   browser-tests:
     name: browser-tests
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    # Setup takes about 5 minutes and the tests about 16 on a hosted runner.
+    timeout-minutes: 35
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - uses: actions/setup-node@v7
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: "22"
           cache: npm
           cache-dependency-path: v2/package-lock.json
 
-      - name: Install v2 and Chromium
+      - name: Install v2 and the browsers
         working-directory: v2
         run: |
           npm ci --ignore-scripts --no-audit --no-fund
-          npx playwright install --with-deps chromium
+          npx playwright install --with-deps chromium webkit
 
       - name: Build v2
         working-directory: v2
@@ -106,8 +115,8 @@ jobs:
         run: npx playwright test --workers=2 --retries=1 --reporter=line
 
       - name: Keep failure traces
-        if: failure()
-        uses: actions/upload-artifact@v7
+        if: failure() || cancelled()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: playwright-results
           path: v2/test-results

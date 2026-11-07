@@ -192,6 +192,7 @@ export function measureDesktop(element: Element): Desktop
 export function animateGeometry(element: HTMLElement | null): void
 export function beginWindowDrag(event: PointerEvent, ctx: DragContext): (() => void) | null
 export function beginWindowResize(event: PointerEvent, ctx: ResizeContext): (() => void) | null
+export function keepFileLongPress(root?: Window | Document | Element, options?: { holdMs?: number }): () => void
 export function watchDesktop(
   element: Element,
   onChange: (desktop: Desktop, mode: WindowMode) => void,

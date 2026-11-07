@@ -3,18 +3,26 @@ import { useOsStore } from '../store/osStore'
 import { startPinnedApps } from '../apps/manifest'
 import { getApp, groupAppsByLetter, listApps } from '../apps/registry'
 import { searchOs, type SearchResult } from '../../../assets/js/windowing/shell-core.js'
-import { filesystem, type FsEntry } from '../data/filesystem'
+import { relativeTime } from '../../../assets/js/windowing/shell-ui.js'
+import { findEntry, joinPath } from '../../../assets/js/windowing/file-ops.js'
+import type { FsEntry } from '../data/filesystem'
+import { showFileMenu } from './menus'
 import { openEntry } from './openEntry'
 
 type View = 'pinned' | 'allApps'
 type Result = SearchResult<FsEntry>
 
-// 1:1 port of partials/start-menu.php — 540x600 panel above the taskbar with
+// 1:1 port of partials/start-menu.php - 540x600 panel above the taskbar with
 // search, Pinned grid (6 cols), All Apps A-Z view, Recommended row, and a
 // profile bar at the bottom.
 
 export function StartMenu() {
   const open = useOsStore((s) => s.startMenuOpen)
+  // Mounted only while open, so that each opening starts afresh.
+  return open ? <StartPanel /> : null
+}
+
+function StartPanel() {
   const close = useOsStore((s) => s.closeAllPopups)
   const openAppStore = useOsStore((s) => s.openApp)
   const logout = useOsStore((s) => s.logout)
@@ -26,7 +34,6 @@ export function StartMenu() {
 
   // Click-away
   useEffect(() => {
-    if (!open) return
     const onDown = (e: MouseEvent) => {
       if (!containerRef.current || containerRef.current.contains(e.target as Node)) return
       // Ignore clicks on the taskbar's start/search/quick-settings buttons -
@@ -35,23 +42,17 @@ export function StartMenu() {
       const t = e.target as Element | null
       if (t?.closest?.('[data-popup-toggle]')) return
       close()
-      setView('pinned')
-      setQuery('')
     }
     const id = window.setTimeout(() => document.addEventListener('mousedown', onDown), 0)
     return () => {
       window.clearTimeout(id)
       document.removeEventListener('mousedown', onDown)
     }
-  }, [open, close])
+  }, [close])
 
   useEffect(() => {
-    if (open) {
-      setView('pinned')
-      setQuery('')
-      inputRef.current?.focus()
-    }
-  }, [open])
+    inputRef.current?.focus()
+  }, [])
 
   const pinned = useMemo(
     () => startPinnedApps.map(getApp).filter((a): a is NonNullable<typeof a> => !!a),
@@ -59,33 +60,17 @@ export function StartMenu() {
   )
 
   const grouped = useMemo(() => groupAppsByLetter(), [])
-  const recycleBin = useOsStore((s) => s.recycleBin)
-  const recoveredItems = useOsStore((s) => s.recoveredItems)
-  const renames = useOsStore((s) => s.renames)
-
-  // The file system as the visitor has left it: v1 changes its copy directly,
-  // and v2 keeps their changes as overlays.
-  const files = useMemo(() => {
-    const visible: Record<string, FsEntry[]> = {}
-    for (const [path, entries] of Object.entries(filesystem)) {
-      const recycled = recycleBin.filter((r) => r.fromPath === path).map((r) => r.name)
-      const recovered = recoveredItems
-        .filter((r) => r.path === path)
-        .map((r) => r.item as unknown as FsEntry)
-        .filter((item) => !entries.some((entry) => entry.name === item.name))
-      visible[path] = [...entries.filter((entry) => !recycled.includes(entry.name)), ...recovered].map(
-        (entry) => ({ ...entry, name: renames[`${path}::${entry.name}`] ?? entry.name }),
-      )
-    }
-    return visible
-  }, [recycleBin, recoveredItems, renames])
+  const files = useOsStore((s) => s.fileSystem)
+  const startPins = useOsStore((s) => s.startPins)
+  const pinnedFiles = useMemo(
+    () => startPins.map((full) => findEntry(files, full)).filter((found) => found !== null),
+    [startPins, files],
+  )
 
   const searchResults = useMemo(
     () => (query ? searchOs(query, listApps(), files) : []),
     [query, files],
   )
-
-  if (!open) return null
 
   const launch = (id: string) => {
     const def = getApp(id)
@@ -109,6 +94,9 @@ export function StartMenu() {
   return (
     <div
       ref={containerRef}
+      data-start-menu=""
+      role="dialog"
+      aria-label="Start"
       className="absolute glass rounded-xl flex flex-col overflow-hidden win-shadow animate-start-menu z-10000 start-menu-mobile"
       style={{
         bottom: 'calc(var(--os-taskbar-height) + 8px)',
@@ -128,6 +116,7 @@ export function StartMenu() {
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
+            aria-label="Search"
             placeholder="Search for apps, settings, and documents"
             className="w-full bg-white dark:bg-black/20 border-b-2 border-win-blue px-10 py-2 rounded-md outline-hidden text-sm transition-all focus:bg-white dark:focus:bg-[#1c1c1c]"
             onKeyDown={(e) => {
@@ -135,7 +124,7 @@ export function StartMenu() {
             }}
           />
           <svg
-            className="absolute left-3 top-2.5 w-4 h-4 text-gray-400 group-focus-within:text-win-blue"
+            className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-win-blue"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -157,7 +146,13 @@ export function StartMenu() {
       ) : view === 'pinned' ? (
         <PinnedView
           pinned={pinned}
+          pinnedFiles={pinnedFiles}
+          onOpenFile={(entry, path) => {
+            openEntry(entry, path)
+            close()
+          }}
           onLaunch={launch}
+          onRecommended={(app, title, extra) => openAppStore(app, title, { extra })}
           onAllApps={() => setView('allApps')}
         />
       ) : (
@@ -214,7 +209,7 @@ function SearchView({
 }) {
   return (
     <div className="grow overflow-y-auto px-8">
-      <h3 className="text-[11px] font-bold text-gray-500 uppercase mb-3 tracking-wider">
+      <h3 className="text-xs font-bold text-gray-500 uppercase mb-3 tracking-wider">
         Top results
       </h3>
       <div className="space-y-1">
@@ -239,7 +234,7 @@ function SearchView({
               </div>
               <div className="min-w-0 grow text-black dark:text-white group-hover:text-white">
                 <div className="text-xs font-medium truncate">{result.name}</div>
-                <div className="text-[10px] opacity-60 truncate capitalize">{result.type}</div>
+                <div className="text-xs opacity-60 truncate capitalize">{result.type}</div>
               </div>
             </button>
           ))
@@ -251,13 +246,22 @@ function SearchView({
 
 function PinnedView({
   pinned,
+  pinnedFiles,
+  onOpenFile,
   onLaunch,
+  onRecommended,
   onAllApps,
 }: {
   pinned: ReturnType<typeof getApp>[]
+  pinnedFiles: { entry: FsEntry; path: string }[]
+  onOpenFile: (entry: FsEntry, path: string) => void
   onLaunch: (id: string) => void
+  onRecommended: (app: string, title: string, extra: Record<string, unknown>) => void
   onAllApps: () => void
 }) {
+  const recent = useOsStore((s) => s.recent)
+  // Read so that the times move on while Start stays open.
+  useOsStore((s) => s.clock.time)
   return (
     <div className="grow overflow-y-auto px-8">
       <div className="flex items-center justify-between mb-4">
@@ -284,43 +288,70 @@ function PinnedView({
               <div className="w-10 h-10 rounded-sm flex items-center justify-center bg-white/5 dark:bg-white/5 group-hover:bg-white/10 shrink-0 overflow-hidden transition-transform group-hover:scale-110">
                 <img src={a.icon} alt="" className="w-7 h-7 object-contain" />
               </div>
-              <span className="text-[11px] mt-2 dark:text-white text-center truncate w-full px-0.5">
+              <span className="text-xs mt-2 dark:text-white text-center truncate w-full px-0.5">
                 {a.title}
               </span>
             </button>
           ) : null,
         )}
+        {pinnedFiles.map(({ entry, path }) => (
+          <button
+            key={joinPath(path, entry.name)}
+            type="button"
+            data-pinned-file={joinPath(path, entry.name)}
+            title={entry.name}
+            onClick={() => onOpenFile(entry, path)}
+            onContextMenu={(e) => {
+              e.preventDefault()
+              e.stopPropagation()
+              showFileMenu(entry, path, e)
+            }}
+            className="flex flex-col items-center group cursor-pointer transition-all active:scale-95 w-full min-w-0"
+          >
+            <div className="w-10 h-10 rounded-sm flex items-center justify-center text-2xl group-hover:scale-110 transition-transform bg-white/5 dark:bg-white/5 group-hover:bg-white/10 shrink-0 overflow-hidden">
+              {entry.icon?.includes('.') ? (
+                <img src={entry.icon} alt="" className="w-7 h-7 object-contain" />
+              ) : (
+                <span>{entry.icon || '📄'}</span>
+              )}
+            </div>
+            <span className="text-xs mt-2 dark:text-white text-center truncate w-full px-0.5">
+              {entry.name}
+            </span>
+          </button>
+        ))}
       </div>
 
+      {/* Recommended: what the visitor opened, and when. See recentKey in shell-ui.js. */}
       <div className="mt-8">
         <h2 className="text-sm font-semibold dark:text-white mb-4">Recommended</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <button
             type="button"
-            onClick={() => onLaunch('pdfreader')}
-            className="flex items-center p-2 rounded-sm hover:bg-white/20 dark:hover:bg-white/10 text-left transition-colors"
+            data-recommended="cv"
+            onClick={() => onRecommended('pdfreader', CV_TITLE, { pdfUrl: '/data/cv.pdf' })}
+            className="w-full flex items-center p-2 rounded-sm hover:bg-white/20 dark:hover:bg-white/10 text-left transition-colors"
           >
-            <div className="w-8 h-8 rounded-sm bg-white flex items-center justify-center mr-3 overflow-hidden">
+            <div className="w-8 h-8 rounded-sm bg-white flex items-center justify-center mr-3 overflow-hidden shrink-0">
               <img src="/assets/img/pdf.webp" alt="" className="w-6 h-6 object-contain" />
             </div>
-            <div>
-              <div className="text-[11px] font-medium dark:text-white">
-                CV - DeVanté Johnson-Rose.pdf
-              </div>
-              <div className="text-[10px] text-gray-500">2h ago</div>
+            <div className="min-w-0">
+              <div className="text-xs font-medium dark:text-white truncate">{CV_TITLE}</div>
+              <div className="text-xs text-gray-600 dark:text-gray-400">{recentLabel(recent.cv)}</div>
             </div>
           </button>
           <button
             type="button"
-            onClick={() => onLaunch('explorer')}
-            className="flex items-center p-2 rounded-sm hover:bg-white/20 dark:hover:bg-white/10 text-left transition-colors"
+            data-recommended="projects"
+            onClick={() => onRecommended('explorer', 'Projects', { initialPath: PROJECTS })}
+            className="w-full flex items-center p-2 rounded-sm hover:bg-white/20 dark:hover:bg-white/10 text-left transition-colors"
           >
-            <div className="w-8 h-8 rounded-sm bg-yellow-100 flex items-center justify-center mr-3 overflow-hidden">
+            <div className="w-8 h-8 rounded-sm bg-yellow-100 flex items-center justify-center mr-3 overflow-hidden shrink-0">
               <img src="/assets/img/win11/folder.webp" alt="" className="w-6 h-6 object-contain" />
             </div>
-            <div>
-              <div className="text-[11px] font-medium dark:text-white">Projects</div>
-              <div className="text-[10px] text-gray-500">Yesterday</div>
+            <div className="min-w-0">
+              <div className="text-xs font-medium dark:text-white truncate">Projects</div>
+              <div className="text-xs text-gray-600 dark:text-gray-400">{recentLabel(recent.projects)}</div>
             </div>
           </button>
         </div>
@@ -328,6 +359,12 @@ function PinnedView({
     </div>
   )
 }
+
+const CV_TITLE = 'CV - DeVanté Johnson-Rose.pdf'
+const PROJECTS = 'C:\\Users\\DeVante\\Projects'
+
+/** When a Recommended item was last opened, as v1's recentLabel puts it. */
+const recentLabel = (time: number | undefined) => relativeTime(time ?? null, new Date()) ?? 'Recently added'
 
 function AllAppsView({
   grouped,
@@ -366,7 +403,7 @@ function AllAppsView({
                   <div className="w-8 h-8 rounded-sm flex items-center justify-center mr-3 overflow-hidden shrink-0 transition-transform group-hover:scale-110">
                     <img src={a.icon} alt="" className="w-6 h-6 object-contain" />
                   </div>
-                  <span className="text-[11px] font-medium dark:text-white">{a.title}</span>
+                  <span className="text-xs font-medium dark:text-white">{a.title}</span>
                 </button>
               ))}
             </div>

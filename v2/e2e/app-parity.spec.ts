@@ -93,9 +93,10 @@ async function openStart(page: Page) {
 for (const build of BUILDS) {
   test.describe(build.name, () => {
     test('Start shows the shared pins, in order', async ({ page }) => {
+      test.setTimeout(60_000) // A cold dev server sends icons one at a time.
       await boot(page, build.url)
       await openStart(page)
-      await expect.poll(() => undrawn(page, 'data-pinned-app'), { timeout: 15_000 }).toEqual([])
+      await expect.poll(() => undrawn(page, 'data-pinned-app'), { timeout: 40_000 }).toEqual([])
 
       const tiles = await entries(page, 'data-pinned-app')
       expect(tiles.map((tile) => tile.id)).toEqual(manifest.startPinned)
@@ -106,10 +107,11 @@ for (const build of BUILDS) {
     })
 
     test('All apps lists every app, in order', async ({ page }) => {
+      test.setTimeout(60_000) // A cold dev server sends icons one at a time.
       await boot(page, build.url)
       await openStart(page)
       await page.getByRole('button', { name: /All apps/ }).click()
-      await expect.poll(() => undrawn(page, 'data-all-app'), { timeout: 15_000 }).toEqual([])
+      await expect.poll(() => undrawn(page, 'data-all-app'), { timeout: 40_000 }).toEqual([])
 
       const rows = await entries(page, 'data-all-app')
       const sorted = [...manifest.apps].sort((a, b) => a.title.localeCompare(b.title))
@@ -386,6 +388,21 @@ test.describe('Start search in both builds', () => {
   }
 })
 
+test('Settings Qualifications lays out the same in both builds', async ({ browser }) => {
+  const [v1, v2] = await inBothBuilds(browser, async (page) => {
+    await call(page, 'openApp', 'settings')
+    const settings = page.locator('.os-window').last()
+    await settings.locator('[data-settings-nav="qualifications"]').click()
+    const card = settings.locator('[data-cert]').first()
+    await expect(card).toBeVisible()
+    // Past the tab's slide-in, so both are measured at rest.
+    await page.waitForTimeout(400)
+    const top = async (el: typeof card) => Math.round((await el.boundingBox())!.y - (await settings.boundingBox())!.y)
+    return { firstCertificate: await top(card), certificates: await settings.locator('[data-cert]').count() }
+  })
+  expect(v1).toEqual(v2)
+})
+
 test.describe('right-click menus in both builds', () => {
   /** What the open menu shows, down to each icon. */
   const readMenu = (page: Page) =>
@@ -449,6 +466,31 @@ test.describe('right-click menus in both builds', () => {
       await file.click({ button: 'right' })
     },
   }
+
+  // Each build's switch names the other build, so its label differs. With a
+  // wide font, as on Linux without Segoe UI, a label-sized switch made one tray
+  // wider and moved the centred taskbar icons.
+  test('taskbar icons sit in the same place whatever the font', async ({ browser }) => {
+    const [v1, v2] = await inBothBuilds(
+      browser,
+      async (page) => {
+        await page.evaluate(() => document.fonts.ready)
+        return page.evaluate(() => ({
+          tray: Math.round(document.querySelector('.os-taskbar-tray')!.getBoundingClientRect().width),
+          edge: Math.round(document.querySelector('[data-taskbar-app="edge"]')!.getBoundingClientRect().x),
+        }))
+      },
+      {
+        script: () =>
+          document.addEventListener('DOMContentLoaded', () => {
+            const style = document.createElement('style')
+            style.textContent = '* { font-family: Verdana, "DejaVu Sans", sans-serif !important }'
+            document.head.append(style)
+          }),
+      },
+    )
+    expect(v1).toEqual(v2)
+  })
 
   for (const [name, open] of Object.entries(targets)) {
     test(`${name} menu matches, with an image on every item`, async ({ browser }) => {
@@ -552,6 +594,33 @@ test.describe('the tray in both builds', () => {
       expect(v1).toEqual(v2)
     })
   }
+
+  test('tells the time the same way, whatever the visitor’s language', async ({ browser }) => {
+    test.setTimeout(60_000)
+    const [v1, v2] = await inBothBuilds(browser, async (page) => {
+      await page.waitForTimeout(1000) // The clock fills in just after the shell boots.
+      return page.locator('[data-tray-item="clock"]').innerText()
+    })
+    expect(v1).toMatch(/^\d{2}:\d{2}/)
+    expect(v1).toEqual(v2)
+  })
+
+  test('lines up at phone size', async ({ browser }) => {
+    test.setTimeout(60_000)
+    const [v1, v2] = await inBothBuilds(
+      browser,
+      async (page) => {
+        await page.waitForTimeout(1000) // The clock fills in just after the shell boots.
+        return page.locator('[data-tray-item]').evaluateAll((items) =>
+          items
+            .filter((el) => (el as HTMLElement).offsetParent !== null)
+            .map((el) => Math.round(el.getBoundingClientRect().x)),
+        )
+      },
+      { viewport: { width: 390, height: 844 } },
+    )
+    expect(v1).toEqual(v2)
+  })
 
   const readBattery = async (page: Page) => {
     const battery = page.locator('[data-tray-battery]')

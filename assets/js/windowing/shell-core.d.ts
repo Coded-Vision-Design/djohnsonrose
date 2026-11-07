@@ -62,6 +62,13 @@ export function buildMenu(
   overrides?: Record<string, Partial<MenuItemData>>,
 ): BuiltMenu
 
+export function cssUrl(address: string): string
+export function clockTime(date: Date): string
+export function clockDate(date: Date): string
+
+export function fingerGap(touches: ArrayLike<{ clientX: number; clientY: number }>): number
+export function pinchZoom(startZoom: number, startGap: number, gap: number): number
+
 export function placeMenu(
   x: number,
   y: number,

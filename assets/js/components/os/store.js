@@ -11,6 +11,44 @@ const APP_LOAD_ERROR = `
         </div>
     </div>`;
 
+const readList = (key) => {
+    try {
+        const list = JSON.parse(localStorage.getItem(key));
+        return Array.isArray(list) ? list : [];
+    } catch {
+        return [];
+    }
+};
+
+const toggled = (list, item) => (list.includes(item) ? list.filter(value => value !== item) : [...list, item]);
+
+// Storage can be blocked, which throws. The page still works, it just forgets.
+const stored = (key) => {
+    try {
+        return localStorage.getItem(key);
+    } catch {
+        return null;
+    }
+};
+
+const store = (key, value) => {
+    try {
+        localStorage.setItem(key, value);
+    } catch {
+        // Kept until the page closes.
+    }
+};
+
+const prefersDark = () => !!window.matchMedia?.('(prefers-color-scheme: dark)').matches;
+
+const readRecent = () => {
+    try {
+        return JSON.parse(localStorage.getItem('os.recent')) || {};
+    } catch {
+        return {};
+    }
+};
+
 document.addEventListener('alpine:init', () => {
     Alpine.store('os', {
         windows: [],
@@ -18,7 +56,7 @@ document.addEventListener('alpine:init', () => {
         contextMenu: { open: false, x: 0, y: 0, items: [], variant: 'modern' },
         nextWindowZ: 100,
         eventLogs: [],
-        logEvent(source, level, description) {
+        logEvent(source, level, description, details = {}) {
             this.eventLogs.unshift({
                 id: Date.now() + Math.random(),
                 time: new Date().toLocaleTimeString(),
@@ -32,41 +70,38 @@ document.addEventListener('alpine:init', () => {
 
             // Send telemetry for important events
             if (source === 'Security' || source === 'System' || source === 'Explorer') {
-                this.sendTelemetry(source + ': ' + level, { description });
+                this.sendTelemetry(source + ': ' + level, { description, ...details });
             }
         },
 
+        // The same as v2's: see deviceInfo in shell-ui.js.
         getDeviceInfo() {
-            const ua = navigator.userAgent;
-            let os = "Unknown OS";
-            if (ua.indexOf("Win") !== -1) os = "Windows";
-            if (ua.indexOf("Mac") !== -1) os = "MacOS";
-            if (ua.indexOf("Linux") !== -1) os = "Linux";
-            if (ua.indexOf("Android") !== -1) os = "Android";
-            if (ua.indexOf("like Mac") !== -1) os = "iOS";
-
-            return {
-                os: os,
-                browser: navigator.appName + " " + navigator.appVersion,
-                resolution: window.screen.width + "x" + window.screen.height,
-                deviceTime: new Date().toString(),
-                userAgent: ua
-            };
+            return OsWindowing.deviceInfo({
+                userAgent: navigator.userAgent,
+                screen: window.screen,
+                touchPoints: navigator.maxTouchPoints
+            });
         },
 
         sendTelemetry(action, details = {}) {
             // GDPR: no telemetry fires until the visitor accepts the cookie
-            // banner. Mirrors v2/src/lib/telemetry.ts behaviour.
-            if (localStorage.getItem('cookie.consent') !== 'true') return;
+            // banner, and none after they withdraw it. Mirrors v2/src/lib/telemetry.ts.
+            if (!this.cookieConsent) return;
+            let sessionID = 'guest';
+            try {
+                sessionID = sessionStorage.getItem('os.sessionID') || 'guest';
+            } catch {
+                // Blocked storage: the event is still worth sending.
+            }
             const data = {
                 action: action,
                 details: {
                     ...details,
                     // Tag every event with which build it came from so the
-                    // email logs (and the admin console stats) can split
-                    // PHP-side vs React-side activity.
+                    // daily digest and the Admin Console stats can split
+                    // v1 (PHP) and v2 (React) activity.
                     source: 'php',
-                    sessionID: sessionStorage.getItem('os.sessionID') || 'guest'
+                    sessionID
                 },
                 deviceInfo: this.getDeviceInfo()
             };
@@ -84,7 +119,11 @@ document.addEventListener('alpine:init', () => {
         windowHeight: window.innerHeight,
         windowWidth: window.innerWidth,
         previewWallpaper: null,
-        pinnedApps: window.portfolioConfig.pinned,
+        // Saved when the visitor pins or unpins, so the taskbar comes back the same.
+        pinnedApps: (() => {
+            const saved = readList('os.taskbarPins');
+            return stored('os.taskbarPins') === null ? window.portfolioConfig.pinned : saved;
+        })(),
         snapPreview: { rect: null, bar: null, target: null },
         snapFlyout: null,
         snapAssist: null,
@@ -95,40 +134,109 @@ document.addEventListener('alpine:init', () => {
             height: window.innerHeight,
             coarse: window.matchMedia('(pointer: coarse)').matches
         }),
-        cookieConsent: localStorage.getItem('cookie.consent') === 'true',
-        showCookieNotification: localStorage.getItem('auth.loggedIn') === 'true' && localStorage.getItem('cookie.consent') === null,
+        cookieConsent: stored('cookie.consent') === 'true',
+        // Set again after sign-in, so that a new visitor sees it at once.
+        showCookieNotification: stored('cookie.consent') === null,
         errorDialog: { open: false, title: '', message: '', path: '' },
         showError(title, message, path = '') {
             this.errorDialog = { open: true, title, message, path };
         },
         news: [],
+        // 'loading', 'ready' or 'error', so that Widgets can say when headlines failed.
+        newsStatus: 'loading',
+        // When Start's Recommended items were last opened, by key.
+        recent: readRecent(),
         desktopZoom: 1,
         settings: {
-            theme: localStorage.getItem('settings.theme') || 'light',
-            sound: localStorage.getItem('settings.sound') !== 'false',
-            volume: parseInt(localStorage.getItem('settings.volume')) || 75,
-            brightness: parseInt(localStorage.getItem('settings.brightness')) || 100,
-            wallpaper: localStorage.getItem('settings.wallpaper') || 'https://images.unsplash.com/photo-1620641788421-7a1c342ea42e?q=80&w=1974&auto=format&fit=crop',
+            // A first visit follows the system; a choice made in Settings is saved and wins.
+            theme: OsWindowing.initialTheme(stored('settings.theme'), prefersDark()),
+            sound: stored('settings.sound') !== 'false',
+            volume: OsWindowing.storedNumber(stored('settings.volume'), 75),
+            brightness: OsWindowing.storedNumber(stored('settings.brightness'), 100),
+            wallpaper: stored('settings.wallpaper') || window.portfolioConfig.imgPath + 'wallpaper-bloom.webp',
             email: window.portfolioConfig.email,
-            wifi: localStorage.getItem('settings.wifi') !== 'false',
-            bluetooth: localStorage.getItem('settings.bluetooth') !== 'false',
-            airplane: localStorage.getItem('settings.airplane') === 'true',
-            batterySaver: localStorage.getItem('settings.batterySaver') === 'true',
-            nightLight: localStorage.getItem('settings.nightLight') === 'true',
-            accessibility: localStorage.getItem('settings.accessibility') === 'true'
+            wifi: stored('settings.wifi') !== 'false',
+            bluetooth: stored('settings.bluetooth') !== 'false',
+            airplane: stored('settings.airplane') === 'true',
+            batterySaver: stored('settings.batterySaver') === 'true',
+            nightLight: stored('settings.nightLight') === 'true',
+            accessibility: stored('settings.accessibility') === 'true'
         },
+        // Windows makes no sound for a click, or for opening or minimising a
+        // window, so neither do we. v2's lib/sounds.ts has the same list.
         sounds: {
-            startup: window.portfolioConfig.basePath + 'assets/sounds/Windows Logon.wav',
-            click: window.portfolioConfig.basePath + 'assets/sounds/click.wav',
-            error: window.portfolioConfig.basePath + 'assets/sounds/Windows Error.wav',
-            minimize: window.portfolioConfig.basePath + 'assets/sounds/Windows Minimize.wav',
-            open: window.portfolioConfig.basePath + 'assets/sounds/Windows Restore.wav',
-            notify: window.portfolioConfig.basePath + 'assets/sounds/Windows Notify.wav',
-            recycle: window.portfolioConfig.basePath + 'assets/sounds/Windows Recycle.wav',
-            uac: window.portfolioConfig.basePath + 'assets/sounds/Windows User Account Control.wav'
+            startup: window.portfolioConfig.basePath + 'assets/sounds/Windows Logon.m4a',
+            error: window.portfolioConfig.basePath + 'assets/sounds/Windows Error.m4a',
+            notify: window.portfolioConfig.basePath + 'assets/sounds/Windows Notify.m4a',
+            recycle: window.portfolioConfig.basePath + 'assets/sounds/Windows Recycle.m4a',
+            uac: window.portfolioConfig.basePath + 'assets/sounds/Windows User Account Control.m4a'
         },
         // Injected from filesystem.js
         fileSystem: window.loadFileSystem(),
+        fileClipboard: null,
+        renaming: null,
+        properties: null,
+        toastMessage: null,
+        startPins: readList('os.startPins'),
+        favourites: readList('os.favourites'),
+        desktopIconSize: localStorage.getItem('os.iconSize') || 'medium',
+        desktopIconsVisible: localStorage.getItem('os.iconsVisible') !== 'false',
+
+        // Each change comes from a function in file-ops.js.
+        changeFiles(change) {
+            const next = change(this.fileSystem);
+            if (next === this.fileSystem) return;
+            this.fileSystem = next;
+            this.saveFileSystem();
+        },
+
+        toggleStartPin(full) {
+            this.startPins = toggled(this.startPins, full);
+            localStorage.setItem('os.startPins', JSON.stringify(this.startPins));
+        },
+
+        toggleFavourite(full) {
+            this.favourites = toggled(this.favourites, full);
+            localStorage.setItem('os.favourites', JSON.stringify(this.favourites));
+        },
+
+        togglePinned(app) {
+            this.pinnedApps = toggled(this.pinnedApps, app);
+            store('os.taskbarPins', JSON.stringify(this.pinnedApps));
+        },
+
+        markRecent(key) {
+            this.recent = { ...this.recent, [key]: Date.now() };
+            store('os.recent', JSON.stringify(this.recent));
+        },
+
+        setDesktopIconSize(size) {
+            this.desktopIconSize = size;
+            localStorage.setItem('os.iconSize', size);
+        },
+
+        setDesktopIconsVisible(visible) {
+            this.desktopIconsVisible = visible;
+            localStorage.setItem('os.iconsVisible', visible);
+        },
+
+        /** Returns the old and new names, so that the desktop can move the icon's spot. */
+        commitRename(value) {
+            if (!this.renaming) return null;
+            const { path, name } = this.renaming;
+            const newName = value.trim();
+            this.renaming = null;
+            this.changeFiles(fs => OsWindowing.renameEntry(fs, path, name, newName));
+            const renamed = (this.fileSystem[path] || []).some(entry => entry.name === newName);
+            return renamed && newName !== name ? { path, from: name, to: newName } : null;
+        },
+
+        showToast(message) {
+            this.toastMessage = message;
+            setTimeout(() => {
+                if (this.toastMessage === message) this.toastMessage = null;
+            }, 3000);
+        },
 
         saveFileSystem() {
             localStorage.setItem('os.fileSystem', JSON.stringify(this.fileSystem));
@@ -144,7 +252,7 @@ document.addEventListener('alpine:init', () => {
             if (this.settings.theme === 'dark') {
                 const fileName = soundPath.split('/').pop();
                 // Only these three have official dark mode variants in the dm folder
-                const dmVariants = ['Windows Background.wav', 'Windows Notify.wav', 'Windows User Account Control.wav'];
+                const dmVariants = ['Windows Background.m4a', 'Windows Notify.m4a', 'Windows User Account Control.m4a'];
                 if (dmVariants.includes(fileName)) {
                     soundPath = soundPath.replace('assets/sounds/', 'assets/sounds/dm/');
                 }
@@ -158,7 +266,9 @@ document.addEventListener('alpine:init', () => {
         openApp(appHandle, title = null, extraData = {}) {
             this.contextMenu.open = false; // Close menu when opening app
             this.taskSwitcherOpen = false;
-            this.logEvent('System', 'Information', `Starting application: ${title || appHandle}`);
+            this.logEvent('System', 'Information', `Starting application: ${title || appHandle}`, { app: appHandle });
+            const recent = OsWindowing.recentKey(appHandle, extraData);
+            if (recent) this.markRecent(recent);
             if (extraData.fromRecycleBin) {
                 this.playSound('error');
                 return;
@@ -177,7 +287,7 @@ document.addEventListener('alpine:init', () => {
                     existing.pdfUrl = extraData.pdfUrl;
                     existing.title = title || existing.title;
                 }
-                if (appHandle === 'notepad' && extraData.fileContent !== undefined) {
+                if ((appHandle === 'notepad' || appHandle === 'flstudio') && extraData.fileContent !== undefined) {
                     existing.fileContent = extraData.fileContent;
                     existing.filePath = extraData.filePath;
                     existing.fileRevision = (existing.fileRevision ?? 0) + 1;
@@ -186,6 +296,10 @@ document.addEventListener('alpine:init', () => {
                 if (appHandle === 'settings' && extraData.currentTab) {
                     existing.currentTab = extraData.currentTab;
                 }
+                if (appHandle === 'edge' && extraData.initialUrl) {
+                    existing.initialUrl = extraData.initialUrl;
+                    existing.urlRevision = (existing.urlRevision ?? 0) + 1;
+                }
                 
                 this.focusWindow(existing.id);
                 if (existing.state === 'minimized') this.toggleMinimize(existing.id);
@@ -193,7 +307,7 @@ document.addEventListener('alpine:init', () => {
                 if (appHandle === 'explorer' && extraData.initialPath) {
                     // Dispatch after focusing to ensure the listener identifies the right window
                     setTimeout(() => {
-                        window.dispatchEvent(new CustomEvent('explorer-navigate', { detail: { path: extraData.initialPath } }));
+                        window.dispatchEvent(new CustomEvent('explorer-navigate', { detail: { selectName: extraData.selectName, path: extraData.initialPath } }));
                     }, 10);
                 }
                 return;
@@ -215,7 +329,6 @@ document.addEventListener('alpine:init', () => {
 
             this.windows.push(newWindow);
             this.focusedWindowId = id;
-            this.playSound('open');
 
             fetch(`${window.portfolioConfig.basePath}api/app.php?name=${appHandle}`)
                 .then(res => {
@@ -248,6 +361,7 @@ document.addEventListener('alpine:init', () => {
                 if (win.app === 'settings') {
                     this.previewWallpaper = null;
                 }
+                OsWindowing.animateWindowOut(document.getElementById('win-' + id), 'close');
             }
             this.windows = this.windows.filter(w => w.id !== id);
             if (this.focusedWindowId === id) {
@@ -255,6 +369,14 @@ document.addEventListener('alpine:init', () => {
             }
             this.snapAssist = null;
             if (this.snapFlyout?.windowId === id) this.snapFlyout = null;
+            // Focus went with the window, so it moves on, as v2's Desktop does.
+            if (win) {
+                setTimeout(() => {
+                    if (document.activeElement === document.body || !document.activeElement) {
+                        OsWindowing.focusAfterClose(this.focusedWindowId, win.app);
+                    }
+                });
+            }
         },
 
         focusWindow(id) {
@@ -274,8 +396,8 @@ document.addEventListener('alpine:init', () => {
                 this.focusWindow(id);
                 return;
             }
+            OsWindowing.animateWindowOut(document.getElementById('win-' + id), 'minimise');
             Object.assign(win, OsWindowing.minimizePatch(win));
-            this.playSound('minimize');
             if (this.focusedWindowId === id) {
                 this.focusedWindowId = OsWindowing.nextFocusedWindow(this.windows)?.id ?? null;
             }
@@ -375,33 +497,20 @@ document.addEventListener('alpine:init', () => {
             this.settings.wallpaper = url;
             this.previewWallpaper = null; // Clear preview on permanent save
             localStorage.setItem('settings.wallpaper', url);
-            this.playSound('click');
         },
 
         setCookieConsent(val) {
             this.cookieConsent = val;
-            localStorage.setItem('cookie.consent', val);
-            if (val) {
-                // Initialize GTM if accepted
-                if (window.initGTM) window.initGTM();
-            }
+            store('cookie.consent', val);
+            // Google Analytics loads on acceptance, and stops when consent is withdrawn.
+            if (val) window.initGTM?.();
+            else window.disableGTM?.();
             this.showCookieNotification = false;
         },
 
         writeFile(path, file) {
-            if (!this.fileSystem[path]) {
-                this.fileSystem[path] = [];
-            }
-            
-            const existingIndex = this.fileSystem[path].findIndex(f => f.name === file.name);
-            if (existingIndex > -1) {
-                this.fileSystem[path][existingIndex] = { ...this.fileSystem[path][existingIndex], ...file };
-            } else {
-                this.fileSystem[path].push(file);
-            }
-            
+            this.changeFiles(fs => OsWindowing.writeTextFile(fs, path, file.name, file.content, file.icon));
             this.logEvent('FileSystem', 'Information', `File saved: ${path}\\${file.name}`);
-            this.saveFileSystem();
             return true;
         }
     });

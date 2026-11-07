@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test'
 
 // End-to-end coverage of the Phase 5 plan's e2e checklist:
 // boot → login → open multiple apps → drag → close.
-// Tests share no state — each one clears localStorage first.
+// Tests share no state - each one clears localStorage first.
 
 const clearStorage = async (page: import('@playwright/test').Page) => {
   await page.goto('/v2/')
@@ -20,15 +20,16 @@ test.describe('boot + login', () => {
   test('boot screen → lock screen → desktop with profile photo', async ({ page }) => {
     await page.goto('/v2/')
 
-    // Boot screen has the "Portfolio OS" tagline + a 5-dot loader.
-    await expect(page.getByText('Portfolio OS')).toBeVisible()
+    // Boot screen has v1's Windows logo and a 5-dot loader.
+    await expect(page.locator('[data-boot-screen] img[src*="startmenu.webp"]')).toBeVisible()
 
-    // After 3 s the lock screen takes over. The clock in the corner has the
-    // long date format ("Monday, January 1") — that's not on the boot screen.
+    // Once its pictures are ready the lock screen takes over. The clock in the
+    // corner has the long date format, which is not on the boot screen.
     await expect(page.getByRole('button', { name: 'Sign In' })).toBeVisible({
       timeout: 6_000,
     })
-    await expect(page.getByText('DeVanté Johnson-Rose')).toBeVisible()
+    // The account picker names the owner too, so look for the heading.
+    await expect(page.getByRole('heading', { name: 'DeVanté Johnson-Rose' })).toBeVisible()
     await expect(page.getByText('Welcome back, DeVante.')).toBeVisible()
 
     // Profile picture is served from /assets/img/profile.webp (shared with v1).
@@ -36,7 +37,7 @@ test.describe('boot + login', () => {
     await expect(avatar).toBeVisible()
     await expect(avatar).toHaveAttribute('src', '/assets/img/profile.webp')
 
-    // Click Sign In → 3-second "Signing in…" state, then desktop.
+    // Click Sign In: "Signing in…" until the desktop is ready, then the desktop.
     await page.getByRole('button', { name: 'Sign In' }).click()
     await expect(page.getByText('Signing in…')).toBeVisible()
 
@@ -53,12 +54,12 @@ test.describe('boot + login', () => {
       timeout: 6_000,
     })
 
-    // Reload — loggedIn flag is persisted, so we go straight to desktop.
+    // Reload - loggedIn flag is persisted, so we go straight to desktop.
     await page.reload()
     await expect(page.getByRole('button', { name: 'Start' })).toBeVisible({
       timeout: 2_000,
     })
-    // Sign In button should NOT show — we're already logged in.
+    // Sign In button should NOT show - we're already logged in.
     await expect(page.getByRole('button', { name: 'Sign In' })).not.toBeVisible()
   })
 })
@@ -111,7 +112,7 @@ test.describe('window management', () => {
     await page.getByRole('button', { name: 'Start' }).click()
     await expect(page.getByPlaceholder('Search for apps, settings, and documents')).toBeVisible()
 
-    // Click "Calculator" from the All apps list — search filters reliably.
+    // Click "Calculator" from the All apps list - search filters reliably.
     const search = page.getByPlaceholder('Search for apps, settings, and documents')
     await search.fill('calculator')
     await page.getByRole('button', { name: /Calculator/ }).first().click()
@@ -129,7 +130,7 @@ test.describe('window management', () => {
   test('multiple windows: pinned taskbar reuses; focus follows new opens', async ({ page }) => {
     await signIn(page)
 
-    // Open Calculator + Notepad via deep-link routes — quicker than menu clicks.
+    // Open Calculator + Notepad via deep-link routes - quicker than menu clicks.
     await page.goto('/v2/app/calculator')
     await expect(page.getByRole('dialog', { name: 'Calculator' })).toBeVisible()
     await page.goto('/v2/app/notepad')
@@ -168,7 +169,7 @@ test.describe('desktop icons + recycle bin', () => {
 
   test('desktop has icons and double-click opens Explorer at This PC', async ({ page }) => {
     await signIn(page)
-    // "DeVanté's PC" icon — synthetic.
+    // "DeVanté's PC" icon - synthetic.
     const pc = page.getByRole('button', { name: "DeVanté's PC", exact: true })
     await expect(pc).toBeVisible()
     await pc.dblclick()
@@ -184,7 +185,7 @@ test.describe('desktop icons + recycle bin', () => {
     await bin.dblclick()
     const win = page.getByRole('dialog', { name: 'Recycle Bin' })
     await expect(win).toBeVisible()
-    // v1 seeds the bin with an Easter Egg video — verify it's visible.
+    // v1 seeds the bin with an Easter Egg video - verify it's visible.
     await expect(win.getByText('Easter Egg - South Africa 25 Video.mp4')).toBeVisible()
   })
 })

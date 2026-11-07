@@ -1,0 +1,1211 @@
+/* Paint and Photoshop, shared by both builds. Both render the same markup
+   with these classes, so the two look identical. drawing.js sizes the
+   canvases and writes the pointer position; everything else is here. */
+
+.dr-icon {
+    width: 20px;
+    height: 20px;
+    flex: none;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.6;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+/* ---- Paint ------------------------------------------------------------------ */
+
+.pt-app {
+    --pt-bar: #f9f9f9;
+    --pt-line: #e0e0e0;
+    --pt-text: #1b1b1b;
+    --pt-dim: #5f5f5f;
+    --pt-hover: rgba(0, 0, 0, 0.05);
+    --pt-press: rgba(0, 0, 0, 0.09);
+    --pt-on: rgba(0, 95, 184, 0.12);
+    --pt-on-line: rgba(0, 95, 184, 0.6);
+    --pt-accent: #0067c0;
+    --pt-on-accent: #ffffff;
+    --pt-work: #e3e8ee;
+    --pt-swatch-line: rgba(0, 0, 0, 0.22);
+    --pt-target: 32px;
+    --pt-swatch: 20px;
+    --pt-dot: 16px;
+    container: pt / inline-size;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-width: 0;
+    overflow: hidden;
+    background: var(--pt-work);
+    color: var(--pt-text);
+    font: 12px/1.3 'Segoe UI Variable', 'Segoe UI', system-ui, sans-serif;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+.dark .pt-app {
+    --pt-bar: #2b2b2b;
+    --pt-line: #3f3f3f;
+    --pt-text: #f3f3f3;
+    --pt-dim: #b0b0b0;
+    --pt-hover: rgba(255, 255, 255, 0.06);
+    --pt-press: rgba(255, 255, 255, 0.1);
+    --pt-on: rgba(96, 205, 255, 0.14);
+    --pt-on-line: rgba(96, 205, 255, 0.6);
+    --pt-accent: #60cdff;
+    --pt-on-accent: #000000;
+    --pt-work: #1c1c1c;
+    --pt-swatch-line: rgba(255, 255, 255, 0.28);
+}
+
+/* :where() keeps these resets weaker than any class below. */
+:where(.pt-app, .ps-app) :where(button, input) {
+    font: inherit;
+    color: inherit;
+}
+
+:where(.pt-app, .ps-app) :where(button) {
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: none;
+    cursor: pointer;
+    touch-action: manipulation;
+}
+
+:where(.pt-app, .ps-app) :where(button:disabled) {
+    opacity: 0.35;
+    cursor: default;
+}
+
+.pt-app :focus-visible {
+    outline: 2px solid var(--pt-accent);
+    outline-offset: 1px;
+}
+
+.pt-tabs {
+    display: flex;
+    flex: none;
+    gap: 2px;
+    padding: 4px 10px 0;
+    background: var(--pt-bar);
+}
+
+.pt-tab {
+    position: relative;
+    min-height: 28px;
+    padding: 4px 10px 6px;
+    border-radius: 4px 4px 0 0;
+    color: var(--pt-dim);
+}
+
+.pt-tab:hover {
+    color: var(--pt-text);
+    background: var(--pt-hover);
+}
+
+.pt-tab[aria-selected='true'] {
+    color: var(--pt-accent);
+    font-weight: 600;
+}
+
+.pt-tab[aria-selected='true']::after {
+    content: '';
+    position: absolute;
+    left: 10px;
+    right: 10px;
+    bottom: 0;
+    height: 2px;
+    border-radius: 1px;
+    background: var(--pt-accent);
+}
+
+.pt-ribbon {
+    display: flex;
+    flex: none;
+    align-items: stretch;
+    min-height: 94px;
+    padding: 6px 2px 4px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    background: var(--pt-bar);
+    border-bottom: 1px solid var(--pt-line);
+    scrollbar-width: thin;
+}
+
+.pt-ribbon[hidden] {
+    display: none;
+}
+
+.pt-group {
+    display: flex;
+    flex: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    gap: 4px;
+    padding: 0 7px;
+    border-right: 1px solid var(--pt-line);
+}
+
+.pt-group-body {
+    display: flex;
+    flex: 1;
+    align-items: center;
+    gap: 4px;
+}
+
+.pt-stack {
+    flex-direction: column;
+    gap: 1px;
+}
+
+.pt-group-label {
+    color: var(--pt-dim);
+    font-size: 11px;
+    white-space: nowrap;
+}
+
+.pt-grid {
+    display: grid;
+    grid-template-columns: repeat(3, var(--pt-target));
+    gap: 2px;
+}
+
+.pt-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--pt-target);
+    height: var(--pt-target);
+    border-radius: 4px;
+}
+
+.pt-button:hover:not(:disabled),
+.pt-edit:hover,
+.pt-action:hover {
+    background: var(--pt-hover);
+}
+
+.pt-button:active:not(:disabled) {
+    background: var(--pt-press);
+}
+
+.pt-button[aria-pressed='true'] {
+    background: var(--pt-on);
+    box-shadow: inset 0 0 0 1px var(--pt-on-line);
+}
+
+.pt-well[aria-pressed='true'] {
+    background: var(--pt-bar);
+    box-shadow: 0 0 0 2px var(--pt-accent);
+}
+
+.pt-well[aria-pressed='false'] {
+    background: var(--pt-bar);
+}
+
+.pt-big {
+    flex-direction: column;
+    gap: 2px;
+    width: auto;
+    min-width: 48px;
+    height: auto;
+    min-height: var(--pt-target);
+    padding: 4px;
+}
+
+.pt-big .dr-icon {
+    width: 26px;
+    height: 26px;
+}
+
+.pt-big span {
+    font-size: 11px;
+    white-space: nowrap;
+}
+
+.pt-size {
+    flex-direction: column;
+    justify-content: center;
+    gap: 6px;
+}
+
+.pt-size-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.pt-size input {
+    width: 84px;
+    margin: 0;
+    accent-color: var(--pt-accent);
+}
+
+.pt-size-preview {
+    display: grid;
+    place-items: center;
+    width: 30px;
+    height: 30px;
+    overflow: hidden;
+    border: 1px solid var(--pt-line);
+    border-radius: 4px;
+    background: #ffffff;
+}
+
+.pt-size-dot {
+    width: min(var(--s), 26px);
+    height: min(var(--s), 26px);
+    border-radius: 50%;
+    background: #000000;
+}
+
+.pt-app[data-tool='pencil'] .pt-size-dot,
+.pt-app[data-tool='eraser'] .pt-size-dot {
+    border-radius: 0;
+}
+
+.pt-size-value {
+    min-width: 30px;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+
+.pt-colours {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+/* Colour 1 in front of colour 2, as Paint and Photoshop draw them. */
+.pt-wells {
+    position: relative;
+    flex: none;
+    width: 50px;
+    height: 50px;
+}
+
+.pt-well {
+    position: absolute;
+    display: grid;
+    place-items: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+}
+
+.pt-well[data-paint-slot='0'] {
+    top: 0;
+    left: 0;
+    z-index: 1;
+}
+
+.pt-well[data-paint-slot='1'] {
+    right: 0;
+    bottom: 0;
+}
+
+.pt-edit {
+    position: relative;
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    width: 48px;
+    min-height: var(--pt-target);
+    padding: 4px 2px;
+    border-radius: 4px;
+    font-size: 11px;
+    line-height: 1.1;
+    text-align: center;
+}
+
+.pt-well-swatch {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: var(--c);
+    box-shadow: inset 0 0 0 1px var(--pt-swatch-line);
+}
+
+.pt-edit {
+    cursor: pointer;
+}
+
+.pt-edit input {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
+}
+
+.pt-palette {
+    display: grid;
+    grid-template-columns: repeat(10, var(--pt-swatch));
+    gap: 2px;
+}
+
+.pt-swatch {
+    display: grid;
+    place-items: center;
+    width: var(--pt-swatch);
+    height: var(--pt-swatch);
+    border-radius: 50%;
+}
+
+.pt-swatch::before {
+    content: '';
+    width: var(--pt-dot);
+    height: var(--pt-dot);
+    border-radius: 50%;
+    background: var(--c);
+    box-shadow: inset 0 0 0 1px var(--pt-swatch-line);
+    transition: transform 0.1s;
+}
+
+.pt-swatch:hover::before {
+    transform: scale(1.15);
+}
+
+.pt-actions {
+    display: flex;
+    flex: none;
+    flex-direction: column;
+    justify-content: center;
+    gap: 6px;
+    margin-left: auto;
+    padding: 0 4px 0 8px;
+}
+
+.pt-action {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 28px;
+    padding: 2px 10px 2px 6px;
+    border: 1px solid var(--pt-line);
+    border-radius: 4px;
+    white-space: nowrap;
+}
+
+.pt-action .dr-icon {
+    width: 16px;
+    height: 16px;
+}
+
+.pt-action-primary,
+.pt-action-primary:hover {
+    border-color: var(--pt-accent);
+    background: var(--pt-accent);
+    color: var(--pt-on-accent);
+}
+
+.pt-action-primary:hover {
+    filter: brightness(1.08);
+}
+
+.pt-viewport {
+    display: flex;
+    flex: 1 1 auto;
+    min-height: 0;
+    padding: 16px;
+    overflow: auto;
+    overscroll-behavior: contain;
+    background: var(--pt-work);
+    scrollbar-width: thin;
+}
+
+/* margin: auto centres the page while it fits, and lets the viewport scroll
+   to its very start when it does not. Centring with justify-content would
+   cut off the top and left of a large page. */
+.pt-frame {
+    position: relative;
+    flex: none;
+    margin: auto;
+    background: #ffffff;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.18);
+}
+
+.pt-sheet {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+}
+
+.pt-canvas {
+    display: block;
+    touch-action: none;
+    cursor: crosshair;
+}
+
+.pt-app[data-tool='zoom'] .pt-canvas {
+    cursor: zoom-in;
+}
+
+.pt-app[data-tool='text'] .pt-canvas {
+    cursor: text;
+}
+
+.pt-app[data-tool='picker'] .pt-canvas,
+.pt-app[data-tool='fill'] .pt-canvas {
+    cursor: cell;
+}
+
+.pt-handle {
+    position: absolute;
+    z-index: 1;
+    width: 8px;
+    height: 8px;
+    border: 1px solid #7a7a7a;
+    background: #ffffff;
+    touch-action: none;
+}
+
+/* A bigger target than the handle you see. It grows away from the page
+   only, so the handles never cover its last pixels. */
+.pt-handle::before {
+    content: '';
+    position: absolute;
+    inset: calc(-1 * var(--pt-grip, 8px));
+}
+
+.pt-handle[data-paint-resize='x']::before {
+    left: -3px;
+}
+
+.pt-handle[data-paint-resize='y']::before {
+    top: -3px;
+}
+
+.pt-handle[data-paint-resize='xy']::before {
+    top: -3px;
+    left: -3px;
+}
+
+.pt-handle[data-paint-resize='x'] {
+    top: 50%;
+    right: -12px;
+    margin-top: -4px;
+    cursor: ew-resize;
+}
+
+.pt-handle[data-paint-resize='y'] {
+    bottom: -12px;
+    left: 50%;
+    margin-left: -4px;
+    cursor: ns-resize;
+}
+
+.pt-handle[data-paint-resize='xy'] {
+    right: -12px;
+    bottom: -12px;
+    cursor: nwse-resize;
+}
+
+.pt-textbox,
+.ps-textbox {
+    position: absolute;
+    z-index: 2;
+    min-width: 120px;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    outline: 1px dashed currentColor;
+    outline-offset: 3px;
+    resize: none;
+    overflow: hidden;
+    white-space: pre;
+    field-sizing: content;
+    user-select: text;
+    -webkit-user-select: text;
+}
+
+.pt-app .pt-textbox:focus-visible,
+.ps-app .ps-textbox:focus-visible {
+    outline: 1px dashed currentColor;
+    outline-offset: 3px;
+}
+
+.pt-textbox[hidden],
+.ps-textbox[hidden] {
+    display: none;
+}
+
+.pt-status {
+    display: flex;
+    flex: none;
+    align-items: center;
+    gap: 16px;
+    height: 28px;
+    padding: 0 12px;
+    overflow: hidden;
+    background: var(--pt-bar);
+    border-top: 1px solid var(--pt-line);
+    color: var(--pt-dim);
+    font-size: 11px;
+    white-space: nowrap;
+}
+
+.pt-status-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+    font-variant-numeric: tabular-nums;
+}
+
+.pt-status .dr-icon {
+    width: 16px;
+    height: 16px;
+}
+
+.pt-pointer {
+    min-width: 64px;
+}
+
+.pt-zoom {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin-left: auto;
+}
+
+.pt-zoom .pt-button {
+    width: 24px;
+    height: 24px;
+}
+
+.pt-zoom .dr-icon {
+    width: 14px;
+    height: 14px;
+}
+
+.pt-zoom input {
+    width: 110px;
+    accent-color: var(--pt-accent);
+}
+
+.pt-zoom-value {
+    min-width: 38px;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+
+/* Narrow windows and phones: finger-sized targets. The ribbon scrolls sideways. */
+@container pt (max-width: 640px) {
+    .pt-app > * {
+        --pt-target: 44px;
+        --pt-swatch: 44px;
+        --pt-dot: 26px;
+    }
+
+    .pt-palette {
+        gap: 0;
+    }
+
+    .pt-wells {
+        width: 66px;
+        height: 66px;
+    }
+
+    .pt-well {
+        width: 44px;
+        height: 44px;
+    }
+
+    .pt-edit {
+        min-height: 44px;
+    }
+
+    .pt-status {
+        height: 44px;
+    }
+
+    .pt-zoom .pt-button {
+        width: 44px;
+        height: 44px;
+    }
+
+    .pt-zoom input,
+    .pt-status-size {
+        display: none;
+    }
+
+    .pt-handle {
+        --pt-grip: 18px;
+    }
+
+    .pt-tab {
+        min-height: 44px;
+        padding: 10px 14px;
+    }
+}
+
+/* ---- Photoshop ------------------------------------------------------------- */
+
+.ps-app {
+    --ps-accent: #0078d4;
+    --ps-line: rgba(0, 0, 0, 0.4);
+    --ps-dim: #b4b4b4;
+    --ps-bright: #e8e8e8;
+    --ps-checks: conic-gradient(#cccccc 25%, #ffffff 0 50%, #cccccc 0 75%, #ffffff 0) 0 0 / 16px 16px;
+    container: ps / inline-size;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-width: 0;
+    overflow: hidden;
+    background: #535353;
+    color: #cccccc;
+    font: 11px/1.3 'Segoe UI Variable', 'Segoe UI', system-ui, sans-serif;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+.ps-app :focus-visible {
+    outline: 2px solid #4cc2ff;
+    outline-offset: 1px;
+}
+
+.ps-titlebar {
+    display: flex;
+    flex: none;
+    align-items: center;
+    gap: 8px;
+    height: 32px;
+    padding: 0 12px;
+    overflow: hidden;
+    background: #001e36;
+    color: #e0e0e0;
+    font-size: 12px;
+    white-space: nowrap;
+}
+
+.ps-logo {
+    width: 16px;
+    height: 16px;
+    flex: none;
+}
+
+.ps-title {
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.ps-menubar {
+    position: relative;
+    z-index: 3;
+    display: flex;
+    flex: none;
+    align-items: center;
+    gap: 2px;
+    height: 26px;
+    padding: 0 4px;
+    background: #323232;
+    border-bottom: 1px solid var(--ps-line);
+}
+
+.ps-menu {
+    position: relative;
+}
+
+.ps-menu-shield {
+    position: fixed;
+    inset: 0;
+    z-index: 39;
+}
+
+.ps-menu-button {
+    position: relative;
+    z-index: 41;
+    padding: 3px 8px;
+    border-radius: 3px;
+    color: var(--ps-dim);
+}
+
+.ps-menu-button:hover,
+.ps-menu-button[aria-expanded='true'] {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--ps-bright);
+}
+
+.ps-menu-list {
+    position: absolute;
+    top: calc(100% + 2px);
+    left: 0;
+    z-index: 40;
+    min-width: 210px;
+    padding: 4px;
+    background: #2b2b2b;
+    border: 1px solid rgba(0, 0, 0, 0.6);
+    border-radius: 4px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+}
+
+.ps-menu-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+    width: 100%;
+    min-height: 26px;
+    padding: 0 10px;
+    border-radius: 3px;
+    color: var(--ps-bright);
+    text-align: left;
+}
+
+.ps-menu-item:hover:not(:disabled) {
+    background: var(--ps-accent);
+    color: #ffffff;
+}
+
+.ps-menu-key {
+    opacity: 0.7;
+}
+
+.ps-menu-sep {
+    height: 1px;
+    margin: 4px 2px;
+    background: rgba(255, 255, 255, 0.12);
+}
+
+.ps-options {
+    display: flex;
+    flex: none;
+    align-items: center;
+    gap: 12px;
+    height: 40px;
+    padding: 0 12px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    background: #404040;
+    border-bottom: 1px solid var(--ps-line);
+    white-space: nowrap;
+    scrollbar-width: thin;
+}
+
+.ps-dim {
+    color: var(--ps-dim);
+}
+
+.ps-strong {
+    color: var(--ps-bright);
+    font-weight: 600;
+}
+
+.ps-sep {
+    flex: none;
+    width: 1px;
+    height: 20px;
+    background: var(--ps-line);
+}
+
+.ps-field {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.ps-field input {
+    width: 112px;
+    accent-color: var(--ps-accent);
+}
+
+.ps-value {
+    min-width: 36px;
+    font-variant-numeric: tabular-nums;
+}
+
+.ps-export {
+    flex: none;
+    margin-left: auto;
+    padding: 5px 12px;
+    border-radius: 3px;
+    background: var(--ps-accent);
+    color: #ffffff;
+}
+
+.ps-export:hover {
+    background: #106ebe;
+}
+
+.ps-main {
+    display: flex;
+    flex: 1 1 auto;
+    min-height: 0;
+}
+
+.ps-rail {
+    display: flex;
+    flex: none;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    width: 48px;
+    padding: 8px 0;
+    background: #3a3a3a;
+    border-right: 1px solid var(--ps-line);
+}
+
+.ps-tool {
+    display: grid;
+    place-items: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 4px;
+    color: #d6d6d6;
+}
+
+.ps-tool:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.ps-tool[aria-pressed='true'] {
+    background: var(--ps-accent);
+    color: #ffffff;
+}
+
+.ps-wells {
+    position: relative;
+    flex: none;
+    width: 32px;
+    height: 32px;
+    margin-top: auto;
+    margin-bottom: 8px;
+}
+
+.ps-well {
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    border: 2px solid #ffffff;
+    border-radius: 2px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+}
+
+.ps-well-front {
+    top: 0;
+    left: 0;
+    z-index: 1;
+    background: var(--c);
+}
+
+.ps-well-back {
+    right: 0;
+    bottom: 0;
+    background: #ffffff;
+}
+
+.ps-viewport {
+    display: flex;
+    flex: 1 1 auto;
+    min-width: 0;
+    min-height: 0;
+    padding: 24px;
+    overflow: auto;
+    overscroll-behavior: contain;
+    background: #1f1f1f;
+    scrollbar-width: thin;
+}
+
+/* As Paint's: margin: auto keeps the start of a large document reachable. */
+.ps-frame {
+    position: relative;
+    flex: none;
+    margin: auto;
+    background: var(--ps-checks);
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.6);
+}
+
+.ps-stack {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    touch-action: none;
+    cursor: crosshair;
+}
+
+.ps-app[data-tool='move'] .ps-stack {
+    cursor: move;
+}
+
+.ps-app[data-tool='text'] .ps-stack {
+    cursor: text;
+}
+
+.ps-app[data-tool='bucket'] .ps-stack {
+    cursor: cell;
+}
+
+.ps-layer {
+    position: absolute;
+    inset: 0;
+    display: block;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+}
+
+.ps-layer[hidden] {
+    display: none;
+}
+
+.ps-stack[data-pixelated='true'] .ps-layer {
+    image-rendering: pixelated;
+}
+
+.ps-panels {
+    display: flex;
+    flex: none;
+    flex-direction: column;
+    width: 256px;
+    min-height: 0;
+    background: #3a3a3a;
+    border-left: 1px solid var(--ps-line);
+}
+
+.ps-panel-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 33px;
+    padding: 4px 8px 4px 12px;
+    border-bottom: 1px solid var(--ps-line);
+    color: var(--ps-dim);
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.ps-swatches {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 4px;
+    padding: 8px;
+}
+
+.ps-swatch {
+    aspect-ratio: 1;
+    border: 1px solid var(--ps-line);
+    border-radius: 2px;
+    background: var(--c);
+}
+
+.ps-swatch[aria-pressed='true'] {
+    border-color: #ffffff;
+    box-shadow: 0 0 0 1px var(--ps-accent);
+}
+
+.ps-custom {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 12px 10px;
+}
+
+.ps-custom input {
+    width: 24px;
+    height: 24px;
+    padding: 0;
+    border: 0;
+    border-radius: 2px;
+    background: none;
+    cursor: pointer;
+}
+
+.ps-hex {
+    color: var(--ps-dim);
+    font: 10px ui-monospace, Consolas, monospace;
+}
+
+.ps-layers {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+}
+
+.ps-head-buttons {
+    display: flex;
+    gap: 2px;
+}
+
+.ps-head-button,
+.ps-eye {
+    display: grid;
+    place-items: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 3px;
+    color: #d6d6d6;
+}
+
+.ps-head-button:hover:not(:disabled),
+.ps-eye:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.ps-head-button .dr-icon,
+.ps-eye .dr-icon {
+    width: 16px;
+    height: 16px;
+}
+
+.ps-layer-row {
+    padding: 6px 10px 8px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.3);
+}
+
+.ps-layer-row[data-active='true'] {
+    background: rgba(0, 120, 212, 0.3);
+}
+
+.ps-layer-top {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.ps-layer-pick {
+    display: flex;
+    flex: 1;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+    padding: 2px;
+    border-radius: 3px;
+    text-align: left;
+}
+
+.ps-thumb {
+    flex: none;
+    width: 36px;
+    height: 24px;
+    border: 1px solid rgba(0, 0, 0, 0.5);
+    background: conic-gradient(#cccccc 25%, #ffffff 0 50%, #cccccc 0 75%, #ffffff 0) 0 0 / 8px 8px;
+}
+
+.ps-layer-name {
+    overflow: hidden;
+    color: var(--ps-bright);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.ps-opacity {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 4px;
+    padding-left: 30px;
+    color: var(--ps-dim);
+    font-size: 10px;
+}
+
+.ps-opacity input {
+    flex: 1;
+    min-width: 0;
+    accent-color: var(--ps-accent);
+}
+
+.ps-opacity span:last-child {
+    width: 30px;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+
+.ps-status {
+    display: flex;
+    flex: none;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    height: 22px;
+    padding: 0 12px;
+    overflow: hidden;
+    background: #323232;
+    border-top: 1px solid var(--ps-line);
+    color: var(--ps-dim);
+    font-size: 10px;
+    white-space: nowrap;
+}
+
+/* Narrow windows and phones: the tools run along the top, the panels sit
+   under the canvas, and every target is finger sized. */
+@container ps (max-width: 760px) {
+    .ps-main {
+        flex-direction: column;
+    }
+
+    .ps-rail {
+        flex-direction: row;
+        width: auto;
+        padding: 2px 8px;
+        overflow-x: auto;
+        border-right: 0;
+        border-bottom: 1px solid var(--ps-line);
+    }
+
+    .ps-tool {
+        width: 44px;
+        height: 44px;
+    }
+
+    .ps-wells {
+        margin: 0 0 0 auto;
+    }
+
+    .ps-viewport {
+        min-height: 160px;
+        padding: 12px;
+    }
+
+    .ps-panels {
+        width: auto;
+        max-height: 42%;
+        overflow-y: auto;
+        border-top: 1px solid var(--ps-line);
+        border-left: 0;
+    }
+
+    .ps-layers {
+        flex: none;
+        overflow: visible;
+    }
+
+    .ps-swatches {
+        grid-template-columns: repeat(6, minmax(0, 44px));
+    }
+
+    .ps-menubar {
+        height: 44px;
+    }
+
+    .ps-menu-button,
+    .ps-export,
+    .ps-eye,
+    .ps-head-button,
+    .ps-menu-item {
+        min-width: 44px;
+        min-height: 44px;
+    }
+
+    .ps-options {
+        height: 48px;
+    }
+
+    .ps-field input {
+        width: 88px;
+    }
+
+    .ps-custom input {
+        width: 44px;
+        height: 44px;
+    }
+}

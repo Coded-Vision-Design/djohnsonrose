@@ -5,6 +5,16 @@ $route = $router['route'];
 $isHtmx = $router['htmx'];
 $appToOpen = $router['appToOpen'];
 
+// Plain server-rendered pages (/privacy) and the 404 page set their own
+// headers. See pages/layout.php.
+if ($router['template'] !== null) {
+    if ($route === 'not_found') {
+        http_response_code(404);
+    }
+    include $router['template'];
+    return;
+}
+
 if ($isHtmx) {
     // Partial renders for HTMX
     if ($route === 'login') {

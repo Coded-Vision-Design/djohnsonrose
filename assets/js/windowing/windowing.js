@@ -811,6 +811,139 @@ export function beginWindowResize(event, ctx) {
   return trackPointer(event, ctx.handle, { onFrame, onEnd })
 }
 
+const FILE_SELECTOR = '[data-explorer-file]'
+const TOUCH_DRAG_SLOP = 12
+
+/**
+ * Files under a finger behave as on a Windows touchscreen. Holding a file opens
+ * its menu, and moving the finger after that carries the file, to drop it
+ * wherever the finger lifts. A quick swipe still scrolls.
+ *
+ * Browsers would otherwise turn the hold into their own drag and cancel the
+ * touch, and iOS sends a mousedown as that drag begins, which closes menus.
+ * The carried file is announced with ordinary drag events, so whatever accepts
+ * a mouse drag, such as the Recycle Bin, accepts a finger's too.
+ */
+export function keepFileLongPress(root = window, { holdMs = 500 } = {}) {
+  let fingers = 0
+  let press = null
+  let drag = null
+
+  const send = (target, type, point) => {
+    const event = new DragEvent(type, {
+      bubbles: true,
+      cancelable: true,
+      composed: true,
+      clientX: point.x,
+      clientY: point.y,
+      dataTransfer: drag.data,
+    })
+    // True when a handler accepted the drag, as a drop target does.
+    return !target.dispatchEvent(event)
+  }
+
+  const follow = (point) => {
+    drag.point = point
+    drag.ghost.style.translate = `${point.x + 10}px ${point.y + 10}px`
+    const under = document.elementFromPoint(point.x, point.y)
+    if (under !== drag.over) {
+      if (drag.over) send(drag.over, 'dragleave', point)
+      if (under) send(under, 'dragenter', point)
+      drag.over = under
+    }
+    drag.accepted = under ? send(under, 'dragover', point) : false
+  }
+
+  const begin = (point) => {
+    const file = press.file
+    press = null
+    // The menu the hold opened makes way for the file.
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))
+    const ghost = document.createElement('div')
+    ghost.setAttribute('data-touch-drag', '')
+    ghost.setAttribute('aria-hidden', 'true')
+    const icon = file.querySelector('img')
+    if (icon) ghost.append(icon.cloneNode())
+    ghost.append(document.createTextNode(file.getAttribute('data-explorer-file') ?? ''))
+    document.body.append(ghost)
+    // Places that take a dropped file come into view, such as the Recycle Bin chip on a phone.
+    for (const target of document.querySelectorAll('[data-touch-drop]')) {
+      if (target.getClientRects().length) target.scrollIntoView({ block: 'nearest', inline: 'nearest' })
+    }
+    drag = { file, ghost, data: new DataTransfer(), over: null, accepted: false, point }
+    // The app fills in what is being dragged, exactly as for a mouse drag.
+    send(file, 'dragstart', point)
+    follow(point)
+  }
+
+  const finish = (dropped) => {
+    const { file, ghost, over, accepted, point } = drag
+    if (dropped && over && accepted) send(over, 'drop', point)
+    else if (over) send(over, 'dragleave', point)
+    send(file, 'dragend', point)
+    ghost.remove()
+    drag = null
+  }
+
+  const onStart = (event) => {
+    fingers = event.touches.length
+    const touch = event.touches[0]
+    const file = fingers === 1 && touch ? event.target.closest?.(FILE_SELECTOR) : null
+    press = file ? { file, x: touch.clientX, y: touch.clientY, time: event.timeStamp } : null
+  }
+
+  const onMove = (event) => {
+    const touch = event.touches[0]
+    if (!touch) return
+    const point = { x: touch.clientX, y: touch.clientY }
+    if (drag) {
+      event.preventDefault()
+      follow(point)
+      return
+    }
+    if (!press || event.touches.length !== 1) return
+    if (Math.hypot(point.x - press.x, point.y - press.y) <= TOUCH_DRAG_SLOP) return
+    if (event.timeStamp - press.time < holdMs) {
+      press = null
+      return
+    }
+    event.preventDefault()
+    begin(point)
+  }
+
+  const onEnd = (event) => {
+    fingers = event.touches.length
+    press = null
+    if (!drag) return
+    // Lifting would click whatever is under the finger.
+    event.preventDefault()
+    finish(event.type === 'touchend')
+  }
+
+  const onDragStart = (event) => {
+    // Only the browser's own drag is stopped; ours is let through.
+    if (fingers && !drag && event.target.closest?.(FILE_SELECTOR)) event.preventDefault()
+  }
+
+  const onMouseDown = (event) => {
+    if (fingers && event.target.closest?.(FILE_SELECTOR)) event.stopPropagation()
+  }
+
+  const listeners = [
+    ['touchstart', onStart, { capture: true, passive: true }],
+    ['touchmove', onMove, { capture: true, passive: false }],
+    ['touchend', onEnd, { capture: true, passive: false }],
+    ['touchcancel', onEnd, { capture: true, passive: false }],
+    ['dragstart', onDragStart, true],
+    ['mousedown', onMouseDown, true],
+  ]
+  for (const [type, listener, options] of listeners) root.addEventListener(type, listener, options)
+  return () => {
+    if (drag) finish(false)
+    for (const [type, listener, options] of listeners) root.removeEventListener(type, listener, options)
+  }
+}
+
 /**
  * Reports the usable desktop, and marks the page with the current mode so that
  * CSS can adapt. Also tracks the on-screen keyboard, which on iOS does not

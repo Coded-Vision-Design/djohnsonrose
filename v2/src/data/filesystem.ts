@@ -17,7 +17,7 @@ export interface FsFolderEntry {
   name: string
   type: 'folder'
   icon: string
-  /** Optional alias path — e.g. Desktop's "Projects" shortcut points at Users/.../Projects. */
+  /** Optional alias path - e.g. Desktop's "Projects" shortcut points at Users/.../Projects. */
   path?: string
 }
 
@@ -52,13 +52,26 @@ export interface FsLinkEntry {
   url: string
 }
 
-export type FsEntry =
+/** Set by what a visitor does to an entry. See file-ops.js. */
+interface FsHistory {
+  modified?: number
+  shortcut?: boolean
+  zipped?: boolean
+  originalName?: string
+  originalPath?: string
+  /** Where a search result was found. */
+  location?: string
+}
+
+export type FsEntry = (
   | FsAppEntry
   | FsFolderEntry
   | FsFileEntry
   | FsImageEntry
   | FsVideoEntry
   | FsLinkEntry
+) &
+  FsHistory
 
 export type FileSystem = Record<string, FsEntry[]>
 
@@ -68,52 +81,5 @@ export const filesystem: FileSystem = prepareFileSystem<FsEntry>(data, {
   otherBuild: { name: 'PHP Build', url: '/', icon: 'php.webp' },
 })
 
-/** Quick-access shortcuts shown in the Explorer sidebar. */
-export const QUICK_ACCESS = [
-  { label: 'Home', icon: '🏠', path: 'C:\\Users\\DeVante' },
-  { label: 'Desktop', icon: '🖥️', path: 'C:\\Users\\DeVante\\Desktop' },
-  { label: 'Documents', icon: '📄', path: 'C:\\Users\\DeVante\\Documents' },
-  { label: 'Downloads', icon: '⬇️', path: 'C:\\Users\\DeVante\\Downloads' },
-  { label: 'Pictures', icon: '🖼️', path: 'C:\\Users\\DeVante\\Pictures' },
-  { label: 'Projects', icon: '🧰', path: 'C:\\Users\\DeVante\\Projects' },
-  { label: 'This PC', icon: '💻', path: 'C:\\' },
-] as const
-
-/** Returns the entries at `path`, or [] if it doesn't exist. */
-export function listAt(path: string): FsEntry[] {
-  return filesystem[path] ?? []
-}
-
-/** Parent path — splits on `\\` and rejoins. Returns 'C:\\' as the root. */
-export function parentPath(path: string): string {
-  const parts = path.split('\\').filter((p) => p !== '')
-  // C:\  (parts=['C:']) or C:\Users (parts=['C:', 'Users']) — root is the parent.
-  if (parts.length <= 2) return 'C:\\'
-  return parts.slice(0, -1).join('\\')
-}
-
-/** Build the child path for entering `folder` from `current`. */
-export function joinPath(current: string, folder: FsFolderEntry): string {
-  if (folder.path) return folder.path // explicit alias (Desktop → Projects)
-  const trimmed = current.endsWith('\\') ? current.slice(0, -1) : current
-  return `${trimmed}\\${folder.name}`
-}
-
-/** Case-insensitive substring search across every entry in the filesystem. */
-export function searchFiles(
-  query: string,
-  limit = 50,
-): { path: string; entry: FsEntry }[] {
-  if (!query) return []
-  const q = query.toLowerCase()
-  const out: { path: string; entry: FsEntry }[] = []
-  for (const [path, entries] of Object.entries(filesystem)) {
-    for (const entry of entries) {
-      if (entry.name.toLowerCase().includes(q)) {
-        out.push({ path, entry })
-        if (out.length >= limit) return out
-      }
-    }
-  }
-  return out
-}
+// Paths, search and the Explorer sidebar are in assets/js/windowing/file-ops.js
+// and shell-core.js, shared with v1.

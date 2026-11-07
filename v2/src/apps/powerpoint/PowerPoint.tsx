@@ -1,108 +1,160 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState, type CSSProperties } from 'react'
+import {
+  OFFICE_ICONS,
+  POWERPOINT_TABS,
+  SLIDE_SIZE,
+  loadChecked,
+  portfolioDeck,
+  slideForKey,
+  watchFit,
+  type Slide,
+} from '../../../../assets/js/windowing/office.js'
 
-interface Project {
-  id: number
-  title: string
-  description: string
-  tags: string[]
-  url: string
-  thumbnail: string
-}
+// PowerPoint: a slide for each project in data/portfolio.json. What it shows
+// and how the keys move between slides lives in assets/js/windowing/office.js,
+// which v1 shares, and it is styled by assets/css/office.css.
 
-// PowerPoint mock: each portfolio project becomes a slide, with arrow-key
-// navigation and a thumbnail strip on the left.
+const vars = (values: Record<string, string | number>) => values as CSSProperties
+
 export default function PowerPoint() {
-  const [slides, setSlides] = useState<Project[]>([])
+  const [slides, setSlides] = useState<Slide[]>([])
+  const [state, setState] = useState<'loading' | 'ready' | 'error'>('loading')
   const [active, setActive] = useState(0)
+  const [fit, setFit] = useState(1)
+  const rootRef = useRef<HTMLDivElement>(null)
+  const stageRef = useRef<HTMLDivElement>(null)
+  const live = useRef({ active, count: slides.length })
+
+  useEffect(() => {
+    live.current = { active, count: slides.length }
+  }, [active, slides.length])
 
   useEffect(() => {
     let cancelled = false
-    fetch('/data/portfolio.json')
-      .then((r) => r.json() as Promise<{ projects: Project[] }>)
-      .then((d) => {
-        if (!cancelled) setSlides(d.projects)
+    loadChecked('/data/portfolio.json')
+      .then((data) => {
+        if (cancelled) return
+        setSlides(portfolioDeck(data, '/'))
+        setState('ready')
       })
       .catch(() => {
-        /* leave empty */
+        if (!cancelled) setState('error')
       })
     return () => {
       cancelled = true
     }
   }, [])
 
+  useEffect(() => watchFit(stageRef.current, SLIDE_SIZE, setFit), [])
+
+  // Only while PowerPoint's own window has focus: the keys go to its window.
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (slides.length === 0) return
-      if (e.key === 'ArrowRight') setActive((a) => Math.min(a + 1, slides.length - 1))
-      else if (e.key === 'ArrowLeft') setActive((a) => Math.max(a - 1, 0))
+    const host = rootRef.current?.closest('.os-window')
+    if (!host) return
+    const onKey = (event: Event) => {
+      const next = slideForKey(event as KeyboardEvent, live.current.active, live.current.count)
+      if (next === null) return
+      event.preventDefault()
+      setActive(next)
     }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [slides.length])
+    host.addEventListener('keydown', onKey)
+    return () => host.removeEventListener('keydown', onKey)
+  }, [])
 
   const current = slides[active]
 
   return (
-    <div className="h-full flex flex-col bg-win-bg dark:bg-[#1c1c1c] text-black dark:text-white">
-      <div className="h-8 bg-[#b7472a] flex items-center px-3 shrink-0">
-        <img src="/assets/img/powerpoint.webp" alt="" className="w-4 h-4 mr-2" />
-        <span className="text-white text-xs font-medium">Portfolio.pptx — PowerPoint</span>
+    <div className="office-app" data-office-app="powerpoint" ref={rootRef}>
+      <div className="office-titlebar">
+        <div className="office-titlebar-name">
+          <img src="/assets/img/powerpoint.webp" alt="" />
+          <span>Portfolio.pptx - PowerPoint</span>
+        </div>
+        <span className="office-user office-optional">DeVanté Johnson-Rose</span>
       </div>
 
-      <div className="grow flex min-h-0">
-        <div className="w-40 bg-white dark:bg-[#2b2b2b] border-r border-gray-300 dark:border-gray-700 overflow-y-auto shrink-0 p-2 space-y-2">
-          {slides.map((s, i) => (
+      <div className="office-tabs">
+        {POWERPOINT_TABS.map((tab) => (
+          <span key={tab} className="office-tab" data-active={tab === 'Home' ? '' : undefined}>
+            {tab}
+          </span>
+        ))}
+      </div>
+
+      <div className="ppt-body">
+        <div className="ppt-thumbs" role="group" aria-label="Slides">
+          {slides.map((slide, index) => (
             <button
-              key={s.id}
+              key={slide.id}
               type="button"
-              onClick={() => setActive(i)}
-              className={`w-full aspect-video rounded border text-[10px] flex flex-col bg-cover bg-center relative overflow-hidden text-left ${
-                i === active ? 'border-[#b7472a] ring-2 ring-[#b7472a]/30' : 'border-gray-300 dark:border-gray-700'
-              }`}
-              style={{ backgroundImage: `url(/${s.thumbnail})` }}
+              className="ppt-thumb"
+              data-slide-thumb=""
+              aria-current={index === active ? 'true' : undefined}
+              onClick={() => setActive(index)}
             >
-              <div className="absolute inset-0 bg-black/40" />
-              <div className="relative px-1 py-0.5 text-white truncate">
-                {i + 1}. {s.title}
-              </div>
+              <img src={slide.image} alt="" loading="lazy" />
+              <span>{`${index + 1}. ${slide.title}`}</span>
             </button>
           ))}
         </div>
 
-        <div className="grow bg-gray-100 dark:bg-[#0f0f0f] flex items-center justify-center p-8">
+        <div className="ppt-stage" data-slide-stage="" ref={stageRef}>
           {current ? (
-            <div
-              className="w-full max-w-4xl aspect-video rounded-lg shadow-2xl bg-white relative overflow-hidden"
-              style={{ backgroundImage: `url(/${current.thumbnail})`, backgroundSize: 'cover', backgroundPosition: 'center' }}
-            >
-              <div className="absolute inset-0 bg-linear-to-b from-black/0 via-black/30 to-black/80" />
-              <div className="absolute bottom-0 inset-x-0 p-8 text-white">
-                <div className="text-xs uppercase tracking-widest opacity-80 mb-2">
-                  Slide {active + 1} / {slides.length}
-                </div>
-                <h2 className="text-4xl font-bold mb-2">{current.title}</h2>
-                <p className="text-sm opacity-90 max-w-2xl">{current.description}</p>
-                <div className="flex flex-wrap gap-2 mt-4">
-                  {current.tags.map((t) => (
-                    <span
-                      key={t}
-                      className="px-2 py-0.5 bg-white/20 backdrop-blur-xs rounded-sm text-[10px] font-medium"
-                    >
-                      {t}
+            <div className="ppt-slide" data-slide="" style={vars({ '--office-zoom': fit })}>
+              <img src={current.image} alt={`The ${current.title} website`} />
+              <div className="ppt-slide-body">
+                <div className="ppt-slide-count">{`Slide ${active + 1} / ${slides.length}`}</div>
+                <h2 className="ppt-slide-title" data-slide-title="">
+                  {current.title}
+                </h2>
+                <p className="ppt-slide-text">{current.description}</p>
+                <div className="ppt-tags">
+                  {current.tags.map((tag) => (
+                    <span key={tag} className="ppt-tag">
+                      {tag}
                     </span>
                   ))}
                 </div>
               </div>
             </div>
           ) : (
-            <div className="opacity-50 text-sm">Loading slides…</div>
+            <div className="ppt-message">
+              {state === 'error' ? 'The slides could not be loaded.' : 'Loading slides…'}
+            </div>
           )}
         </div>
       </div>
 
-      <div className="h-6 bg-[#b7472a] text-white text-[10px] flex items-center px-3 shrink-0 justify-between">
-        <span>Slide {active + 1} of {slides.length}</span>
-        <span>← / → to navigate</span>
+      <div className="office-status">
+        <div className="office-status-group">
+          <span data-slide-status="">{`Slide ${slides.length ? active + 1 : 0} of ${slides.length}`}</span>
+          <span className="office-optional">English (United Kingdom)</span>
+        </div>
+        <div className="office-status-group">
+          <span className="office-optional">Arrow keys change slide</span>
+          <button
+            type="button"
+            title="Previous slide"
+            aria-label="Previous slide"
+            disabled={active === 0}
+            onClick={() => setActive((index) => Math.max(0, index - 1))}
+          >
+            <svg className="office-icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path d={OFFICE_ICONS.previous.d} />
+            </svg>
+          </button>
+          <button
+            type="button"
+            title="Next slide"
+            aria-label="Next slide"
+            disabled={active >= slides.length - 1}
+            onClick={() => setActive((index) => Math.min(slides.length - 1, index + 1))}
+          >
+            <svg className="office-icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path d={OFFICE_ICONS.next.d} />
+            </svg>
+          </button>
+        </div>
       </div>
     </div>
   )

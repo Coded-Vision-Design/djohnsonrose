@@ -4,6 +4,9 @@
 // Admin Console. Validation and limits live in lib/contact.php.
 require_once __DIR__ . '/../bootstrap.php';
 require_once __DIR__ . '/../lib/contact.php';
+require_once __DIR__ . '/../lib/request.php';
+require_once __DIR__ . '/../lib/state.php';
+require_once __DIR__ . '/../lib/db.php';
 
 header('Content-Type: application/json');
 
@@ -13,26 +16,13 @@ function contact_fail(int $status, string $message): void {
     exit;
 }
 
-/** Best effort: a logging failure must never lose an enquiry already sent. */
+/**
+ * Best effort: a logging failure must never lose an enquiry already sent. The
+ * table is created by lib/migrate.php, and $ip is already shortened.
+ */
 function contact_log(array $config, array $data, array $attachments, string $status, string $ip): void {
     try {
-        $dbConfig = $config['db'];
-        $dsn = "mysql:host={$dbConfig['host']};dbname={$dbConfig['name']};charset=utf8mb4";
-        $pdo = new PDO($dsn, $dbConfig['user'], $dbConfig['pass'], [
-            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-            PDO::ATTR_TIMEOUT => 3,
-        ]);
-
-        $pdo->exec("CREATE TABLE IF NOT EXISTS email_logs (
-            id VARCHAR(36) PRIMARY KEY,
-            sender VARCHAR(255) NOT NULL,
-            recipient VARCHAR(255) NOT NULL,
-            subject VARCHAR(255) NOT NULL,
-            body TEXT NOT NULL,
-            status VARCHAR(32) NOT NULL,
-            ip_address VARCHAR(45) NOT NULL,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        ) DEFAULT CHARSET=utf8mb4");
+        $pdo = db_connect($config);
 
         $uuid = sprintf('%04x%04x-%04x-%04x-%04x-%04x%04x%04x',
             mt_rand(0, 0xffff), mt_rand(0, 0xffff),
@@ -83,8 +73,8 @@ if (!$collected['ok']) {
 }
 $attachments = $collected['files'];
 
-$ip = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
-if (!contact_rate_allowed(sys_get_temp_dir(), $ip, time())) {
+$ip = client_ip($_SERVER, $config['trusted_proxies'] ?? []);
+if (!contact_rate_allowed(state_dir($config), $ip, time())) {
     contact_fail(429, "Too many messages. Please try again later, or email {$config['email']} directly.");
 }
 
@@ -95,10 +85,10 @@ $mail = contact_build_mail($data, $attachments, [
 ]);
 
 // As in api/log.php, local development never sends real mail.
-$isLocal = $host === 'localhost' || $host === '127.0.0.1' || strpos($host, 'localhost:') === 0;
+$isLocal = request_is_local($_SERVER);
 $sent = $isLocal || mail($mail['to'], $mail['subject'], $mail['body'], $mail['headers']);
 
-contact_log($config, $data, $attachments, $sent ? ($isLocal ? 'local' : 'sent') : 'failed', $ip);
+contact_log($config, $data, $attachments, $sent ? ($isLocal ? 'local' : 'sent') : 'failed', ip_truncate($ip));
 
 if (!$sent) {
     contact_fail(502, "Sorry, that did not send. Please email {$config['email']} directly.");

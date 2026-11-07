@@ -1,40 +1,50 @@
 <!doctype html>
-<html lang="en" class="h-full">
+<html lang="en-GB" class="h-full">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content" />
     <title>DeVanté Johnson-Rose | Full Stack Developer & Systems Engineer · Portfolio OS (React)</title>
-    <meta name="description" content="React-built interactive Windows-style portfolio of DeVanté Johnson-Rose — Senior Full Stack Developer and Systems Engineer in the UK. Working Paint, Terminal, Explorer, Outlook, FL Studio and more." />
+    <meta name="description" content="React-built interactive Windows-style portfolio of DeVanté Johnson-Rose - Senior Full Stack Developer and Systems Engineer in the UK. Working Paint, Terminal, Explorer, Outlook, FL Studio and more." />
     <meta name="author" content="DeVanté Johnson-Rose" />
     <meta name="keywords" content="DeVanté Johnson-Rose, full stack developer UK, systems engineer, React developer, TypeScript, portfolio, Vite, devante.johnson-rose.co.uk" />
     <meta name="robots" content="index, follow, max-image-preview:large" />
     <meta name="theme-color" content="#0078d4" />
-    <link rel="canonical" href="https://devante.johnson-rose.co.uk/v2/" />
+    <!-- Both desktops share one canonical, so that they do not compete in search. -->
+    <link rel="canonical" href="https://devante.johnson-rose.co.uk/" />
 
     <!-- Open Graph -->
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="DeVanté Johnson-Rose · Portfolio OS" />
     <meta property="og:title" content="DeVanté Johnson-Rose | Portfolio OS (React)" />
     <meta property="og:description" content="React + TypeScript port of the Portfolio OS. Same Windows 11-styled desktop, every app working." />
-    <meta property="og:url" content="https://devante.johnson-rose.co.uk/v2/" />
-    <meta property="og:image" content="https://devante.johnson-rose.co.uk/assets/img/favicon.webp" />
+    <meta property="og:url" content="https://devante.johnson-rose.co.uk/" />
+    <meta property="og:image" content="https://devante.johnson-rose.co.uk/assets/img/share-card.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:type" content="image/png" />
+    <meta property="og:image:alt" content="Portrait of DeVanté Johnson-Rose beside his name and devante.johnson-rose.co.uk" />
     <meta property="og:locale" content="en_GB" />
 
     <!-- Twitter / X card -->
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="DeVanté Johnson-Rose | Portfolio OS (React)" />
     <meta name="twitter:description" content="React + TypeScript port of the interactive Windows-style portfolio." />
-    <meta name="twitter:image" content="https://devante.johnson-rose.co.uk/assets/img/favicon.webp" />
+    <meta name="twitter:image" content="https://devante.johnson-rose.co.uk/assets/img/share-card.png" />
+    <meta name="twitter:image:alt" content="Portrait of DeVanté Johnson-Rose beside his name and devante.johnson-rose.co.uk" />
 
-    <!-- Favicon set matches v1 exactly — both versions share the same files. -->
+    <!-- Favicon set matches v1 exactly - both versions share the same files. -->
     <link rel="icon" type="image/x-icon" href="/favicon.ico" />
     <link rel="shortcut icon" href="/favicon.ico" />
     <link rel="icon" type="image/png" sizes="32x32" href="/assets/img/favicon.webp" />
     <link rel="apple-touch-icon" sizes="180x180" href="/assets/img/favicon.webp" />
     <!-- v2 ships its own manifest scoped to /v2/. v1 keeps its own at /manifest.json. -->
     <link rel="manifest" href="/v2/manifest.json" />
+    <!-- The default wallpaper, shown behind the lock screen and the desktop. -->
+    <link rel="preload" as="image" href="/assets/img/wallpaper-bloom.webp" />
 
-    <!-- JSON-LD: Person + WebSite -->
+    <!-- JSON-LD: Person + WebSite, the same as v1's in partials/shell.php. worksFor,
+         alumniOf, knowsAbout and sameAs follow data/profile.json, which /cv reads
+         (src/data/profile.test.ts checks all three). -->
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
@@ -47,13 +57,24 @@
             "image": "https://devante.johnson-rose.co.uk/assets/img/profile.webp",
             "jobTitle": "Senior Full Stack Developer & Systems Engineer",
             "email": "mailto:devante@johnson-rose.co.uk",
+            "worksFor": [
+              { "@type": "Organization", "name": "Killik & Co" },
+              { "@type": "Organization", "name": "Coded Vision Design" }
+            ],
+            "alumniOf": { "@type": "CollegeOrUniversity", "name": "University of East Anglia" },
+            "knowsAbout": [
+              "Applications support", "Full-stack development", "PHP", "Laravel", "JavaScript",
+              "TypeScript", "React", "Next.js", "Node.js", "MySQL", "MS SQL Server", "PowerShell",
+              "Automation", "SCCM", "JAMF", "Active Directory", "Docker", "AI integration"
+            ],
             "sameAs": ["https://github.com/CodedVisionDesign"]
           },
           {
             "@type": "WebSite",
-            "@id": "https://devante.johnson-rose.co.uk/v2/#website",
-            "url": "https://devante.johnson-rose.co.uk/v2/",
-            "name": "DeVanté Johnson-Rose · Portfolio OS (React)",
+            "@id": "https://devante.johnson-rose.co.uk/#website",
+            "url": "https://devante.johnson-rose.co.uk/",
+            "name": "DeVanté Johnson-Rose · Portfolio OS",
+            "description": "Interactive Windows-style portfolio of DeVanté Johnson-Rose.",
             "publisher": { "@id": "https://devante.johnson-rose.co.uk/#person" }
           }
         ]
@@ -61,6 +82,12 @@
     </script>
   </head>
   <body class="h-full">
+    <!-- The same notice as v1's partials/shell.php. Styled inline, as no stylesheet is certain to load. -->
+    <noscript>
+      <div data-noscript style="position:fixed;inset:0;z-index:2147483647;display:flex;align-items:center;justify-content:center;padding:24px;background:#381759;color:#fff;font:16px/1.5 'Segoe UI',Selawik,system-ui,sans-serif;text-align:center">
+        <p style="max-width:32rem;margin:0">This desktop needs JavaScript. <a href="/cv" style="color:#fff;text-decoration:underline">Read the CV</a> instead, which works without it.</p>
+      </div>
+    </noscript>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

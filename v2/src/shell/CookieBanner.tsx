@@ -1,57 +1,56 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef } from 'react'
+import { setConsent, useConsent } from '../lib/consent'
+import { reserveBottomSpace } from '../../../assets/js/windowing/shell-ui.js'
 
-const CONSENT_KEY = 'react.cookie.consent'
-
-// Mirrors v1's cookie notification: shown once after login until the user
-// either accepts or declines. Acceptance enables telemetry (see lib/telemetry).
+// Mirrors v1's cookie notification (partials/shell.php): shown after sign-in
+// until the visitor accepts or declines. Acceptance enables telemetry (see
+// lib/telemetry). On a phone it is a slim bar that windows keep clear of.
 export function CookieBanner() {
-  const [open, setOpen] = useState(false)
+  const consent = useConsent()
+  const ref = useRef<HTMLDivElement>(null)
+  const open = consent === null
 
   useEffect(() => {
-    if (localStorage.getItem(CONSENT_KEY) === null) {
-      setOpen(true)
-    }
-  }, [])
-
-  const accept = () => {
-    localStorage.setItem(CONSENT_KEY, 'true')
-    setOpen(false)
-  }
-  const decline = () => {
-    localStorage.setItem(CONSENT_KEY, 'false')
-    setOpen(false)
-  }
+    if (!open || !ref.current) return
+    return reserveBottomSpace(ref.current)
+  }, [open])
 
   if (!open) return null
 
   return (
     <div
+      ref={ref}
       role="dialog"
       aria-label="Cookie consent"
-      className="fixed bottom-16 right-4 z-20000 w-[360px] glass rounded-xl p-4 win-shadow text-xs animate-window-open"
+      data-cookie-banner=""
+      className="os-consent glass dark:bg-[#1c1c1c]/90 border border-white/20 dark:border-white/10 shadow-2xl overflow-hidden text-black dark:text-white animate-window-open"
     >
-      <div className="font-semibold mb-2">Cookies &amp; telemetry</div>
-      <p className="opacity-80 leading-relaxed mb-3">
-        This portfolio uses a tiny telemetry call to <code className="opacity-90">/api/log.php</code> so I can see
-        which apps visitors actually open. No personal data, no third-party
-        scripts. Decline and the call won&apos;t fire &mdash; you can change your mind
-        any time in Settings.
-      </p>
-      <div className="flex items-center justify-end space-x-2">
-        <button
-          type="button"
-          onClick={decline}
-          className="px-3 py-1 rounded-sm text-[11px] hover:bg-black/5 dark:hover:bg-white/10"
-        >
-          Decline
-        </button>
-        <button
-          type="button"
-          onClick={accept}
-          className="px-4 py-1 rounded-sm bg-win-blue text-white text-[11px] font-medium hover:opacity-90"
-        >
-          Accept
-        </button>
+      <div className="os-consent-body p-4 flex flex-col gap-3">
+        <div className="os-consent-title font-semibold text-sm">Cookies &amp; telemetry</div>
+        <p className="text-xs leading-relaxed">
+          If you accept, the site records which apps you open and a shortened IP address, and may load Google
+          Analytics. Records are kept for 90 days. Decline and none of this happens. You can change your mind at
+          any time in Settings.{' '}
+          <a href="/privacy" target="_blank" rel="noopener" className="underline text-win-blue dark:text-[#60cdff]">
+            Privacy notice
+          </a>
+        </p>
+        <div className="os-consent-actions flex items-center justify-end gap-2">
+          <button
+            type="button"
+            onClick={() => setConsent(false)}
+            className="px-4 rounded-sm text-xs hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
+          >
+            Decline
+          </button>
+          <button
+            type="button"
+            onClick={() => setConsent(true)}
+            className="px-4 rounded-sm bg-win-blue text-white text-xs font-medium hover:opacity-90 transition-opacity"
+          >
+            Accept
+          </button>
+        </div>
       </div>
     </div>
   )

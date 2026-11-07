@@ -384,7 +384,7 @@ for (const build of BUILDS) {
 
     test('typing survives minimise and restore', async ({ page }) => {
       const win = await open(page, 'notepad', 'Notepad')
-      if (build.name === 'v1') await win.getByText('Click to start typing').click()
+      await win.getByText('Click to start typing').click()
       const text = win.locator('textarea:visible').first()
       await text.click()
       await page.keyboard.type('keep this')
@@ -393,9 +393,8 @@ for (const build of BUILDS) {
       await win.getByRole('button', { name: 'Minimise' }).click()
       await expect(page.locator(`#win-${id}`)).toBeHidden()
       await call(page, 'toggleMinimize', id)
-      // v1 Notepad shows a preview once the text box loses focus.
-      if (build.name === 'v1') await expect(page.locator(`#win-${id}`)).toContainText('keep this')
-      else await expect(page.locator(`#win-${id} textarea:visible`).first()).toHaveValue('keep this')
+      // Notepad shows a preview once the text box loses focus.
+      await expect(page.locator(`#win-${id}`)).toContainText('keep this')
     })
   })
 
@@ -595,7 +594,7 @@ for (const build of BUILDS) {
 
     test('shortcuts leave editable fields alone', async ({ page }) => {
       const win = await open(page, 'notepad', 'Notepad')
-      if (build.name === 'v1') await win.getByText('Click to start typing').click()
+      await win.getByText('Click to start typing').click()
       await win.locator('textarea:visible').first().click()
       await page.keyboard.press('Alt+Shift+ArrowLeft')
       await page.waitForTimeout(100)

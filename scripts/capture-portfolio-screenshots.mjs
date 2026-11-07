@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Portfolio screenshot capture — single source of truth for the thumbnails in
+// Portfolio screenshot capture - single source of truth for the thumbnails in
 // data/portfolio.json. Run with:
 //
 //   node scripts/capture-portfolio-screenshots.mjs                # all sites
@@ -33,7 +33,7 @@ const SITES = [
   { slug: 'combatevolvedsports',   url: 'https://combatevolvedsports.com',     featured: true },
   { slug: 'ramstaxis',             url: 'https://ramstaxis.co.uk',             featured: true },
 
-  // Existing archive — refresh every thumbnail in the same pass.
+  // Existing archive - refresh every thumbnail in the same pass.
   { slug: 'englishopenbjj',        url: 'https://englishopenbjjchampionships.co.uk' },
   { slug: 'baymotors',             url: 'https://www.baymotors.co.uk' },
   { slug: 'cpttours',              url: 'https://cpttours.co.za' },
@@ -46,7 +46,7 @@ const SITES = [
   { slug: 'sweetdelights',         url: 'https://hameedahsdelights.com' },
 ]
 
-// Common consent / popup selectors. Order matters — broader matches last.
+// Common consent / popup selectors. Order matters - broader matches last.
 const DISMISS_SELECTORS = [
   '#onetrust-accept-btn-handler',
   '#cookie-accept',
@@ -102,7 +102,7 @@ async function dismissPopups(page) {
         await page.waitForTimeout(200)
       }
     } catch {
-      /* selector didn't apply on this site — fine */
+      /* selector didn't apply on this site - fine */
     }
   }
   await page.addStyleTag({ content: HIDE_OVERLAY_CSS }).catch(() => {})
@@ -111,7 +111,7 @@ async function dismissPopups(page) {
 async function stabilize(page) {
   await page.evaluate(() => document.fonts.ready).catch(() => {})
   // Some sites (bjjhavering, bhrrecovery) auto-scroll during hydration to
-  // restore a saved position or jump to a hash anchor — that's why their
+  // restore a saved position or jump to a hash anchor - that's why their
   // captures used to land mid-page instead of on the hero. We pin the
   // scroll position both *before* the paint wait and *after*, and freeze
   // <html>'s scroll-behavior so any later programmatic scroll snaps back.
@@ -141,7 +141,7 @@ async function stabilize(page) {
 
   await page.waitForTimeout(1500) // animation / hero-fade settle
 
-  // Final scroll-to-top after the page has actually painted — catches
+  // Final scroll-to-top after the page has actually painted - catches
   // sessionStorage scroll-restore + IntersectionObserver-triggered jumps.
   await page.evaluate(() => window.scrollTo(0, 0))
   await page.waitForTimeout(300)
@@ -183,7 +183,7 @@ async function main() {
   console.log(`Capturing ${targets.length} sites → ${OUT}\n`)
   const browser = await chromium.launch({ headless: true })
 
-  // Desktop context — fresh per site to keep cookies isolated.
+  // Desktop context - fresh per site to keep cookies isolated.
   const desktopVP = { width: 1440, height: 900 }
   const mobileDevice = devices['iPhone 13']
 

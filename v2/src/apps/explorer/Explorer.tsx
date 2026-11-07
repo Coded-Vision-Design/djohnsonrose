@@ -1,123 +1,56 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useOsStore } from '../../store/osStore'
 import { useWindowExtras } from '../../windowing/WindowContext'
+import type { FsEntry } from '../../data/filesystem'
 import {
-  filesystem,
-  listAt,
-  type FsEntry,
-} from '../../data/filesystem'
-import { showClassicDesktopMenu, showMenu } from '../../shell/menus'
-import { isImageEntry } from '../../shell/openEntry'
+  RECYCLE_BIN,
+  deleteEntry,
+  emptyBin,
+  entryDate,
+  entryIcon,
+  entryProperties,
+  entrySize,
+  entryType,
+  explorerSidebar,
+  fileMenuHandlers,
+  folderMenuHandlers,
+  folderMenuOverrides,
+  folderPath,
+  formatDate,
+  formatSize,
+  parentPath,
+  searchFolder,
+  sortEntries,
+  type SidebarEntry,
+} from '../../../../assets/js/windowing/file-ops.js'
+import { fileOs } from '../../shell/fileOs'
+import { showFileMenu, showMenu } from '../../shell/menus'
+import { openEntry } from '../../shell/openEntry'
+import { RenameInput } from '../../shell/RenameInput'
 
-// 1:1 port of partials/apps/explorer.php — toolbar (back/forward/up,
+// 1:1 port of partials/apps/explorer.php: toolbar (back/forward/up,
 // breadcrumb + editable path, search), 52 px sidebar with pinned + This PC
 // groups (drag-to-Recycle-Bin support), grid OR details file pane, optional
 // details panel, right-click context menu, in-place rename, keyboard
 // shortcuts, sortable columns, and per-path selection memory.
 
 const HOME = 'C:\\Users\\DeVante'
-const RECYCLE = 'C:\\Recycle Bin'
+const IMG = '/assets/img/'
 
 type ViewMode = 'grid' | 'details'
 type SortKey = 'name' | 'type' | 'date' | 'size'
 type SortDir = 'asc' | 'desc'
 
-interface SidebarItem {
-  id?: string
-  type?: 'header' | 'item'
-  label: string
-  icon?: string
-  path?: string
-  indent?: boolean
-}
-
-const buildSidebar = (recycleCount: number): SidebarItem[] => [
-  { type: 'header', label: 'Pinned' },
-  { id: 'home', label: 'Home', icon: '/assets/img/thispc.webp', path: HOME, type: 'item' },
-  { id: 'desktop', label: 'Desktop', icon: '/assets/img/win11/desktop.webp', path: 'C:\\Users\\DeVante\\Desktop', type: 'item' },
-  { id: 'documents', label: 'Documents', icon: '/assets/img/win11/documents.webp', path: 'C:\\Users\\DeVante\\Documents', type: 'item' },
-  { id: 'downloads', label: 'Downloads', icon: '/assets/img/win11/downloads.webp', path: 'C:\\Users\\DeVante\\Downloads', type: 'item' },
-  { id: 'pictures', label: 'Pictures', icon: '/assets/img/win11/pictures.webp', path: 'C:\\Users\\DeVante\\Pictures', type: 'item' },
-  { id: 'projects', label: 'Projects', icon: '/assets/img/win11/folder.webp', path: 'C:\\Users\\DeVante\\Projects', type: 'item' },
-  {
-    id: 'recycle',
-    label: 'Recycle Bin',
-    icon: recycleCount > 0 ? '/assets/img/recyclebinfull.webp' : '/assets/img/recyclebinempty.webp',
-    path: RECYCLE,
-    type: 'item',
-  },
-  { type: 'header', label: 'This PC' },
-  { id: 'pc', label: "DeVanté's PC", icon: '/assets/img/thispc.webp', path: 'C:\\', type: 'item' },
-  { id: 'cdrive', label: 'C: Drive', icon: '/assets/img/win11/drive_c.webp', path: 'C:\\', indent: true, type: 'item' },
-]
-
-// ---- Helpers (pure) ------------------------------------------------------
-
-function typeLabel(file: FsEntry): string {
-  if (file.type === 'folder') return 'File folder'
-  const lower = file.name.toLowerCase()
-  if (lower.endsWith('.pdf')) return 'PDF Document'
-  if (lower.endsWith('.txt')) return 'Text Document'
-  if (lower.endsWith('.docx') || lower.endsWith('.doc')) return 'Microsoft Word Document'
-  if (lower.endsWith('.xlsx')) return 'Microsoft Excel Worksheet'
-  if (lower.endsWith('.pptx')) return 'Microsoft PowerPoint Presentation'
-  if (lower.endsWith('.psd')) return 'Adobe Photoshop Image'
-  if (lower.endsWith('.mp4') || lower.endsWith('.webm')) return 'Video file'
-  if (lower.endsWith('.mp3') || lower.endsWith('.wav')) return 'Audio file'
-  if (lower.endsWith('.webp') || lower.endsWith('.png') || lower.endsWith('.jpg') || lower.endsWith('.jpeg')) return 'Image'
-  if (file.type === 'app') return 'Application'
-  if (file.type === 'image') return 'Image'
-  if (file.type === 'video') return 'Video file'
-  return 'File'
-}
-
-// Deterministic fake date / size so sorting is stable and the pane feels
-// real. Hashes the filename so the values don't shift between sessions.
-function hashString(s: string): number {
-  let h = 0
-  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0
-  return Math.abs(h)
-}
-
-function fakeDate(file: FsEntry): Date {
-  const seed = hashString(file.name)
-  // Last ~24 months
-  const now = Date.now()
-  const offset = (seed % (730 * 24 * 60 * 60 * 1000))
-  return new Date(now - offset)
-}
-
-function fakeSize(file: FsEntry): number {
-  if (file.type === 'folder') return 0
-  const seed = hashString(file.name)
-  return (seed % 4_900_000) + 4_096 // 4 KB – 5 MB-ish
-}
-
-function formatSize(bytes: number): string {
-  if (bytes <= 0) return ''
-  if (bytes < 1024) return `${bytes} B`
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
-  return `${(bytes / (1024 * 1024)).toFixed(2)} MB`
-}
-
-function formatDate(d: Date): string {
-  return d.toLocaleString('en-GB', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  })
-}
-
 // ---- Component -----------------------------------------------------------
 
 export default function Explorer() {
-  const { initialPath } = useWindowExtras<{ initialPath?: string }>()
+  const { initialPath, selectName } = useWindowExtras<{ initialPath?: string; selectName?: string }>()
   const [history, setHistory] = useState<string[]>([initialPath ?? HOME])
   const [step, setStep] = useState(0)
   // Per-path selection memory so navigating away + back restores the highlight.
-  const [selectedByPath, setSelectedByPath] = useState<Record<string, string | null>>({})
+  const [selectedByPath, setSelectedByPath] = useState<Record<string, string | null>>(
+    selectName ? { [initialPath ?? HOME]: selectName } : {},
+  )
   const [searchQuery, setSearchQuery] = useState('')
   const [addressActive, setAddressActive] = useState(false)
   const [manualPath, setManualPath] = useState(initialPath ?? HOME)
@@ -125,24 +58,18 @@ export default function Explorer() {
   const [sortKey, setSortKey] = useState<SortKey>('name')
   const [sortDir, setSortDir] = useState<SortDir>('asc')
   const [detailsOpen, setDetailsOpen] = useState(false)
-  const [renaming, setRenaming] = useState<string | null>(null)
-  const [renameValue, setRenameValue] = useState('')
 
   const inputRef = useRef<HTMLInputElement>(null)
-  const renameInputRef = useRef<HTMLInputElement>(null)
   const fileGridRef = useRef<HTMLDivElement>(null)
 
-  const openApp = useOsStore((s) => s.openApp)
-  const recycleBin = useOsStore((s) => s.recycleBin)
-  const hiddenDesktop = useOsStore((s) => s.hiddenDesktop)
-  const restoredSeeds = useOsStore((s) => s.restoredSeeds)
-  const recoveredItems = useOsStore((s) => s.recoveredItems)
-  const renames = useOsStore((s) => s.renames)
-  const restoreFromRecycle = useOsStore((s) => s.restoreFromRecycle)
-  const recycleItem = useOsStore((s) => s.recycleItem)
-  const emptyRecycleBin = useOsStore((s) => s.emptyRecycleBin)
-  const renameFile = useOsStore((s) => s.renameFile)
-  const updateSetting = useOsStore((s) => s.updateSetting)
+  const fileSystem = useOsStore((s) => s.fileSystem)
+  const favourites = useOsStore((s) => s.favourites)
+  const clipboard = useOsStore((s) => s.fileClipboard)
+  const renaming = useOsStore((s) => s.renaming)
+  const changeFiles = useOsStore((s) => s.changeFiles)
+  const beginRename = useOsStore((s) => s.beginRename)
+  const cancelRename = useOsStore((s) => s.cancelRename)
+  const showProperties = useOsStore((s) => s.showProperties)
   const closeContextMenu = useOsStore((s) => s.closeContextMenu)
   const focusedAppId = useOsStore((s) => s.focusedWindowId)
   const focusedAppName = useOsStore((s) =>
@@ -150,86 +77,23 @@ export default function Explorer() {
   )
 
   const currentPath = history[step]
-  const isRecycle = currentPath === RECYCLE
+  const isRecycle = currentPath === RECYCLE_BIN
   const selected = selectedByPath[currentPath] ?? null
 
-  const effectiveName = useCallback(
-    (file: FsEntry) => renames[`${currentPath}::${file.name}`] ?? file.name,
-    [renames, currentPath],
-  )
+  // A search result can come from below this folder, so it says where it is.
+  const pathOf = useCallback((file: FsEntry) => file.location ?? currentPath, [currentPath])
 
-  // Files at the current path: real entries, or recycled items if in the bin.
-  const allFiles = useMemo<(FsEntry & { __originPath?: string })[]>(() => {
-    if (isRecycle) {
-      const seeded = (listAt(RECYCLE) as FsEntry[]).filter(
-        (e) => !restoredSeeds.includes(e.name),
-      )
-      const dynamic = recycleBin.map(
-        (r) => ({ ...(r.payload as unknown as FsEntry), __originPath: r.fromPath }),
-      )
-      const merged: (FsEntry & { __originPath?: string })[] = []
-      const seen = new Set<string>()
-      for (const e of [...seeded, ...dynamic]) {
-        if (seen.has(e.name)) continue
-        seen.add(e.name)
-        merged.push(e)
-      }
-      return merged
-    }
-    const raw = listAt(currentPath)
-    const recoveredHere = recoveredItems
-      .filter((r) => r.path === currentPath)
-      .map((r) => r.item as unknown as FsEntry)
-      .filter((e) => !raw.some((s) => s.name === e.name))
-    if (currentPath === 'C:\\Users\\DeVante\\Desktop') {
-      const visible = raw.filter((e) => !hiddenDesktop.includes(e.name))
-      return [...visible, ...recoveredHere]
-    }
-    return [...raw, ...recoveredHere]
-  }, [currentPath, isRecycle, recycleBin, hiddenDesktop, restoredSeeds, recoveredItems])
-
-  // Sort + search.
   const sortedFiles = useMemo(() => {
-    const list = searchQuery
-      ? allFiles.filter((f) => effectiveName(f).toLowerCase().includes(searchQuery.toLowerCase()))
-      : [...allFiles]
-    list.sort((a, b) => {
-      // Folders always above files within the same direction.
-      if (a.type === 'folder' && b.type !== 'folder') return -1
-      if (b.type === 'folder' && a.type !== 'folder') return 1
-      let cmp = 0
-      switch (sortKey) {
-        case 'name':
-          cmp = effectiveName(a).localeCompare(effectiveName(b), 'en', { sensitivity: 'base' })
-          break
-        case 'type':
-          cmp = typeLabel(a).localeCompare(typeLabel(b))
-          break
-        case 'date':
-          cmp = fakeDate(a).getTime() - fakeDate(b).getTime()
-          break
-        case 'size':
-          cmp = fakeSize(a) - fakeSize(b)
-          break
-      }
-      return sortDir === 'asc' ? cmp : -cmp
-    })
-    return list
-  }, [allFiles, searchQuery, sortKey, sortDir, effectiveName])
+    const list = searchQuery ? searchFolder(fileSystem, currentPath, searchQuery) : (fileSystem[currentPath] ?? [])
+    return sortEntries(list, sortKey, sortDir)
+  }, [fileSystem, currentPath, searchQuery, sortKey, sortDir])
 
   const selectedFile = useMemo(
     () => sortedFiles.find((f) => f.name === selected) ?? null,
     [sortedFiles, selected],
   )
 
-  // Sidebar icon swaps between full/empty based on total bin contents.
-  const binCount = useMemo(() => {
-    const seeded = (listAt(RECYCLE) as FsEntry[]).filter(
-      (e) => !restoredSeeds.includes(e.name),
-    ).length
-    return seeded + recycleBin.length
-  }, [recycleBin.length, restoredSeeds])
-  const sidebar = useMemo(() => buildSidebar(binCount), [binCount])
+  const sidebar = useMemo(() => explorerSidebar(fileSystem, favourites, IMG), [fileSystem, favourites])
 
   const setSelected = useCallback(
     (name: string | null) => {
@@ -241,95 +105,60 @@ export default function Explorer() {
   const navigate = useCallback(
     (path: string) => {
       const target = path
-      if (target !== RECYCLE && !filesystem[target]) return
+      if (!fileSystem[target]) return
       setHistory((h) => [...h.slice(0, step + 1), target])
       setStep((s) => s + 1)
       setSearchQuery('')
       setAddressActive(false)
       setManualPath(target)
-      setRenaming(null)
+      cancelRename()
       closeContextMenu()
     },
-    [step, closeContextMenu],
+    [step, fileSystem, cancelRename, closeContextMenu],
   )
 
   const goBack = useCallback(() => {
     if (step > 0) {
       setStep((s) => s - 1)
-      setRenaming(null)
+      cancelRename()
       closeContextMenu()
     }
-  }, [step, closeContextMenu])
+  }, [step, cancelRename, closeContextMenu])
 
   const goForward = useCallback(() => {
     if (step < history.length - 1) {
       setStep((s) => s + 1)
-      setRenaming(null)
+      cancelRename()
       closeContextMenu()
     }
-  }, [step, history.length, closeContextMenu])
+  }, [step, history.length, cancelRename, closeContextMenu])
 
   const goUp = useCallback(() => {
-    if (currentPath === 'C:\\' || currentPath === RECYCLE) return
-    const parts = currentPath.split('\\').filter(Boolean)
-    if (parts.length <= 1) {
-      navigate('C:\\')
-      return
-    }
-    const parent = parts.slice(0, -1).join('\\')
-    navigate(parent === 'C:' ? 'C:\\' : parent)
-  }, [currentPath, navigate])
+    if (currentPath === 'C:\\' || isRecycle) return
+    navigate(parentPath(currentPath))
+  }, [currentPath, isRecycle, navigate])
 
   const submitPath = () => {
     const target = manualPath.trim()
-    if (target === RECYCLE || filesystem[target]) navigate(target)
+    if (fileSystem[target]) navigate(target)
     setAddressActive(false)
   }
 
   const openItem = useCallback(
     (file: FsEntry) => {
-      if (file.type === 'folder') {
-        const target = 'path' in file && file.path ? file.path : `${currentPath}\\${file.name}`
-        navigate(target.replace(/\\+$/, '') || 'C:\\')
-      } else if (file.type === 'app') {
-        openApp(file.app, file.name, { extra: file.extraData })
-      } else if (file.type === 'image') {
-        openApp('photos', file.name, { extra: { imageUrl: file.url } })
-      } else if (file.type === 'video') {
-        openApp('video', file.name, { extra: { videoUrl: file.url } })
-      } else if (file.type === 'file') {
-        openApp('notepad', file.name, { extra: { content: file.content ?? '' } })
-      }
+      const path = pathOf(file)
+      if (isRecycle) showProperties(file, path)
+      else if (file.type === 'folder') navigate(folderPath(file, path))
+      else openEntry(file, path)
     },
-    [currentPath, navigate, openApp],
+    [isRecycle, navigate, pathOf, showProperties],
   )
 
-  const recycleSelected = useCallback(() => {
-    if (!selectedFile || isRecycle) return
-    recycleItem(selectedFile.name, currentPath, { ...selectedFile })
-    setSelected(null)
-  }, [selectedFile, isRecycle, recycleItem, currentPath, setSelected])
-
-  const beginRename = useCallback((file: FsEntry) => {
-    setRenaming(file.name)
-    setRenameValue(effectiveName(file))
-  }, [effectiveName])
-
-  const commitRename = useCallback(() => {
-    if (renaming) {
-      renameFile(currentPath, renaming, renameValue)
-    }
-    setRenaming(null)
-    setRenameValue('')
-  }, [renaming, renameValue, renameFile, currentPath])
-
   // ---- Drag-to-Recycle ----
-  const dragRef = useRef<{ file: FsEntry } | null>(null)
   const onDragStart = (file: FsEntry) => (e: React.DragEvent) => {
-    dragRef.current = { file }
     e.dataTransfer.setData(
       'application/json',
-      JSON.stringify({ item: file, fromPath: currentPath }),
+      JSON.stringify({ item: file, fromPath: pathOf(file) }),
     )
     e.dataTransfer.effectAllowed = 'move'
   }
@@ -340,41 +169,43 @@ export default function Explorer() {
       const raw = e.dataTransfer.getData('application/json')
       if (!raw) return
       const parsed = JSON.parse(raw) as { item: FsEntry; fromPath: string }
-      recycleItem(parsed.item.name, parsed.fromPath, { ...parsed.item })
+      changeFiles((fs) => deleteEntry(fs, parsed.fromPath, parsed.item.name))
     } catch {
       /* noop */
     }
   }
 
+  // The Recycle Bin, in the sidebar or the phone's place chips, takes a dropped file.
+  const recycleDropProps = (isRecycle: boolean) => ({
+    onDragOver: (e: React.DragEvent<HTMLElement>) => {
+      if (!isRecycle) return
+      e.preventDefault()
+      e.dataTransfer.dropEffect = 'move'
+      e.currentTarget.classList.add('bg-blue-100', 'dark:bg-blue-900/40')
+    },
+    onDragLeave: (e: React.DragEvent<HTMLElement>) => {
+      if (isRecycle) e.currentTarget.classList.remove('bg-blue-100', 'dark:bg-blue-900/40')
+    },
+    onDrop: (e: React.DragEvent<HTMLElement>) => {
+      if (!isRecycle) return
+      e.currentTarget.classList.remove('bg-blue-100', 'dark:bg-blue-900/40')
+      onRecycleDrop(e)
+    },
+  })
+
+  const openHere = useMemo(
+    () => ({ openEntry: (entry: FsEntry) => openItem(entry) }),
+    [openItem],
+  )
+
   // ---- Right-click context menu ----
   const showFileContextMenu = (file: FsEntry, clientX: number, clientY: number) => {
     setSelected(file.name)
-    const here = { clientX, clientY }
-    const shared = {
-      open: () => openItem(file),
-      properties: () => setDetailsOpen(true),
-      classic: () => showClassicDesktopMenu(here),
-    }
-    if (isRecycle) {
-      showMenu('recycledFile', here, { ...shared, restore: () => restoreFromRecycle(file.name) })
-      return
-    }
-    showMenu(
-      'file',
-      here,
-      {
-        ...shared,
-        rename: () => beginRename(file),
-        delete: () => recycleItem(file.name, currentPath, { ...file }),
-        setBackground: () => {
-          if ('url' in file) updateSetting('wallpaper', file.url)
-        },
-      },
-      { setBackground: { hidden: !isImageEntry(file) } },
-    )
+    showFileMenu(file, pathOf(file), { clientX, clientY }, openHere)
   }
 
   const showPaneContextMenu = (clientX: number, clientY: number) => {
+    const os = fileOs(openHere)
     showMenu(
       'explorerPane',
       { clientX, clientY },
@@ -385,11 +216,19 @@ export default function Explorer() {
         sortType: () => setSortKey('type'),
         sortDate: () => setSortKey('date'),
         sortSize: () => setSortKey('size'),
+        ...folderMenuHandlers(os, currentPath),
       },
       {
-        view: { label: viewMode === 'grid' ? 'View · Details' : 'View · Grid' },
+        ...folderMenuOverrides(os),
+        view: { label: viewMode === 'grid' ? 'View as details' : 'View as grid' },
         details: { label: detailsOpen ? 'Hide details pane' : 'Show details pane' },
-        sortHeader: { label: `Sort by · ${sortKey}` },
+        // The Recycle Bin only takes what is deleted into it.
+        ...(isRecycle && {
+          paste: { hidden: true },
+          pasteShortcut: { hidden: true },
+          newFolder: { hidden: true },
+          newTextFile: { hidden: true },
+        }),
       },
     )
   }
@@ -406,16 +245,33 @@ export default function Explorer() {
         // Allow Esc to bubble through to clear rename / address bar; otherwise stay out of the way.
         if (e.key !== 'Escape') return
       }
-      if (e.key === 'Backspace') {
-        if (renaming) return
+      if (renaming && e.key !== 'Escape') return
+      const os = fileOs(openHere)
+      const actions = selectedFile && fileMenuHandlers(os, selectedFile, pathOf(selectedFile))
+      const command = e.ctrlKey || e.metaKey ? e.key.toLowerCase() : ''
+
+      if (command === 'c' || command === 'x') {
+        if (actions && !isRecycle) {
+          e.preventDefault()
+          if (command === 'c') actions.copy()
+          else actions.cut()
+        }
+      } else if (command === 'v') {
+        if (!isRecycle && clipboard) {
+          e.preventDefault()
+          folderMenuHandlers(os, currentPath).paste()
+        }
+      } else if (e.key === 'Backspace') {
         e.preventDefault()
         goBack()
       } else if (e.key === 'Delete') {
-        if (renaming) return
-        e.preventDefault()
-        recycleSelected()
+        if (actions) {
+          e.preventDefault()
+          if (isRecycle) actions.deleteForever()
+          else actions.delete()
+          setSelected(null)
+        }
       } else if (e.key === 'Enter') {
-        if (renaming) return
         if (selectedFile) {
           e.preventDefault()
           openItem(selectedFile)
@@ -423,13 +279,12 @@ export default function Explorer() {
       } else if (e.key === 'F2') {
         if (selectedFile && !isRecycle) {
           e.preventDefault()
-          beginRename(selectedFile)
+          beginRename(pathOf(selectedFile), selectedFile.name)
         }
       } else if (e.key === 'Escape') {
         if (renaming) {
           e.preventDefault()
-          setRenaming(null)
-          setRenameValue('')
+          cancelRename()
         } else if (addressActive) {
           e.preventDefault()
           setAddressActive(false)
@@ -440,20 +295,26 @@ export default function Explorer() {
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [
-    isExplorerFocused, renaming, selectedFile, isRecycle, addressActive, currentPath,
-    goBack, recycleSelected, openItem, beginRename,
+    isExplorerFocused, renaming, selectedFile, isRecycle, addressActive, currentPath, clipboard,
+    goBack, openItem, beginRename, cancelRename, openHere, pathOf, setSelected,
   ])
 
   useEffect(() => {
     if (addressActive) inputRef.current?.focus()
   }, [addressActive])
 
-  useEffect(() => {
-    if (renaming) {
-      renameInputRef.current?.focus()
-      renameInputRef.current?.select()
+  const openSidebarItem = (item: SidebarEntry<FsEntry>) => {
+    if (!item.entry) {
+      if (item.path) navigate(item.path)
+    } else if (item.entry.type === 'folder') {
+      navigate(folderPath(item.entry, item.path as string))
+    } else {
+      openEntry(item.entry, item.path as string)
     }
-  }, [renaming])
+  }
+
+  const cutName = clipboard?.mode === 'cut' && clipboard.fromPath === currentPath ? clipboard.name : null
+  const renamingName = renaming?.path === currentPath ? renaming.name : null
 
   const breadcrumbParts = currentPath.split('\\').filter((p) => p !== '')
 
@@ -532,8 +393,9 @@ export default function Explorer() {
 
         {/* Empty Recycle Bin */}
         {isRecycle && (
-          <button type="button" onClick={emptyRecycleBin} disabled={sortedFiles.length === 0} className="px-3 py-1.5 rounded-sm text-xs font-medium bg-red-500 text-white hover:bg-red-600 disabled:opacity-40 disabled:cursor-not-allowed" title="Empty Recycle Bin">
-            🗑 Empty
+          <button type="button" onClick={() => changeFiles(emptyBin)} disabled={sortedFiles.length === 0} className="px-3 py-1.5 rounded-sm text-xs font-medium bg-red-500 text-white hover:bg-red-600 disabled:opacity-40 disabled:cursor-not-allowed" title="Empty Recycle Bin">
+            <img src={`${IMG}win11/delete.webp`} alt="" className="w-3.5 h-3.5 inline-block mr-1 align-[-2px] brightness-0 invert" />
+            Empty
           </button>
         )}
       </div>
@@ -547,20 +409,19 @@ export default function Explorer() {
               return <div key={`h-${i}`} className="px-3 py-2 font-bold opacity-50 uppercase tracking-tighter text-[10px]">{item.label}</div>
             }
             const isRecycleEntry = item.id === 'recycle'
-            const active = currentPath === item.path
+            const active = !item.favourite && currentPath === item.path
             return (
               <button
                 key={item.id ?? item.label} type="button"
-                onClick={() => item.path && navigate(item.path)}
-                onDragOver={(e) => { if (!isRecycleEntry) return; e.preventDefault(); e.dataTransfer.dropEffect = 'move'; e.currentTarget.classList.add('bg-blue-100', 'dark:bg-blue-900/40') }}
-                onDragLeave={(e) => { if (!isRecycleEntry) return; e.currentTarget.classList.remove('bg-blue-100', 'dark:bg-blue-900/40') }}
-                onDrop={(e) => { if (!isRecycleEntry) return; e.currentTarget.classList.remove('bg-blue-100', 'dark:bg-blue-900/40'); onRecycleDrop(e) }}
+                data-sidebar-item={item.label}
+                onClick={() => openSidebarItem(item)}
+                {...recycleDropProps(isRecycleEntry)}
                 className={`w-full text-left py-1.5 rounded-sm hover:bg-gray-100 dark:hover:bg-white/5 flex items-center group transition-colors ${active ? 'bg-blue-100/50 dark:bg-blue-900/20 text-win-blue font-semibold' : ''} ${item.indent ? 'pl-8' : 'px-3'}`}
               >
                 <span className="mr-3 text-base group-hover:scale-110 transition-transform flex items-center justify-center w-5 h-5 shrink-0">
-                  {item.icon ? <img src={item.icon} alt="" className="w-full h-full object-contain" /> : '📁'}
+                  <img src={entryIcon({ name: item.label, type: 'folder', icon: item.icon }, IMG)} alt="" className="w-full h-full object-contain" />
                 </span>
-                <span>{item.label}</span>
+                <span className="truncate">{item.label}</span>
               </button>
             )
           })}
@@ -570,11 +431,12 @@ export default function Explorer() {
         <div
           ref={fileGridRef}
           className="grow overflow-y-auto bg-white dark:bg-[#1c1c1c]"
+          data-explorer-pane=""
           onContextMenu={(e) => {
-            if (e.target === e.currentTarget) {
-              e.preventDefault()
-              showPaneContextMenu(e.clientX, e.clientY)
-            }
+            if ((e.target as Element).closest('[data-explorer-file], input')) return
+            e.preventDefault()
+            e.stopPropagation()
+            showPaneContextMenu(e.clientX, e.clientY)
           }}
           onClick={(e) => {
             // Click on empty space deselects.
@@ -584,11 +446,12 @@ export default function Explorer() {
           {/* Mobile pills */}
           <div className="m-4 mb-2 flex overflow-x-auto pb-2 space-x-2 lg:hidden">
             {sidebar
-              .filter((i): i is SidebarItem & { path: string; icon: string; label: string } =>
-                Boolean(i.type !== 'header' && i.path),
-              )
+              .filter((i) => i.type !== 'header')
               .map((i) => (
-                <button key={i.id ?? i.label} type="button" onClick={() => navigate(i.path)}
+                <button key={i.id ?? i.label} type="button" onClick={() => openSidebarItem(i)}
+                  data-place-pill={i.label}
+                  data-touch-drop={i.id === 'recycle' ? '' : undefined}
+                  {...recycleDropProps(i.id === 'recycle')}
                   className={`px-4 py-1.5 rounded-full text-[10px] whitespace-nowrap transition-all border border-transparent flex items-center space-x-2 ${currentPath === i.path ? 'bg-win-blue text-white shadow-md' : 'bg-gray-100 dark:bg-white/5'}`}>
                   {i.icon && <img src={i.icon} alt="" className="w-3 h-3 object-contain" />}
                   <span>{i.label}</span>
@@ -606,18 +469,13 @@ export default function Explorer() {
               files={sortedFiles}
               selected={selected}
               isRecycle={isRecycle}
-              renaming={renaming}
-              renameValue={renameValue}
-              renameInputRef={renameInputRef}
-              setRenameValue={setRenameValue}
-              commitRename={commitRename}
-              cancelRename={() => { setRenaming(null); setRenameValue('') }}
+              renamingName={renamingName}
+              cutName={cutName}
               onSelect={(name) => setSelected(name)}
-              onOpen={(file) => (isRecycle ? restoreFromRecycle(file.name) : openItem(file))}
+              onOpen={openItem}
               onContextMenu={(file, x, y) => showFileContextMenu(file, x, y)}
               onDragStart={onDragStart}
-              onRestore={(name) => restoreFromRecycle(name)}
-              effectiveName={effectiveName}
+              onRestore={(file) => fileMenuHandlers(fileOs(), file, pathOf(file)).restore()}
             />
           ) : (
             <DetailsView
@@ -630,16 +488,11 @@ export default function Explorer() {
                 if (sortKey === k) setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'))
                 else { setSortKey(k); setSortDir('asc') }
               }}
-              renaming={renaming}
-              renameValue={renameValue}
-              renameInputRef={renameInputRef}
-              setRenameValue={setRenameValue}
-              commitRename={commitRename}
-              cancelRename={() => { setRenaming(null); setRenameValue('') }}
+              renamingName={renamingName}
+              cutName={cutName}
               onSelect={(name) => setSelected(name)}
-              onOpen={(file) => (isRecycle ? restoreFromRecycle(file.name) : openItem(file))}
+              onOpen={openItem}
               onContextMenu={(file, x, y) => showFileContextMenu(file, x, y)}
-              effectiveName={effectiveName}
             />
           )}
         </div>
@@ -648,8 +501,7 @@ export default function Explorer() {
         {detailsOpen && (
           <DetailsPanel
             file={selectedFile}
-            currentPath={currentPath}
-            effectiveName={effectiveName}
+            rows={selectedFile ? entryProperties(fileSystem, selectedFile, pathOf(selectedFile)) : []}
             onClose={() => setDetailsOpen(false)}
           />
         )}
@@ -666,8 +518,8 @@ export default function Explorer() {
           )}
           {selectedFile && (
             <div className="flex items-center space-x-1">
-              <span>📁</span>
-              <span>1 item selected · {formatSize(fakeSize(selectedFile))}</span>
+              <img src={entryIcon(selectedFile, IMG)} alt="" className="w-3.5 h-3.5 object-contain" />
+              <span>1 item selected · {formatSize(entrySize(selectedFile))}</span>
             </div>
           )}
         </div>
@@ -680,69 +532,61 @@ export default function Explorer() {
 // GridView (the original tile grid, extracted)
 // ============================================================================
 
-interface GridViewProps {
+interface FileViewProps {
   files: FsEntry[]
   selected: string | null
   isRecycle: boolean
-  renaming: string | null
-  renameValue: string
-  renameInputRef: React.RefObject<HTMLInputElement | null>
-  setRenameValue: (v: string) => void
-  commitRename: () => void
-  cancelRename: () => void
+  renamingName: string | null
+  cutName: string | null
   onSelect: (name: string) => void
   onOpen: (file: FsEntry) => void
   onContextMenu: (file: FsEntry, x: number, y: number) => void
+}
+
+interface GridViewProps extends FileViewProps {
   onDragStart: (file: FsEntry) => (e: React.DragEvent) => void
-  onRestore: (name: string) => void
-  effectiveName: (file: FsEntry) => string
+  onRestore: (file: FsEntry) => void
 }
 
 function GridView({
-  files, selected, isRecycle, renaming, renameValue, renameInputRef,
-  setRenameValue, commitRename, cancelRename,
-  onSelect, onOpen, onContextMenu, onDragStart, onRestore, effectiveName,
+  files, selected, isRecycle, renamingName, cutName,
+  onSelect, onOpen, onContextMenu, onDragStart, onRestore,
 }: GridViewProps) {
   return (
     <div className="grid gap-4 grid-cols-[repeat(auto-fill,minmax(100px,1fr))] p-4">
       {files.map((file) => {
         const isSelected = selected === file.name
-        const isRenaming = renaming === file.name
+        const isRenaming = renamingName === file.name
         return (
           <div
-            key={file.name}
+            key={file.location ? file.location + file.name : file.name}
             onClick={() => onSelect(file.name)}
             onDoubleClick={() => onOpen(file)}
             data-explorer-file={file.name}
             onContextMenu={(e) => { e.preventDefault(); e.stopPropagation(); onContextMenu(file, e.clientX, e.clientY) }}
             draggable={!isRenaming}
             onDragStart={onDragStart(file)}
-            title={effectiveName(file)}
-            className={`flex flex-col items-center p-2 rounded-sm border border-transparent hover:border-blue-200 dark:hover:border-blue-800 hover:bg-blue-50/50 dark:hover:bg-blue-900/10 cursor-pointer group transition-all w-[100px] ${isSelected ? 'bg-blue-100/50 dark:bg-blue-900/30 border-blue-300 dark:border-blue-700 shadow-xs' : ''}`}
+            title={file.name}
+            className={`flex flex-col items-center p-2 rounded-sm border border-transparent hover:border-blue-200 dark:hover:border-blue-800 hover:bg-blue-50/50 dark:hover:bg-blue-900/10 cursor-pointer group transition-all w-[100px] ${isSelected ? 'bg-blue-100/50 dark:bg-blue-900/30 border-blue-300 dark:border-blue-700 shadow-xs' : ''} ${cutName === file.name ? 'file-cut' : ''}`}
           >
             <div className="w-12 h-12 mb-2 flex items-center justify-center relative overflow-hidden rounded-sm shadow-xs group-hover:scale-105 transition-transform shrink-0">
               {file.type === 'image' ? (
                 <img src={file.url} alt="" className="w-full h-full object-cover" loading="lazy" />
-              ) : file.icon && (file.icon.includes('.') || file.icon.startsWith('/')) ? (
-                <img src={file.icon} alt="" className="w-10 h-10 object-contain" />
               ) : (
-                <div className="text-4xl drop-shadow-xs">{file.icon || '📁'}</div>
+                <img src={entryIcon(file, IMG)} alt="" className="w-10 h-10 object-contain" />
               )}
             </div>
             {isRenaming ? (
-              <input
-                ref={renameInputRef} type="text"
-                value={renameValue} onChange={(e) => setRenameValue(e.target.value)}
-                onKeyDown={(e) => { if (e.key === 'Enter') commitRename(); if (e.key === 'Escape') cancelRename() }}
-                onBlur={commitRename}
-                onClick={(e) => e.stopPropagation()}
+              <RenameInput
+                name={file.name}
                 className="text-[11px] text-center w-full px-1 font-medium leading-tight bg-white dark:bg-[#1c1c1c] border border-win-blue rounded-sm outline-hidden"
               />
             ) : (
-              <div className="text-[11px] text-center w-full px-0.5 font-medium leading-tight overflow-hidden">{effectiveName(file)}</div>
+              <div className="text-[11px] text-center w-full px-0.5 font-medium leading-tight overflow-hidden">{file.name}</div>
             )}
+            {file.location && <div className="text-[9px] text-gray-400 truncate w-full px-0.5 mt-0.5">{file.location}</div>}
             {isRecycle && !isRenaming && (
-              <button type="button" onClick={(e) => { e.stopPropagation(); onRestore(file.name) }} className="mt-2 px-3 py-1 bg-win-blue text-white text-[10px] font-semibold rounded-sm shadow-sm hover:bg-blue-600 transition-colors" title={`Restore ${file.name}`}>
+              <button type="button" onClick={(e) => { e.stopPropagation(); onRestore(file) }} className="mt-2 px-3 py-1 bg-win-blue text-white text-[10px] font-semibold rounded-sm shadow-sm hover:bg-blue-600 transition-colors" title={`Restore ${file.name}`}>
                 ↺ Restore
               </button>
             )}
@@ -757,29 +601,15 @@ function GridView({
 // DetailsView (sortable table)
 // ============================================================================
 
-interface DetailsViewProps {
-  files: FsEntry[]
-  selected: string | null
-  isRecycle: boolean
+interface DetailsViewProps extends FileViewProps {
   sortKey: SortKey
   sortDir: SortDir
   toggleSort: (k: SortKey) => void
-  renaming: string | null
-  renameValue: string
-  renameInputRef: React.RefObject<HTMLInputElement | null>
-  setRenameValue: (v: string) => void
-  commitRename: () => void
-  cancelRename: () => void
-  onSelect: (name: string) => void
-  onOpen: (file: FsEntry) => void
-  onContextMenu: (file: FsEntry, x: number, y: number) => void
-  effectiveName: (file: FsEntry) => string
 }
 
 function DetailsView({
-  files, selected, isRecycle, sortKey, sortDir, toggleSort,
-  renaming, renameValue, renameInputRef, setRenameValue, commitRename, cancelRename,
-  onSelect, onOpen, onContextMenu, effectiveName,
+  files, selected, isRecycle, sortKey, sortDir, toggleSort, renamingName, cutName,
+  onSelect, onOpen, onContextMenu,
 }: DetailsViewProps) {
   const arrow = (k: SortKey) => (sortKey === k ? (sortDir === 'asc' ? ' ↑' : ' ↓') : '')
   return (
@@ -795,45 +625,39 @@ function DetailsView({
       <tbody>
         {files.map((file) => {
           const isSelected = selected === file.name
-          const isRenaming = renaming === file.name
+          const isRenaming = renamingName === file.name
           return (
             <tr
-              key={file.name}
+              key={file.location ? file.location + file.name : file.name}
               onClick={() => onSelect(file.name)}
               onDoubleClick={() => onOpen(file)}
               data-explorer-file={file.name}
             onContextMenu={(e) => { e.preventDefault(); e.stopPropagation(); onContextMenu(file, e.clientX, e.clientY) }}
-              className={`cursor-pointer hover:bg-blue-50/50 dark:hover:bg-blue-900/10 ${isSelected ? 'bg-blue-100/50 dark:bg-blue-900/30' : ''}`}
+              className={`cursor-pointer hover:bg-blue-50/50 dark:hover:bg-blue-900/10 ${isSelected ? 'bg-blue-100/50 dark:bg-blue-900/30' : ''} ${cutName === file.name ? 'file-cut' : ''}`}
             >
               <td className="pl-4 py-1.5 flex items-center space-x-2">
                 <span className="w-5 h-5 flex items-center justify-center shrink-0">
                   {file.type === 'image' ? (
                     <img src={file.url} alt="" className="w-5 h-5 object-cover rounded-sm" />
-                  ) : file.icon && (file.icon.includes('.') || file.icon.startsWith('/')) ? (
-                    <img src={file.icon} alt="" className="w-5 h-5 object-contain" />
                   ) : (
-                    <span className="text-sm">{file.icon || '📁'}</span>
+                    <img src={entryIcon(file, IMG)} alt="" className="w-5 h-5 object-contain" />
                   )}
                 </span>
                 {isRenaming ? (
-                  <input
-                    ref={renameInputRef} type="text"
-                    value={renameValue} onChange={(e) => setRenameValue(e.target.value)}
-                    onKeyDown={(e) => { if (e.key === 'Enter') commitRename(); if (e.key === 'Escape') cancelRename() }}
-                    onBlur={commitRename}
-                    onClick={(e) => e.stopPropagation()}
+                  <RenameInput
+                    name={file.name}
                     className="text-[12px] px-1 bg-white dark:bg-[#1c1c1c] border border-win-blue rounded-sm outline-hidden w-full"
                   />
                 ) : (
-                  <span className="truncate">{effectiveName(file)}</span>
+                  <span className="truncate">{file.name}</span>
                 )}
                 {isRecycle && !isRenaming && (
                   <span className="ml-2 text-[10px] opacity-60">(deleted)</span>
                 )}
               </td>
-              <td className="py-1.5 opacity-70">{formatDate(fakeDate(file))}</td>
-              <td className="py-1.5 opacity-70">{typeLabel(file)}</td>
-              <td className="py-1.5 opacity-70 text-right pr-4">{file.type === 'folder' ? '' : formatSize(fakeSize(file))}</td>
+              <td className="py-1.5 opacity-70">{formatDate(entryDate(file))}</td>
+              <td className="py-1.5 opacity-70">{entryType(file)}</td>
+              <td className="py-1.5 opacity-70 text-right pr-4">{formatSize(entrySize(file))}</td>
             </tr>
           )
         })}
@@ -856,14 +680,13 @@ function Th({ children, onClick, className = '' }: { children: React.ReactNode; 
 
 interface DetailsPanelProps {
   file: FsEntry | null
-  currentPath: string
-  effectiveName: (file: FsEntry) => string
+  rows: [string, string][]
   onClose: () => void
 }
 
-function DetailsPanel({ file, currentPath, effectiveName, onClose }: DetailsPanelProps) {
+function DetailsPanel({ file, rows, onClose }: DetailsPanelProps) {
   return (
-    <aside className="w-72 border-l border-gray-200 dark:border-gray-800 bg-[#fafafa] dark:bg-[#252526] shrink-0 flex flex-col hidden xl:flex">
+    <aside className="w-72 border-l border-gray-200 dark:border-gray-800 bg-[#fafafa] dark:bg-[#252526] shrink-0 flex-col hidden xl:flex" data-details-pane="">
       <div className="h-9 px-3 flex items-center justify-between border-b border-gray-200 dark:border-gray-800">
         <span className="text-[11px] font-semibold opacity-70 uppercase tracking-wider">Details</span>
         <button type="button" onClick={onClose} className="opacity-50 hover:opacity-100 text-sm" aria-label="Close details">×</button>
@@ -878,23 +701,14 @@ function DetailsPanel({ file, currentPath, effectiveName, onClose }: DetailsPane
             <div className="w-20 h-20 flex items-center justify-center rounded-sm shadow-xs">
               {file.type === 'image' ? (
                 <img src={file.url} alt="" className="w-full h-full object-cover rounded-sm" />
-              ) : file.icon && (file.icon.includes('.') || file.icon.startsWith('/')) ? (
-                <img src={file.icon} alt="" className="w-16 h-16 object-contain" />
               ) : (
-                <div className="text-5xl">{file.icon || '📁'}</div>
+                <img src={entryIcon(file, IMG)} alt="" className="w-16 h-16 object-contain" />
               )}
             </div>
-            <div className="mt-3 text-center font-semibold text-sm break-all">{effectiveName(file)}</div>
-            <div className="text-[11px] opacity-60">{typeLabel(file)}</div>
+            <div className="mt-3 text-center font-semibold text-sm break-all">{file.name}</div>
           </div>
           <dl className="text-[11px] space-y-1">
-            <Row label="Location" value={currentPath} />
-            <Row label="Type" value={typeLabel(file)} />
-            <Row label="Size" value={file.type === 'folder' ? 'Folder' : formatSize(fakeSize(file))} />
-            <Row label="Date modified" value={formatDate(fakeDate(file))} />
-            {file.type === 'app' && <Row label="Opens with" value={file.app} />}
-            {file.type === 'image' && 'url' in file && <Row label="URL" value={file.url} />}
-            {file.type === 'video' && 'url' in file && <Row label="Source" value={file.url} />}
+            {rows.map(([label, value]) => <Row key={label} label={label} value={value} />)}
           </dl>
         </div>
       )}

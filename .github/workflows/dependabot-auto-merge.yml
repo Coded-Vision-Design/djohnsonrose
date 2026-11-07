@@ -1,9 +1,8 @@
 name: Dependabot auto-merge
 
-# Arms GitHub auto-merge on the Dependabot PRs that are safe to land once the
-# required `verify` check (ci-deps-check.yml: install + build) passes.
-# Seeded org-wide by cdv-vps-ops scripts/seed-auto-merge-workflow.ps1 and
-# scripts/auto-onboard.ps1. Policy v2, Nov 2026:
+# Merges the Dependabot PRs that are safe to land, once every other check on
+# the PR has passed. Based on the org template seeded by cdv-vps-ops
+# scripts/seed-auto-merge-workflow.ps1 (policy v2, Nov 2026):
 #
 #   security updates (the transitive-security group)   any semver level
 #   version updates, patch or minor                    yes
@@ -13,10 +12,15 @@ name: Dependabot auto-merge
 #       bot (cdv-vps-ops/services/dependabot-bot) arms it the same day when
 #       `verify` is green, or asks Claude to fix it
 #
+# Repo change on top of the template: branch protection here only requires
+# `verify` (install and build of the repo root), so GitHub would merge before
+# v2's tests, the PHP tests and the browser tests had finished. The job waits
+# until every other check run on the PR's head commit has passed, and insists
+# on `verify`, `site-tests` and `browser-tests` by name, before it merges. A
+# failed, cancelled or missing check leaves the PR open for a person.
+#
 # No approval step: Actions cannot approve PRs enterprise-wide and branch
-# protection requires 0 reviews, so `verify` is the gate.
-# No formatting job: v1's format-fix ran a full npm ci on every Dependabot PR
-# (up to ~17 billed minutes) and when it failed, auto-merge never armed.
+# protection requires 0 reviews.
 #
 # Gated on the PR author rather than github.actor, so a human re-running the
 # workflow on a Dependabot PR still gets the same decision.
@@ -27,12 +31,18 @@ on:
 permissions:
   contents: write
   pull-requests: write
+  checks: read
+
+# A new push to the PR starts a fresh wait for the new commit.
+concurrency:
+  group: dependabot-auto-merge-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
 
 jobs:
   auto-merge:
     if: github.event.pull_request.user.login == 'dependabot[bot]'
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 50
     steps:
       - name: Fetch Dependabot metadata
         id: meta
@@ -68,9 +78,76 @@ jobs:
           echo "reason=$reason" >> "$GITHUB_OUTPUT"
           echo "Decision: merge=$merge ($reason)"
 
-      - name: Enable auto-merge (squash)
+      # Check runs only; this repo's checks (Actions, CodeQL, GitGuardian) all
+      # report that way. Neutral and skipped count as passed, except for the
+      # three named checks, which must succeed.
+      - name: Wait for every other check to pass
         if: steps.decide.outputs.merge == 'yes'
-        run: gh pr merge --auto --squash "$PR_URL"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          REQUIRED: verify site-tests browser-tests
+          SELF: auto-merge
+        run: |
+          is_required() { case " $REQUIRED " in *" $1 "*) return 0 ;; esac; return 1; }
+          deadline=$(( $(date +%s) + 45 * 60 ))
+          while :; do
+            if ! checks=$(gh api "repos/${REPO}/commits/${HEAD_SHA}/check-runs?filter=latest&per_page=100" \
+                --jq '.check_runs[] | [.name, .status, (.conclusion // "none")] | @tsv'); then
+              checks=""
+              pending=" (could not read checks)"
+            else
+              pending=""
+            fi
+            failed=""
+            missing=""
+            while IFS=$'\t' read -r name status conclusion; do
+              if [ -z "$name" ] || [ "$name" = "$SELF" ]; then continue; fi
+              if [ "$status" != "completed" ]; then
+                pending="$pending $name"
+              elif [ "$conclusion" = "success" ]; then
+                :
+              elif { [ "$conclusion" = "neutral" ] || [ "$conclusion" = "skipped" ]; } && ! is_required "$name"; then
+                :
+              else
+                failed="$failed $name=$conclusion"
+              fi
+            done <<< "$checks"
+            for name in $REQUIRED; do
+              if ! cut -f1 <<< "$checks" | grep -qxF "$name"; then missing="$missing $name"; fi
+            done
+
+            if [ -n "$failed" ]; then
+              echo "::error::Not merging, these checks did not pass:$failed"
+              exit 1
+            fi
+            if [ -z "$pending" ] && [ -z "$missing" ]; then
+              echo "Every check passed"
+              break
+            fi
+            if [ "$(date +%s)" -ge "$deadline" ]; then
+              echo "::error::Not merging, gave up waiting for:$pending$missing"
+              exit 1
+            fi
+            echo "Waiting for:$pending$missing"
+            sleep 30
+          done
+
+      # Checks have passed, so gh merges straight away (with --auto it only
+      # waits if GitHub still reports something pending). --match-head-commit
+      # stops it merging a commit pushed after the checks were read. GitHub
+      # can take a moment to settle the PR's merge state, hence the retries.
+      - name: Merge (squash)
+        if: steps.decide.outputs.merge == 'yes'
+        run: |
+          for attempt in 1 2 3; do
+            if gh pr merge --auto --squash --match-head-commit "$HEAD_SHA" "$PR_URL"; then exit 0; fi
+            echo "Merge attempt ${attempt} failed, trying again shortly"
+            sleep 20
+          done
+          exit 1
         env:
           PR_URL: ${{ github.event.pull_request.html_url }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
