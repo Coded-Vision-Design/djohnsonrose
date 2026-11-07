@@ -16,8 +16,20 @@ export const HANDOFF_TTL_MS = 5000
 const FUTURE_SKEW_MS = 1000
 
 /**
- * What each app opens with that both builds understand, in v2's names. Apps
- * not listed open as they would from a fresh launch.
+ * What each app opens with that both builds understand, in v2's names.
+ *
+ * - Explorer: the folder on screen and the file picked in it (live), but not
+ *   its Back and Forward history, view, sort or search.
+ * - Notepad: the text on screen, typed or opened, and its file's folder (live),
+ *   but not the undo history, the caret or an open menu or dialog.
+ * - Settings: the page on screen (live).
+ * - Chrome: the address it opened with, but not tabs opened since.
+ * - FL Studio: the project file it opened with, but not edits since.
+ * - Photos, PDF Reader, Movies & TV: the picture, document or video opened.
+ *
+ * Every other app opens as it would from a fresh launch, in the same place:
+ * Terminal's history, Paint's canvas, Calculator's sum, Word's edits and the
+ * rest live only in the page, in each build's own framework.
  */
 export const HANDOFF_EXTRAS = {
   edge: ['initialUrl'],
