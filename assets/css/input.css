@@ -138,7 +138,8 @@ body {
     object-fit: contain;
 }
 
-.dark .context-menu-icon img {
+/* Line icons are drawn dark; full-colour pictures keep their colours. */
+.dark .context-menu-icon img[src$=".svg"] {
     filter: invert(1) brightness(2);
 }
 

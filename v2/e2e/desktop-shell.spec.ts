@@ -672,6 +672,33 @@ for (const build of BUILDS) {
       await boot(page, build)
       expect(await isDark(page)).toBe(false)
     })
+
+    test('the right-click menu is readable in dark mode', async ({ page }) => {
+      await page.emulateMedia({ colorScheme: 'dark' })
+      await boot(page, build)
+      expect(await isDark(page)).toBe(true)
+      await page.mouse.click(1000, 400, { button: 'right' })
+      await expect(page.locator('[data-menu-item="Paste"]')).toBeVisible()
+      const items = await page.evaluate(() =>
+        [...document.querySelectorAll<HTMLElement>('[data-menu-item]')]
+          .filter((el) => el.offsetParent !== null)
+          .map((el) => {
+            const img = el.querySelector('img')!
+            return {
+              item: el.dataset.menuItem,
+              color: getComputedStyle(el.querySelector('.context-menu-label')!).color,
+              svg: /\.svg$/.test(img.getAttribute('src') ?? ''),
+              filter: getComputedStyle(img).filter,
+            }
+          }),
+      )
+      expect(items.length).toBeGreaterThan(5)
+      for (const item of items) {
+        expect(item.color, item.item).toBe('rgb(255, 255, 255)')
+        // Line icons are drawn dark, so they are turned light; pictures keep their colours.
+        expect(item.filter, item.item).toBe(item.svg ? 'invert(1) brightness(2)' : 'none')
+      }
+    })
   })
 
   test.describe(`${build.name} boot and sign-in`, () => {
