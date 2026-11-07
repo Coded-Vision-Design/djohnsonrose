@@ -255,6 +255,21 @@ for (const build of BUILDS) {
       await expect(toast(page)).toBeHidden()
     })
 
+    test('waits behind the calendar and Task View too, as behind Start', async ({ page }) => {
+      await boot(page, build)
+      await replayFromStart(page)
+      await page.locator('[data-tray-item="clock"]').click()
+      await expect(toast(page)).toBeHidden()
+      await page.keyboard.press('Escape')
+      await expect(toast(page)).toBeVisible()
+      await page.keyboard.press('Alt+Shift+T')
+      await expect(page.locator('.os-task-view')).toBeVisible()
+      await expect(toast(page)).toBeHidden()
+      await page.keyboard.press('Escape')
+      await expect(toast(page)).toBeVisible()
+      await expect(toast(page)).toHaveAttribute('data-tour-step', 'start')
+    })
+
     test('replays from Start, clearing the desktop, and the highlighted part still works', async ({ page }) => {
       await boot(page, build)
       await openApp(page, build, 'calculator')

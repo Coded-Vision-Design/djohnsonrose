@@ -47,6 +47,8 @@ export const SOURCE_FILES = [
   'assets/js/windowing/terminal.js',
   'assets/js/windowing/text-ops.d.ts',
   'assets/js/windowing/text-ops.js',
+  'assets/js/windowing/tour.d.ts',
+  'assets/js/windowing/tour.js',
   'assets/js/windowing/weather.d.ts',
   'assets/js/windowing/weather.js',
   'assets/js/windowing/widgets.d.ts',

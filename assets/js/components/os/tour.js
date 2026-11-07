@@ -44,7 +44,7 @@ document.addEventListener('alpine:init', () => {
         get title() { return this.offering ? OsWindowing.TOUR_OFFER.title : this.state.step?.title ?? ''; },
         get text() { return this.offering ? OsWindowing.TOUR_OFFER.text : this.state.step?.text ?? ''; },
         // Start, Quick Settings and Widgets cover the toast, and the tour waits behind them.
-        get covered() { return this.startMenuOpen || this.quickSettingsOpen || this.widgetsOpen; },
+        get covered() { return this.startMenuOpen || this.quickSettingsOpen || this.widgetsOpen || this.calendarOpen || Alpine.store('os').taskSwitcherOpen; },
         offer: OsWindowing.TOUR_OFFER,
 
         init() {
@@ -94,10 +94,11 @@ document.addEventListener('alpine:init', () => {
             }
         },
 
-        // Esc closes Start, Quick Settings, Widgets or a menu first, then skips the tour.
+        // Esc closes whatever covers the tour (Start, Quick Settings, Widgets, the
+        // calendar, Task View) or a menu first, then skips the tour.
         onEscape() {
             if (this.state.status !== 'running') return;
-            if (this.startMenuOpen || this.quickSettingsOpen || this.widgetsOpen || this.contextMenu.open) return;
+            if (this.covered || this.contextMenu.open) return;
             this.act(() => Alpine.store('tour').skip());
         },
 

@@ -23,7 +23,9 @@ export function Tour() {
   const ringRef = useRef<HTMLDivElement>(null)
   const offering = state.status === 'offer'
   // Start, Quick Settings and Widgets cover the toast, and the tour waits behind them.
-  const covered = useOsStore((s) => s.startMenuOpen || s.quickSettingsOpen || s.widgetsOpen)
+  const covered = useOsStore(
+    (s) => s.startMenuOpen || s.quickSettingsOpen || s.widgetsOpen || s.calendarOpen || s.taskSwitcherOpen,
+  )
 
   // The cookie question is asked first, and the offer waits for it.
   useEffect(() => tour.block(consent === null), [consent])
@@ -40,13 +42,15 @@ export function Tour() {
     return stop
   }, [state, mode])
 
-  // Esc closes Start, Quick Settings, Widgets or a menu first, then skips the tour.
+  // Esc closes whatever covers the tour (Start, Quick Settings, Widgets, the
+  // calendar, Task View) or a menu first, then skips the tour.
   useEffect(() => {
     if (state.status !== 'running') return
     const onKey = (event: KeyboardEvent) => {
       if (event.key !== 'Escape') return
       const os = useOsStore.getState()
-      if (os.startMenuOpen || os.quickSettingsOpen || os.widgetsOpen || os.contextMenu.open) return
+      if (os.startMenuOpen || os.quickSettingsOpen || os.widgetsOpen || os.calendarOpen || os.taskSwitcherOpen) return
+      if (os.contextMenu.open) return
       act(toastRef.current, () => tour.skip())
     }
     window.addEventListener('keydown', onKey, true)
