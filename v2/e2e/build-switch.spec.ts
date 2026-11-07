@@ -404,6 +404,22 @@ for (const build of BUILDS) {
       await expect(page.locator('.os-window')).toHaveCount(0)
     })
 
+    test('the windows brought over appear at once, and one opened after still opens as usual', async ({ page }) => {
+      const opening = (title: string) =>
+        windowOf(page, title).evaluate((el) => getComputedStyle(el).animationName)
+      await prepare(page)
+      await page.goto(build.url)
+      await waitForBuild(page, build.name)
+      await openApp(page, build, 'notepad')
+      expect(await opening('Notepad')).toBe('windowOpen')
+
+      await page.locator('[data-tray-item="build"]').click()
+      await waitForBuild(page, build.other)
+      expect(await opening('Notepad')).toBe('none')
+      await openApp(page, build.name === 'v1' ? BUILDS[1] : BUILDS[0], 'calculator')
+      expect(await opening('Calculator')).toBe('windowOpen')
+    })
+
     test('a click that opens a new tab leaves this desktop as it is', async ({ page, context }) => {
       await prepare(page)
       await page.goto(build.url)

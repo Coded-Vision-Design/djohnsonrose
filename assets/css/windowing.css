@@ -753,6 +753,6 @@ html[data-os-mode='phone'] .os-consent-actions button {
 
 /* Build switch: the windows the other build had open are already on screen, so
    they appear at once instead of playing the opening animation. See handoff.js. */
-.os-window[data-restored] {
+.os-window.os-window-restored {
     animation: none;
 }
