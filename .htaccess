@@ -25,6 +25,8 @@ AddType video/mp4 .mp4
 AddType video/mp4 .m4v
 AddType video/webm .webm
 AddType video/ogg .ogv
+# Hostinger sent the AAC sounds as text/plain.
+AddType audio/mp4 .m4a
 # llms.txt and llm.txt hold accented names; without a charset browsers guess.
 # A header rather than AddCharset, which Hostinger's server ignores.
 <IfModule mod_headers.c>

@@ -20,6 +20,9 @@ const SERVED: Record<string, string> = {
 /** Other people's projects on GitHub that a file may cite. */
 const THIRD_PARTY = ['github.com/microsoft/Selawik']
 
+/** Server code that is never sent to a browser and must name the repository. */
+const SERVER_ONLY = ['../../../lib/activity.php']
+
 /** Each GitHub link or account name in a text, other than a third-party citation. */
 function accountMentions(text: string): string[] {
   const links = [...text.matchAll(/github\.com\/[\w.-]*(?:\/[\w.-]+)?/gi)]
@@ -74,8 +77,19 @@ describe('no GitHub account on the site', () => {
   })
 
   it('names no GitHub account and links to none', () => {
-    const found = Object.entries(SERVED).flatMap(([file, text]) => accountMentions(text).map((hit) => `${file}: ${hit}`))
+    const found = Object.entries(SERVED)
+      .filter(([file]) => !SERVER_ONLY.includes(file))
+      .flatMap(([file, text]) => accountMentions(text).map((hit) => `${file}: ${hit}`))
     expect(found).toEqual([])
+  })
+
+  // lib/activity.php asks GitHub's API for this site's commits, so it has to
+  // name the repository. lib/ is never served (lib/.htaccess), and the widget's
+  // answer is checked separately: tests/php/activity_test.php makes sure no name,
+  // author or link reaches the browser.
+  it('lets only the server-side activity fetch name the repository', () => {
+    const found = SERVER_ONLY.flatMap((file) => accountMentions(SERVED[file] ?? '')).sort()
+    expect(found).toEqual(['Coded-Vision-Design', 'github.com/repos'])
   })
 
   it('leaves the GitHub field of data/profile.json empty', () => {
