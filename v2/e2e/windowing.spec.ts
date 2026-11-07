@@ -962,6 +962,7 @@ for (const build of BUILDS) {
       ['settings', 'Settings'], ['taskmanager', 'Task Manager'], ['eventviewer', 'Event Viewer'],
       ['calculator', 'Calculator'], ['paint', 'Paint'], ['photos', 'Photos'], ['video', 'Movies & TV'],
       ['pdfreader', 'PDF Reader'], ['admin', 'Admin Console'], ['references', 'References'], ['github', 'GitHub'],
+      ['copilot', 'Copilot'],
     ] as const
 
     // Known bugs recorded in the review, unrelated to window management.

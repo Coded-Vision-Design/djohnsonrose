@@ -6,7 +6,7 @@ import { describe, it, expect } from 'vitest'
 const SOURCES = import.meta.glob('../../../partials/apps/*.php', { query: '?raw', import: 'default', eager: true }) as Record<string, string>
 
 const PARTIALS = [
-  'admin', 'calculator', 'database', 'docker', 'edge', 'eventviewer', 'explorer', 'filezilla',
+  'admin', 'calculator', 'copilot', 'database', 'docker', 'edge', 'eventviewer', 'explorer', 'filezilla',
   'flstudio', 'github', 'notepad', 'outlook', 'pdfreader', 'photos', 'references',
   'taskmanager', 'terminal', 'video', 'vscode',
 ]

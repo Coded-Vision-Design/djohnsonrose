@@ -12,7 +12,7 @@ $requested = request_string($_GET, 'name') ?? 'explorer';
 // partials/apps/*.php; anything else triggers the not-found branch with
 // the escaped name in the message.
 $allowed = [
-    'admin', 'calculator', 'database', 'docker', 'edge', 'eventviewer', 'excel',
+    'admin', 'calculator', 'copilot', 'database', 'docker', 'edge', 'eventviewer', 'excel',
     'explorer', 'filezilla', 'flstudio', 'github', 'notepad', 'outlook', 'paint',
     'pdfreader', 'photos', 'photoshop', 'powerpoint', 'putty', 'references',
     'settings', 'taskmanager', 'terminal', 'video', 'vscode', 'word',

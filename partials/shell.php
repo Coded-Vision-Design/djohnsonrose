@@ -422,6 +422,7 @@
         'apps/system',
         'apps/tools',
         'apps/admin',
+        'apps/copilot',
         'flstudio'
     ];
     // Versioned by file time like the stylesheet, so browsers keep each script

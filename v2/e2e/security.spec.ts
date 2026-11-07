@@ -13,6 +13,7 @@ const APPS = [
   ['settings', 'Settings'], ['taskmanager', 'Task Manager'], ['eventviewer', 'Event Viewer'],
   ['calculator', 'Calculator'], ['paint', 'Paint'], ['photos', 'Photos'], ['video', 'Movies & TV'],
   ['pdfreader', 'PDF Reader'], ['admin', 'Admin Console'], ['references', 'References'], ['github', 'GitHub'],
+  ['copilot', 'Copilot'],
 ] as const
 
 async function prepare(page: Page, violations: string[]) {

@@ -29,7 +29,7 @@ A toggle in each taskbar flips between the two builds so visitors (and recruiter
 Portfolios that link to other portfolios are forgettable. This one **is** the work:
 
 - A working desktop OS - taskbar, start menu, quick settings, snapping, drag‑resize, context menus, recycle bin with restore, file explorer, lock screen, telemetry pipeline, admin dashboard.
-- 26 windowed apps in both builds, from one shared list in data/apps.json (calculator, paint, photos, video, notepad, word, excel, powerpoint, outlook, edge, vscode, terminal, explorer, photoshop, fl studio, docker, putty, filezilla, ssms‑style SQL viewer, task manager, event viewer, settings, pdf reader, admin console, references, github).
+- 27 windowed apps in both builds, from one shared list in data/apps.json (calculator, paint, photos, video, notepad, word, excel, powerpoint, outlook, edge, vscode, terminal, explorer, photoshop, fl studio, docker, putty, filezilla, ssms‑style SQL viewer, task manager, event viewer, settings, pdf reader, admin console, references, github, copilot).
 - The whole thing is intentionally over‑engineered: SPA routing, lazy‑loaded code‑split bundles, a typed state store, an admin OAuth flow, a Chart.js analytics dashboard, and a CI/CD pipeline that builds **both** tracks and rsyncs them to Hostinger atomically.
 
 ---
@@ -258,7 +258,7 @@ The site degrades gracefully if optional services (Google APIs, OAuth, SMTP) are
 ├── partials/                  # v1 PHP partials (shell, taskbar, start-menu, apps/*)
 ├── data/portfolio.json        # Single source of truth for CV-derived settings
 ├── v2/                        # Parallel React build (Vite-based)
-│   ├── src/apps/              # 26 windowed apps, each its own module + tests
+│   ├── src/apps/              # 27 windowed apps, each its own module + tests
 │   ├── src/shell/             # Taskbar, StartMenu, ContextMenu, etc.
 │   ├── src/store/osStore.ts   # Zustand store
 │   ├── src/windowing/         # Drag + resize hooks (tested)

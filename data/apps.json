@@ -1,7 +1,7 @@
 {
   "pinned": ["edge", "explorer", "outlook", "vscode", "flstudio"],
   "startPinned": [
-    "edge", "explorer", "pdfreader", "vscode", "outlook", "word",
+    "edge", "explorer", "pdfreader", "copilot", "vscode", "outlook", "word",
     "excel", "powerpoint", "terminal", "database", "notepad", "settings"
   ],
   "apps": [
@@ -30,6 +30,7 @@
     { "id": "pdfreader", "title": "PDF Reader", "icon": "pdf.webp", "size": { "w": 900, "h": 720 } },
     { "id": "admin", "title": "Admin Console", "icon": "mssql.webp", "size": { "w": 1180, "h": 760 } },
     { "id": "references", "title": "References", "icon": "notepad++.webp", "size": { "w": 820, "h": 560 } },
-    { "id": "github", "title": "GitHub", "icon": "github.webp", "size": { "w": 1180, "h": 760 } }
+    { "id": "github", "title": "GitHub", "icon": "github.webp", "size": { "w": 1180, "h": 760 } },
+    { "id": "copilot", "title": "Copilot", "icon": "copilot.webp", "size": { "w": 980, "h": 720 } }
   ]
 }
