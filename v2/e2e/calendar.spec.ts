@@ -119,10 +119,13 @@ for (const build of BUILDS) {
       await expect(notifications(page).nth(0)).toContainText('12:00')
       await expect(flyout(page)).not.toContainText('No new notifications')
 
-      await flyout(page).getByRole('button', { name: 'Clear all' }).click()
+      await flyout(page).getByRole('button', { name: 'Clear all' }).focus()
+      await page.keyboard.press('Enter')
       await expect(notifications(page)).toHaveCount(0)
       await expect(flyout(page)).toContainText('No new notifications')
       await expect(flyout(page)).toBeVisible()
+      // The button goes with them, so focus moves on to the calendar rather than off the page.
+      await expect(day(page, '2026-11-07')).toBeFocused()
     })
 
     test('moves between months with the buttons, and back to today', async ({ page }) => {

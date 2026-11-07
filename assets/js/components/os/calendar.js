@@ -28,6 +28,12 @@ document.addEventListener('alpine:init', () => {
         get notes() { return Alpine.store('os').notifications; },
         noteTime(note) { return OsWindowing.notificationTime(note.time); },
 
+        // The button goes with the notifications, so focus moves on to the calendar.
+        clearAll() {
+            Alpine.store('os').clearNotifications();
+            this.focusSelected();
+        },
+
         select(iso, focus = false) {
             this.selected = iso;
             if (focus) this.$nextTick(() => this.focusSelected());
@@ -42,18 +48,19 @@ document.addEventListener('alpine:init', () => {
             this.select(target, true);
         },
 
-        // x-show reveals the flyout a frame after it opens, so focus waits for it.
+        // Focus waits, for a frame or two at most, until the day is on screen.
         focusSelected(frames = 3) {
-            if (!this.$root.getClientRects().length && frames > 0) {
+            const day = this.$root.querySelector('[data-calendar-day][tabindex="0"]');
+            if (!day?.getClientRects().length && frames > 0) {
                 requestAnimationFrame(() => this.focusSelected(frames - 1));
                 return;
             }
-            this.$root.querySelector('[data-calendar-day][tabindex="0"]')?.focus({ preventScroll: true });
+            day?.focus({ preventScroll: true });
         },
 
         // The clock toggles the flyout itself, so a click on it is not a click away.
         clickAway(e) {
-            if (!e.target.closest('[data-tray-item="clock"]')) this.calendarOpen = false;
+            if (!e.target.closest?.('[data-tray-item="clock"]')) this.calendarOpen = false;
         },
 
         // Esc closes it and gives focus back to the clock.

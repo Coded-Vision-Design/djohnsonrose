@@ -83,6 +83,12 @@ function CalendarPanel() {
     setSelected(iso)
   }
 
+  // The button goes with the notifications, so focus moves on to the calendar.
+  const clearAll = () => {
+    clearNotifications()
+    focusSelected(ref.current)
+  }
+
   const onGridKey = (e: KeyboardEvent) => {
     const target = calendarKeyTarget(selected, e)
     if (!target) return
@@ -108,7 +114,7 @@ function CalendarPanel() {
         <div className="os-notify-head">
           <h2 id="os-notifications-heading">Notifications</h2>
           {notifications.length > 0 && (
-            <button type="button" className="os-calendar-text-button" data-notifications-clear="" onClick={clearNotifications}>
+            <button type="button" className="os-calendar-text-button" data-notifications-clear="" onClick={clearAll}>
               Clear all
             </button>
           )}
