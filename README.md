@@ -31,19 +31,36 @@ Portfolios that link to other portfolios are forgettable. This one **is** the wo
 - A working desktop OS - taskbar, start menu, quick settings, snapping, drag‑resize, context menus, recycle bin with restore, file explorer, lock screen, telemetry pipeline, admin dashboard.
 - 27 windowed apps in both builds, from one shared list in data/apps.json (calculator, paint, photos, video, notepad, word, excel, powerpoint, outlook, edge, vscode, terminal, explorer, photoshop, fl studio, docker, putty, filezilla, ssms‑style SQL viewer, task manager, event viewer, settings, pdf reader, admin console, references, github, copilot).
 - Copilot answers a recruiter's questions about DeVanté and matches a pasted job description against the CV, from the site's own data only, with every answer citing the CV section, file or project it came from, and builds a tailored, printable CV. It calls Claude from the server ([api/copilot.php](api/copilot.php), [lib/copilot.php](lib/copilot.php)) and stays switched off until `ANTHROPIC_API_KEY` is set in the server's `.env` (see [.env.example](.env.example)).
-- The whole thing is intentionally over‑engineered: SPA routing, lazy‑loaded code‑split bundles, a typed state store, an admin OAuth flow, a Chart.js analytics dashboard, and a CI/CD pipeline that builds **both** tracks and rsyncs them to Hostinger atomically.
+- Windows 11 behaviour, the same in both builds: a calendar and notification flyout on the clock, Task View, an Alt+Q window switcher, an address bar that follows the open windows (Back on a phone returns to the desktop), a 60‑second guided tour of toasts, and a build switch that opens the other build with the same windows in the same places.
+- Apps with real depth: Terminal (`cv`, `skills`, `cat`, `man devante`, Tab completion, a terminal tour), VS Code showing the site's own public source, PowerPoint reading each project as a case study (problem, approach, outcome, metrics, screenshots), Widgets with recent changes to this site's code, and a Task Manager showing only what the page really measured: Web Vitals, download sizes, and the deployed commit with its checks.
+- The whole thing is intentionally over‑engineered: lazy‑loaded code‑split bundles, a typed state store, an admin OAuth flow, a Chart.js analytics dashboard, and a CI/CD pipeline that builds **both** tracks and rsyncs them to Hostinger atomically.
+
+### Keyboard shortcuts
+
+| Keys | What they do |
+| --- | --- |
+| Alt+Shift+T (or Win+Tab where the system allows it) | Task View |
+| Hold Alt, press Q (Shift+Q goes back) | Switch windows; release Alt to choose |
+| Win or Alt+Shift with the arrows | Snap, maximise and restore the focused window |
+| Win+Z or Alt+Shift+Z | Snap Layouts |
+| Ctrl+Shift+Esc | Task Manager |
+| Win+S | Search |
+| Alt+F4 | Close the focused window |
+| Esc | Close Start, a flyout, a menu or an overlay |
+
+Browsers keep Alt+Tab for the operating system, hence Alt+Q.
 
 ---
 
 ## Tech stack
 
-**Frontend (v2)** - React 19.2 · TypeScript 6 · Vite 8 · React Router 6 · Tailwind 3.4 · [Zustand 5 with `persist`](v2/src/store/osStore.ts) · Chart.js 4 / react‑chartjs‑2
+**Frontend (v2)** - React 19 · TypeScript 6 · Vite 8 · Tailwind 4 · [Zustand 5 with `persist`](v2/src/store/osStore.ts) · Chart.js 4 / react‑chartjs‑2 · the address is kept by [assets/js/windowing/address.js](assets/js/windowing/address.js), shared with v1, rather than a router
 
 **Frontend (v1)** - Alpine.js · Tailwind 4 · vanilla JS modules
 
 **Backend** - PHP 8 (no framework) · MySQL · PDO with prepared statements · HMAC‑SHA256 session cookies (no JWT lib) · Google OAuth (Identity Services + `tokeninfo` verification)
 
-**Tooling** - Vitest 4 (118 unit tests) · Playwright 1 (e2e) · `concurrently` for dual‑server dev · `actionlint` for CI · `git-filter-repo` for history hygiene
+**Tooling** - Vitest 5 (over 1,300 unit tests) · Playwright 1 (about 1,200 browser tests in desktop Chromium, iPhone WebKit and Android Chromium, plus a job on a real iOS Safari simulator) · PHP tests for every server library · `concurrently` for dual‑server dev · `actionlint` for CI · `git-filter-repo` for history hygiene
 
 **Infra / CI** - GitHub Actions → rsync over SSH to Hostinger · atomic releases with snapshot for one‑click rollback · `.htaccess` rewrites for SPA + PHP coexistence
 
@@ -226,7 +243,8 @@ Secrets live in GitHub Actions Secrets only - no `.env` is ever rsync'd. A separ
 - **`npm run test`** - Vitest specs cover the window manager core, the store, the calculator engine, the drawing rules Paint and Photoshop share (flood fill, canvas points, shapes, zoom and undo), the terminal commands, the filesystem model, the clock hook, and the app registry and shared app list.
 - **`npm run e2e`** - Playwright drives real browser interactions. [e2e/windowing.spec.ts](v2/e2e/windowing.spec.ts) runs every window behaviour against both builds, at desktop, tablet and phone sizes, including real touch input. [e2e/app-parity.spec.ts](v2/e2e/app-parity.spec.ts) checks every place that lists apps against [data/apps.json](data/apps.json), opens each app alone in both builds to catch runtime errors, and compares Start, search, every right-click menu and the tray between the builds. [e2e/file-actions.spec.ts](v2/e2e/file-actions.spec.ts) performs every file action in both builds and checks the result, [e2e/phone.spec.ts](v2/e2e/phone.spec.ts) runs both builds on an iPhone profile in WebKit and a Pixel profile in Chromium, and [e2e/flstudio.spec.ts](v2/e2e/flstudio.spec.ts) plays, edits, saves, reopens and exports a song in FL Studio in both builds. FL Studio's engine, editing rules, instruments and WAV export live in [assets/js/windowing/fl-studio.js](assets/js/windowing/fl-studio.js), which both builds share, and its look in [assets/css/flstudio.css](assets/css/flstudio.css). [e2e/drawing.spec.ts](v2/e2e/drawing.spec.ts) draws, fills, zooms and saves in Paint and Photoshop in both builds, by mouse, touch and pen, and checks that the same strokes leave the same pixels and that screenshots of the two builds match. Both apps run on [assets/js/windowing/drawing.js](assets/js/windowing/drawing.js) and are styled by [assets/css/drawing.css](assets/css/drawing.css). Both builds read [data/apps.json](data/apps.json), [data/filesystem.json](data/filesystem.json) and [data/menus.json](data/menus.json), so a change to an app, a file or a menu belongs there, and the rules for what can be done to a file are in [assets/js/windowing/file-ops.js](assets/js/windowing/file-ops.js). They need the PHP server on :8765 and Vite on :5173. Set `V1_URL` or `V2_ORIGIN` to use other addresses.
 - **iOS Safari** - [.github/workflows/ios-safari.yml](.github/workflows/ios-safari.yml) runs both builds in real Mobile Safari on Apple's iOS Simulator, on GitHub's macOS runners, through Appium. It checks long press, pinch, the on-screen keyboard and dragging a file with a finger. It runs on demand and when touch handling changes on a branch, and keeps its screenshots.
-- **`npm run test:php`** (repo root) - unit tests for the contact form library.
+- **`npm run test:php`** (repo root) - [tests/php/run.php](tests/php/run.php) runs the PHP tests for every server library: the contact form, telemetry and its retention, admin sessions, routes, weather, Copilot (against a stub of Anthropic's API, never the real one), recent changes for Widgets and the testimonials file.
+- **Server pieces worth knowing:** the deploy writes `build.json` (the commit and its check results, which Task Manager shows); [api/activity.php](api/activity.php) serves this site's recent commits for Widgets, cached, with no names or links; [data/testimonials.json](data/testimonials.json) feeds the Widgets testimonial, which stays hidden while the file is empty (its shape is documented in [lib/testimonials.php](lib/testimonials.php)).
 - **`actionlint`** - every CI workflow is linted on push.
 
 ---
