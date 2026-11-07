@@ -434,6 +434,15 @@ function completions(line, ctx) {
 }
 
 /**
+ * Which way a key press completes the line: 'next' for Tab, 'back' for Shift+Tab.
+ * On an empty line Tab is left to move focus, so a keyboard user is never trapped.
+ */
+export function completionKey(event, line) {
+  if (event.key !== 'Tab' || event.altKey || event.ctrlKey || event.metaKey || !line.trim()) return null;
+  return event.shiftKey ? 'back' : 'next';
+}
+
+/**
  * Tab completion, case-insensitive like Windows. Pass back the session from the
  * last call to cycle: each Tab moves to the next match, and Shift+Tab (`back`)
  * to the one before. Any change to the line starts again.

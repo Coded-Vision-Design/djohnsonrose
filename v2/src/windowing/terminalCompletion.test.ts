@@ -3,6 +3,7 @@ import {
   TERMINAL_COMMANDS,
   TERMINAL_HOME,
   completeTerminalLine,
+  completionKey,
   type CompletionSession,
   type TerminalContext,
 } from '../../../assets/js/windowing/terminal.js'
@@ -26,6 +27,27 @@ function press(line: string, times: number, cwd = TERMINAL_HOME, back = false) {
   }
   return seen
 }
+
+describe('completionKey', () => {
+  const key = (init: Partial<KeyboardEventInit>) => new KeyboardEvent('keydown', { key: 'Tab', ...init })
+
+  it('Tab goes forward and Shift+Tab back on a line with something on it', () => {
+    expect(completionKey(key({}), 'cd do')).toBe('next')
+    expect(completionKey(key({ shiftKey: true }), 'cd do')).toBe('back')
+  })
+
+  it('leaves Tab to move focus on an empty line, so the keyboard is never trapped', () => {
+    expect(completionKey(key({}), '')).toBeNull()
+    expect(completionKey(key({ shiftKey: true }), '   ')).toBeNull()
+  })
+
+  it('ignores other keys and Tab with Ctrl, Alt or the Windows key', () => {
+    expect(completionKey(key({ key: 'Enter' }), 'cd')).toBeNull()
+    expect(completionKey(key({ ctrlKey: true }), 'cd')).toBeNull()
+    expect(completionKey(key({ altKey: true }), 'cd')).toBeNull()
+    expect(completionKey(key({ metaKey: true }), 'cd')).toBeNull()
+  })
+})
 
 describe('completing a command', () => {
   it('finishes the only match', () => {

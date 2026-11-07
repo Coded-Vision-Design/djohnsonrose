@@ -1,8 +1,12 @@
 import { useEffect, useRef, useState } from 'react'
 import { useOsStore } from '../../store/osStore'
 import { useCurrentWindow } from '../../windowing/WindowContext'
-import { TERMINAL_HOME } from '../../../../assets/js/windowing/terminal.js'
-import { runCommand } from './commands'
+import {
+  TERMINAL_HOME,
+  completionKey,
+  type CompletionSession,
+} from '../../../../assets/js/windowing/terminal.js'
+import { completeCommand, runCommand } from './commands'
 import { track } from '../../lib/telemetry'
 
 // 1:1 port of partials/apps/terminal.php - PowerShell-styled header,
@@ -25,6 +29,8 @@ export default function Terminal() {
   const inputRef = useRef<HTMLInputElement>(null)
   const outputRef = useRef<HTMLDivElement>(null)
   const idRef = useRef(1)
+  // Where Tab completion is up to, so the next Tab moves to the next match.
+  const completion = useRef<CompletionSession | null>(null)
 
   const windowId = useCurrentWindow().id
   const isFocused = useOsStore((s) => s.focusedWindowId === windowId)
@@ -69,7 +75,16 @@ export default function Terminal() {
   }
 
   const handleKey = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
+    const tab = completionKey(e, input)
+    if (tab) {
+      e.preventDefault()
+      const next = completeCommand(input, cwd, completion.current, tab === 'back')
+      completion.current = next.session
+      setInput(next.line)
+    } else if (e.key === 'Escape' && input) {
+      // As in PowerShell, Esc clears the line.
+      setInput('')
+    } else if (e.key === 'Enter') {
       e.preventDefault()
       execute()
     } else if (e.key === 'ArrowUp') {
@@ -161,6 +176,7 @@ export default function Terminal() {
             spellCheck={false}
             autoCapitalize="off"
             autoCorrect="off"
+            autoComplete="off"
             className="bg-transparent border-none outline-hidden grow text-[#cccccc] font-mono"
             aria-label="Terminal input"
           />

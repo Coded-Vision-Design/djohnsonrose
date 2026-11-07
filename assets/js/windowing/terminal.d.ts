@@ -82,6 +82,10 @@ export function resolveFile(
   cwd: string,
   target: string,
 ): { entry: TerminalEntry; folder: string } | null
+export function completionKey(
+  event: Pick<KeyboardEvent, 'key' | 'shiftKey' | 'altKey' | 'ctrlKey' | 'metaKey'>,
+  line: string,
+): 'next' | 'back' | null
 export function completeTerminalLine(
   line: string,
   ctx: Pick<TerminalContext, 'cwd' | 'fileSystem' | 'apps'>,
