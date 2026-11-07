@@ -281,5 +281,27 @@ for (const build of BUILDS) {
       await win.getByRole('button', { name: 'Find Next' }).tap()
       await expect(win.locator('[data-notepad-mark]')).toHaveText('World')
     })
+
+    test('VS Code picks a file by touch and shows its source', async ({ page }) => {
+      await icon(page, 'VS Code').tap()
+      const win = page.getByRole('dialog', { name: 'VS Code', exact: true })
+      const picker = win.getByRole('combobox', { name: 'File' })
+      await picker.waitFor({ timeout: 20_000 })
+      await picker.selectOption('assets/js/windowing/terminal.js')
+      await expect(win.locator('[data-source-tab][data-active]')).toHaveAttribute('data-source-tab', 'assets/js/windowing/terminal.js')
+      await expect(win.locator('[data-vscode-editor] .vsc-row').first()).toContainText("// The Terminal's commands")
+      await win.getByRole('button', { name: 'Close terminal.js' }).tap()
+      await expect(win.locator('[data-source-tab]')).toHaveCount(1)
+    })
+
+    test('the Terminal takes a typed command', async ({ page }) => {
+      await icon(page, 'Terminal').tap()
+      const input = page.getByRole('dialog', { name: 'Terminal', exact: true }).getByRole('textbox', { name: 'Terminal input' })
+      await input.waitFor({ timeout: 20_000 })
+      await input.tap()
+      await page.keyboard.type('man devante')
+      await page.keyboard.press('Enter')
+      await expect(page.locator('[data-terminal-output]').last()).toContainText('SEE ALSO')
+    })
   })
 }

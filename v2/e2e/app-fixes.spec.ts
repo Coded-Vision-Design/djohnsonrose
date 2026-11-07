@@ -321,14 +321,12 @@ for (const build of BUILDS) {
       await boot(page, build.url)
     })
 
-    test('VS Code has a project picker, and picking stays on the editor', async ({ page }) => {
+    test('VS Code has a file picker, and picking opens the file', async ({ page }) => {
       await call(page, 'openApp', 'vscode')
-      const picker = page.getByRole('combobox', { name: 'Project' })
+      const picker = page.getByRole('combobox', { name: 'File' })
       await expect(picker).toBeVisible({ timeout: 15_000 })
-      const other = portfolio.projects[1].title
-      await picker.selectOption({ label: other })
-      await expect(page.locator('.os-window h2', { hasText: other })).toBeVisible()
-      await expect(page.locator('.os-window').getByText('Building...')).toHaveCount(0)
+      await picker.selectOption('data/portfolio.json')
+      await expect(page.locator('.os-window [data-vscode-editor]')).toContainText(portfolio.projects[1].title)
     })
 
     test('Docker folds its sidebar away and lists the shared containers', async ({ page }) => {
