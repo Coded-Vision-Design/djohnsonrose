@@ -115,7 +115,8 @@ export function WindowSwitcher() {
           </div>
         </div>
       )}
-      <p className="os-switcher-status" role="status">
+      {/* A live region rather than role="status", which the apps' own messages use. */}
+      <p className="os-switcher-status" aria-live="polite" aria-atomic="true">
         {switching ? cards[shown]?.title : ''}
       </p>
     </>

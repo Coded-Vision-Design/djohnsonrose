@@ -281,8 +281,13 @@ for (const build of BUILDS) {
       await expect(switcher(page)).toBeVisible()
       await expect(switcher(page).getByRole('button')).toHaveText(['Notepad', 'Calculator', 'Settings'])
       await expect(selected(page)).toHaveText('Calculator')
+      // Screen readers hear each window as it is reached, from a polite live region.
+      const spoken = page.locator('.os-switcher-status')
+      await expect(spoken).toHaveAttribute('aria-live', 'polite')
+      await expect(spoken).toHaveText('Calculator')
       await page.keyboard.press('q')
       await expect(selected(page)).toHaveText('Settings')
+      await expect(spoken).toHaveText('Settings')
       await page.keyboard.press('q')
       await expect(selected(page)).toHaveText('Notepad')
       await page.keyboard.press('q')

@@ -18,5 +18,6 @@
             </div>
         </div>
     </template>
-    <p class="os-switcher-status" role="status" x-text="selectedTitle"></p>
+    <!-- A live region rather than role="status", which the apps' own messages use. -->
+    <p class="os-switcher-status" aria-live="polite" aria-atomic="true" x-text="selectedTitle"></p>
 </div>
