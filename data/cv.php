@@ -78,7 +78,7 @@
             </section>
 
             <section class="mb-8">
-                <h2 class="text-sm font-bold border-b border-black mb-3">CERTIFICATIONS <span class="text-[10px] font-normal text-gray-500">/ 19</span></h2>
+                <h2 class="text-sm font-bold border-b border-black mb-3">CERTIFICATIONS <span class="text-[10px] font-normal text-gray-500">/ 20</span></h2>
                 <div class="space-y-2 text-[10px] text-gray-700 leading-snug">
                     <div>
                         <span class="font-semibold">Anthropic</span> · 2026<br>

@@ -116,6 +116,18 @@ foreach ($profile['worksFor'] ?? [] as $employer) {
     check("profile: {$employer} is a current role", count($current) === 1);
 }
 
+// The Word app's CV counts its certifications in the heading: "/ 20". Each
+// issuer's certificates are one line, separated by middle dots.
+$cvRaw = (string)file_get_contents("{$root}/data/cv.php");
+preg_match('#CERTIFICATIONS <span[^>]*>/ (\d+)</span></h2>(.*?)</section>#s', $cvRaw, $certSection);
+preg_match_all('#<span class="text-gray-600">(.*?)</span>#s', $certSection[2] ?? '', $certLines);
+$cvCertificates = [];
+foreach ($certLines[1] as $line) array_push($cvCertificates, ...explode(' · ', trim($line)));
+check('certificates: the CV heading has a count', isset($certSection[1]));
+check('certificates: the CV heading counts every certificate it lists', (int)($certSection[1] ?? -1) === count($cvCertificates));
+check('certificates: the CV lists as many as the data', count($cvCertificates) === count($portfolio['certifications']));
+check('certificates: there are 20', count($cvCertificates) === 20);
+
 // The share image used by og:image and twitter:image.
 $share = @getimagesize("{$root}/assets/img/share-card.png");
 check('share image: exists', is_array($share));
