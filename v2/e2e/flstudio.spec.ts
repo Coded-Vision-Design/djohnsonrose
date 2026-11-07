@@ -72,25 +72,31 @@ for (const build of BUILDS) {
       const app = await openFl(page)
       await app.locator('[data-fl-view="mixer"]').click()
       await app.getByRole('button', { name: 'Mute Kick' }).click()
-      // Every frame from the moment play is pressed: the first kick must not leak either.
-      const loudest = page.evaluate(
+      // Every frame from the moment play is pressed until the others have played
+      // for a while, however slowly the audio starts: the first kick must not leak either.
+      const heard = page.evaluate(
         () =>
-          new Promise<number>((resolve) => {
-            const meter = document.querySelector('[data-fl-meter="c1"]')!
-            const end = performance.now() + 2000
-            let max = 0
+          new Promise<{ muted: number; others: boolean }>((resolve) => {
+            const meter = (id: string) =>
+              Number(getComputedStyle(document.querySelector(`[data-fl-meter="${id}"]`)!).getPropertyValue('--level')) || 0
+            const giveUp = performance.now() + 12_000
+            let othersFrom = 0
+            let muted = 0
             const read = () => {
-              max = Math.max(max, Number(getComputedStyle(meter).getPropertyValue('--level')) || 0)
-              if (performance.now() < end) requestAnimationFrame(read)
-              else resolve(max)
+              const now = performance.now()
+              muted = Math.max(muted, meter('c1'))
+              if (!othersFrom && meter('c3') > 0.01) othersFrom = now
+              if ((othersFrom && now - othersFrom > 1500) || now > giveUp) resolve({ muted, others: othersFrom > 0 })
+              else requestAnimationFrame(read)
             }
             requestAnimationFrame(read)
           }),
       )
       await app.locator('[data-fl-play]').click()
-      await expect.poll(() => level(page, 'c3'), { timeout: 5000 }).toBeGreaterThan(0.01)
+      const { muted, others } = await heard
+      expect(others).toBe(true)
       // Below -60 dB.
-      expect(await loudest).toBeLessThan(0.002)
+      expect(muted).toBeLessThan(0.002)
       await app.locator('[data-fl-stop]').click()
     })
 
