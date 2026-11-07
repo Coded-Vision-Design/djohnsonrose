@@ -29,6 +29,18 @@ function telemetry_purge(PDO $pdo, int $days): int {
     return (int)$pdo->exec('DELETE FROM event_logs WHERE created_at < NOW() - INTERVAL ' . max(1, $days) . ' DAY');
 }
 
+/**
+ * Deletes contact-form messages more than $days days older than $now, so one
+ * exactly that old is kept. Returns how many went. Throws if email_logs is
+ * missing, as telemetry_store does; it is never created here.
+ */
+function email_logs_purge(PDO $pdo, int $now, int $days = EMAIL_LOG_RETENTION_DAYS): int {
+    // FROM_UNIXTIME works in the connection's time zone, as created_at does.
+    $stmt = $pdo->prepare('DELETE FROM email_logs WHERE created_at < FROM_UNIXTIME(?)');
+    $stmt->execute([$now - max(1, $days) * 86400]);
+    return $stmt->rowCount();
+}
+
 /** Counts for the digest, for events from $from up to (not including) $to. */
 function telemetry_summary(PDO $pdo, int $from, int $to): array {
     // FROM_UNIXTIME works in the connection's time zone, as created_at does.
@@ -61,9 +73,9 @@ function telemetry_summary(PDO $pdo, int $from, int $to): array {
 
 /**
  * The once-a-day jobs, run lazily by the first event of each day: delete
- * events past the retention period, and send one digest of the days since the
- * last one through $send(subject, body). Each job is claimed before it runs,
- * so two requests can never both run it.
+ * events past the retention period, send one digest of the days since the
+ * last one through $send(subject, body), and delete messages past theirs.
+ * Each job is claimed before it runs, so two requests can never both run it.
  */
 function telemetry_daily_jobs(PDO $pdo, string $stateDir, int $now, callable $send): void {
     if (daily_job_claim($stateDir, 'telemetry-purge', $now, TELEMETRY_TIMEZONE) !== null) {
@@ -71,10 +83,15 @@ function telemetry_daily_jobs(PDO $pdo, string $stateDir, int $now, callable $se
     }
 
     $period = daily_job_claim($stateDir, 'telemetry-digest', $now, TELEMETRY_TIMEZONE);
-    if ($period === null) return;
+    if ($period !== null) {
+        $digest = telemetry_digest(telemetry_summary($pdo, $period['from'], $period['to']), $period['from'], $period['to']);
+        if ($digest !== null) {
+            $send($digest['subject'], $digest['body']);
+        }
+    }
 
-    $digest = telemetry_digest(telemetry_summary($pdo, $period['from'], $period['to']), $period['from'], $period['to']);
-    if ($digest !== null) {
-        $send($digest['subject'], $digest['body']);
+    // Last, so that a missing email_logs table cannot hold up the jobs above.
+    if (daily_job_claim($stateDir, 'email-purge', $now, TELEMETRY_TIMEZONE) !== null) {
+        email_logs_purge($pdo, $now);
     }
 }

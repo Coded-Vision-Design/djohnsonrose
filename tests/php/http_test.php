@@ -165,6 +165,11 @@ try {
     check('privacy: names the events', str_contains($page, 'opening or closing an app') && str_contains($page, 'Terminal'));
     check('privacy: explains the shortened address', str_contains($page, '203.0.113.0') && str_contains($page, '48 bits'));
     check('privacy: gives the retention period', str_contains($page, TELEMETRY_RETENTION_DAYS . ' days old'));
+    check('privacy: says messages are kept for 12 months', EMAIL_LOG_RETENTION_DAYS === 365
+        && str_contains($page, 'A message you send me through the Outlook app is kept for 12 months.')
+        && str_contains($page, 'is deleted automatically once it is 12 months (' . EMAIL_LOG_RETENTION_DAYS . ' days) old'));
+    check('privacy: does not promise a clean-up within a day, as it waits for a visitor', !str_contains($page, 'up to a day longer') && str_contains($page, 'the next time a visitor who has accepted uses the site'));
+    check('privacy: the copy of a message can still be deleted sooner on request', str_contains($page, 'or sooner if you ask me'));
     check('privacy: mentions the daily digest', str_contains($page, 'once a day I receive one summary email'));
     check('privacy: describes Google Analytics accurately', str_contains($page, 'G-64PRMY8EKD') && str_contains($page, 'v2 never loads Google Analytics'));
     check('privacy: names the fixed weather place', str_contains($page, 'one fixed place, Essex'));

@@ -19,6 +19,10 @@ const portfolio = JSON.parse(
   readFileSync(new URL('../../data/portfolio.json', import.meta.url), 'utf8'),
 ) as { education: { title: string; issuer: string }[] }
 
+const profile = JSON.parse(
+  readFileSync(new URL('../../data/profile.json', import.meta.url), 'utf8'),
+) as { headline: string }
+
 const BUILDS = [
   { name: 'v1', url: process.env.V1_URL ?? 'http://localhost:8765/' },
   { name: 'v2', url: `${process.env.V2_ORIGIN ?? 'http://localhost:5173'}/v2/` },
@@ -222,6 +226,15 @@ for (const build of BUILDS) {
       await expect(win.getByText('Incorrect password.')).toBeVisible()
     })
 
+    test('Settings About shows the headline from data/profile.json', async ({ page }) => {
+      await boot(page, build.url)
+      await call(page, 'openApp', 'settings')
+      const win = page.getByRole('dialog', { name: 'Settings', exact: true })
+      await win.getByText('About', { exact: true }).first().click()
+      await expect(win.locator('[data-about-headline]')).toHaveText(profile.headline)
+      await expect(win.getByText('Applications Support Engineer · ', { exact: false })).toHaveCount(0)
+    })
+
     test('Settings lists every qualification', async ({ page }) => {
       await boot(page, build.url)
       await call(page, 'openApp', 'settings')
@@ -401,6 +414,21 @@ test('Settings Qualifications lays out the same in both builds', async ({ browse
     return { firstCertificate: await top(card), certificates: await settings.locator('[data-cert]').count() }
   })
   expect(v1).toEqual(v2)
+})
+
+test('Settings About shows the headline in the same place in both builds', async ({ browser }) => {
+  const [v1, v2] = await inBothBuilds(browser, async (page) => {
+    await call(page, 'openApp', 'settings')
+    const settings = page.locator('.os-window').last()
+    await settings.locator('[data-settings-nav="about"]').click()
+    const headline = settings.locator('[data-about-headline]')
+    await expect(headline).toHaveText(profile.headline)
+    // Past the tab's slide-in, so both are measured at rest.
+    await page.waitForTimeout(400)
+    const [box, frame] = [(await headline.boundingBox())!, (await settings.boundingBox())!]
+    return [box.x - frame.x, box.y - frame.y, box.width, box.height].map(Math.round)
+  })
+  expect(v2).toEqual(v1)
 })
 
 test.describe('right-click menus in both builds', () => {

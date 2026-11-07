@@ -97,5 +97,6 @@ function schema_tidy(PDO $pdo, array $apps): array {
     $done['apps filled in'] = $filled;
 
     $done['purged'] = telemetry_purge($pdo, TELEMETRY_RETENTION_DAYS);
+    $done['messages purged'] = email_logs_purge($pdo, time());
     return $done;
 }

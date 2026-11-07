@@ -1,4 +1,4 @@
-DeVanté Johnson-Rose | Applications Support Engineer & Full-Stack Developer
+DeVanté Johnson-Rose | Full Stack Developer
 Interactive Windows 11-themed portfolio OS with parallel PHP and React builds.
 Experience: Applications Support Engineer at Killik & Co; Freelance Full-Stack Developer at Coded Vision Design (2013+); Desktop Developer / 3rd Line Engineer at UEA (8,000+ devices); Systems Engineer II at Skyscanner; Desk Side Engineer at Shawbrook Bank.
 Stack: React, TypeScript, Vite, Tailwind, Zustand; PHP, HTMX, Alpine.js; MySQL, MS SQL Server; Docker, Traefik; PowerShell, Bash; SCCM, JAMF, Active Directory.

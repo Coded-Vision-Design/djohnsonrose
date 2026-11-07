@@ -75,6 +75,7 @@ $legacy->execute(['System: Information', 'php', 's1', '198.51.100.77', 'United K
 $legacy->execute(['System: Information', 'php', 's2', '2001:db8:abcd:1234::9', null, null, null, 'Linux', 'Netscape 5.0', null, null, json_encode(['description' => 'Closing application: Word']), date('Y-m-d H:i:s', time() - 7200)]);
 $legacy->execute(['Terminal Command', 'react', 's3', '198.51.100.1, 203.0.113.9', null, null, null, null, null, null, null, json_encode(['command' => 'ls']), date('Y-m-d H:i:s', time() - 100 * 86400)]);
 $pdo->exec("INSERT INTO email_logs (id, sender, recipient, subject, body, status, ip_address) VALUES ('m1', 'jo@example.com', 'me@example.com', 'Hi', 'Hello', 'sent', '198.51.100.77')");
+$pdo->exec("INSERT INTO email_logs (id, sender, recipient, subject, body, status, ip_address, created_at) VALUES ('m-old', 'al@example.com', 'me@example.com', 'Old', 'Hello', 'sent', '198.51.100.0', NOW() - INTERVAL 400 DAY)");
 
 $done = schema_tidy($pdo, $apps);
 $rows = $pdo->query('SELECT * FROM event_logs ORDER BY session_id')->fetchAll();
@@ -87,7 +88,20 @@ check('tidy: then removes the user agent', $rows[0]['user_agent'] === null);
 check('tidy: renames browsers it cannot re-read', $rows[1]['browser'] === 'Other');
 check('tidy: fills in the app for older events', $rows[0]['app'] === 'flstudio' && $rows[1]['app'] === 'word');
 check('tidy: shortens addresses on enquiries', $pdo->query("SELECT ip_address FROM email_logs WHERE id = 'm1'")->fetchColumn() === '198.51.100.0');
+check('tidy: deletes messages past 12 months, and keeps newer ones', $done['messages purged'] === 1 && $pdo->query('SELECT id FROM email_logs')->fetchAll(PDO::FETCH_COLUMN) === ['m1']);
 check('tidy: can run again', is_array(schema_tidy($pdo, $apps)));
+
+// email_logs_purge: messages are kept for 12 months (365 days), then deleted.
+$pdo->exec('DELETE FROM email_logs');
+$message = $pdo->prepare("INSERT INTO email_logs (id, sender, recipient, subject, body, status, ip_address, created_at)
+    VALUES (?, 'jo@example.com', 'me@example.com', 'Hi', 'Hello', 'sent', '198.51.100.0', FROM_UNIXTIME(?))");
+$now = time();
+$message->execute(['a-recent', $now - 100 * 86400]);
+$message->execute(['b-exactly-365-days', $now - 365 * 86400]);
+$message->execute(['c-a-second-more', $now - 365 * 86400 - 1]);
+$message->execute(['d-two-years', $now - 730 * 86400]);
+check('messages: the purge says how many went', email_logs_purge($pdo, $now) === 2);
+check('messages: keeps those 365 days old or newer', $pdo->query('SELECT id FROM email_logs ORDER BY id')->fetchAll(PDO::FETCH_COLUMN) === ['a-recent', 'b-exactly-365-days']);
 
 // telemetry_summary and telemetry_daily_jobs
 $pdo->exec('DELETE FROM event_logs');
@@ -107,6 +121,8 @@ check('summary: splits the builds', $summary['by_source'] === ['php' => 2, 'reac
 check('summary: counts apps', ($summary['by_app']['word'] ?? 0) === 1 && ($summary['by_app']['terminal'] ?? 0) === 1);
 check('summary: counts events', ($summary['by_action']['System: Information'] ?? 0) === 2);
 
+$pdo->exec("DELETE FROM email_logs WHERE id = 'b-exactly-365-days'");
+$message->execute(['e-thirteen-months', time() - 395 * 86400]);
 $stateDir = sys_get_temp_dir() . '/db_test_' . bin2hex(random_bytes(6));
 mkdir($stateDir);
 $sent = [];
@@ -116,8 +132,32 @@ check('daily: sends one digest', count($sent) === 1);
 check('daily: the digest covers yesterday', str_contains($sent[0][1], 'Events: 3'));
 check('daily: the digest holds no addresses', !str_contains($sent[0][1], '203.0.113'));
 check('daily: purges old rows', (int)$pdo->query('SELECT COUNT(*) FROM event_logs')->fetchColumn() === 4);
+check('daily: purges messages past 12 months', $pdo->query('SELECT id FROM email_logs ORDER BY id')->fetchAll(PDO::FETCH_COLUMN) === ['a-recent']);
 telemetry_daily_jobs($pdo, $stateDir, time() + 60, $send);
 check('daily: does nothing more the same day', count($sent) === 1);
+
+// With no email_logs table, the purge throws for the caller, but only after
+// the telemetry purge and the digest, which it must not hold up.
+$pdo->exec('DROP TABLE email_logs');
+$threw = false;
+try {
+    email_logs_purge($pdo, time());
+} catch (PDOException $e) {
+    $threw = true;
+}
+check('messages: a missing table throws', $threw);
+$at->execute(['System: Information', 'react', 'e', '203.0.113.0', 'word', time() - 91 * 86400]);
+$freshState = sys_get_temp_dir() . '/db_test_' . bin2hex(random_bytes(6));
+mkdir($freshState);
+$threw = false;
+try {
+    telemetry_daily_jobs($pdo, $freshState, time(), $send);
+} catch (PDOException $e) {
+    $threw = true;
+}
+check('daily: a missing message table is reported', $threw);
+check('daily: the digest still goes without it', count($sent) === 2);
+check('daily: old events are still purged without it', (int)$pdo->query('SELECT COUNT(*) FROM event_logs')->fetchColumn() === 4);
 
 $pdo->exec('DROP TABLE IF EXISTS event_logs, email_logs');
 

@@ -68,10 +68,27 @@ function cv_certificate_groups(array $certificates): array {
     }, array_values($groups));
 }
 
-/** The public profiles for sameAs: GitHub, and LinkedIn when the data has one. */
+/** The public profiles for sameAs: GitHub and LinkedIn, each when the data has one. */
 function cv_same_as(array $profile): array {
     $links = [$profile['github'] ?? '', $profile['linkedin'] ?? ''];
     return array_values(array_filter($links, fn($url) => is_string($url) && preg_match('#^https://#', $url)));
+}
+
+/**
+ * A UK phone number as the CV writes it ("07429 490 333") in the international
+ * form a tel: link and schema.org want ("+447429490333"), or '' if it is not one.
+ */
+function cv_tel(string $phone): string {
+    $digits = preg_replace('/\D/', '', $phone) ?? '';
+    if (str_starts_with(trim($phone), '+')) $digits = preg_replace('/^44/', '0', $digits) ?? '';
+    return preg_match('/^0\d{9,10}$/', $digits) ? '+44' . substr($digits, 1) : '';
+}
+
+/** A profile address as people read it: no scheme, www or closing slash, and é rather than %C3%A9. */
+function cv_link_label(string $url): string {
+    $label = rtrim((string)preg_replace('#^https?://(www\.)?#', '', $url), '/');
+    $decoded = rawurldecode($label);
+    return mb_check_encoding($decoded, 'UTF-8') ? $decoded : $label;
 }
 
 /**
@@ -80,7 +97,7 @@ function cv_same_as(array $profile): array {
  * step with data/profile.json.
  */
 function cv_person_schema(array $profile, string $jobTitle, string $email): array {
-    return [
+    $person = [
         '@type' => 'Person',
         '@id' => $profile['url'] . '#person',
         'name' => $profile['name'],
@@ -88,6 +105,10 @@ function cv_person_schema(array $profile, string $jobTitle, string $email): arra
         'image' => $profile['image'],
         'jobTitle' => $jobTitle,
         'email' => 'mailto:' . $email,
+    ];
+    $phone = cv_tel((string)($profile['phone'] ?? ''));
+    if ($phone !== '') $person['telephone'] = $phone;
+    return $person + [
         'worksFor' => array_map(fn($name) => ['@type' => 'Organization', 'name' => $name], $profile['worksFor'] ?? []),
         'alumniOf' => ['@type' => 'CollegeOrUniversity', 'name' => $profile['alumniOf'] ?? ''],
         'knowsAbout' => $profile['knowsAbout'] ?? [],
