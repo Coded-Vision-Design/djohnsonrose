@@ -1,414 +1,207 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import {
-  VSCODE_TERMINAL_START,
-  vscodeBuildLog,
-  type BuildLine,
-} from '../../../../assets/js/windowing/devtools.js'
-import { projectTags } from '../../../../assets/js/windowing/browser.js'
+  SOURCE_FILES,
+  SOURCE_LANGUAGES,
+  SOURCE_START,
+  closeSourceTab,
+  openSourceTab,
+  renderSource,
+  sourceFolders,
+  sourceGroups,
+  sourceLanguage,
+  sourceRows,
+  sourceUrl,
+  type RenderedSource,
+  type SourceTabs,
+} from '../../../../assets/js/windowing/source-viewer.js'
 
-interface Project {
-  id: number
-  title: string
-  description: string
-  tags?: string[]
-  url: string
-  thumbnail: string
-  thumbnail_mobile?: string
-  location?: string
-  featured?: boolean
-}
+// The same VS Code as v1's partials/apps/vscode.php: a read-only viewer of the
+// site's own source. The explorer (a picker on phones) lists the files in
+// source-viewer.js, and each opens in a tab, fetched from the site the way any
+// visitor's browser already fetches it. Styles are in assets/css/windowing.css.
 
-// The same VS Code as v1's partials/apps/vscode.php: activity bar, projects
-// sidebar (a picker on phones), tabbed editor, project hero with Build and
-// Visit Website, terminal and status bar. Picking a project shows it; only
-// Build switches to the terminal.
+type Loaded = { status: 'error' } | ({ status: 'ready' } & RenderedSource)
+
+const fileName = (path: string) => path.split('/').pop() ?? path
+const badge = (path: string) => SOURCE_LANGUAGES[sourceLanguage(path)].badge
+const groups = sourceGroups()
+
+const ICONS = [
+  'M12 2L2 7v10l10 5 10-5V7L12 2zm0 2.8L19.2 7.5 12 11.1 4.8 7.5 12 4.8zm-7.2 5.1l6.2 3.1v6.2l-6.2-3.1v-6.2zm8.2 9.3v-6.2l6.2-3.1v6.2l-6.2 3.1z',
+  'M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z',
+  'M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92 1.61 0 2.92-1.31 2.92-2.92s-1.31-2.92-2.92-2.92z',
+]
+
 export default function VSCode() {
-  const [projects, setProjects] = useState<Project[]>([])
-  const [activeFile, setActiveFile] = useState<string>('')
-  const [activeTab, setActiveTab] = useState<'editor' | 'terminal'>('editor')
-  const [explorerOpen, setExplorerOpen] = useState(true)
-  const [isBuilding, setIsBuilding] = useState(false)
-  const [terminalOutput, setTerminalOutput] = useState<BuildLine[]>(VSCODE_TERMINAL_START)
+  const [tabs, setTabs] = useState<SourceTabs>({ tabs: [SOURCE_START], active: SOURCE_START })
+  const [expanded, setExpanded] = useState<string[]>(() => sourceFolders(SOURCE_START))
+  const [files, setFiles] = useState<Record<string, Loaded>>({})
+  const pending = useRef(new Set<string>())
 
-  const featured = projects.filter((p) => p.featured)
-  const others = projects.filter((p) => !p.featured)
+  const active = tabs.active
+  const view = active ? files[active] : undefined
+  const rows = useMemo(() => sourceRows(SOURCE_FILES, expanded), [expanded])
 
+  // Fetches the open file once. Only listed files have a URL at all.
   useEffect(() => {
-    let cancelled = false
-    fetch('/data/portfolio.json')
-      .then((r) => r.json() as Promise<{ projects: Project[] }>)
-      .then((d) => {
-        if (cancelled) return
-        setProjects(d.projects)
-        const first = d.projects.find((p) => p.featured) ?? d.projects[0]
-        if (first) setActiveFile(first.title)
+    const url = active ? sourceUrl('/', active) : null
+    if (!active || !url || files[active] || pending.current.has(active)) return
+    pending.current.add(active)
+    fetch(url)
+      .then((res) => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}`)
+        return res.text()
       })
-      .catch(() => {})
-    return () => {
-      cancelled = true
-    }
-  }, [])
+      .then((text) => setFiles((all) => ({ ...all, [active]: { status: 'ready', ...renderSource(text, active) } })))
+      .catch(() => setFiles((all) => ({ ...all, [active]: { status: 'error' } })))
+      .finally(() => pending.current.delete(active))
+  }, [active, files])
 
-  const active = projects.find((p) => p.title === activeFile)
-
-  // Build animation lives on a single interval that we always clean up - the
-  // old impl could leak across re-renders (and across switching projects mid-
-  // build), which is what was causing the "Build" button to white-screen the
-  // window after a second click.
-  const buildTimerRef = useRef<number | null>(null)
-
-  useEffect(() => {
-    return () => {
-      if (buildTimerRef.current != null) {
-        window.clearInterval(buildTimerRef.current)
-        buildTimerRef.current = null
-      }
-    }
-  }, [])
-
-  const runBuild = () => {
-    if (isBuilding) return
-    if (buildTimerRef.current != null) {
-      window.clearInterval(buildTimerRef.current)
-      buildTimerRef.current = null
-    }
-    setIsBuilding(true)
-    setActiveTab('terminal')
-    const lines = vscodeBuildLog(active?.title)
-    let i = 0
-    buildTimerRef.current = window.setInterval(() => {
-      if (i >= lines.length) {
-        if (buildTimerRef.current != null) {
-          window.clearInterval(buildTimerRef.current)
-          buildTimerRef.current = null
-        }
-        setIsBuilding(false)
-        return
-      }
-      // Capture the line *before* incrementing - the setState updater may
-      // run later (StrictMode replays / concurrent rendering), at which
-      // point a closure-captured lines[i] reads the already-incremented i
-      // and pushes undefined, blowing up the map below with
-      //   "Cannot read properties of undefined (reading 'type')".
-      const line = lines[i]
-      i++
-      setTerminalOutput((prev) => [...prev, line])
-    }, 350)
+  const open = (path: string) => {
+    setTabs((state) => openSourceTab(state, path))
+    setExpanded((open) => [...new Set([...open, ...sourceFolders(path)])])
   }
+  const close = (path: string) => setTabs((state) => closeSourceTab(state, path))
+  const toggle = (path: string) =>
+    setExpanded((open) => (open.includes(path) ? open.filter((folder) => folder !== path) : [...open, path]))
+  const retry = () =>
+    setFiles((all) => {
+      const rest = { ...all }
+      if (active) delete rest[active]
+      return rest
+    })
 
   return (
-    <div className="h-full flex bg-[#1e1e1e] text-[#cccccc] overflow-hidden select-none" style={{ fontFamily: 'sans-serif' }}>
-      {/* Activity bar */}
-      <div className="w-12 flex flex-col items-center py-4 space-y-4 bg-[#333333] shrink-0">
-        <div className="p-2 text-white opacity-100 border-l-2 border-white" title="Explorer">
-          <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M12 2L2 7v10l10 5 10-5V7L12 2zm0 2.8L19.2 7.5 12 11.1 4.8 7.5 12 4.8zm-7.2 5.1l6.2 3.1v6.2l-6.2-3.1v-6.2zm8.2 9.3v-6.2l6.2-3.1v6.2l-6.2 3.1z" />
-          </svg>
-        </div>
-        <div className="p-2 opacity-50 hover:opacity-100 cursor-pointer" title="Search">
-          <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z" />
-          </svg>
-        </div>
-        <div className="p-2 opacity-50 hover:opacity-100 cursor-pointer" title="Source control">
-          <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92 1.61 0 2.92-1.31 2.92-2.92s-1.31-2.92-2.92-2.92z" />
-          </svg>
-        </div>
-        <div className="mt-auto p-2 opacity-50 hover:opacity-100 cursor-pointer" title="Accounts">
-          <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
-          </svg>
-        </div>
-        <div className="p-2 opacity-50 hover:opacity-100 cursor-pointer" title="Settings">
-          <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L3.34 8.88c-.11.2-.06.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z" />
-          </svg>
-        </div>
+    <div className="vsc" data-vscode>
+      <div className="vsc-activity" aria-hidden="true">
+        {ICONS.map((d) => (
+          <span key={d}>
+            <svg fill="currentColor" viewBox="0 0 24 24">
+              <path d={d} />
+            </svg>
+          </span>
+        ))}
       </div>
 
-      {/* Sidebar (hidden on small) */}
-      <div className="w-60 bg-[#252526] shrink-0 flex-col hidden md:flex">
-        <div className="h-9 px-4 flex items-center justify-between text-[11px] uppercase tracking-wider font-bold opacity-70">
-          <span>Explorer</span>
-        </div>
-        <div className="grow overflow-y-auto">
-          <div className="px-1 py-1">
-            <button
-              type="button"
-              onClick={() => setExplorerOpen((v) => !v)}
-              className="w-full flex items-center px-2 py-1 text-xs font-bold uppercase opacity-80"
-            >
-              <svg
-                className={`w-4 h-4 mr-1 transition-transform ${explorerOpen ? 'rotate-90' : ''}`}
-                fill="currentColor"
-                viewBox="0 0 24 24"
-                aria-hidden="true"
+      <nav className="vsc-explorer" aria-label="Explorer">
+        <h2 className="vsc-explorer-title">Explorer</h2>
+        <ul className="vsc-tree" data-vscode-tree>
+          {rows.map((row) => (
+            <li key={row.path}>
+              {row.kind === 'folder' ? (
+                <button
+                  type="button"
+                  className="vsc-tree-row"
+                  data-depth={row.depth}
+                  data-source-folder={row.path}
+                  aria-expanded={row.open}
+                  onClick={() => toggle(row.path)}
+                >
+                  <span className="vsc-chevron" aria-hidden="true">
+                    <svg fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z" />
+                    </svg>
+                  </span>
+                  <span className="vsc-name">{row.name}</span>
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  className="vsc-tree-row"
+                  data-depth={row.depth}
+                  data-source-file={row.path}
+                  aria-current={row.path === active ? 'true' : undefined}
+                  onClick={() => open(row.path)}
+                >
+                  <span className="vsc-chevron" aria-hidden="true"></span>
+                  <span className="vsc-badge" data-lang={sourceLanguage(row.path)} aria-hidden="true">
+                    {badge(row.path)}
+                  </span>
+                  <span className="vsc-name">{row.name}</span>
+                </button>
+              )}
+            </li>
+          ))}
+        </ul>
+      </nav>
+
+      <div className="vsc-main">
+        <label className="vsc-picker">
+          <span>File</span>
+          <select aria-label="File" value={active ?? ''} onChange={(e) => e.target.value && open(e.target.value)}>
+            <option value="" disabled>
+              Choose a file
+            </option>
+            {groups.map((group) => (
+              <optgroup key={group.folder} label={group.folder}>
+                {group.files.map((file) => (
+                  <option key={file.path} value={file.path}>
+                    {file.name}
+                  </option>
+                ))}
+              </optgroup>
+            ))}
+          </select>
+        </label>
+
+        <div className="vsc-tabs" data-vscode-tabs>
+          {tabs.tabs.map((path) => (
+            <div key={path} className="vsc-tab" data-active={path === active ? 'true' : undefined} data-source-tab={path}>
+              <button
+                type="button"
+                className="vsc-tab-open"
+                aria-current={path === active ? 'true' : undefined}
+                title={path}
+                onClick={() => open(path)}
               >
-                <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z" />
-              </svg>
-              Projects
-            </button>
-            {explorerOpen && (
-              <div className="ml-4 space-y-0.5">
-                {projects.some((p) => p.featured) && (
-                  <div className="px-2 pt-1 pb-0.5 text-[9px] uppercase tracking-wider opacity-50">
-                    ★ Featured
-                  </div>
-                )}
-                {projects
-                  .filter((p) => p.featured)
-                  .map((p) => (
-                    <button
-                      key={p.id}
-                      type="button"
-                      onClick={() => {
-                        setActiveFile(p.title)
-                        setActiveTab('editor')
-                      }}
-                      className={`w-full text-left flex items-center px-2 py-1 text-xs hover:bg-[#37373d] ${
-                        activeFile === p.title ? 'bg-[#37373d]' : ''
-                      }`}
-                    >
-                      <span className="mr-2 text-yellow-500">📂</span>
-                      {p.title}
-                    </button>
-                  ))}
-                {projects.some((p) => !p.featured) && (
-                  <div className="px-2 pt-2 pb-0.5 text-[9px] uppercase tracking-wider opacity-50">
-                    Other work
-                  </div>
-                )}
-                {projects
-                  .filter((p) => !p.featured)
-                  .map((p) => (
-                    <button
-                      key={p.id}
-                      type="button"
-                      onClick={() => {
-                        setActiveFile(p.title)
-                        setActiveTab('editor')
-                      }}
-                      className={`w-full text-left flex items-center px-2 py-1 text-xs hover:bg-[#37373d] ${
-                        activeFile === p.title ? 'bg-[#37373d]' : ''
-                      }`}
-                    >
-                      <span className="mr-2 text-yellow-500">📂</span>
-                      {p.title}
-                    </button>
-                  ))}
-              </div>
+                <span className="vsc-badge" data-lang={sourceLanguage(path)} aria-hidden="true">
+                  {badge(path)}
+                </span>
+                <span className="vsc-name">{fileName(path)}</span>
+              </button>
+              <button type="button" className="vsc-tab-close" aria-label={`Close ${fileName(path)}`} onClick={() => close(path)}>
+                <svg fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 16 16" aria-hidden="true">
+                  <path d="M4 4l8 8M12 4l-8 8" />
+                </svg>
+              </button>
+            </div>
+          ))}
+        </div>
+
+        {active && <p className="vsc-crumbs">{active.split('/').join(' › ')}</p>}
+
+        {view?.status === 'ready' ? (
+          <div className="vsc-editor" tabIndex={0} role="region" aria-label={`${fileName(active!)}, read-only`} data-vscode-editor>
+            <pre className="vsc-code">
+              <code dangerouslySetInnerHTML={{ __html: view.html }} />
+            </pre>
+          </div>
+        ) : (
+          <div className="vsc-message" data-vscode-message>
+            {!active && <p>Choose a file to read the source of this site.</p>}
+            {active && !view && <p>Loading {fileName(active)}...</p>}
+            {active && view?.status === 'error' && (
+              <>
+                <p>Could not load {fileName(active)}.</p>
+                <button type="button" onClick={retry}>
+                  Try again
+                </button>
+              </>
             )}
           </div>
-        </div>
-      </div>
+        )}
 
-      {/* Main editor */}
-      <div className="grow flex flex-col min-w-0 bg-[#1e1e1e]">
-        {/* Phones have no room for the sidebar, so they pick a project here */}
-        <div className="md:hidden px-3 py-2 bg-[#252526] border-b border-[#333333] shrink-0">
-          <label className="flex items-center gap-2 text-[11px]">
-            <span className="uppercase tracking-wider font-bold opacity-70">Project</span>
-            <select
-              value={activeFile}
-              onChange={(e) => {
-                setActiveFile(e.target.value)
-                setActiveTab('editor')
-              }}
-              aria-label="Project"
-              className="grow min-w-0 bg-[#3c3c3c] text-[#cccccc] border border-[#3c3c3c] rounded-sm px-2 py-1.5 text-xs outline-hidden focus:border-win-blue"
-            >
-              {featured.length > 0 && (
-                <optgroup label="Featured">
-                  {featured.map((p) => (
-                    <option key={p.id} value={p.title}>
-                      {p.title}
-                    </option>
-                  ))}
-                </optgroup>
-              )}
-              {others.length > 0 && (
-                <optgroup label="Other work">
-                  {others.map((p) => (
-                    <option key={p.id} value={p.title}>
-                      {p.title}
-                    </option>
-                  ))}
-                </optgroup>
-              )}
-            </select>
-          </label>
-        </div>
-
-        {/* Tabs */}
-        <div className="h-9 bg-[#252526] flex items-center overflow-x-auto shrink-0">
-          <button
-            type="button"
-            onClick={() => setActiveTab('editor')}
-            className={`h-full px-4 flex items-center text-xs cursor-pointer min-w-[120px] transition-all ${
-              activeTab === 'editor' ? 'bg-[#1e1e1e] border-t border-win-blue' : 'opacity-50'
-            }`}
-          >
-            <span className="mr-2 text-yellow-500">📂</span>
-            <span className="truncate">{activeFile || 'No file'}</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab('terminal')}
-            className={`h-full px-4 flex items-center text-xs cursor-pointer min-w-[120px] transition-all ${
-              activeTab === 'terminal' ? 'bg-[#1e1e1e] border-t border-win-blue' : 'opacity-50'
-            }`}
-          >
-            <span className="mr-2 text-gray-400">⌨️</span>
-            <span>Terminal</span>
-          </button>
-        </div>
-
-        {/* Breadcrumbs */}
-        <div className="h-6 px-4 flex items-center text-[11px] opacity-60 bg-[#1e1e1e] shrink-0">
-          Projects <span className="mx-1">&gt;</span> <span>{activeFile}</span>
-        </div>
-
-        <div className="grow flex flex-col min-h-0 overflow-hidden">
-          {activeTab === 'editor' && (
-            <div className="grow overflow-auto bg-[#1e1e1e] p-3 sm:p-4">
-              <div className="flex h-full">
-                {/* Line numbers */}
-                <div
-                  className="w-10 shrink-0 text-right pr-4 text-[#858585] font-mono text-xs leading-6 select-none border-r border-[#333333] hidden sm:block"
-                  aria-hidden="true"
-                >
-                  {Array.from({ length: 50 }).map((_, i) => (
-                    <div key={i}>{i + 1}</div>
-                  ))}
-                </div>
-                {/* Project hero */}
-                <div className="grow font-mono text-xs leading-6 h-full sm:px-4 min-w-0">
-                  {active && (
-                    <div className="flex flex-col h-full animate-window-open">
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
-                        <div className="min-w-0">
-                          <h2 className="text-2xl font-bold text-white mb-2">{active.title}</h2>
-                          <p className="text-gray-400 text-sm max-w-2xl">{active.description}</p>
-                        </div>
-                        <div className="flex gap-3 shrink-0">
-                          <button
-                            type="button"
-                            onClick={runBuild}
-                            className="bg-[#333333] hover:bg-[#444444] text-white px-4 py-2 rounded-md font-medium transition-colors flex items-center text-sm border border-white/10"
-                          >
-                            <span className={`mr-2 ${isBuilding ? 'animate-spin' : ''}`} aria-hidden="true">
-                              🔨
-                            </span>
-                            <span>{isBuilding ? 'Building...' : 'Build'}</span>
-                          </button>
-                          <a
-                            href={active.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="bg-win-blue hover:bg-blue-600 text-white px-6 py-2 rounded-md font-medium transition-colors flex items-center text-sm"
-                          >
-                            <span>Visit Website</span>
-                            <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                            </svg>
-                          </a>
-                        </div>
-                      </div>
-
-                      <div className="grow relative group overflow-hidden rounded-xl border border-white/10 bg-black/40 flex items-center justify-center min-h-0">
-                        <img
-                          src={`/${active.thumbnail}`}
-                          alt={`Screenshot of ${active.title}`}
-                          loading="lazy"
-                          className="max-w-full max-h-full w-auto h-auto object-contain transition-transform duration-700 group-hover:scale-105"
-                        />
-                        <div className="absolute inset-0 bg-linear-to-t from-black/80 via-transparent to-transparent flex flex-col justify-end p-8 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <div className="flex flex-wrap gap-2">
-                            {projectTags(active).map((t) => (
-                              <span
-                                key={t}
-                                className="px-3 py-1 bg-white/10 backdrop-blur-md rounded-full text-[10px] uppercase tracking-wider"
-                              >
-                                {t}
-                              </span>
-                            ))}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
+        <div className="vsc-status" data-vscode-status>
+          <div>
+            <span>Read-only</span>
+          </div>
+          {view?.status === 'ready' && (
+            <div>
+              <span>{view.lines} lines</span>
+              <span>UTF-8</span>
+              <span>{view.languageName}</span>
             </div>
           )}
-
-          {activeTab === 'terminal' && (
-            <div className="grow bg-[#1e1e1e] border-t border-[#333333] flex flex-col">
-              <div className="h-9 flex items-center px-4 justify-between border-b border-[#333333] shrink-0">
-                <div className="flex space-x-4 text-[11px] uppercase font-bold tracking-wider opacity-70">
-                  <span className="text-white border-b border-white">Terminal</span>
-                  <span>Output</span>
-                  <span>Debug Console</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <div className="text-[10px] bg-white/10 px-2 py-0.5 rounded-sm">powershell</div>
-                  <button
-                    type="button"
-                    onClick={() => setTerminalOutput([])}
-                    className="text-gray-400 hover:text-white p-1"
-                    aria-label="Clear"
-                  >
-                    🗑️
-                  </button>
-                </div>
-              </div>
-              <div className="grow p-4 font-mono text-[12px] overflow-y-auto">
-                {terminalOutput.map((line, i) => (
-                  <div key={i} className="mb-1">
-                    <span
-                      className={
-                        line.type === 'command'
-                          ? 'text-win-blue'
-                          : line.type === 'info'
-                            ? 'text-gray-400'
-                            : line.type === 'success'
-                              ? 'text-green-500'
-                              : 'text-red-500'
-                      }
-                    >
-                      {line.text}
-                    </span>
-                  </div>
-                ))}
-                {isBuilding && <div className="animate-pulse text-win-blue">_</div>}
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Status bar */}
-        <div className="h-6 bg-win-blue text-white flex items-center px-3 justify-between text-[11px] shrink-0">
-          <div className="flex items-center space-x-4">
-            <div className="flex items-center px-1">
-              <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 15h2v2h-2v-2zm0-10h2v8h-2V7z" />
-              </svg>
-              0
-            </div>
-            <div className="flex items-center px-1">
-              <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z" />
-              </svg>
-              0
-            </div>
-          </div>
-          <div className="flex items-center space-x-4">
-            <div className="px-1">Spaces: 4</div>
-            <div className="px-1">UTF-8</div>
-            <div className="px-1">HTML</div>
-            <div className="px-1">Prettier</div>
-          </div>
         </div>
       </div>
     </div>

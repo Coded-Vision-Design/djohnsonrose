@@ -30,11 +30,3 @@ export function containerAction(
 export function inspectContainer(container: DockerContainer | null | undefined): string
 export function quickconnectLog(host: string, user: string, port: number | string, remotePath: string): LogLine[]
 export function transferSize(entry: { type: string; size: number }): string
-
-export interface BuildLine {
-  type: 'command' | 'info' | 'success' | 'error'
-  text: string
-}
-
-export const VSCODE_TERMINAL_START: BuildLine[]
-export function vscodeBuildLog(project: string | null | undefined): BuildLine[]
