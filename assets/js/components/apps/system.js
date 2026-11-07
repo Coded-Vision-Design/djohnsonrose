@@ -1,57 +1,76 @@
 // assets/js/components/apps/system.js
 document.addEventListener('alpine:init', () => {
-    // Task Manager App Logic
-    Alpine.data('taskManagerApp', () => ({
-        processes: [],
-        cpu: 0,
-        ram: 0,
-        network: 0,
-        uptime: '0:00:00',
-        startTime: Date.now(),
-        init() {
-            this.updateStats();
-            this.statsTimer = setInterval(() => this.updateStats(), 2000);
-            this.updateUptime();
-            this.uptimeTimer = setInterval(() => this.updateUptime(), 1000);
-        },
-        destroy() {
-            clearInterval(this.statsTimer);
-            clearInterval(this.uptimeTimer);
-        },
-        updateStats() {
-            const osStore = Alpine.store('os');
-            const imgPath = window.portfolioConfig.imgPath;
-            this.processes = osStore.windows.map(win => {
+    // Task Manager: the same as v2's TaskManager.tsx. Every figure comes from the
+    // page (the store, Web Vitals, Resource Timing, the heap) or from build.json,
+    // through assets/js/windowing/metrics.js.
+    let taskManagers = 0;
+    Alpine.data('taskManagerApp', () => {
+        // The browser's own entries stay out of Alpine's reactivity: wrapping them
+        // in a proxy breaks their getters. tick tells the getters to read again.
+        let entries = [];
+        let buildRequest = null;
+        return {
+            tabs: OsWindowing.TASK_MANAGER_TABS,
+            tab: 'processes',
+            uid: 'tm-' + (++taskManagers),
+            tick: 0,
+            vitals: [],
+            downloads: OsWindowing.summariseDownloads([]),
+            heap: null,
+            build: null,
+            init() {
+                this.refresh();
+                this.timer = setInterval(() => this.refresh(), 1000);
+            },
+            destroy() {
+                clearInterval(this.timer);
+            },
+            refresh() {
+                const reading = OsWindowing.startVitals().read();
+                entries = performance.getEntriesByType('resource');
+                const navigation = performance.getEntriesByType('navigation')[0] ?? null;
+                this.vitals = OsWindowing.vitalCards(reading);
+                this.downloads = OsWindowing.summariseDownloads(entries, { navigation, full: reading.resourcesFull });
+                this.heap = OsWindowing.jsHeap(performance);
+                this.tick++;
+            },
+            get rows() {
+                this.tick;
+                return OsWindowing.processRows(Alpine.store('os').windows, entries);
+            },
+            get countText() {
+                return OsWindowing.windowCountText(Alpine.store('os').windows.length);
+            },
+            get info() {
+                return OsWindowing.buildView(this.build);
+            },
+            iconFor(app) {
                 // Each app's own picture from data/apps.json, as in v2.
-                const icon = imgPath + (window.portfolioConfig.apps[win.app]?.icon ?? 'win11/taskmgr.webp');
-                return {
-                    id: win.id,
-                    name: win.title,
-                    icon,
-                    cpu: Math.floor(Math.random() * 5) + (win.id === osStore.focusedWindowId ? 2 : 0),
-                    ram: Math.floor(Math.random() * 100) + 150,
-                    network: Math.random() > 0.7 ? (Math.random() * 2).toFixed(1) : 0,
-                    status: win.state === 'minimized' ? 'Suspended' : 'Running'
-                };
-            });
-            
-            // Total stats
-            this.cpu = this.processes.reduce((acc, p) => acc + p.cpu, 5) + Math.floor(Math.random() * 5);
-            this.ram = this.processes.reduce((acc, p) => acc + p.ram, 2400) + Math.floor(Math.random() * 200);
-            this.network = (parseFloat(this.processes.reduce((acc, p) => acc + parseFloat(p.network), 0)) + Math.random()).toFixed(1);
-        },
-        updateUptime() {
-            const loginTime = parseInt(localStorage.getItem('auth.loginTime')) || this.startTime;
-            const diff = Math.floor((Date.now() - loginTime) / 1000);
-            const h = Math.floor(diff / 3600);
-            const m = Math.floor((diff % 3600) / 60);
-            const s = diff % 60;
-            this.uptime = `${h}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
-        },
-        endTask(id) {
-            Alpine.store('os').closeWindow(id);
-        }
-    }));
+                return window.portfolioConfig.imgPath + (window.portfolioConfig.apps[app]?.icon ?? 'win11/taskmgr.webp');
+            },
+            toneColour(tone) {
+                return OsWindowing.TONE_COLOURS[tone];
+            },
+            select(id) {
+                this.tab = id;
+                // build.json is read the first time the Build tab opens.
+                if (id === 'build' && !buildRequest) {
+                    buildRequest = OsWindowing.loadBuildInfo(fetch, window.portfolioConfig.basePath + 'build.json')
+                        .then((result) => { this.build = result; });
+                }
+            },
+            onTabKey(event, index) {
+                const next = OsWindowing.tabAfterKey(event.key, index, this.tabs.length);
+                if (next === null) return;
+                event.preventDefault();
+                this.select(this.tabs[next].id);
+                this.$nextTick(() => this.$root.querySelectorAll('[role="tab"]')[next]?.focus());
+            },
+            endTask(id) {
+                Alpine.store('os').closeWindow(id);
+            }
+        };
+    });
 
     // Event Viewer Logic
     Alpine.data('eventViewerApp', () => ({
