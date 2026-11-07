@@ -30,6 +30,7 @@ Portfolios that link to other portfolios are forgettable. This one **is** the wo
 
 - A working desktop OS - taskbar, start menu, quick settings, snapping, drag‑resize, context menus, recycle bin with restore, file explorer, lock screen, telemetry pipeline, admin dashboard.
 - 27 windowed apps in both builds, from one shared list in data/apps.json (calculator, paint, photos, video, notepad, word, excel, powerpoint, outlook, edge, vscode, terminal, explorer, photoshop, fl studio, docker, putty, filezilla, ssms‑style SQL viewer, task manager, event viewer, settings, pdf reader, admin console, references, github, copilot).
+- Copilot answers a recruiter's questions about DeVanté and matches a pasted job description against the CV, from the site's own data only, with every answer citing the CV section, file or project it came from, and builds a tailored, printable CV. It calls Claude from the server ([api/copilot.php](api/copilot.php), [lib/copilot.php](lib/copilot.php)) and stays switched off until `ANTHROPIC_API_KEY` is set in the server's `.env` (see [.env.example](.env.example)).
 - The whole thing is intentionally over‑engineered: SPA routing, lazy‑loaded code‑split bundles, a typed state store, an admin OAuth flow, a Chart.js analytics dashboard, and a CI/CD pipeline that builds **both** tracks and rsyncs them to Hostinger atomically.
 
 ---
