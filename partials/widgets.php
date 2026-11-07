@@ -26,8 +26,9 @@
         </div>
     </div>
 
-    <!-- Widgets Grid -->
-    <div class="grow overflow-y-auto px-6 pb-6 space-y-4 custom-scrollbar">
+    <!-- Widgets Grid. widgetFeeds (assets/js/components/widgets.js) loads the
+         testimonials and recent changes when Widgets opens. -->
+    <div class="grow overflow-y-auto px-6 pb-6 space-y-4 custom-scrollbar" x-data="widgetFeeds">
         <!-- Weather Widget Large. A failed fetch says so, the same as v2's Widgets.tsx. -->
         <div class="glass p-6 rounded-2xl flex flex-col space-y-4 shadow-xs border-white/10">
             <template x-if="weather.status === 'error'">
@@ -62,6 +63,41 @@
             </template>
         </div>
 
+        <!-- Testimonials, one at a time. Hidden until data/testimonials.json has
+             some (see lib/testimonials.php). The same as v2's Widgets.tsx. -->
+        <template x-if="testimonial">
+            <section data-testimonials aria-labelledby="widgets-testimonials-title" class="glass p-5 rounded-2xl flex flex-col gap-3 shadow-xs border-white/10">
+                <div class="flex items-center justify-between gap-2 min-w-0">
+                    <h3 id="widgets-testimonials-title" class="text-xs font-bold text-gray-600 dark:text-gray-300 uppercase tracking-wider">Testimonials</h3>
+                    <template x-if="testimonials.length > 1">
+                        <div class="flex items-center gap-1 shrink-0">
+                            <span data-testimonial-position class="text-xs text-gray-600 dark:text-gray-300 tabular-nums mr-1" x-text="`${testimonialIndex + 1} of ${testimonials.length}`"></span>
+                            <button type="button" class="os-widget-step" aria-label="Previous testimonial" @click="stepTestimonial(-1)">
+                                <svg aria-hidden="true" viewBox="0 0 16 16" width="16" height="16"><path d="M10 3 5 8l5 5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                            </button>
+                            <button type="button" class="os-widget-step" aria-label="Next testimonial" @click="stepTestimonial(1)">
+                                <svg aria-hidden="true" viewBox="0 0 16 16" width="16" height="16"><path d="m6 3 5 5-5 5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                            </button>
+                        </div>
+                    </template>
+                </div>
+                <figure data-testimonial aria-live="polite" class="flex flex-col gap-2">
+                    <blockquote class="os-testimonial-quote text-sm leading-relaxed" x-text="testimonial.quote"></blockquote>
+                    <figcaption class="text-xs">
+                        <template x-if="testimonial.link">
+                            <a :href="testimonial.link" target="_blank" rel="noopener noreferrer" class="font-bold text-win-blue dark:text-[#60cdff] hover:underline" x-text="testimonial.name"></a>
+                        </template>
+                        <template x-if="!testimonial.link">
+                            <span class="font-bold" x-text="testimonial.name"></span>
+                        </template>
+                        <template x-if="OsWindowing.testimonialByline(testimonial)">
+                            <span class="block text-gray-600 dark:text-gray-300" x-text="OsWindowing.testimonialByline(testimonial)"></span>
+                        </template>
+                    </figcaption>
+                </figure>
+            </section>
+        </template>
+
         <!-- News Section -->
         <div class="space-y-3">
             <h3 class="text-xs font-bold text-gray-600 dark:text-gray-300 uppercase tracking-wider ml-1">Top Stories</h3>
@@ -91,6 +127,33 @@
                 </div>
             </template>
         </div>
+
+        <!-- Recent changes to this site, from api/activity.php: each commit's
+             first line, short SHA and date, and nothing naming the account
+             behind it. The same as v2's Widgets.tsx. -->
+        <section data-activity aria-labelledby="widgets-activity-title" class="flex flex-col gap-3">
+            <h3 id="widgets-activity-title" class="text-xs font-bold text-gray-600 dark:text-gray-300 uppercase tracking-wider ml-1">Recent changes to this site</h3>
+            <template x-if="activityStatus === 'ready'">
+                <ol class="glass rounded-xl shadow-xs border-white/10 divide-y divide-black/5 dark:divide-white/10">
+                    <template x-for="change in activity" :key="change.sha">
+                        <li data-activity-item class="px-4 py-3 flex flex-col gap-1 min-w-0">
+                            <span class="os-activity-message text-xs font-bold leading-tight text-black dark:text-white" x-text="change.message"></span>
+                            <span class="text-xs text-gray-600 dark:text-gray-300 flex items-center gap-1.5">
+                                <code class="font-mono" x-text="change.sha"></code>
+                                <span aria-hidden="true">·</span>
+                                <time :datetime="change.date" :title="OsWindowing.fullDate(change.date)" x-text="OsWindowing.timeAgo(change.date, now)"></time>
+                            </span>
+                        </li>
+                    </template>
+                </ol>
+            </template>
+            <template x-if="activityStatus === 'error'">
+                <p data-activity-failed class="text-xs text-gray-600 dark:text-gray-300 ml-1">Recent changes cannot be shown right now.</p>
+            </template>
+            <template x-if="activityStatus === 'idle' || activityStatus === 'loading'">
+                <p role="status" class="text-xs text-gray-600 dark:text-gray-300 ml-1">Loading recent changes...</p>
+            </template>
+        </section>
     </div>
 
     <!-- Widgets Footer -->

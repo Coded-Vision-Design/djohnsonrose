@@ -110,7 +110,8 @@
         import * as devtools from '<?php echo BASE_PATH; ?>assets/js/windowing/devtools.js?v=<?php echo @filemtime(__DIR__ . '/../assets/js/windowing/devtools.js'); ?>';
         import * as references from '<?php echo BASE_PATH; ?>assets/js/windowing/references.js?v=<?php echo @filemtime(__DIR__ . '/../assets/js/windowing/references.js'); ?>';
         import * as weather from '<?php echo BASE_PATH; ?>assets/js/windowing/weather.js?v=<?php echo @filemtime(__DIR__ . '/../assets/js/windowing/weather.js'); ?>';
-        window.OsWindowing = { ...windowing, ...shellCore, ...fileOps, ...textOps, ...shellUi, ...calculator, ...terminal, ...browser, ...media, ...sql, ...devtools, ...references, ...weather };
+        import * as widgets from '<?php echo BASE_PATH; ?>assets/js/windowing/widgets.js?v=<?php echo @filemtime(__DIR__ . '/../assets/js/windowing/widgets.js'); ?>';
+        window.OsWindowing = { ...windowing, ...shellCore, ...fileOps, ...textOps, ...shellUi, ...calculator, ...terminal, ...browser, ...media, ...sql, ...devtools, ...references, ...weather, ...widgets };
         window.FlStudio = flStudio;
         window.OfficeApps = officeApps;
         window.Drawing = drawing;
@@ -421,7 +422,8 @@
         'apps/system',
         'apps/tools',
         'apps/admin',
-        'flstudio'
+        'flstudio',
+        'widgets'
     ];
     // Versioned by file time like the stylesheet, so browsers keep each script
     // until it changes instead of fetching all of them on every visit.
