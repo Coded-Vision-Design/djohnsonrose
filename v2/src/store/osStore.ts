@@ -43,7 +43,6 @@ import {
 import { filesystem, type FileSystem, type FsEntry } from '../data/filesystem'
 import { forgetReferences } from '../../../assets/js/windowing/references.js'
 import { addNotification, type ShellNotification } from '../../../assets/js/windowing/calendar.js'
-
 import { siteToVisit } from '../../../assets/js/windowing/browser.js'
 
 const prefersDark = () => !!window.matchMedia?.('(prefers-color-scheme: dark)').matches
