@@ -114,7 +114,8 @@
         import * as switcher from '<?php echo BASE_PATH; ?>assets/js/windowing/switcher.js?v=<?php echo @filemtime(__DIR__ . '/../assets/js/windowing/switcher.js'); ?>';
         import * as calendar from '<?php echo BASE_PATH; ?>assets/js/windowing/calendar.js?v=<?php echo @filemtime(__DIR__ . '/../assets/js/windowing/calendar.js'); ?>';
         import * as address from '<?php echo BASE_PATH; ?>assets/js/windowing/address.js?v=<?php echo @filemtime(__DIR__ . '/../assets/js/windowing/address.js'); ?>';
-        window.OsWindowing = { ...windowing, ...shellCore, ...fileOps, ...textOps, ...shellUi, ...calculator, ...terminal, ...browser, ...media, ...sql, ...devtools, ...references, ...weather, ...switcher, ...calendar, ...address };
+        import * as sourceViewer from '<?php echo BASE_PATH; ?>assets/js/windowing/source-viewer.js?v=<?php echo @filemtime(__DIR__ . '/../assets/js/windowing/source-viewer.js'); ?>';
+        window.OsWindowing = { ...windowing, ...shellCore, ...fileOps, ...textOps, ...shellUi, ...calculator, ...terminal, ...browser, ...media, ...sql, ...devtools, ...references, ...weather, ...switcher, ...calendar, ...address, ...sourceViewer };
         window.FlStudio = flStudio;
         window.OfficeApps = officeApps;
         window.Drawing = drawing;
