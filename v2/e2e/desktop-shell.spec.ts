@@ -562,10 +562,10 @@ for (const build of BUILDS) {
   })
 
   test.describe(`${build.name} Start`, () => {
-    test('pins twelve apps and gives Recommended a real time', async ({ page }) => {
+    test('pins thirteen apps and gives Recommended a real time', async ({ page }) => {
       await boot(page, build)
       await startButton(page).click()
-      await expect(page.locator('[data-pinned-app]')).toHaveCount(12)
+      await expect(page.locator('[data-pinned-app]')).toHaveCount(13)
       await expect(startMenu(page)).not.toContainText('2h ago')
       await page.locator('[data-recommended="cv"]').click()
       await expect(page.locator('.os-window')).toHaveCount(1)

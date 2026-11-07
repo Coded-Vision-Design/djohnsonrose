@@ -27,6 +27,7 @@ const Photoshop = lazy(() => import('./photoshop/Photoshop'))
 const AdminConsole = lazy(() => import('./admin/AdminConsole'))
 const ReferencesVault = lazy(() => import('./references/ReferencesVault'))
 const GitHubApp = lazy(() => import('./github/GitHub'))
+const Copilot = lazy(() => import('./copilot/Copilot'))
 
 export interface AppDef {
   id: string
@@ -69,6 +70,7 @@ const components: Record<string, LazyExoticComponent<FC>> = {
   admin: AdminConsole,
   references: ReferencesVault,
   github: GitHubApp,
+  copilot: Copilot,
 }
 
 // Titles, icons and sizes come from the manifest shared with v1.

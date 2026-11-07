@@ -57,10 +57,12 @@ describe('shared app manifest (data/apps.json)', () => {
     expect(startPinnedApps).not.toContain('admin')
   })
 
-  it('pins twelve apps to Start, the CV among them', () => {
-    expect(startPinnedApps).toHaveLength(12)
+  it('pins thirteen apps to Start, the CV and Copilot among them', () => {
+    expect(startPinnedApps).toHaveLength(13)
     // PDF Reader opens the CV, so the CV is one tap from Start.
     expect(startPinnedApps).toContain('pdfreader')
+    // Copilot answers a recruiter's questions from the CV, so it sits beside it.
+    expect(startPinnedApps.indexOf('copilot')).toBe(startPinnedApps.indexOf('pdfreader') + 1)
   })
 
   it('does not treat object built-ins as apps', () => {

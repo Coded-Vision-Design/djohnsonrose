@@ -117,7 +117,8 @@
         import * as sourceViewer from '<?php echo BASE_PATH; ?>assets/js/windowing/source-viewer.js?v=<?php echo @filemtime(__DIR__ . '/../assets/js/windowing/source-viewer.js'); ?>';
         import * as widgets from '<?php echo BASE_PATH; ?>assets/js/windowing/widgets.js?v=<?php echo @filemtime(__DIR__ . '/../assets/js/windowing/widgets.js'); ?>';
         import * as tour from '<?php echo BASE_PATH; ?>assets/js/windowing/tour.js?v=<?php echo @filemtime(__DIR__ . '/../assets/js/windowing/tour.js'); ?>';
-        window.OsWindowing = { ...windowing, ...shellCore, ...fileOps, ...textOps, ...shellUi, ...calculator, ...terminal, ...browser, ...media, ...sql, ...devtools, ...references, ...weather, ...switcher, ...calendar, ...address, ...sourceViewer, ...widgets, ...tour };
+        import * as copilot from '<?php echo BASE_PATH; ?>assets/js/windowing/copilot.js?v=<?php echo @filemtime(__DIR__ . '/../assets/js/windowing/copilot.js'); ?>';
+        window.OsWindowing = { ...windowing, ...shellCore, ...fileOps, ...textOps, ...shellUi, ...calculator, ...terminal, ...browser, ...media, ...sql, ...devtools, ...references, ...weather, ...switcher, ...calendar, ...address, ...sourceViewer, ...widgets, ...tour, ...copilot };
         window.FlStudio = flStudio;
         window.OfficeApps = officeApps;
         window.Drawing = drawing;
@@ -435,6 +436,9 @@
         'apps/admin',
         'flstudio',
         'widgets'
+
+        'apps/copilot',
+        'flstudio'
     ];
     // Versioned by file time like the stylesheet, so browsers keep each script
     // until it changes instead of fetching all of them on every visit.

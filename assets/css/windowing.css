@@ -1908,3 +1908,626 @@ html[data-os-mode='phone'] .os-tour-button {
     transition: none !important;
   }
 }
+
+/* Copilot, the same in both builds (partials/apps/copilot.php and
+   v2/src/apps/copilot/Copilot.tsx). It is a container, so a narrow window lays
+   out like a phone whatever the screen. The tailored CV has its own styles, in
+   assets/js/windowing/copilot.js, as it is a document of its own. */
+.copilot {
+    --copilot-bg: #ffffff;
+    --copilot-surface: #f5f7fa;
+    --copilot-text: #1b1b1b;
+    --copilot-muted: #595959;
+    --copilot-border: #d5dbe3;
+    --copilot-accent: #0f6cbd;
+    --copilot-accent-text: #ffffff;
+    --copilot-link: #0f5ea8;
+    --copilot-bubble: #eef2f7;
+    --copilot-error-bg: #fdf3f4;
+    --copilot-error-border: #f1bbbc;
+    --copilot-error-text: #8a1c22;
+    --copilot-generated-bg: #f7f3ff;
+    --copilot-generated-border: #9b7bea;
+    --copilot-generated-text: #5b2fc9;
+    --copilot-strong-bg: #dff6dd;
+    --copilot-strong-text: #0b5a0a;
+    --copilot-partial-bg: #fff4ce;
+    --copilot-partial-text: #6b4d00;
+    --copilot-none-bg: #f0f0f0;
+    --copilot-none-text: #4a4a4a;
+    container-type: inline-size;
+    /* Clipped, so nothing inside can scroll the window itself. */
+    position: relative;
+    overflow: clip;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+    background: var(--copilot-bg);
+    color: var(--copilot-text);
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.dark .copilot {
+    --copilot-bg: #1c1c1c;
+    --copilot-surface: #232323;
+    --copilot-text: #f3f3f3;
+    --copilot-muted: #b8b8b8;
+    --copilot-border: #3b3b3b;
+    --copilot-accent: #1f6fbf;
+    --copilot-link: #60cdff;
+    --copilot-bubble: #2b2b2b;
+    --copilot-error-bg: #3b1d20;
+    --copilot-error-border: #6e2b30;
+    --copilot-error-text: #ffb3b8;
+    --copilot-generated-bg: #2a2340;
+    --copilot-generated-border: #8c6ff0;
+    --copilot-generated-text: #cdbcff;
+    --copilot-strong-bg: #173d19;
+    --copilot-strong-text: #a5e3a2;
+    --copilot-partial-bg: #3d3100;
+    --copilot-partial-text: #ffd966;
+    --copilot-none-bg: #2f2f2f;
+    --copilot-none-text: #cccccc;
+}
+
+.copilot p {
+    margin: 0;
+}
+
+.copilot-visually-hidden {
+    position: absolute !important;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    clip-path: inset(50%);
+    white-space: nowrap;
+}
+
+.copilot-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--copilot-border);
+    background: var(--copilot-surface);
+    flex-shrink: 0;
+}
+
+.copilot-logo {
+    width: 32px;
+    height: 32px;
+    flex-shrink: 0;
+}
+
+.copilot-title {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+    line-height: 1.3;
+}
+
+.copilot-subtitle {
+    font-size: 12px;
+    color: var(--copilot-muted);
+}
+
+.copilot-tabs {
+    display: flex;
+    gap: 4px;
+    padding: 0 12px;
+    border-bottom: 1px solid var(--copilot-border);
+    flex-shrink: 0;
+}
+
+.copilot-tab {
+    min-height: 44px;
+    padding: 0 14px;
+    border: 0;
+    border-bottom: 3px solid transparent;
+    background: none;
+    color: var(--copilot-muted);
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.copilot-tab[aria-selected='true'] {
+    color: var(--copilot-text);
+    border-bottom-color: var(--copilot-accent);
+}
+
+.copilot-notice {
+    padding: 8px 16px;
+    border-bottom: 1px solid var(--copilot-border);
+    background: var(--copilot-surface);
+    font-size: 13px;
+    flex-shrink: 0;
+}
+
+.copilot-notice:empty {
+    display: none;
+}
+
+.copilot-panel {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-height: 0;
+}
+
+.copilot-panel[hidden] {
+    display: none;
+}
+
+/* The two scrolling areas are positioned, so the text kept for screen readers
+   inside them scrolls with them rather than stretching the window. */
+.copilot-log {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    flex: 1 1 auto;
+    min-height: 0;
+    margin: 0;
+    padding: 16px;
+    overflow-y: auto;
+    list-style: none;
+}
+
+.copilot-message {
+    max-width: min(640px, 88%);
+    padding: 10px 14px;
+    border-radius: 12px;
+    overflow-wrap: anywhere;
+}
+
+.copilot-message-text {
+    white-space: pre-line;
+}
+
+.copilot-message-user {
+    align-self: flex-end;
+    border-bottom-right-radius: 4px;
+    background: var(--copilot-accent);
+    color: var(--copilot-accent-text);
+}
+
+.copilot-message-assistant {
+    align-self: flex-start;
+    border-bottom-left-radius: 4px;
+    background: var(--copilot-bubble);
+}
+
+.copilot-message-error {
+    align-self: flex-start;
+    border: 1px solid var(--copilot-error-border);
+    background: var(--copilot-error-bg);
+    color: var(--copilot-error-text);
+}
+
+.copilot-thinking {
+    color: var(--copilot-muted);
+    font-style: italic;
+}
+
+.copilot-note {
+    margin-top: 8px !important;
+    font-size: 12px;
+    color: var(--copilot-muted);
+}
+
+.copilot-sources {
+    margin-top: 10px;
+}
+
+.copilot-sources-title {
+    margin-bottom: 4px !important;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--copilot-muted);
+}
+
+.copilot-citations {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.copilot-citation {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    max-width: 100%;
+    min-height: 32px;
+    padding: 4px 10px;
+    border: 1px solid var(--copilot-border);
+    border-radius: 999px;
+    background: var(--copilot-bg);
+    color: var(--copilot-link);
+    font: inherit;
+    font-size: 12px;
+    line-height: 1.3;
+    text-align: left;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.copilot-citation:hover {
+    background: var(--copilot-surface);
+    text-decoration: underline;
+}
+
+.copilot-citation-kind {
+    flex-shrink: 0;
+    color: var(--copilot-muted);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.copilot-suggestions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 0 16px 12px;
+    flex-shrink: 0;
+}
+
+.copilot-suggestion {
+    min-height: 36px;
+    padding: 6px 12px;
+    border: 1px solid var(--copilot-border);
+    border-radius: 999px;
+    background: var(--copilot-bg);
+    color: var(--copilot-text);
+    font: inherit;
+    font-size: 13px;
+    text-align: left;
+    cursor: pointer;
+}
+
+.copilot-suggestion:hover {
+    background: var(--copilot-surface);
+}
+
+.copilot-composer {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 12px 16px;
+    border-top: 1px solid var(--copilot-border);
+    background: var(--copilot-surface);
+    flex-shrink: 0;
+}
+
+.copilot-label {
+    font-weight: 600;
+}
+
+.copilot-field {
+    display: block;
+    width: 100%;
+    min-height: 64px;
+    max-height: 240px;
+    padding: 10px 12px;
+    border: 1px solid var(--copilot-border);
+    border-bottom: 2px solid var(--copilot-muted);
+    border-radius: 6px;
+    background: var(--copilot-bg);
+    color: var(--copilot-text);
+    font: inherit;
+    resize: vertical;
+}
+
+.copilot-field:focus {
+    outline: none;
+    border-bottom-color: var(--copilot-accent);
+}
+
+.copilot-field-job {
+    min-height: 160px;
+    max-height: 400px;
+}
+
+.copilot-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px 12px;
+}
+
+.copilot-count {
+    color: var(--copilot-muted);
+    font-size: 12px;
+}
+
+.copilot-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    min-height: 36px;
+    padding: 0 16px;
+    border: 1px solid var(--copilot-border);
+    border-radius: 6px;
+    background: var(--copilot-bg);
+    color: var(--copilot-text);
+    font: inherit;
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.copilot-button-primary {
+    border-color: var(--copilot-accent);
+    background: var(--copilot-accent);
+    color: var(--copilot-accent-text);
+}
+
+.copilot-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.copilot-disclaimer {
+    padding: 0 16px 10px;
+    background: var(--copilot-surface);
+    color: var(--copilot-muted);
+    font-size: 11px;
+    flex-shrink: 0;
+}
+
+.copilot-disclaimer a,
+.copilot-link {
+    color: var(--copilot-link);
+}
+
+.copilot-scroll {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    flex: 1 1 auto;
+    min-height: 0;
+    padding: 16px;
+    overflow-y: auto;
+}
+
+.copilot-job {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.copilot-loading {
+    padding: 16px;
+    color: var(--copilot-muted);
+}
+
+.copilot-error {
+    padding: 10px 12px;
+    border: 1px solid var(--copilot-error-border);
+    border-radius: 6px;
+    background: var(--copilot-error-bg);
+    color: var(--copilot-error-text);
+}
+
+.copilot-results {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.copilot-results:focus {
+    outline: none;
+}
+
+.copilot-heading {
+    margin: 8px 0 0;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.copilot-subheading {
+    margin: 4px 0 0;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.copilot-counts {
+    color: var(--copilot-muted);
+    font-size: 13px;
+}
+
+.copilot-generated {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 12px;
+    border: 1px dashed var(--copilot-generated-border);
+    border-radius: 8px;
+    background: var(--copilot-generated-bg);
+}
+
+.copilot-generated-label {
+    color: var(--copilot-generated-text);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+.copilot-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+
+.copilot-table th,
+.copilot-table td {
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--copilot-border);
+    text-align: left;
+    vertical-align: top;
+}
+
+.copilot-table thead th {
+    color: var(--copilot-muted);
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.copilot-table tbody th {
+    font-weight: 600;
+}
+
+.copilot-table td > * + * {
+    margin-top: 6px !important;
+}
+
+.copilot-strength {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.copilot-strength[data-strength='strong'] {
+    background: var(--copilot-strong-bg);
+    color: var(--copilot-strong-text);
+}
+
+.copilot-strength[data-strength='partial'] {
+    background: var(--copilot-partial-bg);
+    color: var(--copilot-partial-text);
+}
+
+.copilot-strength[data-strength='none'] {
+    background: var(--copilot-none-bg);
+    color: var(--copilot-none-text);
+}
+
+.copilot-gaps {
+    margin: 0;
+    padding-left: 20px;
+}
+
+.copilot-cv-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.copilot-cv-frame {
+    display: block;
+    width: 100%;
+    height: 640px;
+    border: 1px solid var(--copilot-border);
+    border-radius: 8px;
+    background: #ffffff;
+}
+
+.copilot-off {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    flex: 1 1 auto;
+    padding: 24px;
+    text-align: center;
+}
+
+.copilot-off-logo {
+    width: 64px;
+    height: 64px;
+}
+
+.copilot-off-title {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.copilot-off p {
+    max-width: 420px;
+    color: var(--copilot-muted);
+}
+
+/* A narrow window: smaller gutters, and each requirement as a card. */
+@container (max-width: 560px) {
+    .copilot-header,
+    .copilot-composer {
+        padding: 10px 12px;
+    }
+
+    .copilot-log,
+    .copilot-scroll {
+        padding: 12px;
+    }
+
+    .copilot-suggestions {
+        padding: 0 12px 10px;
+    }
+
+    .copilot-disclaimer {
+        padding: 0 12px 10px;
+    }
+
+    .copilot-message {
+        max-width: 94%;
+    }
+
+    .copilot-table thead {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip: rect(0 0 0 0);
+        clip-path: inset(50%);
+    }
+
+    .copilot-table,
+    .copilot-table tbody {
+        display: block;
+    }
+
+    .copilot-table tbody tr {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 4px 8px;
+        margin-bottom: 8px;
+        padding: 10px;
+        border: 1px solid var(--copilot-border);
+        border-radius: 8px;
+    }
+
+    .copilot-table tbody th,
+    .copilot-table tbody td {
+        padding: 0;
+        border: 0;
+    }
+
+    .copilot-table tbody td:last-child {
+        grid-column: 1 / -1;
+    }
+
+    .copilot-cv-frame {
+        height: 520px;
+    }
+}
+
+/* Finger-sized controls on a phone. */
+html[data-os-mode='phone'] .copilot :is(.copilot-button, .copilot-suggestion, .copilot-citation) {
+    min-height: 44px;
+}

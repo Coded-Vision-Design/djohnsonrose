@@ -65,6 +65,9 @@ ob_start();
         <h2 id="messages">If you send me a message</h2>
         <p>If you use the Outlook app to send me a message, I receive your email address, your subject, your message and any attachments by email. A copy of the message, without attachments, is kept in the site's database with a shortened IP address so that I can reply and deal with abuse. That copy is deleted automatically after 12 months, or sooner if you ask me.</p>
 
+        <h2 id="copilot">Copilot</h2>
+        <p>The Copilot app answers questions about my work and matches job descriptions against my CV. When you send it a question or a job description, the site's server passes it to Anthropic, whose Claude models write the answer, together with your last few messages in that chat and the site's own CV data. Nothing else about you goes with it: not your IP address, not a cookie and not a name. The site does not keep your questions, job descriptions or Copilot's answers; your chat stays in that window until you close it. To stop overuse, the server counts requests against a hashed copy of your shortened IP address and forgets each count within a day. Anthropic handles what it receives under its own <a href="https://www.anthropic.com/legal/privacy">privacy policy</a>, so please do not paste anything private into Copilot.</p>
+
         <h2 id="device">What stays on your device</h2>
         <p>Your settings (such as theme and wallpaper), your answer to the cookie banner and any files you make on the desktop are saved in your browser's local storage, on your own device. They are not sent to the site, except where an event above mentions them, such as the name of a file you move to the Recycle Bin.</p>
 
