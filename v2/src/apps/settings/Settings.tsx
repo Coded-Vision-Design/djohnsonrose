@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useOsStore, type Settings as SettingsShape } from '../../store/osStore'
-import { useWindowExtras } from '../../windowing/WindowContext'
+import { useLiveExtras, useWindowExtras } from '../../windowing/WindowContext'
 import { cssUrl } from '../../../../assets/js/windowing/shell-core.js'
 import { setConsent, useConsent } from '../../lib/consent'
 
@@ -113,6 +113,8 @@ export default function Settings() {
   const isMobile = useOsStore((s) => s.isMobile)
   const { currentTab } = useWindowExtras<{ currentTab?: Tab }>()
   const [tab, setTab] = useState<Tab>(currentTab ?? 'system')
+  // The page on screen goes with a switch to v1, as v1 keeps it on its window.
+  useLiveExtras({ currentTab: tab })
   // The wallpaper being previewed shows on the desktop too, as in v1.
   const preview = useOsStore((s) => s.previewWallpaper)
   const setPreview = useOsStore((s) => s.setPreviewWallpaper)

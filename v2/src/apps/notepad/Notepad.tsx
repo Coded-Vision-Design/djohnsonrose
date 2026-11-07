@@ -19,7 +19,7 @@ import {
 } from '../../../../assets/js/windowing/text-ops.js'
 import type { FsEntry } from '../../data/filesystem'
 import { useOsStore } from '../../store/osStore'
-import { useCurrentWindow, useWindowExtras } from '../../windowing/WindowContext'
+import { useCurrentWindow, useLiveExtras, useWindowExtras } from '../../windowing/WindowContext'
 
 const DOCUMENTS = 'C:\\Users\\DeVante\\Documents'
 const TEXT_ICON = '/assets/img/notepad++.webp'
@@ -62,6 +62,8 @@ export default function Notepad() {
   const [currentFile, setCurrentFile] = useState(
     extras.filePath ? { name: win.title, path: extras.filePath } : null,
   )
+  // The text on screen, and its file, go with a switch to v1.
+  useLiveExtras({ content, filePath: currentFile?.path })
   const [isEditing, setIsEditing] = useState(false)
   const [showFileMenu, setShowFileMenu] = useState(false)
   const [dialog, setDialog] = useState<DialogKind | null>(null)

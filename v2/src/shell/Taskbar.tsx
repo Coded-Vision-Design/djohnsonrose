@@ -3,6 +3,7 @@ import { useOsStore } from '../store/osStore'
 import { getApp } from '../apps/registry'
 import { VolumeIcon } from './VolumeIcon'
 import { showClassicDesktopMenu, showMenu, type MenuPoint } from './menus'
+import { followBuildLink } from './buildSwitch'
 
 // 1:1 port of partials/taskbar.php - left widget area, centre pinned + running
 // apps with the v1 active indicators (active/inactive/minimized), right system
@@ -421,10 +422,11 @@ export function Taskbar() {
           </div>
         </button>
 
-        {/* Cross-version flip. A fixed width, as in v1, so the label never moves the centred icons. */}
+        {/* Cross-version flip, taking the screen as it is. A fixed width, as in v1, so the label never moves the centred icons. */}
         <a
           data-tray-item="build"
           href="/"
+          onClick={(e) => followBuildLink(e, 'PHP Build')}
           title="Switch to the original PHP (v1) build"
           className="hidden md:flex items-center justify-center w-24 whitespace-nowrap overflow-hidden px-2 py-1 mr-1 rounded-sm text-xs font-medium border border-win-blue/30 bg-win-blue/10 text-win-blue hover:bg-win-blue hover:text-white transition-colors"
         >

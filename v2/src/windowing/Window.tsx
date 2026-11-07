@@ -50,6 +50,7 @@ export function Window({ win, children }: Props) {
       ref={element}
       tabIndex={-1}
       data-state={win.state}
+      data-restored={win.restored ? 'true' : undefined}
       className={`os-window win-shadow glass animate-window-open rounded-lg ${
         isFocused ? 'window-active' : ''
       }`}

@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { render, screen, act } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { readConsent, setConsent, useConsent, resetConsentForTests } from './consent'
+import { adoptConsent, readConsent, setConsent, useConsent, resetConsentForTests } from './consent'
 import { CookieBanner } from '../shell/CookieBanner'
 
 function Probe() {
@@ -42,6 +42,24 @@ describe('consent', () => {
     expect(readConsent()).toBeNull()
     expect(() => setConsent(true)).not.toThrow()
     expect(readConsent()).toBe(true)
+  })
+
+  it('takes the choice made in v1 from the build switch, including no answer yet', () => {
+    render(<Probe />)
+    act(() => adoptConsent(true))
+    expect(screen.getByTestId('consent')).toHaveTextContent('true')
+    expect(localStorage.getItem('react.cookie.consent')).toBe('true')
+    act(() => adoptConsent(null))
+    expect(screen.getByTestId('consent')).toHaveTextContent('null')
+    expect(localStorage.getItem('react.cookie.consent')).toBeNull()
+  })
+
+  it('takes it for this visit when storage is blocked', () => {
+    vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+      throw new DOMException('blocked', 'SecurityError')
+    })
+    expect(() => adoptConsent(false)).not.toThrow()
+    expect(readConsent()).toBe(false)
   })
 })
 

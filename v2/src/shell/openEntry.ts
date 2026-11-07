@@ -4,7 +4,7 @@ import { appForFile } from '../../../assets/js/windowing/file-ops.js'
 
 /** Opens a file system entry from the desktop or search, as v1's openItem does. */
 export function openEntry(entry: FsEntry, path: string) {
-  const { openApp, logEvent } = useOsStore.getState()
+  const { openApp, switchBuild } = useOsStore.getState()
   // Locked entries are in the References vault, which asks for the password.
   if ('extraData' in entry && entry.extraData?.locked) {
     openApp('references', entry.name, { extra: entry.extraData })
@@ -20,9 +20,7 @@ export function openEntry(entry: FsEntry, path: string) {
   } else if (entry.type === 'file') {
     openApp(appForFile(entry.name), entry.name, { extra: { content: entry.content ?? '', filePath: path } })
   } else if (entry.type === 'link') {
-    // Cross-build hop (e.g. PHP/React Desktop shortcuts). Logged via the same
-    // Security/System event mechanism v1 uses so emails read alike.
-    logEvent('System', 'Information', `Version switch: opening ${entry.name} (${entry.url})`)
-    window.location.href = entry.url
+    // The Desktop's build shortcut, which phones have in place of the chip.
+    switchBuild(entry.url, entry.name)
   }
 }

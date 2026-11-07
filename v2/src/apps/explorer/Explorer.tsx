@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useOsStore } from '../../store/osStore'
-import { useWindowExtras } from '../../windowing/WindowContext'
+import { useLiveExtras, useWindowExtras } from '../../windowing/WindowContext'
 import type { FsEntry } from '../../data/filesystem'
 import {
   RECYCLE_BIN,
@@ -79,6 +79,8 @@ export default function Explorer() {
   const currentPath = history[step]
   const isRecycle = currentPath === RECYCLE_BIN
   const selected = selectedByPath[currentPath] ?? null
+  // The folder on screen goes with a switch to v1.
+  useLiveExtras({ initialPath: currentPath, selectName: selected })
 
   // A search result can come from below this folder, so it says where it is.
   const pathOf = useCallback((file: FsEntry) => file.location ?? currentPath, [currentPath])

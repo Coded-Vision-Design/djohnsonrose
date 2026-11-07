@@ -1,5 +1,6 @@
-import { createContext, useContext } from 'react'
+import { createContext, useContext, useEffect } from 'react'
 import type { WinWindow } from '../store/osStore'
+import { shareLiveExtras } from '../../../assets/js/windowing/handoff.js'
 
 const WindowContext = createContext<WinWindow | null>(null)
 
@@ -23,4 +24,14 @@ export function useCurrentWindow(): WinWindow {
 export function useWindowExtras<T extends Record<string, unknown>>(): T {
   const w = useCurrentWindow()
   return (w.extra ?? {}) as T
+}
+
+/**
+ * Shares what the app shows now, in the extras' own names, so that the build
+ * switch carries it to v1 rather than what the window opened with. See
+ * shareLiveExtras in handoff.js. Kept current on every render.
+ */
+export function useLiveExtras(extras: Record<string, unknown>): void {
+  const { id } = useCurrentWindow()
+  useEffect(() => shareLiveExtras(id, () => extras))
 }

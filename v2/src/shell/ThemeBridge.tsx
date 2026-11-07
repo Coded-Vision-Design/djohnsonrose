@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useLayoutEffect } from 'react'
 import { useOsStore } from '../store/osStore'
 import { displayFilter } from '../../../assets/js/windowing/shell-ui.js'
 
@@ -12,11 +12,13 @@ export function ThemeBridge() {
   const nightLight = useOsStore((s) => s.settings.nightLight)
   const accessibility = useOsStore((s) => s.settings.accessibility)
 
-  useEffect(() => {
+  // Before the first paint, so that a dark desktop arriving from v1 by the build
+  // switch never shows a light frame first.
+  useLayoutEffect(() => {
     document.documentElement.classList.toggle('dark', theme === 'dark')
   }, [theme])
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     document.body.style.filter = displayFilter({ brightness, nightLight, accessibility })
   }, [brightness, nightLight, accessibility])
 
