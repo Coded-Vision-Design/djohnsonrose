@@ -21,6 +21,10 @@ export const SUGGESTED_QUESTIONS = [
   'What automation work has he done?',
 ];
 
+export const COPILOT_TABS = ['chat', 'match'];
+
+export const MISSING_SOURCE = 'That file is no longer on this desktop. It may have been moved or deleted.';
+
 const NETWORK_MESSAGE = 'Copilot could not be reached. Check your connection and try again.';
 const GENERIC_MESSAGE = 'Copilot could not answer just now. Please try again.';
 
@@ -78,6 +82,17 @@ export function historyFor(messages) {
     i++;
   }
   return pairs.slice(-HISTORY_TURNS).flat();
+}
+
+/** The counter under a text box, such as "120 / 500". */
+export const countLabel = (text, max) => `${characters(String(text ?? '')).toLocaleString('en-GB')} / ${max.toLocaleString('en-GB')}`;
+
+/** The tab an arrow key, Home or End moves to from $tab, or null for any other key. */
+export function tabAfterKey(tab, key) {
+  const at = Math.max(0, COPILOT_TABS.indexOf(tab));
+  const last = COPILOT_TABS.length - 1;
+  const moves = { ArrowRight: at === last ? 0 : at + 1, ArrowLeft: at === 0 ? last : at - 1, Home: 0, End: last };
+  return Object.hasOwn(moves, key) ? COPILOT_TABS[moves[key]] : null;
 }
 
 export const chatBody = (question, messages) => ({ task: 'chat', question: String(question).trim(), history: historyFor(messages) });
@@ -194,6 +209,12 @@ export function matchCounts(requirements) {
     counts[Object.hasOwn(counts, item?.strength) ? item.strength : 'none']++;
   }
   return counts;
+}
+
+/** A match in one line, such as "3 strong · 1 partial · 2 none". */
+export function matchCountsText(requirements) {
+  const counts = matchCounts(requirements);
+  return `${counts.strong} strong · ${counts.partial} partial · ${counts.none} none`;
 }
 
 // ---- The tailored CV ------------------------------------------------------
@@ -402,6 +423,27 @@ export function saveTailoredCv(cv, doc = document) {
   anchor.remove();
   setTimeout(() => URL.revokeObjectURL(url), 2000);
   return name;
+}
+
+/**
+ * Keeps the preview frame as tall as the CV inside it, so the panel scrolls as
+ * one page rather than a frame within a frame. Returns a function that stops.
+ */
+export function watchCvFrame(frame) {
+  if (!frame) return () => {};
+  const fit = () => {
+    const height = frame.contentDocument?.body?.scrollHeight;
+    if (height) frame.style.height = `${Math.ceil(height)}px`;
+  };
+  frame.addEventListener('load', fit);
+  // A wider or narrower frame wraps the CV differently.
+  const observer = typeof ResizeObserver === 'function' ? new ResizeObserver(fit) : null;
+  observer?.observe(frame);
+  fit();
+  return () => {
+    frame.removeEventListener('load', fit);
+    observer?.disconnect();
+  };
 }
 
 /** Prints the preview frame, and only it. Returns false when there is no preview to print. */

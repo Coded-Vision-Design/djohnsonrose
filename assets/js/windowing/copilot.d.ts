@@ -5,6 +5,10 @@ export const JOB_MAX: number
 export const HISTORY_TURNS: number
 export const HISTORY_TEXT_MAX: number
 export const SUGGESTED_QUESTIONS: string[]
+export const COPILOT_TABS: CopilotTab[]
+export const MISSING_SOURCE: string
+
+export type CopilotTab = 'chat' | 'match'
 
 export type CitationTarget =
   | { type: 'cv'; anchor: string }
@@ -117,6 +121,8 @@ export function copilotUrl(basePath?: string): string
 export function questionProblem(text: string): string
 export function jobProblem(text: string): string
 export function historyFor(messages: ChatTurn[]): ChatTurn[]
+export function countLabel(text: string, max: number): string
+export function tabAfterKey(tab: CopilotTab, key: string): CopilotTab | null
 export function chatBody(question: string, messages: ChatTurn[]): ChatBody
 export function matchBody(job: string): MatchBody
 export function askCopilot(body: ChatBody, options?: { fetcher?: Fetcher; basePath?: string; signal?: AbortSignal }): Promise<ChatReply>
@@ -138,7 +144,9 @@ export function openCitation<E>(
 ): boolean
 export function strengthLabel(strength: Strength): string
 export function matchCounts(requirements: Pick<Requirement, 'strength'>[]): Record<Strength, number>
+export function matchCountsText(requirements: Pick<Requirement, 'strength'>[]): string
 export function tailoredCvHtml(cv: TailoredCv): string
 export function tailoredCvFileName(cv: Pick<TailoredCv, 'name'>): string
 export function saveTailoredCv(cv: TailoredCv, doc?: Document): string
+export function watchCvFrame(frame: HTMLIFrameElement | null): () => void
 export function printTailoredCv(frame: HTMLIFrameElement | null): boolean

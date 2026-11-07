@@ -1,6 +1,11 @@
 import { describe, it, expect, vi } from 'vitest'
 import {
   COPILOT_ENDPOINT,
+  COPILOT_TABS,
+  MISSING_SOURCE,
+  countLabel,
+  matchCountsText,
+  tabAfterKey,
   HISTORY_TEXT_MAX,
   HISTORY_TURNS,
   JOB_MAX,
@@ -22,6 +27,7 @@ import {
   strengthLabel,
   tailoredCvFileName,
   tailoredCvHtml,
+  watchCvFrame,
   type ChatTurn,
   type Citation,
   type TailoredCv,
@@ -248,6 +254,33 @@ describe('citations', () => {
   })
 })
 
+describe('what the two apps show alike', () => {
+  it('count characters against the limit, with thousands marked', () => {
+    expect(countLabel('', QUESTION_MAX)).toBe('0 / 500')
+    expect(countLabel('😀é', QUESTION_MAX)).toBe('2 / 500')
+    expect(countLabel('a'.repeat(1234), JOB_MAX)).toBe('1,234 / 6,000')
+  })
+
+  it('sum up a match in one line', () => {
+    expect(matchCountsText([{ strength: 'strong' }, { strength: 'partial' }, { strength: 'none' }, { strength: 'strong' }])).toBe('2 strong · 1 partial · 1 none')
+    expect(matchCountsText([])).toBe('0 strong · 0 partial · 0 none')
+  })
+
+  it('move between the tabs with the arrow keys, Home and End', () => {
+    expect(COPILOT_TABS).toEqual(['chat', 'match'])
+    expect(tabAfterKey('chat', 'ArrowRight')).toBe('match')
+    expect(tabAfterKey('match', 'ArrowRight')).toBe('chat')
+    expect(tabAfterKey('chat', 'ArrowLeft')).toBe('match')
+    expect(tabAfterKey('match', 'Home')).toBe('chat')
+    expect(tabAfterKey('chat', 'End')).toBe('match')
+    expect(tabAfterKey('chat', 'Enter')).toBeNull()
+  })
+
+  it('explain a source that has gone', () => {
+    expect(MISSING_SOURCE).toBe('That file is no longer on this desktop. It may have been moved or deleted.')
+  })
+})
+
 describe('strengths', () => {
   it('have words, not just colours', () => {
     expect(strengthLabel('strong')).toBe('Strong')
@@ -331,7 +364,7 @@ describe('saving and printing the tailored CV', () => {
   })
 
   it('downloads the document as an HTML file', async () => {
-    const created = vi.fn((_blob: Blob) => 'blob:cv')
+    const created = vi.fn<(blob: Blob) => string>(() => 'blob:cv')
     const revoked = vi.fn()
     vi.stubGlobal('URL', Object.assign(URL, { createObjectURL: created, revokeObjectURL: revoked }))
     const clicks: { href: string; download: string }[] = []
@@ -358,5 +391,36 @@ describe('saving and printing the tailored CV', () => {
   it('says when there is nothing to print', () => {
     expect(printTailoredCv(null)).toBe(false)
     expect(printTailoredCv({ contentWindow: null } as unknown as HTMLIFrameElement)).toBe(false)
+  })
+})
+
+describe('watchCvFrame', () => {
+  const fakeFrame = (height: number | null) => {
+    const listeners: Record<string, () => void> = {}
+    return {
+      listeners,
+      style: {} as Record<string, string>,
+      contentDocument: height === null ? null : { body: { scrollHeight: height } },
+      addEventListener: (type: string, fn: () => void) => (listeners[type] = fn),
+      removeEventListener: (type: string) => delete listeners[type],
+    }
+  }
+
+  it('makes the preview as tall as the CV in it, and again once it loads', () => {
+    const frame = fakeFrame(900)
+    const stop = watchCvFrame(frame as unknown as HTMLIFrameElement)
+    expect(frame.style.height).toBe('900px')
+    ;(frame.contentDocument as { body: { scrollHeight: number } }).body.scrollHeight = 1200
+    frame.listeners.load()
+    expect(frame.style.height).toBe('1200px')
+    stop()
+    expect(frame.listeners.load).toBeUndefined()
+  })
+
+  it('leaves a frame with nothing in it alone', () => {
+    const frame = fakeFrame(null)
+    expect(() => watchCvFrame(frame as unknown as HTMLIFrameElement)()).not.toThrow()
+    expect(frame.style.height).toBeUndefined()
+    expect(() => watchCvFrame(null)()).not.toThrow()
   })
 })
