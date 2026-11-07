@@ -194,12 +194,31 @@ document.addEventListener('alpine:init', () => {
 
             if (this.loggedIn) this.openSharedFile();
 
-            const initialApp = window.portfolioConfig.appToOpen;
-            if (this.loggedIn && initialApp) {
-                setTimeout(() => this.openApp(initialApp), 100);
-            }
-            
+            if (this.loggedIn) this.openAddressedApp();
+            this.followAddress();
+
             this.booted = true;
+        },
+
+        // Deep link: opens the app the address names once on the desktop, after
+        // signing in too. Signing out leaves the desktop's address, so signing in
+        // again opens nothing. The same as v2's Shell. See address.js.
+        openAddressedApp() {
+            const app = OsWindowing.readAddress(window.portfolioConfig.basePath, window.location.pathname, Object.keys(window.portfolioConfig.apps))?.app;
+            if (app) setTimeout(() => this.openApp(app), 100);
+        },
+
+        // The address follows the window in front, and Back and Forward bring
+        // windows back, as v2's Shell does. See address.js.
+        followAddress() {
+            const os = Alpine.store('os');
+            const follower = OsWindowing.followAddress({
+                base: window.portfolioConfig.basePath,
+                appIds: Object.keys(window.portfolioConfig.apps),
+                titleOf: (app) => this.appTitle(app),
+                show: (app) => { if (this.loggedIn) OsWindowing.showAddressed(os, app); }
+            });
+            Alpine.effect(() => follower.update({ app: OsWindowing.addressedApp(os.windows, os.focusedWindowId), opens: os.windowsOpened }));
         },
 
         openApp(a, t, e) { Alpine.store('os').openApp(a, t, e); this.startMenuOpen = false; },
@@ -589,10 +608,7 @@ document.addEventListener('alpine:init', () => {
                 localStorage.setItem('auth.loggedIn', 'true');
                 // The cookie banner shows from here (loggedIn), not after a reload.
                 this.openSharedFile();
-
-                if (window.location.pathname !== window.portfolioConfig.basePath + 'desktop') {
-                    window.history.pushState({}, '', window.portfolioConfig.basePath + 'desktop');
-                }
+                this.openAddressedApp();
             });
         },
 
@@ -602,9 +618,9 @@ document.addEventListener('alpine:init', () => {
             OsWindowing.forgetReferences(sessionStorage);
             this.loggedIn = false;
             localStorage.removeItem('auth.loggedIn');
+            // The address goes back to the desktop's with the windows. See followAddress.
             Alpine.store('os').windows = [];
             this.startMenuOpen = false;
-            window.history.pushState({}, '', window.portfolioConfig.basePath + 'login');
         },
 
         toggleTheme() {

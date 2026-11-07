@@ -55,6 +55,8 @@ document.addEventListener('alpine:init', () => {
         focusedWindowId: null,
         contextMenu: { open: false, x: 0, y: 0, items: [], variant: 'modern' },
         nextWindowZ: 100,
+        // How many windows have opened, so that the address can tell an open from a focus. See address.js.
+        windowsOpened: 0,
         eventLogs: [],
         logEvent(source, level, description, details = {}) {
             this.eventLogs.unshift({
@@ -329,6 +331,7 @@ document.addEventListener('alpine:init', () => {
 
             this.windows.push(newWindow);
             this.focusedWindowId = id;
+            this.windowsOpened++;
 
             fetch(`${window.portfolioConfig.basePath}api/app.php?name=${appHandle}`)
                 .then(res => {

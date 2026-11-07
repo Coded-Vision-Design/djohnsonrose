@@ -103,6 +103,24 @@ for (const build of BUILDS) {
       await expect(page.getByRole('dialog', { name: FILE, exact: true })).toBeVisible()
     })
 
+    test('Back returns from an app to the desktop, and Forward brings it back', async ({ page }) => {
+      const base = new URL(build.url).pathname
+      const win = page.getByRole('dialog', { name: FILE, exact: true })
+      await icon(page, FILE).tap()
+      await expect(win).toBeVisible()
+      await expect.poll(() => new URL(page.url()).pathname).toBe(`${base}app/notepad`)
+
+      await page.goBack()
+      await expect(win).toBeHidden()
+      expect(new URL(page.url()).pathname).toBe(base)
+      await icon(page, 'Projects').tap()
+      await expect(page.getByRole('dialog', { name: 'Projects', exact: true })).toBeVisible()
+
+      await page.goBack()
+      await page.goForward()
+      await expect(page.getByRole('dialog', { name: 'Projects', exact: true })).toBeVisible()
+    })
+
     test('a long press on an icon opens its menu, not the file', async ({ page, browserName }) => {
       const [x, y] = await middle(page, FILE)
       await longPress(page, browserName, x, y)

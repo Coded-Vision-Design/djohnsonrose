@@ -478,4 +478,21 @@ describe('osStore', () => {
       expect(useOsStore.getState().news).toHaveLength(2)
     })
   })
+
+  describe('the address hooks', () => {
+    it('counts each new window, so that the address can tell an open from a focus', () => {
+      const before = useOsStore.getState().windowsOpened
+      useOsStore.getState().openApp('calculator')
+      useOsStore.getState().openApp('notepad')
+      expect(useOsStore.getState().windowsOpened).toBe(before + 2)
+    })
+
+    it('does not count bringing an open app forward again', () => {
+      useOsStore.getState().openApp('calculator')
+      const before = useOsStore.getState().windowsOpened
+      useOsStore.getState().openApp('notepad')
+      useOsStore.getState().openApp('calculator')
+      expect(useOsStore.getState().windowsOpened).toBe(before + 1)
+    })
+  })
 })
