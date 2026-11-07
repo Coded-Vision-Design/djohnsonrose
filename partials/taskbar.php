@@ -178,8 +178,11 @@
             ⚛ React v2
         </a>
 
-        <!-- Clock/Date -->
-        <button type="button" data-tray-item="clock" title="Date and time" class="px-2 py-1 rounded-sm hover:bg-white/10 text-xs text-right leading-tight transition-colors" @click="startMenuOpen = false; quickSettingsOpen = false; widgetsOpen = false">
+        <!-- Clock/Date: opens the notifications and calendar (calendar-flyout.php) -->
+        <button type="button" data-tray-item="clock" title="Date and time" aria-haspopup="dialog" :aria-expanded="calendarOpen ? 'true' : 'false'"
+                class="px-2 py-1 rounded-sm hover:bg-white/10 text-xs text-right leading-tight transition-colors"
+                :class="{ 'bg-white/10': calendarOpen }"
+                @click="toggleCalendar()">
             <div x-text="clock.time"></div>
             <div x-show="isDesktop" x-text="clock.date" class="text-xs opacity-80"></div>
         </button>
@@ -188,3 +191,6 @@
         <button type="button" x-show="isDesktop" aria-label="Show desktop" class="w-[2px] hover:bg-white/20 h-8 ml-1 cursor-pointer transition-colors" @click="$store.os.minimizeAll()"></button>
     </div>
 </div>
+
+<!-- Outside the taskbar, whose blur would otherwise stop the flyout's own. -->
+<?php include __DIR__ . '/calendar-flyout.php'; ?>

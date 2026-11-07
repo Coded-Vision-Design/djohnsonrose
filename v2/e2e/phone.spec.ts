@@ -335,6 +335,34 @@ for (const build of BUILDS) {
       await expect(box).toHaveValue(/typed by hand/)
     })
 
+    test('a tap on the clock opens the calendar across the screen, above the taskbar', async ({ page }) => {
+      const flyout = page.locator('[data-calendar-flyout]')
+      await page.locator('[data-tray-item="clock"]').tap()
+      await expect(flyout).toBeVisible()
+      await flyout.evaluate((el) => Promise.all([el, ...el.querySelectorAll('*')].flatMap((node) => node.getAnimations().map((a) => a.finished))))
+      const viewport = page.viewportSize()!
+      const box = (await flyout.boundingBox())!
+      const taskbar = (await page.locator('.os-taskbar').boundingBox())!
+      expect(box.x).toBe(0)
+      expect(Math.round(box.width)).toBe(viewport.width)
+      expect(box.y).toBeGreaterThanOrEqual(0)
+      expect(Math.round(box.y + box.height)).toBe(Math.round(taskbar.y))
+      const small = await flyout.evaluate((root) =>
+        [...root.querySelectorAll<HTMLElement>('button, [data-calendar-day]')]
+          .map((el) => el.getBoundingClientRect())
+          .filter((rect) => rect.width < 44 || rect.height < 44).length,
+      )
+      expect(small).toBe(0)
+
+      const next = flyout.getByRole('button', { name: 'Next month' })
+      const title = await page.locator('[data-calendar-title]').innerText()
+      await next.tap()
+      await expect(page.locator('[data-calendar-title]')).not.toHaveText(title)
+      // A tap on the wallpaper above it closes it.
+      await page.touchscreen.tap(viewport.width - 8, 8)
+      await expect(flyout).toBeHidden()
+    })
+
     test('Notepad works by touch, and its menus fit', async ({ page }) => {
       await icon(page, FILE).tap()
       const win = page.getByRole('dialog', { name: FILE, exact: true })

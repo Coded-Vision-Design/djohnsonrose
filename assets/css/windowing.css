@@ -1022,3 +1022,272 @@ html[data-os-mode='phone'] .os-switcher-card {
     animation: none !important;
   }
 }
+
+/* The clock's flyout: notifications above a calendar, as in Windows 11, the
+   same in both builds (partials/calendar-flyout.php and CalendarFlyout.tsx).
+   The flyout itself is a clear frame with room for the panels' shadows. Only
+   the panels take the pointer, so a click beside them still closes it. */
+.os-calendar-flyout {
+  --os-cal-text: #1b1b1b;
+  --os-cal-dim: #5c5c5c;
+  --os-cal-accent: #0078d4;
+  --os-cal-on-accent: #fff;
+  --os-cal-hover: rgba(0, 0, 0, 0.06);
+  --os-cal-card: rgba(255, 255, 255, 0.7);
+  position: fixed;
+  z-index: 10000;
+  right: 0;
+  bottom: var(--os-taskbar-height);
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 384px;
+  max-width: 100%;
+  max-height: calc(100% - var(--os-taskbar-height));
+  padding: 12px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  pointer-events: none;
+  color: var(--os-cal-text);
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.dark .os-calendar-flyout {
+  --os-cal-text: #f3f3f3;
+  --os-cal-dim: #a8a8a8;
+  --os-cal-accent: #60cdff;
+  --os-cal-on-accent: #000;
+  --os-cal-hover: rgba(255, 255, 255, 0.08);
+  --os-cal-card: rgba(255, 255, 255, 0.05);
+}
+
+.os-calendar-panel {
+  flex-shrink: 0;
+  box-sizing: border-box;
+  pointer-events: auto;
+  border: 1px solid var(--os-flyout-edge);
+  border-radius: 8px;
+  background: var(--os-flyout-bg);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.24);
+  -webkit-backdrop-filter: blur(30px) saturate(150%);
+  backdrop-filter: blur(30px) saturate(150%);
+  animation: os-calendar-in 0.2s var(--os-ease);
+}
+
+@keyframes os-calendar-in {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: none; }
+}
+
+.os-calendar-panel h2,
+.os-calendar-panel p {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.os-calendar-panel button {
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 4px;
+  color: inherit;
+  background: transparent;
+  font: inherit;
+  cursor: pointer;
+}
+
+.os-calendar-panel button:hover {
+  background: var(--os-cal-hover);
+}
+
+.os-calendar-text-button {
+  min-height: 32px;
+  padding: 0 10px;
+  font-size: 12px;
+}
+
+.os-calendar-step {
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+}
+
+.os-calendar-step svg {
+  width: 12px;
+  height: 12px;
+}
+
+.os-notify-head,
+.os-calendar-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 48px;
+  padding: 0 8px 0 16px;
+}
+
+.os-calendar-head {
+  border-bottom: 1px solid var(--os-flyout-edge);
+}
+
+.os-notify-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 240px;
+  margin: 0;
+  padding: 0 12px 12px;
+  overflow-y: auto;
+  list-style: none;
+}
+
+.os-notify-item {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid var(--os-flyout-edge);
+  border-radius: 6px;
+  background: var(--os-cal-card);
+}
+
+.os-notify-panel .os-notify-item p {
+  min-width: 0;
+  font-weight: 400;
+  overflow-wrap: anywhere;
+}
+
+.os-notify-item time {
+  flex-shrink: 0;
+  font-size: 12px;
+  color: var(--os-cal-dim);
+}
+
+.os-notify-panel .os-notify-empty {
+  padding: 4px 16px 20px;
+  font-weight: 400;
+  text-align: center;
+  color: var(--os-cal-dim);
+}
+
+.os-calendar-body {
+  padding: 12px 12px 16px;
+}
+
+.os-calendar-nav {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 0 8px 4px;
+}
+
+.os-calendar-nav p {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.os-calendar-grid {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.os-calendar-grid th {
+  height: 32px;
+  padding: 0;
+  font-size: 12px;
+  font-weight: 600;
+  text-align: center;
+}
+
+.os-calendar-day {
+  height: 40px;
+  padding: 0;
+  text-align: center;
+  cursor: pointer;
+}
+
+.os-calendar-day > span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  vertical-align: middle;
+}
+
+.os-calendar-day:hover > span {
+  background: var(--os-cal-hover);
+}
+
+.os-calendar-day[data-outside] {
+  color: var(--os-cal-dim);
+}
+
+.os-calendar-day[aria-selected='true'] > span {
+  box-shadow: inset 0 0 0 1px var(--os-cal-accent);
+}
+
+/* Today is filled with the accent colour, in or out of the month shown. */
+.os-calendar-day[aria-current='date'] > span {
+  background: var(--os-cal-accent);
+  color: var(--os-cal-on-accent);
+  font-weight: 600;
+}
+
+/* The focus ring goes round the day's circle rather than the whole cell. */
+.os-calendar-day:focus-visible {
+  outline: none;
+}
+
+.os-calendar-day:focus-visible > span {
+  outline: 2px solid var(--os-cal-accent);
+  outline-offset: 1px;
+}
+
+/* Phones: one full-width panel above the taskbar, tapped with a finger. */
+html[data-os-mode='phone'] .os-calendar-flyout {
+  left: 0;
+  width: auto;
+  max-height: calc(100% - var(--os-taskbar-height) - env(safe-area-inset-top, 0px));
+  padding: 0;
+  gap: 0;
+}
+
+html[data-os-mode='phone'] .os-calendar-panel {
+  border-width: 1px 0 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+html[data-os-mode='phone'] .os-calendar-panel:first-child {
+  border-radius: 8px 8px 0 0;
+}
+
+html[data-os-mode='phone'] .os-calendar-panel button {
+  min-width: 44px;
+  min-height: 44px;
+}
+
+html[data-os-mode='phone'] .os-calendar-day {
+  height: 44px;
+}
+
+html[data-os-mode='phone'] .os-calendar-day > span {
+  width: 40px;
+  height: 40px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .os-calendar-panel {
+    animation: none !important;
+  }
+}

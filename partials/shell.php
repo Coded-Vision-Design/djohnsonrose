@@ -111,7 +111,8 @@
         import * as references from '<?php echo BASE_PATH; ?>assets/js/windowing/references.js?v=<?php echo @filemtime(__DIR__ . '/../assets/js/windowing/references.js'); ?>';
         import * as weather from '<?php echo BASE_PATH; ?>assets/js/windowing/weather.js?v=<?php echo @filemtime(__DIR__ . '/../assets/js/windowing/weather.js'); ?>';
         import * as switcher from '<?php echo BASE_PATH; ?>assets/js/windowing/switcher.js?v=<?php echo @filemtime(__DIR__ . '/../assets/js/windowing/switcher.js'); ?>';
-        window.OsWindowing = { ...windowing, ...shellCore, ...fileOps, ...textOps, ...shellUi, ...calculator, ...terminal, ...browser, ...media, ...sql, ...devtools, ...references, ...weather, ...switcher };
+        import * as calendar from '<?php echo BASE_PATH; ?>assets/js/windowing/calendar.js?v=<?php echo @filemtime(__DIR__ . '/../assets/js/windowing/calendar.js'); ?>';
+        window.OsWindowing = { ...windowing, ...shellCore, ...fileOps, ...textOps, ...shellUi, ...calculator, ...terminal, ...browser, ...media, ...sql, ...devtools, ...references, ...weather, ...switcher, ...calendar };
         window.FlStudio = flStudio;
         window.OfficeApps = officeApps;
         window.Drawing = drawing;
@@ -410,6 +411,7 @@
         'os/store',
         'os/shell',
         'os/switching',
+        'os/calendar',
         'paint',
         'photoshop',
         'calculator',

@@ -42,6 +42,7 @@ import {
 } from '../../../assets/js/windowing/shell-ui.js'
 import { filesystem, type FileSystem, type FsEntry } from '../data/filesystem'
 import { forgetReferences } from '../../../assets/js/windowing/references.js'
+import { addNotification, type ShellNotification } from '../../../assets/js/windowing/calendar.js'
 
 const prefersDark = () => !!window.matchMedia?.('(prefers-color-scheme: dark)').matches
 
@@ -225,6 +226,8 @@ interface OsState {
   startMenuOpen: boolean
   quickSettingsOpen: boolean
   widgetsOpen: boolean
+  /** The clock's notifications and calendar. */
+  calendarOpen: boolean
   pinnedApps: string[]
 
   // Live ambient state
@@ -243,6 +246,8 @@ interface OsState {
   renaming: { path: string; name: string } | null
   properties: { entry: FsEntry; path: string } | null
   toast: string | null
+  /** Every toast shown this session, newest first, for the clock's flyout. */
+  notifications: ShellNotification[]
 
   // Persisted.
   startPins: string[]
@@ -307,6 +312,7 @@ interface OsState {
   toggleStartMenu: () => void
   toggleQuickSettings: () => void
   toggleWidgets: () => void
+  toggleCalendar: () => void
   closeAllPopups: () => void
   minimizeAll: () => void
 
@@ -327,6 +333,7 @@ interface OsState {
   showProperties: (entry: FsEntry, path: string) => void
   closeProperties: () => void
   showToast: (message: string) => void
+  clearNotifications: () => void
   setDesktopIconSize: (size: IconSize) => void
   setDesktopIconsVisible: (visible: boolean) => void
   setIconPosition: (name: string, pos: IconPosition) => void
@@ -407,6 +414,7 @@ export const useOsStore = create<OsState>()(
       startMenuOpen: false,
       quickSettingsOpen: false,
       widgetsOpen: false,
+      calendarOpen: false,
       pinnedApps,
 
       clock: { time: '', date: '' },
@@ -419,6 +427,7 @@ export const useOsStore = create<OsState>()(
       renaming: null,
       properties: null,
       toast: null,
+      notifications: [],
       startPins: [],
       favourites: [],
       desktopIconSize: 'medium',
@@ -692,21 +701,25 @@ export const useOsStore = create<OsState>()(
         }
       },
 
-      // Chrome toggles: only one of start/quickSettings/widgets is ever open.
+      // Chrome toggles: only one of start/quickSettings/widgets/calendar is ever open.
       toggleStartMenu: () => {
         const open = !get().startMenuOpen
-        set({ startMenuOpen: open, quickSettingsOpen: false, widgetsOpen: false })
+        set({ startMenuOpen: open, quickSettingsOpen: false, widgetsOpen: false, calendarOpen: false })
       },
       toggleQuickSettings: () => {
         const open = !get().quickSettingsOpen
-        set({ quickSettingsOpen: open, startMenuOpen: false, widgetsOpen: false })
+        set({ quickSettingsOpen: open, startMenuOpen: false, widgetsOpen: false, calendarOpen: false })
       },
       toggleWidgets: () => {
         const open = !get().widgetsOpen
-        set({ widgetsOpen: open, startMenuOpen: false, quickSettingsOpen: false })
+        set({ widgetsOpen: open, startMenuOpen: false, quickSettingsOpen: false, calendarOpen: false })
+      },
+      toggleCalendar: () => {
+        const open = !get().calendarOpen
+        set({ calendarOpen: open, startMenuOpen: false, quickSettingsOpen: false, widgetsOpen: false })
       },
       closeAllPopups: () =>
-        set({ startMenuOpen: false, quickSettingsOpen: false, widgetsOpen: false }),
+        set({ startMenuOpen: false, quickSettingsOpen: false, widgetsOpen: false, calendarOpen: false }),
 
       minimizeAll: () => {
         set({
@@ -754,11 +767,12 @@ export const useOsStore = create<OsState>()(
       showProperties: (entry, path) => set({ properties: { entry, path } }),
       closeProperties: () => set({ properties: null }),
       showToast: (toast) => {
-        set({ toast })
+        set({ toast, notifications: addNotification(get().notifications, toast, Date.now()) })
         window.setTimeout(() => {
           if (get().toast === toast) set({ toast: null })
         }, 3000)
       },
+      clearNotifications: () => set({ notifications: [] }),
       setDesktopIconSize: (desktopIconSize) => set({ desktopIconSize }),
       setDesktopIconsVisible: (desktopIconsVisible) => set({ desktopIconsVisible }),
 

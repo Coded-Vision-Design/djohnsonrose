@@ -7,6 +7,7 @@ import { SnapUi } from './SnapUi'
 import { TaskView } from './TaskView'
 import { WindowSwitcher } from './WindowSwitcher'
 import { Taskbar } from './Taskbar'
+import { CalendarFlyout } from './CalendarFlyout'
 import { PropertiesDialog, Toast } from './FileDialogs'
 import { showDesktopMenu } from './menus'
 import { StartMenu } from './StartMenu'
@@ -170,6 +171,7 @@ export function Desktop() {
       <StartMenu />
       <QuickSettings />
       <Taskbar />
+      <CalendarFlyout />
       <CookieBanner />
       <ContextMenu />
       <PropertiesDialog />
