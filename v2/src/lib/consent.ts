@@ -32,6 +32,21 @@ export function setConsent(value: boolean): void {
   for (const listener of listeners) listener()
 }
 
+/**
+ * The choice the visitor made in v1, brought by the build switch, so that both
+ * builds ask once. Null means they have not answered yet, and the banner shows.
+ */
+export function adoptConsent(value: Consent): void {
+  remembered = value
+  try {
+    if (value === null) localStorage.removeItem(KEY)
+    else localStorage.setItem(KEY, String(value))
+  } catch {
+    // Kept in memory for this visit.
+  }
+  for (const listener of listeners) listener()
+}
+
 function subscribe(listener: () => void) {
   listeners.add(listener)
   return () => {

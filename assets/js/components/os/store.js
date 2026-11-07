@@ -49,11 +49,62 @@ const readRecent = () => {
     }
 };
 
+const forget = (key) => {
+    try {
+        localStorage.removeItem(key);
+    } catch {
+        // Nothing was kept.
+    }
+};
+
+// Arriving from the React build by the build chip: its hand-off says what was
+// on screen (see handoff.js). Its settings are saved as this build's own, so
+// that everything below reads them as usual.
+const adoptHandoff = (desktop) => {
+    let session;
+    try {
+        session = sessionStorage;
+    } catch {
+        return null;
+    }
+    const handoff = OsWindowing.takeHandoff(session, {
+        now: Date.now(),
+        loadingFor: performance.now(),
+        apps: Object.keys(window.portfolioConfig.apps),
+        desktop
+    });
+    if (!handoff) return null;
+    const { settings, desktop: icons, consent } = handoff;
+    // Until the visitor picks a theme, both builds follow the system.
+    if (settings.themeChosen === false) forget('settings.theme');
+    else if (settings.themeChosen && settings.theme) store('settings.theme', settings.theme);
+    for (const key of ['sound', 'volume', 'brightness', 'wallpaper', 'wifi', 'bluetooth', 'airplane', 'batterySaver', 'nightLight', 'accessibility']) {
+        if (settings[key] !== null) store('settings.' + key, String(settings[key]));
+    }
+    if (icons.pinnedApps) store('os.taskbarPins', JSON.stringify(icons.pinnedApps));
+    if (icons.iconSize) store('os.iconSize', icons.iconSize);
+    if (icons.iconsVisible !== null) store('os.iconsVisible', String(icons.iconsVisible));
+    store('os.iconPositions', JSON.stringify(icons.iconPositions));
+    if (consent === null) forget('cookie.consent');
+    else store('cookie.consent', String(consent));
+    // Analytics follows the choice, as the head of the page could not know it yet.
+    if (consent) window.initGTM?.();
+    else if (window.gtmInitialized) window.disableGTM?.();
+    if (handoff.signedIn) store('auth.loggedIn', 'true');
+    else forget('auth.loggedIn');
+    return handoff;
+};
+
 document.addEventListener('alpine:init', () => {
+    const startDesktop = { left: 0, top: 0, width: window.innerWidth, height: window.innerHeight - 48 };
+    const arrival = adoptHandoff(startDesktop);
+
     Alpine.store('os', {
+        // Came from the other build, so there is no boot screen to show, and the
+        // taskbar keeps the weather it showed there.
+        arrived: !!arrival,
+        arrivedWeather: arrival?.weather ?? null,
         windows: [],
-        // The last window id given out, so that each new one is unique.
-        lastWindowId: 0,
         focusedWindowId: null,
         contextMenu: { open: false, x: 0, y: 0, items: [], variant: 'modern' },
         nextWindowZ: 100,
@@ -132,7 +183,7 @@ document.addEventListener('alpine:init', () => {
         snapFlyout: null,
         snapAssist: null,
         taskSwitcherOpen: false,
-        desktop: { left: 0, top: 0, width: window.innerWidth, height: window.innerHeight - 48 },
+        desktop: startDesktop,
         windowMode: OsWindowing.detectMode({
             width: window.innerWidth,
             height: window.innerHeight,
@@ -150,7 +201,7 @@ document.addEventListener('alpine:init', () => {
         newsStatus: 'loading',
         // When Start's Recommended items were last opened, by key.
         recent: readRecent(),
-        desktopZoom: 1,
+        desktopZoom: arrival?.desktop.zoom ?? 1,
         settings: {
             // A first visit follows the system; a choice made in Settings is saved and wins.
             theme: OsWindowing.initialTheme(stored('settings.theme'), prefersDark()),
@@ -333,10 +384,7 @@ document.addEventListener('alpine:init', () => {
                 return;
             }
 
-            // Unique even when several open in the same millisecond, as when the
-            // build switch brings windows back. v2 counts its ids the same way.
-            const id = Math.max(Date.now(), (this.lastWindowId ?? 0) + 1);
-            this.lastWindowId = id;
+            const id = this.nextWindowId();
             const manifest = window.portfolioConfig.apps[appHandle];
 
             const newWindow = {
@@ -353,7 +401,33 @@ document.addEventListener('alpine:init', () => {
             this.windows.push(newWindow);
             this.focusedWindowId = id;
             this.windowsOpened++;
+            this.loadApp(id, appHandle);
+        },
 
+        // Opens the windows the other build had open, where they were and as they
+        // were, and fetches each app. See restoredWindows in handoff.js.
+        restoreWindows(handoff) {
+            const restored = OsWindowing.restoredWindows(handoff, () => this.nextWindowId(), this.nextWindowZ);
+            this.windows = restored.windows.map(({ extras, ...win }) => ({
+                ...win,
+                loading: true,
+                ...OsWindowing.renameExtras(extras, OsWindowing.V1_EXTRA_NAMES)
+            }));
+            this.focusedWindowId = restored.focusedId;
+            this.nextWindowZ = restored.nextWindowZ;
+            this.windows.forEach(win => this.loadApp(win.id, win.app));
+        },
+
+        // The time, as before, but never the same twice: several windows can open
+        // within one millisecond, as they do on arrival from the other build, and
+        // the clock may stand still, as it does in the browser tests.
+        lastWindowId: 0,
+        nextWindowId() {
+            this.lastWindowId = Math.max(Date.now(), this.lastWindowId + 1);
+            return this.lastWindowId;
+        },
+
+        loadApp(id, appHandle) {
             fetch(`${window.portfolioConfig.basePath}api/app.php?name=${appHandle}`)
                 .then(res => {
                     if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -538,4 +612,6 @@ document.addEventListener('alpine:init', () => {
             return true;
         }
     });
+
+    if (arrival?.signedIn) Alpine.store('os').restoreWindows(arrival);
 });

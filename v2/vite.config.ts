@@ -4,18 +4,15 @@ import react from '@vitejs/plugin-react'
 // The PHP server Vite hands shared files to. Set PHP_ORIGIN to run more than one copy at once.
 const PHP_ORIGIN = process.env.PHP_ORIGIN ?? 'http://localhost:8765'
 
-// Local-dev helper: any request that lands on Vite outside the /v2/ base
-// gets redirected to the PHP server. This makes the v1↔v2 cross-link
-// buttons in the taskbar "just work" without per-host wiring. The PHP server
-// also decides which pages under /v2/ are v2's: see the second middleware.
-function redirectRootToPhp(): Plugin {
+// In production Apache answers a /v2/ address that is neither v2's desktop nor
+// an app's with v1's 404 page (see .htaccess). PHP's dev server knows the same
+// addresses (v2_address_known in lib/routes.php): it sends v2's back here and
+// answers the rest with that page, which this passes on. v1's own pages reach
+// PHP through the proxy below.
+function v2NotFoundFromPhp(): Plugin {
   return {
     name: 'redirect-root-to-php',
     configureServer(server) {
-      // In production Apache answers a /v2/ address that is neither v2's desktop
-      // nor an app's with v1's 404 page (see .htaccess). PHP's dev server knows
-      // the same addresses (v2_address_known in lib/routes.php): it sends v2's
-      // back here and answers the rest with that page, which is passed on.
       server.middlewares.use((req, res, next) => {
         const url = req.url ?? '/'
         const pathname = url.split('?')[0]
@@ -44,26 +41,6 @@ function redirectRootToPhp(): Plugin {
           // Without the PHP server, the page is v2's, as before.
           .catch(() => next())
       })
-      server.middlewares.use((req, res, next) => {
-        const url = req.url ?? '/'
-        if (
-          !url.startsWith('/v2/') &&
-          url !== '/v2' &&
-          !url.startsWith('/@') && // Vite's internal HMR routes
-          !url.startsWith('/node_modules/') &&
-          !url.startsWith('/api/') &&
-          !url.startsWith('/assets/') &&
-          !url.startsWith('/data/') &&
-          !url.startsWith('/portfolio/') &&
-          url !== '/favicon.ico' &&
-          (url === '/' || url.startsWith('/?') || url.startsWith('/app/') || url === '/desktop' || url === '/login' || url === '/cv')
-        ) {
-          res.writeHead(302, { Location: PHP_ORIGIN + url })
-          res.end()
-          return
-        }
-        next()
-      })
     },
   }
 }
@@ -74,12 +51,19 @@ function redirectRootToPhp(): Plugin {
 // dev, and served directly by Apache in production.
 export default defineConfig({
   base: '/v2/',
-  plugins: [react(), redirectRootToPhp()],
+  plugins: [react(), v2NotFoundFromPhp()],
   server: {
     port: 5173,
     // data/apps.json is shared with v1 and sits outside the Vite root.
     fs: { allow: ['..'] },
     proxy: {
+      // v1's own pages, so that both builds share one origin in dev as they do
+      // on the host. The build switch's hand-off lives in session storage,
+      // which only that origin can read (see assets/js/windowing/handoff.js).
+      '^/(?:app/[^/?#]+|desktop|login|cv|privacy|manifest\\.json)?/?(?:[?#].*)?$': {
+        target: PHP_ORIGIN,
+        changeOrigin: true,
+      },
       '/api': {
         target: PHP_ORIGIN,
         changeOrigin: true,

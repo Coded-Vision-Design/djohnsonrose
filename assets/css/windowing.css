@@ -2531,3 +2531,9 @@ html[data-os-mode='phone'] .os-tour-button {
 html[data-os-mode='phone'] .copilot :is(.copilot-button, .copilot-suggestion, .copilot-citation) {
     min-height: 44px;
 }
+
+/* Build switch: the windows the other build had open are already on screen, so
+   they appear at once instead of playing the opening animation. See handoff.js. */
+.os-window.os-window-restored {
+    animation: none;
+}

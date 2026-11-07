@@ -32,7 +32,8 @@ document.addEventListener('alpine:init', () => {
 
     Alpine.data('os', () => ({
         booted: false,
-        isBooting: localStorage.getItem('auth.loggedIn') !== 'true',
+        // Arriving from the other build, the screen is already up: no boot screen.
+        isBooting: localStorage.getItem('auth.loggedIn') !== 'true' && !Alpine.store('os').arrived,
         loggingIn: false,
         loggedIn: localStorage.getItem('auth.loggedIn') === 'true',
         user: {
@@ -49,7 +50,8 @@ document.addEventListener('alpine:init', () => {
             icon: '☁️',
             city: 'Essex',
             // 'loading', 'ready' or 'error', as in v2's store.
-            status: 'loading'
+            status: 'loading',
+            ...(Alpine.store('os').arrivedWeather ? { ...Alpine.store('os').arrivedWeather, status: 'ready' } : {})
         },
         widgetsOpen: false,
         startMenuOpen: false,
@@ -516,6 +518,54 @@ document.addEventListener('alpine:init', () => {
             });
         },
 
+        // The build chip, on a plain click. Any other click opens the link as usual.
+        followBuildLink(e, name) {
+            if (!OsWindowing.isPlainClick(e)) return;
+            e.preventDefault();
+            this.switchBuild(e.currentTarget.getAttribute('href'), name);
+        },
+
+        // Swaps to the React build with nothing on screen changing: what is open,
+        // where, and how the desktop looks go with the visitor. See handoff.js,
+        // and v2's switchBuild in its store, which does the same the other way.
+        switchBuild(url, name) {
+            const os = Alpine.store('os');
+            const saved = (key) => {
+                try {
+                    return localStorage.getItem(key);
+                } catch {
+                    return null;
+                }
+            };
+            const handoff = OsWindowing.createHandoff({
+                from: 'v1',
+                signedIn: this.loggedIn,
+                windows: os.windows.map(win => ({
+                    ...win,
+                    extras: { ...OsWindowing.pickExtras(win.app, win, OsWindowing.V1_EXTRA_NAMES), ...OsWindowing.liveExtras(win.id) }
+                })),
+                focusedId: os.focusedWindowId,
+                settings: { ...os.settings, themeChosen: saved('settings.theme') !== null },
+                desktop: {
+                    pinnedApps: os.pinnedApps,
+                    iconSize: os.desktopIconSize,
+                    iconsVisible: os.desktopIconsVisible,
+                    iconPositions: this.desktopIconPositions,
+                    zoom: os.desktopZoom
+                },
+                consent: saved('cookie.consent') === null ? null : os.cookieConsent,
+                weather: this.weather.status === 'ready' ? this.weather : null
+            }, Date.now());
+            try {
+                OsWindowing.writeHandoff(sessionStorage, handoff);
+            } catch {
+                // Blocked storage: the other build starts afresh, as a plain link would.
+            }
+            // The same event as v2's, so that the logs read alike.
+            os.logEvent('System', 'Information', `Version switch: opening ${name} (${url})`);
+            window.location.href = url;
+        },
+
         openSharedFile() {
             const shared = OsWindowing.sharedPath(window.location.hash);
             if (!shared) return;
@@ -545,11 +595,8 @@ document.addEventListener('alpine:init', () => {
             } else if (item.type === 'app') {
                 this.openApp(item.app, item.name, item.extraData);
             } else if (item.type === 'link' && item.url) {
-                // Cross-build hop (e.g. React/PHP Desktop shortcuts). Mirrored
-                // by v2's DesktopIcons → fires the same Security/System event
-                // shape so the event logs read identically across builds.
-                Alpine.store('os').logEvent('System', 'Information', `Version switch: opening ${item.name} (${item.url})`);
-                window.location.href = item.url;
+                // The Desktop's build shortcut, which phones have in place of the chip.
+                this.switchBuild(item.url, item.name);
             } else if (item.type === 'image') {
                 this.openApp('photos', item.name, { imageName: item.name, folderPath: path || 'C:\\Users\\DeVante\\Desktop' });
             } else if (item.type === 'video') {

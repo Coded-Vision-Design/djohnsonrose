@@ -119,7 +119,8 @@
         import * as tour from '<?php echo BASE_PATH; ?>assets/js/windowing/tour.js?v=<?php echo @filemtime(__DIR__ . '/../assets/js/windowing/tour.js'); ?>';
         import * as copilot from '<?php echo BASE_PATH; ?>assets/js/windowing/copilot.js?v=<?php echo @filemtime(__DIR__ . '/../assets/js/windowing/copilot.js'); ?>';
         import * as metrics from '<?php echo BASE_PATH; ?>assets/js/windowing/metrics.js?v=<?php echo @filemtime(__DIR__ . '/../assets/js/windowing/metrics.js'); ?>';
-        window.OsWindowing = { ...windowing, ...shellCore, ...fileOps, ...textOps, ...shellUi, ...calculator, ...terminal, ...browser, ...media, ...sql, ...devtools, ...references, ...weather, ...switcher, ...calendar, ...address, ...sourceViewer, ...widgets, ...tour, ...copilot, ...metrics };
+        import * as handoff from '<?php echo BASE_PATH; ?>assets/js/windowing/handoff.js?v=<?php echo @filemtime(__DIR__ . '/../assets/js/windowing/handoff.js'); ?>';
+        window.OsWindowing = { ...windowing, ...shellCore, ...fileOps, ...textOps, ...shellUi, ...calculator, ...terminal, ...browser, ...media, ...sql, ...devtools, ...references, ...weather, ...switcher, ...calendar, ...address, ...sourceViewer, ...widgets, ...tour, ...copilot, ...metrics, ...handoff };
         // Task Manager's Web Vitals are watched from the start, so that early interactions count.
         metrics.startVitals();
         window.FlStudio = flStudio;

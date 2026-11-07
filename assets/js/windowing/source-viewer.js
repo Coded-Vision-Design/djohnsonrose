@@ -30,6 +30,8 @@ export const SOURCE_FILES = [
   'assets/js/windowing/file-ops.js',
   'assets/js/windowing/fl-studio.d.ts',
   'assets/js/windowing/fl-studio.js',
+  'assets/js/windowing/handoff.d.ts',
+  'assets/js/windowing/handoff.js',
   'assets/js/windowing/media.d.ts',
   'assets/js/windowing/media.js',
   'assets/js/windowing/metrics.d.ts',

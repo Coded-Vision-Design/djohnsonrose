@@ -44,6 +44,14 @@ import { filesystem, type FileSystem, type FsEntry } from '../data/filesystem'
 import { forgetReferences } from '../../../assets/js/windowing/references.js'
 import { addNotification, type ShellNotification } from '../../../assets/js/windowing/calendar.js'
 import { siteToVisit } from '../../../assets/js/windowing/browser.js'
+import {
+  createHandoff,
+  liveExtras,
+  restoredWindows,
+  writeHandoff,
+  type Handoff,
+} from '../../../assets/js/windowing/handoff.js'
+import { readConsent } from '../lib/consent'
 
 const prefersDark = () => !!window.matchMedia?.('(prefers-color-scheme: dark)').matches
 
@@ -77,6 +85,8 @@ export interface WinWindow extends ManagedWindow {
   extra?: Record<string, unknown>
   /** Goes up when an open app is given something new to show. */
   revision?: number
+  /** Brought over by the build switch, so it appears at once, with no opening animation. */
+  restored?: boolean
 }
 
 export interface Settings {
@@ -180,6 +190,20 @@ export interface ContextMenuState {
 
 const EMPTY_PREVIEW: SnapPreview = { rect: null, bar: null, target: null }
 
+/** The settings the build switch carries as they are. The theme has its own rule. */
+const CARRIED_SETTINGS = [
+  'sound',
+  'volume',
+  'brightness',
+  'wallpaper',
+  'wifi',
+  'bluetooth',
+  'airplane',
+  'batterySaver',
+  'nightLight',
+  'accessibility',
+] as const
+
 function initialDesktop(): Desktop {
   return { left: 0, top: 0, width: window.innerWidth, height: window.innerHeight - TASKBAR_HEIGHT }
 }
@@ -271,6 +295,10 @@ interface OsState {
   finishBoot: () => void
   login: () => void
   logout: () => void
+  /** Takes what v1 had on screen, left by the build switch. See handoff.js. */
+  adoptHandoff: (handoff: Handoff) => void
+  /** Swaps to v1 with nothing on screen changing. See handoff.js. */
+  switchBuild: (url: string, name: string, go?: (url: string) => void) => void
 
   openApp: (
     app: string,
@@ -467,6 +495,73 @@ export const useOsStore = create<OsState>()(
           quickSettingsOpen: false,
           widgetsOpen: false,
         })
+      },
+
+      adoptHandoff: (handoff) => {
+        const { settings: carried, desktop: icons } = handoff
+        const state = get()
+        const settings = { ...state.settings }
+        for (const key of CARRIED_SETTINGS) {
+          const value = carried[key]
+          if (value !== null) Object.assign(settings, { [key]: value })
+        }
+        // Until the visitor picks a theme, both builds follow the system.
+        if (carried.themeChosen === false) settings.theme = initialTheme(null, prefersDark())
+        else if (carried.themeChosen && carried.theme) settings.theme = carried.theme
+        const restored = restoredWindows(handoff, nextWindowId, state.nextWindowZ)
+        set({
+          // The screen is already up, so there is no boot screen, and no lock
+          // screen unless the visitor was signed out.
+          isBooting: false,
+          loggedIn: handoff.signedIn,
+          settings,
+          themeChosen: carried.themeChosen ?? state.themeChosen,
+          pinnedApps: icons.pinnedApps ?? state.pinnedApps,
+          desktopIconSize: icons.iconSize ?? state.desktopIconSize,
+          desktopIconsVisible: icons.iconsVisible ?? state.desktopIconsVisible,
+          iconPositions: icons.iconPositions,
+          desktopZoom: icons.zoom ?? 1,
+          windows: restored.windows.map(({ extras, ...win }) => ({
+            ...win,
+            loading: false,
+            ...(Object.keys(extras).length ? { extra: extras } : {}),
+          })),
+          focusedWindowId: restored.focusedId,
+          nextWindowZ: restored.nextWindowZ,
+          // The taskbar keeps the weather it showed, rather than say Loading.
+          ...(handoff.weather ? { weather: { ...handoff.weather, status: 'ready' as const } } : {}),
+        })
+      },
+
+      switchBuild: (url, name, go = (to) => window.location.assign(to)) => {
+        const state = get()
+        const handoff = createHandoff(
+          {
+            from: 'v2',
+            signedIn: state.loggedIn,
+            windows: state.windows.map((w) => ({ ...w, extras: { ...w.extra, ...liveExtras(w.id) } })),
+            focusedId: state.focusedWindowId,
+            settings: { ...state.settings, themeChosen: state.themeChosen },
+            desktop: {
+              pinnedApps: state.pinnedApps,
+              iconSize: state.desktopIconSize,
+              iconsVisible: state.desktopIconsVisible,
+              iconPositions: state.iconPositions,
+              zoom: state.desktopZoom,
+            },
+            consent: readConsent(),
+            weather: state.weather.status === 'ready' && typeof state.weather.temp === 'number' ? { ...state.weather, temp: state.weather.temp } : null,
+          },
+          Date.now(),
+        )
+        try {
+          writeHandoff(sessionStorage, handoff)
+        } catch {
+          // Blocked storage: v1 starts afresh, as a plain link would.
+        }
+        // The same event as v1's, so that the logs read alike.
+        state.logEvent('System', 'Information', `Version switch: opening ${name} (${url})`)
+        go(url)
       },
 
       openApp: (app, title, options) => {
