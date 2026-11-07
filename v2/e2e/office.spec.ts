@@ -217,22 +217,24 @@ for (const build of BUILDS) {
   test.describe(`${build.name} PowerPoint`, () => {
     test.beforeEach(({ page }) => boot(page, build.url))
 
-    test('makes a slide of each project', async ({ page }) => {
+    // The case studies themselves are tested in case-studies.spec.ts.
+    test('opens on the first project, with a case study for each project', async ({ page }) => {
       const win = await open(page, 'powerpoint')
-      await expect(win.locator('[data-slide-thumb]')).toHaveCount(PROJECTS.length)
+      await expect(win.locator('[data-deck]')).toHaveText(PROJECTS.map((project) => project.title))
       await expect(win.locator('[data-slide-title]')).toHaveText(PROJECTS[0].title)
-      await expect(win.locator('[data-slide-status]')).toHaveText(`Slide 1 of ${PROJECTS.length}`)
-      await win.locator('[data-slide-thumb]').nth(2).click()
+      await expect(win.locator('[data-slide-status]')).toHaveText(/^Slide 1 of \d+$/)
+      await win.locator('[data-deck]').nth(2).click()
       await expect(win.locator('[data-slide-title]')).toHaveText(PROJECTS[2].title)
     })
 
     test('the arrow keys change slides only while PowerPoint has focus', async ({ page }) => {
       const win = await open(page, 'powerpoint')
       const title = win.locator('[data-slide-title]')
-      await expect(title).toHaveText(PROJECTS[0].title)
+      await win.locator('[data-deck]').nth(1).click()
+      await expect(title).toHaveText(PROJECTS[1].title)
       await win.locator('[data-slide-stage]').click()
       await page.keyboard.press('ArrowRight')
-      await expect(title).toHaveText(PROJECTS[1].title)
+      await expect(title).toHaveText('Problem')
 
       // Another window takes focus, and the arrows are its own.
       await openApp(page, 'calculator')
@@ -242,23 +244,23 @@ for (const build of BUILDS) {
       await page.keyboard.press('ArrowRight')
       await page.keyboard.press('ArrowRight')
       await page.waitForTimeout(200)
-      await expect(title).toHaveText(PROJECTS[1].title)
+      await expect(title).toHaveText('Problem')
 
       // Back in PowerPoint, they change slides again.
       await calculator.getByRole('button', { name: 'Close', exact: true }).click()
       await win.locator('[data-slide-stage]').click()
       await page.keyboard.press('ArrowLeft')
-      await expect(title).toHaveText(PROJECTS[0].title)
+      await expect(title).toHaveText(PROJECTS[1].title)
       await page.keyboard.press('End')
-      await expect(title).toHaveText(PROJECTS[PROJECTS.length - 1].title)
+      await expect(title).toHaveText('Desktop and mobile')
     })
 
-    test('the status bar buttons change slides too', async ({ page }) => {
+    test('the Previous and Next buttons change slides too', async ({ page }) => {
       const win = await open(page, 'powerpoint')
       await win.getByRole('button', { name: 'Next slide' }).click()
-      await expect(win.locator('[data-slide-status]')).toHaveText(`Slide 2 of ${PROJECTS.length}`)
+      await expect(win.locator('[data-slide-status]')).toHaveText(/^Slide 2 of \d+$/)
       await win.getByRole('button', { name: 'Previous slide' }).click()
-      await expect(win.locator('[data-slide-status]')).toHaveText(`Slide 1 of ${PROJECTS.length}`)
+      await expect(win.locator('[data-slide-status]')).toHaveText(/^Slide 1 of \d+$/)
     })
 
     test('on a phone the slide shrinks to fit and its title wraps by words', async ({ page }) => {
@@ -275,7 +277,7 @@ for (const build of BUILDS) {
       })
       expect(fit.inside).toBe(true)
       expect(fit.width).toBeGreaterThan(250)
-      await expect(win.locator('[data-slide-thumb]').first()).toBeVisible()
+      await expect(win.locator('[data-deck]').first()).toBeVisible()
       expect(await sideways(page)).toBeLessThanOrEqual(0)
     })
   })
@@ -435,8 +437,8 @@ test('Word, Excel and PowerPoint show the same data in both builds', async ({ br
   })
   expect(cells[0]).toEqual(cells[1])
   const slides = await inBothBuilds(browser, 'powerpoint', { width: 1440, height: 900 }, async (win) => {
-    await expect(win.locator('[data-slide-thumb]')).toHaveCount(PROJECTS.length)
-    return win.locator('[data-slide-thumb]').allInnerTexts()
+    await expect(win.locator('[data-deck]')).toHaveCount(PROJECTS.length)
+    return win.locator('[data-deck]').allInnerTexts()
   })
   expect(slides[0]).toEqual(slides[1])
 })

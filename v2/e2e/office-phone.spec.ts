@@ -3,8 +3,9 @@ import { test, expect, type Locator, type Page } from '@playwright/test'
 
 // Word, PowerPoint and PuTTY on real phones: as an iPhone on WebKit, Safari's
 // own engine, and as a Pixel on Chromium. The page and the slide shrink to fit
-// with CSS zoom, which each engine must draw the same way. office.spec.ts
-// covers the rest on the desktop.
+// with CSS zoom, which each engine must draw the same way, and PowerPoint's
+// case studies turn with a swipe. office.spec.ts and case-studies.spec.ts
+// cover the rest on the desktop.
 
 const BUILDS = [
   { name: 'v1', url: process.env.V1_URL ?? 'http://localhost:8765/' },
@@ -56,6 +57,38 @@ const wordLines = (target: Locator) =>
 const sideways = (page: Page) =>
   page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)
 
+/**
+ * A finger drawn across the middle of an element. Chromium takes it through its
+ * own touch input; WebKit has no such door, so there the page gets the touch
+ * events, as phone.spec.ts does, carrying their touches.
+ */
+async function swipe(page: Page, browserName: string, target: Locator, direction: 'left' | 'right') {
+  const box = await target.boundingBox()
+  if (!box) throw new Error('nothing to swipe')
+  const y = box.y + box.height / 2
+  const [from, to] = direction === 'left' ? [box.x + box.width * 0.8, box.x + box.width * 0.2] : [box.x + box.width * 0.2, box.x + box.width * 0.8]
+  const points = Array.from({ length: 7 }, (_, i) => ({ x: from + ((to - from) * i) / 6, y }))
+  if (browserName === 'chromium') {
+    const cdp = await page.context().newCDPSession(page)
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [points[0]] })
+    for (const point of points.slice(1)) await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [point] })
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] })
+    await cdp.detach()
+    return
+  }
+  await page.evaluate((path) => {
+    const target = document.elementFromPoint(path[0].x, path[0].y)
+    const raise = (type: string, at: { x: number; y: number } | null) => {
+      const event = new Event(type, { bubbles: true, cancelable: true })
+      Object.defineProperty(event, 'touches', { value: at ? [{ target, clientX: at.x, clientY: at.y }] : [] })
+      target?.dispatchEvent(event)
+    }
+    raise('touchstart', path[0])
+    for (const point of path.slice(1)) raise('touchmove', point)
+    raise('touchend', null)
+  }, points)
+}
+
 for (const build of BUILDS) {
   test.describe(`${build.name} office apps on a phone`, () => {
     test.beforeEach(({ page }) => boot(page, build.url))
@@ -85,9 +118,56 @@ for (const build of BUILDS) {
         return slide.left >= box.left - 1 && slide.right <= box.right + 1
       })
       expect(inside).toBe(true)
-      await win.locator('[data-slide-thumb]').nth(1).click()
+      await win.locator('[data-deck]').nth(1).click()
       await expect(title).toHaveText(portfolio.projects[1].title)
       expect(await sideways(page)).toBeLessThanOrEqual(0)
+    })
+
+    test('a swipe across the slide turns it, in the window and in the show', async ({ page, browserName }) => {
+      const win = await open(page, 'powerpoint', 'PowerPoint')
+      const title = win.locator('[data-slide-stage] [data-slide-title]')
+      // Boulevard Logistics, whose case study has every section.
+      await win.locator('[data-deck="10"]').tap()
+      await expect(title).toHaveText('Boulevard Logistics')
+      const stage = win.locator('[data-slide-stage]')
+      await swipe(page, browserName, stage, 'left')
+      await expect(title).toHaveText('Problem')
+      await swipe(page, browserName, stage, 'left')
+      await expect(title).toHaveText('Approach')
+      await swipe(page, browserName, stage, 'right')
+      await expect(title).toHaveText('Problem')
+
+      await win.getByRole('button', { name: 'Present' }).tap()
+      const show = page.locator('[data-present]')
+      await expect(show.locator('[data-slide-title]')).toHaveText('Problem')
+      const box = await show.boundingBox()
+      expect(box).toEqual({ x: 0, y: 0, ...page.viewportSize() })
+      await swipe(page, browserName, show, 'left')
+      await expect(show.locator('[data-slide-title]')).toHaveText('Approach')
+      await expect(show.locator('[data-show-counter]')).toHaveText('3 / 6')
+      await swipe(page, browserName, show, 'right')
+      await expect(show.locator('[data-slide-title]')).toHaveText('Problem')
+      await show.getByRole('button', { name: 'End show' }).tap()
+      await expect(show).toBeHidden()
+      await expect(title).toHaveText('Problem')
+      expect(await sideways(page)).toBeLessThanOrEqual(0)
+    })
+
+    test("PowerPoint's controls are big enough for a finger", async ({ page }) => {
+      const win = await open(page, 'powerpoint', 'PowerPoint')
+      await expect(win.locator('[data-slide-title]')).toHaveText(portfolio.projects[0].title)
+      const small = async (targets: Locator) =>
+        (await targets.evaluateAll((all) => all.map((el) => [el.getAttribute('aria-label') ?? el.textContent?.trim(), el.getBoundingClientRect()] as const)))
+          .filter(([, box]) => box.width < 44 || box.height < 44)
+          .map(([name]) => name)
+      expect(await small(win.locator('.ppt-toolbar button'))).toEqual([])
+      expect(await small(win.locator('[data-deck]'))).toEqual([])
+      await win.getByRole('button', { name: 'Present' }).tap()
+      const show = page.locator('[data-present]')
+      await expect(show).toBeVisible()
+      expect(await small(show.locator('button'))).toEqual([])
+      await show.getByRole('button', { name: 'End show' }).tap()
+      await expect(show).toBeHidden()
     })
 
     test('PuTTY fits without scrolling sideways', async ({ page }) => {
