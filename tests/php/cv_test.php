@@ -106,7 +106,9 @@ check('person: links GitHub', in_array($profile['github'], $person['sameAs'], tr
 $cvPhp = html_entity_decode((string)file_get_contents("{$root}/data/cv.php"), ENT_QUOTES | ENT_HTML5, 'UTF-8');
 $portfolioText = (string)file_get_contents("{$root}/data/portfolio.json");
 check('profile: the name matches the CV', str_contains($cvPhp, $profile['name'] ?? '?'));
-check('profile: the headline matches the CV', str_contains($cvPhp, $profile['headline'] ?? '?'));
+check('profile: the headline is the one the owner chose', ($profile['headline'] ?? '') === 'Full Stack Developer');
+preg_match('#<h1[^>]*>[^<]*</h1>\s*<p[^>]*>([^<]*)</p>#', $cvPhp, $cvHeadline);
+check('profile: the headline heads the CV', ($cvHeadline[1] ?? '') === ($profile['headline'] ?? '?'));
 check('profile: the location matches the CV', str_contains($cvPhp, $profile['location'] ?? '?'));
 foreach ($profile['knowsAbout'] ?? [] as $skill) {
     check("profile: the CV claims {$skill}", stripos($cvPhp, $skill) !== false || stripos($portfolioText, $skill) !== false);

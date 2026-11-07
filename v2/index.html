@@ -3,8 +3,9 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content" />
-    <title>DeVanté Johnson-Rose | Full Stack Developer & Systems Engineer · Portfolio OS (React)</title>
-    <meta name="description" content="React-built interactive Windows-style portfolio of DeVanté Johnson-Rose - Senior Full Stack Developer and Systems Engineer in the UK. Working Paint, Terminal, Explorer, Outlook, FL Studio and more." />
+    <title>DeVanté Johnson-Rose | Full Stack Developer · Portfolio OS (React)</title>
+    <!-- The description and share tags read as v1's do, as both desktops share one canonical. -->
+    <meta name="description" content="DeVanté Johnson-Rose is a Full Stack Developer in the UK building scalable web platforms, enterprise infrastructure and developer tooling. Explore the interactive Windows-style portfolio." />
     <meta name="author" content="DeVanté Johnson-Rose" />
     <meta name="keywords" content="DeVanté Johnson-Rose, full stack developer UK, systems engineer, React developer, TypeScript, portfolio, Vite, devante.johnson-rose.co.uk" />
     <meta name="robots" content="index, follow, max-image-preview:large" />
@@ -15,8 +16,8 @@
     <!-- Open Graph -->
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="DeVanté Johnson-Rose · Portfolio OS" />
-    <meta property="og:title" content="DeVanté Johnson-Rose | Portfolio OS (React)" />
-    <meta property="og:description" content="React + TypeScript port of the Portfolio OS. Same Windows 11-styled desktop, every app working." />
+    <meta property="og:title" content="DeVanté Johnson-Rose | Full Stack Developer" />
+    <meta property="og:description" content="Interactive Windows 11-styled portfolio. Open the apps, browse the projects, drop into the CV. Every desktop tile is a real, working surface." />
     <meta property="og:url" content="https://devante.johnson-rose.co.uk/" />
     <meta property="og:image" content="https://devante.johnson-rose.co.uk/assets/img/share-card.png" />
     <meta property="og:image:width" content="1200" />
@@ -27,8 +28,8 @@
 
     <!-- Twitter / X card -->
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="DeVanté Johnson-Rose | Portfolio OS (React)" />
-    <meta name="twitter:description" content="React + TypeScript port of the interactive Windows-style portfolio." />
+    <meta name="twitter:title" content="DeVanté Johnson-Rose | Full Stack Developer" />
+    <meta name="twitter:description" content="Interactive Windows-style portfolio with working Paint, Terminal, Explorer, Outlook, FL Studio, and more." />
     <meta name="twitter:image" content="https://devante.johnson-rose.co.uk/assets/img/share-card.png" />
     <meta name="twitter:image:alt" content="Portrait of DeVanté Johnson-Rose beside his name and devante.johnson-rose.co.uk" />
 
@@ -42,9 +43,9 @@
     <!-- The default wallpaper, shown behind the lock screen and the desktop. -->
     <link rel="preload" as="image" href="/assets/img/wallpaper-bloom.webp" />
 
-    <!-- JSON-LD: Person + WebSite, the same as v1's in partials/shell.php. worksFor,
-         alumniOf, knowsAbout and sameAs follow data/profile.json, which /cv reads
-         (src/data/profile.test.ts checks all three). -->
+    <!-- JSON-LD: Person + WebSite, the same as v1's in partials/shell.php. jobTitle,
+         worksFor, alumniOf, knowsAbout and sameAs follow data/profile.json, which /cv
+         reads (src/data/profile.test.ts checks all three). -->
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
@@ -55,7 +56,7 @@
             "name": "DeVanté Johnson-Rose",
             "url": "https://devante.johnson-rose.co.uk/",
             "image": "https://devante.johnson-rose.co.uk/assets/img/profile.webp",
-            "jobTitle": "Senior Full Stack Developer & Systems Engineer",
+            "jobTitle": "Full Stack Developer",
             "email": "mailto:devante@johnson-rose.co.uk",
             "worksFor": [
               { "@type": "Organization", "name": "Killik & Co" },

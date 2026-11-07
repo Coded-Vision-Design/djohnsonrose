@@ -292,5 +292,5 @@ MIT. Use as much or as little of this as you like - it's here to be read.
 
 ## Contact
 
-DeVanté Johnson-Rose · Applications Support Engineer & Full-Stack Developer
+DeVanté Johnson-Rose · Full Stack Developer
 **<https://devante.johnson-rose.co.uk>**

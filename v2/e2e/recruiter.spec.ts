@@ -304,16 +304,10 @@ test.describe('shared metadata', () => {
       )
       people.push(await ldPerson(page))
     }
-    // The job title is the one difference: the desktops keep their meta wording
-    // and /cv uses the CV's headline, until the owner settles on one.
-    const shared = (person: Record<string, unknown>) => {
-      const copy = { ...person }
-      delete copy.jobTitle
-      return copy
-    }
-    expect(shared(people[1])).toEqual(shared(people[0]))
-    expect(shared(people[2])).toEqual(shared(people[0]))
-    expect(people[2].jobTitle).toBe(profile.headline)
+    // One person in all three, job title included, as the owner has settled it.
+    expect(people[1]).toEqual(people[0])
+    expect(people[2]).toEqual(people[0])
+    expect(people[0].jobTitle).toBe(profile.headline)
 
     const image = await request.get(new URL('assets/img/share-card.png', V1).href)
     expect(image.status()).toBe(200)

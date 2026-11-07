@@ -5,6 +5,12 @@ import shellPhp from '../../../partials/shell.php?raw'
 import indexHtml from '../../index.html?raw'
 import sitemap from '../../../sitemap.xml?raw'
 import llms from '../../../llms.txt?raw'
+import llm from '../../../llm.txt?raw'
+import manifest from '../../../manifest.json'
+import layoutPhp from '../../../pages/layout.php?raw'
+import cvPhp from '../../../data/cv.php?raw'
+import settingsPhp from '../../../partials/apps/settings.php?raw'
+import settingsTsx from '../apps/settings/Settings.tsx?raw'
 
 // The head of each desktop is written by hand: v1's in partials/shell.php and
 // v2's in index.html. These checks keep the two identical where they must be,
@@ -67,13 +73,67 @@ describe('desktop metadata', () => {
   it('fills out the person from data/profile.json', () => {
     const person = node(shellPhp, 'Person')!
     expect(person['@id']).toBe(`${profile.url}#person`)
-    expect(person.jobTitle).toBeTruthy()
+    expect(person.jobTitle).toBe(profile.headline)
     expect(person.worksFor).toEqual(
       profile.worksFor.map((name) => expect.objectContaining({ '@type': 'Organization', name })),
     )
     expect(person.alumniOf).toEqual({ '@type': 'CollegeOrUniversity', name: profile.alumniOf })
     expect(person.knowsAbout).toEqual(profile.knowsAbout)
     expect(person.sameAs).toEqual([profile.github, profile.linkedin].filter(Boolean))
+  })
+})
+
+// The owner settled the headline: "Full Stack Developer", everywhere a title
+// is shown or declared. Job history ("Applications Support Engineer at Killik
+// & Co") is a fact, not a headline, so it stays where it is.
+describe('the headline', () => {
+  const OLD_WORDING = /Senior|Systems Engineer|Applications Support Engineer · /
+
+  it('is Full Stack Developer', () => {
+    expect(profile.headline).toBe('Full Stack Developer')
+  })
+
+  it.each(Object.entries(HEADS))('%s names it in the title, description and share tags', (_, html) => {
+    const title = html.match(/<title>([^<]*)<\/title>/)?.[1] ?? ''
+    expect(title.startsWith(`${profile.name} | ${profile.headline} · `)).toBe(true)
+    expect(meta(html, 'description')).toContain(` ${profile.headline} `)
+    expect(meta(html, 'og:title')).toBe(`${profile.name} | ${profile.headline}`)
+    expect(meta(html, 'twitter:title')).toBe(`${profile.name} | ${profile.headline}`)
+    for (const key of ['description', 'og:title', 'og:description', 'twitter:title', 'twitter:description']) {
+      expect(meta(html, key), key).not.toMatch(OLD_WORDING)
+    }
+    expect(title).not.toMatch(OLD_WORDING)
+  })
+
+  it.each(Object.entries(HEADS))('%s declares it as the job title', (_, html) => {
+    expect(node(html, 'Person')?.jobTitle).toBe(profile.headline)
+  })
+
+  it('reads the same in both builds, which share one canonical', () => {
+    for (const key of ['description', 'og:title', 'og:description', 'twitter:title', 'twitter:description']) {
+      expect(meta(indexHtml, key), key).toBe(meta(shellPhp, key))
+    }
+  })
+
+  it('is in the web manifest, the page footer and llm.txt', () => {
+    expect(manifest.description).toContain(` ${profile.headline} `)
+    expect(manifest.description).not.toMatch(OLD_WORDING)
+    expect(layoutPhp).toContain(`${profile.name}, ${profile.headline}.`)
+    expect(llm.split(/\r?\n/)[0]).toBe(`${profile.name} | ${profile.headline}`)
+  })
+
+  it('heads the Word CV', () => {
+    expect(cvPhp.match(/<h1[^>]*>[^<]*<\/h1>\s*<p[^>]*>([^<]*)<\/p>/)?.[1]).toBe(profile.headline)
+  })
+
+  // e2e/app-parity.spec.ts checks what each build shows.
+  it('is read from data/profile.json by both Settings apps, not written out', () => {
+    expect(settingsPhp).toContain("load_shared_data('profile')")
+    expect(settingsTsx).toContain("import profile from '../../../../data/profile.json'")
+    for (const source of [settingsPhp, settingsTsx]) {
+      expect(source).toContain('data-about-headline')
+      expect(source).not.toContain('Applications Support Engineer · ')
+    }
   })
 })
 

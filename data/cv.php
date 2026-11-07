@@ -2,7 +2,7 @@
     <!-- Header -->
     <div class="text-center mb-10 border-b-2 border-black pb-6">
         <h1 class="text-4xl font-bold uppercase tracking-widest mb-2">DeVanté Johnson-Rose</h1>
-        <p class="text-lg text-gray-700 font-semibold">Applications Support Engineer · Full-Stack Developer</p>
+        <p class="text-lg text-gray-700 font-semibold">Full Stack Developer</p>
         <p class="text-gray-500 text-sm mt-2">📧 devante@johnson-rose.co.uk · ☎ 07429 490 333 · 📍 Essex, UK · 🌍 devante.johnson-rose.co.uk</p>
     </div>
 
