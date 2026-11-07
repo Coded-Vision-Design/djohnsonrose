@@ -55,6 +55,8 @@ document.addEventListener('alpine:init', () => {
         focusedWindowId: null,
         contextMenu: { open: false, x: 0, y: 0, items: [], variant: 'modern' },
         nextWindowZ: 100,
+        // How many windows have opened, so that the address can tell an open from a focus. See address.js.
+        windowsOpened: 0,
         eventLogs: [],
         logEvent(source, level, description, details = {}) {
             this.eventLogs.unshift({
@@ -280,6 +282,9 @@ document.addEventListener('alpine:init', () => {
                 this.playSound('error');
                 return;
             }
+            // A Visit Site file's real tab opens now, inside the click. See siteToVisit.
+            const site = OsWindowing.siteToVisit(appHandle, extraData);
+            if (site) window.open(site, '_blank', 'noopener,noreferrer');
 
             const existing = this.windows.find(w => w.app === appHandle);
             if (existing) {
@@ -336,6 +341,7 @@ document.addEventListener('alpine:init', () => {
 
             this.windows.push(newWindow);
             this.focusedWindowId = id;
+            this.windowsOpened++;
 
             fetch(`${window.portfolioConfig.basePath}api/app.php?name=${appHandle}`)
                 .then(res => {

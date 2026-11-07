@@ -6,11 +6,44 @@ const PHP_ORIGIN = process.env.PHP_ORIGIN ?? 'http://localhost:8765'
 
 // Local-dev helper: any request that lands on Vite outside the /v2/ base
 // gets redirected to the PHP server. This makes the v1↔v2 cross-link
-// buttons in the taskbar "just work" without per-host wiring.
+// buttons in the taskbar "just work" without per-host wiring. The PHP server
+// also decides which pages under /v2/ are v2's: see the second middleware.
 function redirectRootToPhp(): Plugin {
   return {
     name: 'redirect-root-to-php',
     configureServer(server) {
+      // In production Apache answers a /v2/ address that is neither v2's desktop
+      // nor an app's with v1's 404 page (see .htaccess). PHP's dev server knows
+      // the same addresses (v2_address_known in lib/routes.php): it sends v2's
+      // back here and answers the rest with that page, which is passed on.
+      server.middlewares.use((req, res, next) => {
+        const url = req.url ?? '/'
+        const pathname = url.split('?')[0]
+        const page = req.method === 'GET' && (req.headers.accept ?? '').includes('text/html')
+        if (
+          !page ||
+          !pathname.startsWith('/v2/') ||
+          /^\/v2\/(@|src\/|node_modules\/)/.test(pathname) || // Vite's own files
+          /\.\w+$/.test(pathname) // files, such as /v2/manifest.json
+        ) {
+          next()
+          return
+        }
+        fetch(PHP_ORIGIN + url, { headers: { accept: 'text/html' }, redirect: 'manual' })
+          .then(async (php) => {
+            if (php.status !== 404) {
+              next()
+              return
+            }
+            res.writeHead(404, {
+              'Content-Type': php.headers.get('content-type') ?? 'text/html; charset=UTF-8',
+              'Content-Security-Policy': php.headers.get('content-security-policy') ?? "default-src 'none'",
+            })
+            res.end(await php.text())
+          })
+          // Without the PHP server, the page is v2's, as before.
+          .catch(() => next())
+      })
       server.middlewares.use((req, res, next) => {
         const url = req.url ?? '/'
         if (

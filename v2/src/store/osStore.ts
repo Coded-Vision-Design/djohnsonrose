@@ -44,6 +44,8 @@ import { filesystem, type FileSystem, type FsEntry } from '../data/filesystem'
 import { forgetReferences } from '../../../assets/js/windowing/references.js'
 import { addNotification, type ShellNotification } from '../../../assets/js/windowing/calendar.js'
 
+import { siteToVisit } from '../../../assets/js/windowing/browser.js'
+
 const prefersDark = () => !!window.matchMedia?.('(prefers-color-scheme: dark)').matches
 
 /** Plays the close or minimise animation on a copy of the window. See shell-ui.js. */
@@ -202,6 +204,8 @@ interface OsState {
   windows: WinWindow[]
   focusedWindowId: number | null
   nextWindowZ: number
+  /** How many windows have opened, so that the address can tell an open from a focus. See address.js. */
+  windowsOpened: number
   snapPreview: SnapPreview
   snapFlyout: SnapFlyoutState | null
   snapAssist: AssistPlan | null
@@ -384,6 +388,7 @@ export const useOsStore = create<OsState>()(
       windows: [],
       focusedWindowId: null,
       nextWindowZ: 100,
+      windowsOpened: 0,
       snapPreview: EMPTY_PREVIEW,
       snapFlyout: null,
       snapAssist: null,
@@ -468,6 +473,9 @@ export const useOsStore = create<OsState>()(
       openApp: (app, title, options) => {
         const recent = recentKey(app, options?.extra)
         if (recent) set({ recent: { ...get().recent, [recent]: Date.now() } })
+        // A Visit Site file's real tab opens now, inside the click. See siteToVisit.
+        const site = siteToVisit(app, options?.extra)
+        if (site) window.open(site, '_blank', 'noopener,noreferrer')
         const state = get()
         // Launching an app always closes start/quick-settings/widgets popups.
         if (
@@ -523,6 +531,7 @@ export const useOsStore = create<OsState>()(
           windows: [...state.windows, w],
           focusedWindowId: id,
           nextWindowZ: state.nextWindowZ + 1,
+          windowsOpened: state.windowsOpened + 1,
         })
         // Single System logEvent matches v1's openApp: the logEvent router
         // already records System events, so an explicit track('Open App')

@@ -112,7 +112,8 @@
         import * as weather from '<?php echo BASE_PATH; ?>assets/js/windowing/weather.js?v=<?php echo @filemtime(__DIR__ . '/../assets/js/windowing/weather.js'); ?>';
         import * as switcher from '<?php echo BASE_PATH; ?>assets/js/windowing/switcher.js?v=<?php echo @filemtime(__DIR__ . '/../assets/js/windowing/switcher.js'); ?>';
         import * as calendar from '<?php echo BASE_PATH; ?>assets/js/windowing/calendar.js?v=<?php echo @filemtime(__DIR__ . '/../assets/js/windowing/calendar.js'); ?>';
-        window.OsWindowing = { ...windowing, ...shellCore, ...fileOps, ...textOps, ...shellUi, ...calculator, ...terminal, ...browser, ...media, ...sql, ...devtools, ...references, ...weather, ...switcher, ...calendar };
+        import * as address from '<?php echo BASE_PATH; ?>assets/js/windowing/address.js?v=<?php echo @filemtime(__DIR__ . '/../assets/js/windowing/address.js'); ?>';
+        window.OsWindowing = { ...windowing, ...shellCore, ...fileOps, ...textOps, ...shellUi, ...calculator, ...terminal, ...browser, ...media, ...sql, ...devtools, ...references, ...weather, ...switcher, ...calendar, ...address };
         window.FlStudio = flStudio;
         window.OfficeApps = officeApps;
         window.Drawing = drawing;

@@ -27,6 +27,16 @@ export function siteName(url) {
 
 export const tabTitle = (url) => (url === HOME_URL ? HOME_TITLE : siteName(url));
 
+/**
+ * The real site a Visit Site file opens in a new tab, or null. Each build's
+ * openApp opens it at once, inside the visitor's click, as pop-up blockers
+ * (Safari's above all) stop a tab opened later, once Chrome has loaded.
+ */
+export function siteToVisit(app, extra) {
+  const url = extra?.initialUrl;
+  return app === 'edge' && typeof url === 'string' && isExternal(url) ? url : null;
+}
+
 export function newTab(id, address = HOME_URL) {
   const url = normaliseAddress(address);
   return { id, url, title: tabTitle(url), back: [], forward: [] };

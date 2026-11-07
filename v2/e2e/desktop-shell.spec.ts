@@ -698,9 +698,11 @@ for (const build of BUILDS) {
 }
 
 test.describe('v2 routing', () => {
-  test('an unknown address still shows the desktop', async ({ page }) => {
+  // As at v1's root. See e2e/address.spec.ts for the rest of the addresses.
+  test('an unknown address is v1’s 404 page', async ({ page }) => {
     await prepare(page)
-    await page.goto(`${BUILDS[1].url}no-such-page`)
-    await expect(startButton(page)).toBeVisible({ timeout: 10_000 })
+    const res = await page.goto(`${BUILDS[1].url}no-such-page`)
+    expect(res?.status()).toBe(404)
+    await expect(page.getByRole('heading', { name: 'Page not found' })).toBeVisible()
   })
 })
