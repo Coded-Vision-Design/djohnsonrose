@@ -180,9 +180,9 @@ check('citations: never carry the section text', !isset($cited[0]['text']));
 check('citations: not a list gives none', copilot_citations('role-killik-co', $sources) === []);
 
 // ---- copilot_chat_reply ----
-$reply = copilot_chat_reply(['answer' => 'He maintains business-critical applications — and automates them.', 'covered' => true, 'citations' => ['role-killik-co', 'nope']], $sources);
+$reply = copilot_chat_reply(['answer' => "He maintains business-critical applications \u{2014} and automates them.", 'covered' => true, 'citations' => ['role-killik-co', 'nope']], $sources);
 check('chat reply: keeps the answer', str_starts_with($reply['answer'], 'He maintains'));
-check('chat reply: house style has no em dash', !str_contains($reply['answer'], '—') && str_contains($reply['answer'], ' - '));
+check('chat reply: house style has no em dash', !str_contains($reply['answer'], "\u{2014}") && str_contains($reply['answer'], ' - '));
 check('chat reply: drops a citation that does not exist', array_column($reply['citations'], 'id') === ['role-killik-co']);
 check('chat reply: is grounded when a real section backs it', $reply['grounded'] === true && $reply['covered'] === true);
 $unbacked = copilot_chat_reply(['answer' => 'He likes cheese.', 'covered' => true, 'citations' => ['invented']], $sources);
