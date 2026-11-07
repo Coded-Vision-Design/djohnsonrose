@@ -3,7 +3,7 @@
     <div class="office-titlebar">
         <div class="office-titlebar-name">
             <img :src="imgPath + 'powerpoint.webp'" alt="">
-            <span>Portfolio.pptx - PowerPoint</span>
+            <span data-deck-title x-text="deck ? `${deck.title} case study - PowerPoint` : 'Case studies - PowerPoint'"></span>
         </div>
         <span class="office-user office-optional">DeVanté Johnson-Rose</span>
     </div>
@@ -15,34 +15,42 @@
     </div>
 
     <div class="ppt-body">
-        <div class="ppt-thumbs" role="group" aria-label="Slides">
-            <template x-for="(slide, index) in slides" :key="slide.id">
-                <button type="button" class="ppt-thumb" data-slide-thumb :aria-current="index === active ? 'true' : null" @click="active = index">
-                    <img :src="slide.image" alt="" loading="lazy">
-                    <span x-text="`${index + 1}. ${slide.title}`"></span>
+        <nav class="ppt-thumbs" aria-label="Case studies">
+            <template x-for="(item, index) in decks" :key="item.id">
+                <button type="button" class="ppt-thumb" :data-deck="item.id" :aria-current="index === deckAt ? 'true' : null" @click="pick(index)">
+                    <template x-if="item.cover">
+                        <img :src="item.cover" alt="" loading="lazy">
+                    </template>
+                    <span x-text="item.title"></span>
                 </button>
             </template>
-        </div>
+        </nav>
 
-        <div class="ppt-stage" data-slide-stage x-ref="stage">
-            <template x-if="slides[active]">
-                <div class="ppt-slide" data-slide :style="`--office-zoom: ${fit}`">
-                    <img :src="slides[active].image" :alt="`The ${slides[active].title} website`">
-                    <div class="ppt-slide-body">
-                        <div class="ppt-slide-count" x-text="`Slide ${active + 1} / ${slides.length}`"></div>
-                        <h2 class="ppt-slide-title" data-slide-title x-text="slides[active].title"></h2>
-                        <p class="ppt-slide-text" x-text="slides[active].description"></p>
-                        <div class="ppt-tags">
-                            <template x-for="tag in slides[active].tags" :key="tag">
-                                <span class="ppt-tag" x-text="tag"></span>
-                            </template>
-                        </div>
-                    </div>
+        <div class="ppt-main">
+            <div class="ppt-stage" data-slide-stage x-ref="stage">
+                <template x-if="slide && deck">
+                    <?php $slideFit = 'fit'; include __DIR__ . '/../powerpoint-slide.php'; ?>
+                </template>
+                <template x-if="!(slide && deck)">
+                    <div class="ppt-message" x-text="state === 'error' ? 'The case studies could not be loaded.' : 'Loading case studies…'"></div>
+                </template>
+            </div>
+
+            <div class="ppt-toolbar" role="group" aria-label="Slides">
+                <div class="ppt-nav">
+                    <button type="button" title="Previous slide" aria-label="Previous slide" :disabled="active === 0" @click="step(-1)">
+                        <svg class="office-icon" viewBox="0 0 24 24" aria-hidden="true"><path :d="ICONS.previous.d"/></svg>
+                    </button>
+                    <span class="ppt-counter" data-slide-counter aria-live="polite" x-text="`${slides.length ? active + 1 : 0} / ${slides.length}`"></span>
+                    <button type="button" title="Next slide" aria-label="Next slide" :disabled="active >= slides.length - 1" @click="step(1)">
+                        <svg class="office-icon" viewBox="0 0 24 24" aria-hidden="true"><path :d="ICONS.next.d"/></svg>
+                    </button>
                 </div>
-            </template>
-            <template x-if="!slides[active]">
-                <div class="ppt-message" x-text="state === 'error' ? 'The slides could not be loaded.' : 'Loading slides…'"></div>
-            </template>
+                <button type="button" class="ppt-present" x-ref="present" :disabled="!slide" @click="present()">
+                    <svg class="office-icon" viewBox="0 0 24 24" aria-hidden="true"><path :d="ICONS.present.d"/></svg>
+                    <span>Present</span>
+                </button>
+            </div>
         </div>
     </div>
 
@@ -53,12 +61,29 @@
         </div>
         <div class="office-status-group">
             <span class="office-optional">Arrow keys change slide</span>
-            <button type="button" title="Previous slide" aria-label="Previous slide" :disabled="active === 0" @click="active = Math.max(0, active - 1)">
-                <svg class="office-icon" viewBox="0 0 24 24" aria-hidden="true"><path :d="ICONS.previous.d"/></svg>
-            </button>
-            <button type="button" title="Next slide" aria-label="Next slide" :disabled="active >= slides.length - 1" @click="active = Math.min(slides.length - 1, active + 1)">
-                <svg class="office-icon" viewBox="0 0 24 24" aria-hidden="true"><path :d="ICONS.next.d"/></svg>
-            </button>
         </div>
     </div>
+
+    <dialog class="ppt-show" data-present :aria-label="deck ? `${deck.title} case study, slide show` : 'Slide show'" tabindex="-1" x-ref="show" @cancel.prevent="endShow()" @close="presenting = false">
+        <div class="ppt-show-stage" x-ref="showStage">
+            <template x-if="presenting && slide && deck">
+                <?php $slideFit = 'showFit'; include __DIR__ . '/../powerpoint-slide.php'; ?>
+            </template>
+        </div>
+        <div class="ppt-show-bar">
+            <div class="ppt-nav">
+                <button type="button" title="Previous slide" aria-label="Previous slide" :disabled="active === 0" @click="step(-1)">
+                    <svg class="office-icon" viewBox="0 0 24 24" aria-hidden="true"><path :d="ICONS.previous.d"/></svg>
+                </button>
+                <span class="ppt-counter" data-show-counter x-text="`${slides.length ? active + 1 : 0} / ${slides.length}`"></span>
+                <button type="button" title="Next slide" aria-label="Next slide" :disabled="active >= slides.length - 1" @click="step(1)">
+                    <svg class="office-icon" viewBox="0 0 24 24" aria-hidden="true"><path :d="ICONS.next.d"/></svg>
+                </button>
+            </div>
+            <button type="button" class="ppt-end-show" title="End show (Esc)" @click="endShow()">
+                <svg class="office-icon" viewBox="0 0 24 24" aria-hidden="true"><path :d="ICONS.endShow.d"/></svg>
+                <span>End show</span>
+            </button>
+        </div>
+    </dialog>
 </div>
