@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { filesystem } from './filesystem'
 import { explorerSidebar, folderPath } from '../../../assets/js/windowing/file-ops.js'
 import data from '../../../data/filesystem.json'
+import portfolio from '../../../data/portfolio.json'
 
 // data/filesystem.json, which both builds show. Path rules live in file-ops.js
 // and are tested in src/windowing/fileOps.test.ts.
@@ -52,17 +53,34 @@ describe('the shared file system', () => {
     }
   })
 
-  it('gives each freelance project a Visit Site link, requirements, plan, outcome and pictures', () => {
+  it('gives each freelance project a Visit Site link, a case study, requirements, plan, outcome and pictures', () => {
     const root = 'C:\\Users\\DeVante\\Projects\\Freelance'
     for (const project of filesystem[root]) {
       if (project.type !== 'folder') continue
       const names = filesystem[`${root}\\${project.name}`].map((entry) => entry.name)
-      for (const required of ['Visit Site.url', 'requirements.txt', 'plan.txt', 'outcome.txt', 'Pictures']) {
+      for (const required of ['Visit Site.url', 'Case study.pptx', 'requirements.txt', 'plan.txt', 'outcome.txt', 'Pictures']) {
         expect(names, `missing '${required}' for ${project.name}`).toContain(required)
       }
       const pictures = filesystem[`${root}\\${project.name}\\Pictures`].map((entry) => entry.name)
       expect(pictures, `missing Desktop UI for ${project.name}`).toContain('Desktop UI.webp')
       expect(pictures, `missing Mobile UI for ${project.name}`).toContain('Mobile UI.webp')
+    }
+  })
+
+  it("opens every project's case study in PowerPoint, at that project's own deck", () => {
+    const projects = 'C:\\Users\\DeVante\\Projects'
+    for (const project of portfolio.projects) {
+      const folder = Object.keys(filesystem).find(
+        (path) => path.startsWith(`${projects}\\`) && path.split('\\').pop() === project.title,
+      )
+      expect(folder, `no folder for ${project.title}`).toBeDefined()
+      const file = filesystem[folder as string].find((entry) => entry.name === 'Case study.pptx')
+      expect(file, `no case study for ${project.title}`).toMatchObject({
+        type: 'app',
+        app: 'powerpoint',
+        icon: '/assets/img/powerpoint.webp',
+        extraData: { deck: project.id },
+      })
     }
   })
 
