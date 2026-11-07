@@ -122,7 +122,10 @@ describe('the build.json step', () => {
 
 /** rsync's rules for a pattern with no slash: it matches a name at any depth. */
 function rsyncMatches(pattern: string, file: string): boolean {
-  const glob = pattern.replace(/[.+^${}()|\\]/g, '\\$&').replace(/\*\*/g, '\u0000').replace(/\*/g, '[^/]*').replace(/\?/g, '[^/]').replace(/\u0000/g, '.*')
+  const glob = pattern
+    .split('**')
+    .map((part) => part.replace(/[.+^${}()|\\[\]]/g, '\\$&').replace(/\*/g, '[^/]*').replace(/\?/g, '[^/]'))
+    .join('.*')
   const regex = new RegExp(`^${glob}$`)
   if (pattern.includes('/')) return regex.test(file)
   return file.split('/').some((part) => regex.test(part))
