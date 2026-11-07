@@ -52,6 +52,8 @@ const readRecent = () => {
 document.addEventListener('alpine:init', () => {
     Alpine.store('os', {
         windows: [],
+        // The last window id given out, so that each new one is unique.
+        lastWindowId: 0,
         focusedWindowId: null,
         contextMenu: { open: false, x: 0, y: 0, items: [], variant: 'modern' },
         nextWindowZ: 100,
@@ -331,7 +333,10 @@ document.addEventListener('alpine:init', () => {
                 return;
             }
 
-            const id = Date.now();
+            // Unique even when several open in the same millisecond, as when the
+            // build switch brings windows back. v2 counts its ids the same way.
+            const id = Math.max(Date.now(), (this.lastWindowId ?? 0) + 1);
+            this.lastWindowId = id;
             const manifest = window.portfolioConfig.apps[appHandle];
 
             const newWindow = {

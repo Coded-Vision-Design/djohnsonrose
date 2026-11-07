@@ -575,6 +575,26 @@ for (const build of BUILDS) {
   })
 
   test.describe(`${build.name} windows`, () => {
+    test('opened in the same moment each get their own window', async ({ page }) => {
+      await boot(page, build)
+      // As the build switch does when it brings several windows back at once.
+      await page.evaluate(() => {
+        const w = window as unknown as {
+          Alpine?: { store: (n: string) => { openApp: (app: string) => void } }
+          __osStore?: { getState: () => { openApp: (app: string) => void } }
+        }
+        const store = w.Alpine ? w.Alpine.store('os') : w.__osStore!.getState()
+        store.openApp('calculator')
+        store.openApp('notepad')
+        store.openApp('settings')
+      })
+      await expect(windowOf(page, 'Calculator')).toBeVisible()
+      await expect(windowOf(page, 'Notepad')).toBeVisible()
+      await expect(windowOf(page, 'Settings')).toBeVisible()
+      const ids = await page.locator('.os-window').evaluateAll((all) => all.map((el) => el.id))
+      expect(new Set(ids).size).toBe(3)
+    })
+
     test('have an app icon in the title bar and animate as they close and minimise', async ({ page }) => {
       // The animation lasts a fifth of a second, so the page notes each one as it starts.
       await page.addInitScript(() => {
