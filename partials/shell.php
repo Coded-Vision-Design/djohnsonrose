@@ -200,6 +200,13 @@
 
     <a href="#main-content" class="os-skip-link">Skip to main content</a>
 
+    <!-- The same notice as v2/index.html. Styled inline, as no stylesheet is certain to load. -->
+    <noscript>
+        <div data-noscript style="position:fixed;inset:0;z-index:2147483647;display:flex;align-items:center;justify-content:center;padding:24px;background:#381759;color:#fff;font:16px/1.5 'Segoe UI',Selawik,system-ui,sans-serif;text-align:center">
+            <p style="max-width:32rem;margin:0">This desktop needs JavaScript. <a href="<?php echo BASE_PATH; ?>cv" style="color:#fff;text-decoration:underline">Read the CV</a> instead, which works without it.</p>
+        </div>
+    </noscript>
+
     <div id="os-root" class="h-full w-full relative overflow-hidden flex flex-col wallpaper-bg">
         <!-- Boot Screen, the same in v2 (BootScreen.tsx) -->
         <div x-show="isBooting"

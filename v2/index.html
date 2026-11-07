@@ -82,6 +82,12 @@
     </script>
   </head>
   <body class="h-full">
+    <!-- The same notice as v1's partials/shell.php. Styled inline, as no stylesheet is certain to load. -->
+    <noscript>
+      <div data-noscript style="position:fixed;inset:0;z-index:2147483647;display:flex;align-items:center;justify-content:center;padding:24px;background:#381759;color:#fff;font:16px/1.5 'Segoe UI',Selawik,system-ui,sans-serif;text-align:center">
+        <p style="max-width:32rem;margin:0">This desktop needs JavaScript. <a href="/cv" style="color:#fff;text-decoration:underline">Read the CV</a> instead, which works without it.</p>
+      </div>
+    </noscript>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

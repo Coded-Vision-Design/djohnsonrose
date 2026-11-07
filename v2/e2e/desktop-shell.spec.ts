@@ -198,6 +198,18 @@ for (const build of BUILDS) {
     })
   })
 
+  test.describe(`${build.name} with JavaScript off`, () => {
+    test.use({ javaScriptEnabled: false })
+
+    test('says the desktop needs JavaScript, and points to the CV, which does not', async ({ page }) => {
+      await page.goto(build.url)
+      const notice = page.locator('[data-noscript]')
+      await expect(notice).toBeVisible()
+      await expect(notice).toContainText('This desktop needs JavaScript.')
+      await expect(notice.getByRole('link', { name: 'Read the CV' })).toHaveAttribute('href', '/cv')
+    })
+  })
+
   test.describe(`${build.name} accessibility`, () => {
     test('the page is in British English, with a skip link to the main content', async ({ page }) => {
       await boot(page, build)
@@ -376,6 +388,31 @@ for (const build of BUILDS) {
       for (const item of await nav.all()) {
         await expect(item.locator('img')).toHaveAttribute('src', /assets\/img\/win11\//)
         expect(await item.innerText()).not.toMatch(/\p{Extended_Pictographic}/u)
+      }
+    })
+
+    test('certifications show how many there are, and each one has its year', async ({ page }) => {
+      await boot(page, build)
+      await openApp(page, build, 'settings')
+      const settings = windowOf(page, 'Settings')
+      await settings.locator('[data-settings-nav="qualifications"]').click()
+      const cards = settings.locator('[data-cert]')
+      await expect(cards.first()).toBeVisible()
+      const count = await cards.count()
+      expect(count).toBeGreaterThan(0)
+      await expect(settings.getByText(`(${count} credentials)`)).toBeVisible()
+      for (const card of await cards.all()) expect(await card.innerText()).toMatch(/\b(19|20)\d{2}\b/)
+    })
+
+    test('every page uses icons, not emoji', async ({ page }) => {
+      await boot(page, build)
+      await openApp(page, build, 'settings')
+      const settings = windowOf(page, 'Settings')
+      for (const tab of ['system', 'personalisation', 'experience', 'qualifications', 'about']) {
+        await settings.locator(`[data-settings-nav="${tab}"]`).click()
+        await expect(settings.locator(`[data-settings-nav="${tab}"]`)).toHaveAttribute('aria-current', 'page')
+        const emoji = (await settings.innerText()).match(/[\p{Extended_Pictographic}✔]/gu) ?? []
+        expect(emoji, tab).toEqual([])
       }
     })
   })

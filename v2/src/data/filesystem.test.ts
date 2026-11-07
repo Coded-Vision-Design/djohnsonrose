@@ -65,4 +65,11 @@ describe('the shared file system', () => {
       expect(pictures, `missing Mobile UI for ${project.name}`).toContain('Mobile UI.webp')
     }
   })
+
+  // House style is British English, and visitors read these files as your own words.
+  it('is written in British English', () => {
+    const text = JSON.stringify(data)
+    const american = /\b(optimiz\w*|inquir\w*|organiz\w*|behavior\w*|favorite\w*|travelers?|colors?|centers?)\b/gi
+    expect(text.match(american) ?? []).toEqual([])
+  })
 })

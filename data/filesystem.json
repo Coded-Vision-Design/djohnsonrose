@@ -261,7 +261,7 @@
     {"name":"Visit Site.url","type":"app","app":"edge","extraData":{"initialUrl":"https://englishopenbjjchampionships.co.uk/"},"icon":"chrome.webp"},
     {"name":"requirements.txt","type":"file","icon":"notepad++.webp","content":"REQUIREMENTS:\n- Showcase the prestige of the English Open BJJ Championships.\n- Highlight previous champions and event highlights.\n- Seamless integration with Smoothcomp for registrations.\n- User-friendly, intuitive interface."},
     {"name":"plan.txt","type":"file","icon":"notepad++.webp","content":"PLAN:\n- Build lightweight site with high Lighthouse/SEO scores.\n- Optimise assets (WebP/WebM) for mobile-first performance.\n- Implement JS Weight Class Finder (Imperial/Metric).\n- Train AI Chatbot on FAQs and IBJJF ruleset.\n- Create clear CTA pathways to Smoothcomp."},
-    {"name":"outcome.txt","type":"file","icon":"notepad++.webp","content":"OUTCOME:\n- Largest competitor turnout in event history.\n- Significant reduction in manual admin tasks.\n- Massive growth in web traffic via SEO optimization."},
+    {"name":"outcome.txt","type":"file","icon":"notepad++.webp","content":"OUTCOME:\n- Largest competitor turnout in event history.\n- Significant reduction in manual admin tasks.\n- Massive growth in web traffic via SEO optimisation."},
     {"name":"Pictures","type":"folder","icon":"win11/folder.webp"}
   ],
   "C:\\Users\\DeVante\\Projects\\Freelance\\English Open BJJ\\Pictures": [
@@ -338,7 +338,7 @@
     {"name":"Visit Site.url","type":"app","app":"edge","extraData":{"initialUrl":"https://youngsconstructionltd.co.uk/"},"icon":"chrome.webp"},
     {"name":"requirements.txt","type":"file","icon":"notepad++.webp","content":"REQUIREMENTS:\n- Modernise outdated site that was failing to generate leads.\n- Replace stock imagery with authentic project showcases.\n- Build a high-trust professional digital portal."},
     {"name":"plan.txt","type":"file","icon":"notepad++.webp","content":"PLAN:\n- Capture 4K drone photography of major flats project.\n- Create and embed 360-degree virtual project tours.\n- Build interactive 3D house wireframes using Three.js.\n- Optimise site structure for construction-specific SEO."},
-    {"name":"outcome.txt","type":"file","icon":"notepad++.webp","content":"OUTCOME:\n- Drastic increase in average time-on-site.\n- Measurable growth in high-value project inquiries."},
+    {"name":"outcome.txt","type":"file","icon":"notepad++.webp","content":"OUTCOME:\n- Drastic increase in average time-on-site.\n- Measurable growth in high-value project enquiries."},
     {"name":"Pictures","type":"folder","icon":"win11/folder.webp"}
   ],
   "C:\\Users\\DeVante\\Projects\\Freelance\\Youngs Construction\\Pictures": [
@@ -358,7 +358,7 @@
   ],
   "C:\\Users\\DeVante\\Projects\\Freelance\\Hameedahs Delights": [
     {"name":"Visit Site.url","type":"app","app":"edge","extraData":{"initialUrl":"https://hameedahsdelights.com/"},"icon":"chrome.webp"},
-    {"name":"requirements.txt","type":"file","icon":"notepad++.webp","content":"REQUIREMENTS:\n- Scale from social media to a professional corporate portal.\n- Appeal to large business orders and event catering.\n- Automated booking and inquiry management."},
+    {"name":"requirements.txt","type":"file","icon":"notepad++.webp","content":"REQUIREMENTS:\n- Scale from social media to a professional corporate portal.\n- Appeal to large business orders and event catering.\n- Automated booking and enquiry management."},
     {"name":"plan.txt","type":"file","icon":"notepad++.webp","content":"PLAN:\n- Build custom specification form with photo upload capability.\n- Implement full interactive menu with auto-pricing engine.\n- Link instant booking notifications to WhatsApp.\n- Synchronise GMB profile and social media lead flows."},
     {"name":"outcome.txt","type":"file","icon":"notepad++.webp","content":"OUTCOME:\n- First major booking within 24 hours of launch.\n- Significant increase in professional visibility.\n- Scalable digital presence for business growth."},
     {"name":"Pictures","type":"folder","icon":"win11/folder.webp"}

@@ -4,7 +4,7 @@
 // What can be done to it is in assets/js/windowing/file-ops.js.
 
 // Bump this when the shared file changes, so that saved copies pick it up.
-window.osFileSystemVersion = 5;
+window.osFileSystemVersion = 6;
 
 window.loadFileSystem = function () {
     const config = window.portfolioConfig;

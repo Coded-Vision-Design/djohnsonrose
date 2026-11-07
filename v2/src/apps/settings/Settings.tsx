@@ -234,7 +234,7 @@ export default function Settings() {
 
             <div className="glass p-6 rounded-lg flex items-center justify-between border border-gray-200 dark:border-white/10">
               <div className="flex items-center">
-                <span className="text-2xl mr-4">🔊</span>
+                <img src="/assets/img/win11/volume.svg" alt="" className="w-6 h-6 mr-4 shrink-0 dark:invert" />
                 <div>
                   <div className="font-medium">System Sounds</div>
                   <div className="text-xs text-gray-500">Enable or disable UI sound effects</div>
@@ -245,7 +245,7 @@ export default function Settings() {
 
             <div className="glass p-6 rounded-lg flex items-center justify-between border border-gray-200 dark:border-white/10">
               <div className="flex items-center">
-                <span className="text-2xl mr-4">🌙</span>
+                <img src="/assets/img/win11/nightlight.svg" alt="" className="w-6 h-6 mr-4 shrink-0 dark:invert" />
                 <div>
                   <div className="font-medium">Dark Mode</div>
                   <div className="text-xs text-gray-500">Switch between light and dark themes</div>
@@ -262,7 +262,7 @@ export default function Settings() {
             {/* GDPR Art. 7(3): withdrawing consent must be as easy as giving it. */}
             <div className="glass p-6 rounded-lg flex items-center justify-between border border-gray-200 dark:border-white/10">
               <div className="flex items-center">
-                <span className="text-2xl mr-4">🍪</span>
+                <img src="/assets/img/win11/view.svg" alt="" className="w-6 h-6 mr-4 shrink-0 dark:invert" />
                 <div>
                   <div className="font-medium">Telemetry &amp; cookies</div>
                   <div className="text-xs text-gray-500 dark:text-gray-400">
@@ -390,7 +390,7 @@ export default function Settings() {
           <div className="space-y-6">
             <div className="p-6 glass rounded-lg border border-gray-200 dark:border-white/10">
               <h3 className="text-lg font-bold mb-4 flex items-center">
-                <span className="mr-3">🏫</span> Education
+                <img src="/assets/img/win11/documents.webp" alt="" className="w-5 h-5 mr-3" /> Education
               </h3>
               <div className="space-y-3">
                 {(data?.education ?? []).map((edu, idx) => (
@@ -402,7 +402,7 @@ export default function Settings() {
                         : 'p-4 bg-black/5 dark:bg-white/5 rounded-lg border border-black/10 dark:border-white/10'
                     }
                   >
-                    {idx === 0 && <div className="text-2xl">🎓</div>}
+                    {idx === 0 && <img src="/assets/img/win11/star.svg" alt="" className="w-6 h-6 shrink-0 dark:invert" />}
                     <div>
                       <div className="font-bold text-sm">{edu.title}</div>
                       <div className="text-xs text-gray-500">{edu.issuer}</div>
@@ -414,7 +414,7 @@ export default function Settings() {
 
             <div className="p-6 glass rounded-lg border border-gray-200 dark:border-white/10">
               <h3 className="text-lg font-bold mb-4 flex items-center">
-                <span className="mr-3">📜</span> Certifications
+                <img src="/assets/img/win11/check.svg" alt="" className="w-5 h-5 mr-3 dark:invert" /> Certifications
                 {data?.certifications && (
                   <span className="ml-2 text-xs font-normal opacity-60">
                     ({data.certifications.length} credentials)
@@ -425,6 +425,7 @@ export default function Settings() {
                 {(data?.certifications ?? []).map((cert) => (
                   <div
                     key={cert.id}
+                    data-cert=""
                     className="p-4 bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-lg flex flex-col justify-between transition-all hover:shadow-md hover:border-win-blue/30 group"
                   >
                     <div className="font-bold text-xs mb-1 group-hover:text-win-blue transition-colors">
@@ -485,7 +486,7 @@ export default function Settings() {
                 <div className="space-y-2">
                   {CORE_SKILLS.map((skill) => (
                     <div key={skill} className="flex items-center text-xs opacity-80">
-                      <span className="text-win-blue mr-2">✔</span>
+                      <img src="/assets/img/win11/check.svg" alt="" className="w-4 h-4 mr-2 shrink-0 dark:invert" />
                       <span>{skill}</span>
                     </div>
                   ))}

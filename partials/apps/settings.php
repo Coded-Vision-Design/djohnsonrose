@@ -49,7 +49,7 @@
 
             <div class="glass p-6 rounded-lg flex items-center justify-between border border-gray-200 dark:border-white/10">
                 <div class="flex items-center">
-                    <span class="text-2xl mr-4">🔊</span>
+                    <img src="<?php echo BASE_PATH; ?>assets/img/win11/volume.svg" alt="" class="w-6 h-6 mr-4 shrink-0 dark:invert">
                     <div>
                         <div class="font-medium">System Sounds</div>
                         <div class="text-xs text-gray-500">Enable or disable UI sound effects</div>
@@ -65,7 +65,7 @@
             
             <div class="glass p-6 rounded-lg flex items-center justify-between border border-gray-200 dark:border-white/10">
                 <div class="flex items-center">
-                    <span class="text-2xl mr-4">🌙</span>
+                    <img src="<?php echo BASE_PATH; ?>assets/img/win11/nightlight.svg" alt="" class="w-6 h-6 mr-4 shrink-0 dark:invert">
                     <div>
                         <div class="font-medium">Dark Mode</div>
                         <div class="text-xs text-gray-500">Switch between light and dark themes</div>
@@ -82,7 +82,7 @@
             <!-- GDPR: consent must be as easy to withdraw as to give (Art. 7(3)). -->
             <div class="glass p-6 rounded-lg flex items-center justify-between border border-gray-200 dark:border-white/10">
                 <div class="flex items-center">
-                    <span class="text-2xl mr-4">🍪</span>
+                    <img src="<?php echo BASE_PATH; ?>assets/img/win11/view.svg" alt="" class="w-6 h-6 mr-4 shrink-0 dark:invert">
                     <div>
                         <div class="font-medium">Telemetry &amp; cookies</div>
                         <div class="text-xs text-gray-500 dark:text-gray-400" x-text="Alpine.store('os').cookieConsent ? 'Accepted: the site records which apps you open and a shortened IP address.' : 'Declined: nothing is recorded.'"></div>
@@ -173,15 +173,15 @@
 
         <!-- Qualifications Tab -->
         <div x-show="currentTab === 'qualifications'" class="space-y-6" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 translate-y-4" x-transition:enter-end="opacity-100 translate-y-0">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div class="p-6 glass rounded-lg border border-gray-200 dark:border-white/10 col-span-full">
                     <h3 class="text-lg font-bold mb-4 flex items-center">
-                        <span class="mr-3">🏫</span> Education
+                        <img src="<?php echo BASE_PATH; ?>assets/img/win11/documents.webp" alt="" class="w-5 h-5 mr-3"> Education
                     </h3>
                     <div class="space-y-3">
                         <template x-for="(edu, idx) in education" :key="edu.id">
                             <div :class="idx === 0 ? 'flex items-start space-x-4 p-4 bg-win-blue/5 rounded-lg border border-win-blue/10' : 'p-4 bg-black/5 dark:bg-white/5 rounded-lg border border-black/10 dark:border-white/10'">
-                                <div class="text-2xl" x-show="idx === 0">🎓</div>
+                                <img src="<?php echo BASE_PATH; ?>assets/img/win11/star.svg" alt="" class="w-6 h-6 shrink-0 dark:invert" x-show="idx === 0">
                                 <div>
                                     <div class="font-bold text-sm" x-text="edu.title"></div>
                                     <div class="text-xs text-gray-500" x-text="edu.issuer"></div>
@@ -193,13 +193,17 @@
 
                 <div class="p-6 glass rounded-lg border border-gray-200 dark:border-white/10 col-span-full">
                     <h3 class="text-lg font-bold mb-4 flex items-center">
-                        <span class="mr-3">📜</span> Certifications
+                        <img src="<?php echo BASE_PATH; ?>assets/img/win11/check.svg" alt="" class="w-5 h-5 mr-3 dark:invert"> Certifications
+                        <span class="ml-2 text-xs font-normal opacity-60" x-show="certs.length" x-text="`(${certs.length} credentials)`"></span>
                     </h3>
                     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                         <template x-for="cert in certs" :key="cert.id">
-                            <div class="p-4 bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-lg flex flex-col justify-between transition-all hover:shadow-md hover:border-win-blue/30 group">
+                            <div data-cert class="p-4 bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-lg flex flex-col justify-between transition-all hover:shadow-md hover:border-win-blue/30 group">
                                 <div class="font-bold text-xs mb-1 group-hover:text-win-blue transition-colors" x-text="cert.name"></div>
-                                <div class="text-xs text-gray-500 uppercase tracking-widest" x-text="cert.issuer"></div>
+                                <div class="text-xs text-gray-500 uppercase tracking-widest flex justify-between">
+                                    <span x-text="cert.issuer"></span>
+                                    <span class="opacity-60" x-show="cert.year" x-text="cert.year"></span>
+                                </div>
                             </div>
                         </template>
                     </div>
@@ -273,7 +277,7 @@
                     <div class="space-y-2">
                         <template x-for="skill in ['Active Directory / Group Policy', 'Windows / Mac OS', 'Microsoft Office 365', 'Imaging / SCCM / JAMF', 'RAID / Backup / DR', 'iOS / iPadOS / MDM', 'Azure / Cloud Ops', 'SQL / Stored Procedures', 'Docker / Virtualisation']">
                             <div class="flex items-center text-xs opacity-80">
-                                <span class="text-win-blue mr-2">✔</span>
+                                <img src="<?php echo BASE_PATH; ?>assets/img/win11/check.svg" alt="" class="w-4 h-4 mr-2 shrink-0 dark:invert">
                                 <span x-text="skill"></span>
                             </div>
                         </template>

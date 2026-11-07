@@ -53,7 +53,7 @@ const animateOut = (id: number, kind: 'close' | 'minimise') =>
 // big to go through persist below, which writes on every state change.
 const FILES_KEY = 'react.fileSystem'
 // Bump this when data/filesystem.json changes, so that saved copies pick it up.
-const FILES_VERSION = 2
+const FILES_VERSION = 3
 
 function savedFiles(): FileSystem {
   try {

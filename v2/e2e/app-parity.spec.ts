@@ -388,6 +388,21 @@ test.describe('Start search in both builds', () => {
   }
 })
 
+test('Settings Qualifications lays out the same in both builds', async ({ browser }) => {
+  const [v1, v2] = await inBothBuilds(browser, async (page) => {
+    await call(page, 'openApp', 'settings')
+    const settings = page.locator('.os-window').last()
+    await settings.locator('[data-settings-nav="qualifications"]').click()
+    const card = settings.locator('[data-cert]').first()
+    await expect(card).toBeVisible()
+    // Past the tab's slide-in, so both are measured at rest.
+    await page.waitForTimeout(400)
+    const top = async (el: typeof card) => Math.round((await el.boundingBox())!.y - (await settings.boundingBox())!.y)
+    return { firstCertificate: await top(card), certificates: await settings.locator('[data-cert]').count() }
+  })
+  expect(v1).toEqual(v2)
+})
+
 test.describe('right-click menus in both builds', () => {
   /** What the open menu shows, down to each icon. */
   const readMenu = (page: Page) =>
