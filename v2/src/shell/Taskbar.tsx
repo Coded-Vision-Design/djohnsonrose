@@ -158,7 +158,8 @@ export function Taskbar() {
     )
   }
   const isMobile = useOsStore((s) => s.isMobile)
-  const closeAllPopups = useOsStore((s) => s.closeAllPopups)
+  const calendarOpen = useOsStore((s) => s.calendarOpen)
+  const toggleCalendar = useOsStore((s) => s.toggleCalendar)
   const minimizeAll = useOsStore((s) => s.minimizeAll)
   const openApp = useOsStore((s) => s.openApp)
   const weather = useOsStore((s) => s.weather)
@@ -431,12 +432,17 @@ export function Taskbar() {
           🐘 PHP v1
         </a>
 
-        {/* Clock + date */}
+        {/* Clock + date: opens the notifications and calendar (CalendarFlyout) */}
         <button
           type="button"
           data-tray-item="clock"
-          onClick={closeAllPopups}
-          className="px-2 py-1 rounded-sm hover:bg-white/10 text-xs text-right leading-tight transition-colors"
+          data-popup-toggle="calendar"
+          aria-haspopup="dialog"
+          aria-expanded={calendarOpen}
+          onClick={toggleCalendar}
+          className={`px-2 py-1 rounded-sm hover:bg-white/10 text-xs text-right leading-tight transition-colors ${
+            calendarOpen ? 'bg-white/10' : ''
+          }`}
           title="Date and time"
         >
           <div>{clock.time}</div>

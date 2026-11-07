@@ -6,6 +6,7 @@ import { WindowErrorBoundary } from '../windowing/WindowErrorBoundary'
 import { SnapUi } from './SnapUi'
 import { TaskSwitcher } from './TaskSwitcher'
 import { Taskbar } from './Taskbar'
+import { CalendarFlyout } from './CalendarFlyout'
 import { PropertiesDialog, Toast } from './FileDialogs'
 import { showDesktopMenu } from './menus'
 import { StartMenu } from './StartMenu'
@@ -168,6 +169,7 @@ export function Desktop() {
       <StartMenu />
       <QuickSettings />
       <Taskbar />
+      <CalendarFlyout />
       <CookieBanner />
       <ContextMenu />
       <PropertiesDialog />
