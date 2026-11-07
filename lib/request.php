@@ -122,13 +122,14 @@ function read_request_body(int $maxBytes, string $source = 'php://input'): ?stri
  * GETs a JSON document, giving up after $timeout seconds (the limit covers
  * connecting and each read). Returns null on any failure, including an error
  * status, so a slow or broken upstream can never hold a visitor's request.
+ * $headers are extra request lines, such as 'User-Agent: x'.
  */
-function http_get_json(string $url, float $timeout): ?array {
+function http_get_json(string $url, float $timeout, array $headers = []): ?array {
     $context = stream_context_create([
         'http' => [
             'timeout' => $timeout,
             'follow_location' => 0,
-            'header' => "Accept: application/json\r\n",
+            'header' => implode("\r\n", ['Accept: application/json', ...$headers]) . "\r\n",
         ],
     ]);
     $raw = @file_get_contents($url, false, $context);
