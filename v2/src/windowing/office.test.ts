@@ -873,6 +873,32 @@ describe('watchSwipe', () => {
     expect(onStep).not.toHaveBeenCalled()
   })
 
+  // Chrome takes a sideways swipe it is left to handle as a pan, and the finger
+  // leaving at speed as a fling. The next tap then only stops that fling, so a
+  // tap on Present or End show straight after a swipe would do nothing.
+  it('keeps a sideways swipe from the browser, but leaves it an upright pan and a pinch', () => {
+    const element = document.createElement('div')
+    watchSwipe(element, vi.fn())
+    const moved = (points: { x: number; y: number }[]) => {
+      const event = new Event('touchmove', { bubbles: true, cancelable: true })
+      Object.defineProperty(event, 'touches', { value: points.map((p) => ({ clientX: p.x, clientY: p.y })) })
+      element.dispatchEvent(event)
+      return event.defaultPrevented
+    }
+    raise(element, 'touchstart', [{ x: 300, y: 100 }])
+    expect(moved([{ x: 280, y: 104 }])).toBe(true)
+    expect(moved([{ x: 200, y: 110 }])).toBe(true)
+    raise(element, 'touchend', [])
+
+    raise(element, 'touchstart', [{ x: 300, y: 100 }])
+    expect(moved([{ x: 304, y: 160 }])).toBe(false)
+    raise(element, 'touchend', [])
+
+    raise(element, 'touchstart', [{ x: 300, y: 100 }, { x: 340, y: 100 }])
+    expect(moved([{ x: 200, y: 100 }, { x: 400, y: 100 }])).toBe(false)
+    raise(element, 'touchend', [])
+  })
+
   it('stops listening when told to, and does nothing without an element', () => {
     const element = document.createElement('div')
     const onStep = vi.fn()
