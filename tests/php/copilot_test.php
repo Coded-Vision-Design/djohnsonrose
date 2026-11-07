@@ -277,6 +277,13 @@ $state = '';
 foreach (glob("{$dir}/*") as $file) $state .= file_get_contents($file);
 check('rate: keeps no address, only hashes and times', !str_contains($state, '203.0.113') && !str_contains($state, '192.0.2'));
 
+// ---- Both builds check the same limits before they send ----
+$js = (string)file_get_contents(__DIR__ . '/../../assets/js/windowing/copilot.js');
+foreach (['QUESTION_MAX' => COPILOT_QUESTION_MAX, 'JOB_MIN' => COPILOT_JOB_MIN, 'JOB_MAX' => COPILOT_JOB_MAX,
+          'HISTORY_TEXT_MAX' => COPILOT_HISTORY_TEXT_MAX, 'HISTORY_TURNS' => intdiv(COPILOT_HISTORY_MAX, 2)] as $name => $value) {
+    check("limits: copilot.js has the server's {$name}", preg_match("/export const {$name} = (\\d+);/", $js, $m) === 1 && (int)$m[1] === $value);
+}
+
 // ---- anthropic_messages_url and anthropic_headers ----
 check('url: the Messages endpoint', anthropic_messages_url('https://api.anthropic.com') === 'https://api.anthropic.com/v1/messages');
 check('url: a trailing slash is fine', anthropic_messages_url('http://127.0.0.1:9/') === 'http://127.0.0.1:9/v1/messages');
