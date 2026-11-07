@@ -70,6 +70,9 @@ test.describe('/cv', () => {
     await expect(page.locator(`main a[href="${profile.linkedin}"]`)).toHaveText(
       'linkedin.com/in/devanté-johnson-rose-b5303a47 (opens in a new tab)',
     )
+    // No GitHub account, for now.
+    await expect(page.locator('a[href*="github.com"]')).toHaveCount(0)
+    await expect(page.getByText(/github/i)).toHaveCount(0)
 
     await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', `${profile.url}cv`)
     await expect(page.locator('script:not([type="application/ld+json"])')).toHaveCount(0)

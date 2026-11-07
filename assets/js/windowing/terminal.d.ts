@@ -36,7 +36,7 @@ export interface TerminalResult {
 }
 
 export const TERMINAL_HOME: string
-export const GITHUB_PROFILE: string
+export const LINKEDIN_PROFILE: string
 export const WINDOWS_VERSION: string
 
 export function splitArgs(text: string): string[]

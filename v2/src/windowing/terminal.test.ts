@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import {
-  GITHUB_PROFILE,
+  LINKEDIN_PROFILE,
   TERMINAL_HOME,
   dirLine,
   resolvePath,
@@ -11,6 +11,7 @@ import {
 import { entryDate } from '../../../assets/js/windowing/file-ops.js'
 import fileSystemData from '../../../data/filesystem.json'
 import portfolio from '../../../data/portfolio.json'
+import profile from '../../../data/profile.json'
 
 // The Terminal both builds use: the commands, their paths and their output.
 
@@ -152,11 +153,13 @@ describe('other commands', () => {
     expect(out.indexOf(lastFeatured.title)).toBeLessThan(out.indexOf(firstOther.title))
   })
 
-  it('contact gives the email and the GitHub profile that exists', () => {
+  it('contact gives the email and LinkedIn, and no GitHub account', () => {
     const out = run('contact').res ?? ''
     expect(out).toContain('devante@johnson-rose.co.uk')
-    expect(out).toContain(GITHUB_PROFILE)
-    expect(GITHUB_PROFILE).toBe('github.com/CodedVisionDesign')
+    expect(out).toContain(`LinkedIn: ${LINKEDIN_PROFILE}`)
+    // The address as people read it, for the profile in data/profile.json.
+    expect(`https://www.${encodeURI(LINKEDIN_PROFILE)}/`).toBe(profile.linkedin)
+    expect(out).not.toMatch(/github/i)
     expect(out).not.toContain('devantejr')
   })
 

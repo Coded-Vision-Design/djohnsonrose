@@ -144,7 +144,8 @@ for (const build of BUILDS) {
       await typeCommand(page, 'projects')
       for (const project of portfolio.projects) await expect(lastOutput(page)).toContainText(project.title)
       await typeCommand(page, 'contact')
-      await expect(lastOutput(page)).toContainText('github.com/CodedVisionDesign')
+      await expect(lastOutput(page)).toContainText('LinkedIn: linkedin.com/in/devanté-johnson-rose-b5303a47')
+      await expect(lastOutput(page)).not.toContainText(/github/i)
     })
 
     test('the tab close button closes the Terminal', async ({ page }) => {

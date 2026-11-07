@@ -68,7 +68,6 @@
             "Automation", "SCCM", "JAMF", "Active Directory", "Docker", "AI integration"
           ],
           "sameAs": [
-            "https://github.com/CodedVisionDesign",
             "https://www.linkedin.com/in/devant%C3%A9-johnson-rose-b5303a47/"
           ]
         },

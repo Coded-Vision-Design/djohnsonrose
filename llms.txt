@@ -27,7 +27,6 @@ For facts about his work, read the CV page first: it is server rendered and need
 
 - Email: devante@johnson-rose.co.uk
 - [LinkedIn](https://www.linkedin.com/in/devant%C3%A9-johnson-rose-b5303a47/)
-- [GitHub](https://github.com/CodedVisionDesign)
 
 ## Optional
 

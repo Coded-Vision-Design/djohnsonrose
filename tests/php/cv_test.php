@@ -175,6 +175,7 @@ check('page: shows the summary', str_contains($html, htmlspecialchars(cv_text($p
 check('page: shows the email as text', (bool)preg_match('/<span[^>]*data-email[^>]*>devante@johnson-rose\.co\.uk<\/span>/', $html));
 check('page: offers a mailto link', str_contains($html, 'href="mailto:devante@johnson-rose.co.uk"'));
 check('page: shows the phone as a tel: link', (bool)preg_match('/<a [^>]*href="tel:' . preg_quote(cv_tel($profile['phone']), '/') . '"[^>]*data-phone[^>]*>' . preg_quote($profile['phone'], '/') . '<\/a>/', $html));
+check('page: names no GitHub account, for now', ($profile['github'] ?? null) === '' && stripos($html, 'github') === false);
 check('page: links LinkedIn by its readable address', (bool)preg_match('/<a [^>]*href="' . preg_quote($profile['linkedin'], '/') . '"[^>]*>' . preg_quote(cv_link_label($profile['linkedin']), '/') . '</', $html));
 check('page: links the PDF', str_contains($html, 'href="/data/cv.pdf"'));
 foreach ($featured as $p) {

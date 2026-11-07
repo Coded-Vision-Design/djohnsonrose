@@ -5,7 +5,9 @@
 import { entryDate, entrySize, folderPath, parentPath } from './file-ops.js';
 
 export const TERMINAL_HOME = 'C:\\Users\\DeVante';
-export const GITHUB_PROFILE = 'github.com/CodedVisionDesign';
+// LinkedIn, as data/profile.json has it, in the form people read. The owner
+// shows no GitHub account, for now.
+export const LINKEDIN_PROFILE = 'linkedin.com/in/devanté-johnson-rose-b5303a47';
 // Windows 11 2025 Update (25H2).
 export const WINDOWS_VERSION = '10.0.26200.9711';
 
@@ -222,7 +224,7 @@ export function runTerminalCommand(raw, ctx) {
     case 'projects':
       return { res: projectList(ctx.projects ?? []) };
     case 'contact':
-      return { res: ['Contact DeVanté:', `  Email: ${ctx.email}`, `  GitHub: ${GITHUB_PROFILE}`].join('\n') };
+      return { res: ['Contact DeVanté:', `  Email: ${ctx.email}`, `  LinkedIn: ${LINKEDIN_PROFILE}`].join('\n') };
     case 'cls':
     case 'clear':
       return { clear: true };
