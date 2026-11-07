@@ -1,0 +1,536 @@
+{
+    "requirements": [
+        {
+            "requirement": "Experience supporting business-critical applications",
+            "strength": "strong",
+            "note": "He maintains and enhances business-critical applications at Killik & Co.",
+            "citations": [
+                {
+                    "id": "role-killik-co",
+                    "title": "Applications Support Engineer, Killik & Co",
+                    "target": {
+                        "type": "cv",
+                        "anchor": "experience-title"
+                    }
+                }
+            ]
+        },
+        {
+            "requirement": "PowerShell scripting and automation",
+            "strength": "strong",
+            "note": "PowerShell automation is part of his work at Killik & Co and saved 20+ weekly hours at UEA.",
+            "citations": [
+                {
+                    "id": "role-killik-co",
+                    "title": "Applications Support Engineer, Killik & Co",
+                    "target": {
+                        "type": "cv",
+                        "anchor": "experience-title"
+                    }
+                },
+                {
+                    "id": "role-uea-university-of-east-anglia",
+                    "title": "Desktop Developer / 3rd Line Engineer, UEA (University of East Anglia)",
+                    "target": {
+                        "type": "cv",
+                        "anchor": "experience-title"
+                    }
+                }
+            ]
+        },
+        {
+            "requirement": "SQL Server querying and reporting",
+            "strength": "strong",
+            "note": "He queries and updates SQL databases through MSSMS for production data work.",
+            "citations": [
+                {
+                    "id": "role-killik-co",
+                    "title": "Applications Support Engineer, Killik & Co",
+                    "target": {
+                        "type": "cv",
+                        "anchor": "experience-title"
+                    }
+                },
+                {
+                    "id": "skills-tools",
+                    "title": "Skills: Data and infrastructure",
+                    "target": {
+                        "type": "cv",
+                        "anchor": "skills-title"
+                    }
+                }
+            ]
+        },
+        {
+            "requirement": "ITIL service management",
+            "strength": "partial",
+            "note": "He holds the ITIL Foundation certificate from 2013.",
+            "citations": [
+                {
+                    "id": "certificates-itil",
+                    "title": "Certificates: ITIL",
+                    "target": {
+                        "type": "cv",
+                        "anchor": "certificates-title"
+                    }
+                }
+            ]
+        },
+        {
+            "requirement": "Azure cloud administration",
+            "strength": "none",
+            "note": "The CV does not mention Azure.",
+            "citations": []
+        }
+    ],
+    "gaps": [
+        "No Azure experience is shown in the CV."
+    ],
+    "summary": {
+        "text": "His current role supporting business-critical applications, with PowerShell automation and SQL work, matches most of this job.",
+        "citations": [
+            {
+                "id": "role-killik-co",
+                "title": "Applications Support Engineer, Killik & Co",
+                "target": {
+                    "type": "cv",
+                    "anchor": "experience-title"
+                }
+            },
+            {
+                "id": "role-uea-university-of-east-anglia",
+                "title": "Desktop Developer / 3rd Line Engineer, UEA (University of East Anglia)",
+                "target": {
+                    "type": "cv",
+                    "anchor": "experience-title"
+                }
+            }
+        ],
+        "generated": true
+    },
+    "cv": {
+        "name": "DeVanté Johnson-Rose",
+        "headline": "Applications Support Engineer · Full-Stack Developer",
+        "location": "Essex, UK",
+        "email": "devante@johnson-rose.co.uk",
+        "website": "https://devante.johnson-rose.co.uk/",
+        "linkedin": "",
+        "summary": "Applications Support Engineer and Full-Stack Developer with enterprise infrastructure experience across finance, education, and global technology. Specialises in automation, deployment workflows, integrations, and scalable software delivery, pairing hands-on systems engineering with full-stack development and AI-assisted tooling.",
+        "generated": {
+            "text": "His current role supporting business-critical applications, with PowerShell automation and SQL work, matches most of this job.",
+            "citations": [
+                {
+                    "id": "role-killik-co",
+                    "title": "Applications Support Engineer, Killik & Co",
+                    "target": {
+                        "type": "cv",
+                        "anchor": "experience-title"
+                    }
+                },
+                {
+                    "id": "role-uea-university-of-east-anglia",
+                    "title": "Desktop Developer / 3rd Line Engineer, UEA (University of East Anglia)",
+                    "target": {
+                        "type": "cv",
+                        "anchor": "experience-title"
+                    }
+                }
+            ]
+        },
+        "roles": [
+            {
+                "id": "role-killik-co",
+                "title": "Applications Support Engineer",
+                "company": "Killik & Co",
+                "location": "Ipswich",
+                "period": "Apr 2025 - Present",
+                "highlights": [
+                    "Maintain and enhance business-critical applications with a strong focus on automation and knowledge sharing.",
+                    "Query and update SQL databases via MSSMS for production data work and reporting.",
+                    "Build AI-assisted internal tooling and PowerShell automation scripts that streamline repeat processes and generate reports."
+                ]
+            },
+            {
+                "id": "role-uea-university-of-east-anglia",
+                "title": "Desktop Developer / 3rd Line Engineer",
+                "company": "UEA (University of East Anglia)",
+                "location": "Norwich",
+                "period": "Nov 2021 - Apr 2025",
+                "highlights": [
+                    "PowerShell automation eliminated 20+ weekly manual hours while maintaining 99.9% system availability.",
+                    "Transformed UEA's desktop infrastructure across 8,000+ devices, achieving 60% faster deployments through SCCM and JAMF automation."
+                ]
+            },
+            {
+                "id": "role-shawbrook-bank",
+                "title": "Desk Side Engineer",
+                "company": "Shawbrook Bank",
+                "location": "Essex",
+                "period": "Mar 2017 - Mar 2020",
+                "highlights": [
+                    "End-to-end IT support for 900+ users across multiple sites; SCCM imaging, patching, RSA deployment.",
+                    "PowerShell scripting and process improvements; trained incoming desk-side engineers reducing onboarding time."
+                ]
+            }
+        ],
+        "otherRoles": [
+            {
+                "id": "role-coded-vision-design",
+                "title": "Freelance Full-Stack Developer",
+                "company": "Coded Vision Design",
+                "location": "Remote",
+                "period": "2013 - Present"
+            },
+            {
+                "id": "role-skyscanner",
+                "title": "Systems Engineer II",
+                "company": "Skyscanner",
+                "location": "Global",
+                "period": "Mar 2020 - Nov 2021"
+            },
+            {
+                "id": "role-frp-advisory",
+                "title": "2nd Line Engineer",
+                "company": "FRP Advisory",
+                "location": "",
+                "period": "Aug 2016 - Feb 2017"
+            },
+            {
+                "id": "role-alexander-knight-business-solutions",
+                "title": "Senior Network Engineer",
+                "company": "Alexander Knight Business Solutions",
+                "location": "",
+                "period": "Jul 2015 - Aug 2016"
+            },
+            {
+                "id": "role-ontraq-it",
+                "title": "IT Support / 2nd Line Field",
+                "company": "Ontraq IT",
+                "location": "",
+                "period": "Nov 2014 - Jul 2015"
+            },
+            {
+                "id": "role-pensar-it",
+                "title": "Service Desk / 2nd Line",
+                "company": "Pensar IT",
+                "location": "",
+                "period": "Jun 2014 - Nov 2014"
+            },
+            {
+                "id": "role-databarracks",
+                "title": "IT Support, 1st Line",
+                "company": "Databarracks",
+                "location": "",
+                "period": "Jun 2013 - Jun 2014"
+            },
+            {
+                "id": "role-blueprint-collections",
+                "title": "IT Systems Administrator",
+                "company": "Blueprint Collections",
+                "location": "",
+                "period": "Sep 2011 - Jun 2013"
+            }
+        ],
+        "projects": [
+            {
+                "id": "project-combat-evolved-sports",
+                "title": "Combat Evolved Sports",
+                "description": "Sports journalism platform built on PHP 8 with no framework - PSR-4 autoloading, PDO, HTMX for live search/modals, Alpine.js for interactivity, Stripe subscriptions, Google + Facebook OAuth, and an editor-facing admin CMS.",
+                "tags": [
+                    "PHP 8",
+                    "MySQL",
+                    "HTMX",
+                    "Alpine.js",
+                    "Stripe",
+                    "OAuth"
+                ],
+                "url": "https://combatevolvedsports.com/"
+            }
+        ],
+        "skills": [
+            {
+                "id": "skills-tools",
+                "label": "Data and infrastructure",
+                "items": [
+                    {
+                        "name": "MS SQL Server",
+                        "matched": true
+                    },
+                    {
+                        "name": "Active Directory",
+                        "matched": true
+                    },
+                    {
+                        "name": "MySQL",
+                        "matched": false
+                    },
+                    {
+                        "name": "PostgreSQL",
+                        "matched": false
+                    },
+                    {
+                        "name": "MariaDB",
+                        "matched": false
+                    },
+                    {
+                        "name": "GPO",
+                        "matched": false
+                    },
+                    {
+                        "name": "DNS",
+                        "matched": false
+                    },
+                    {
+                        "name": "DHCP",
+                        "matched": false
+                    },
+                    {
+                        "name": "SCCM",
+                        "matched": false
+                    },
+                    {
+                        "name": "JAMF",
+                        "matched": false
+                    },
+                    {
+                        "name": "VPS",
+                        "matched": false
+                    },
+                    {
+                        "name": "Docker",
+                        "matched": false
+                    },
+                    {
+                        "name": "Traefik",
+                        "matched": false
+                    },
+                    {
+                        "name": "Grafana",
+                        "matched": false
+                    },
+                    {
+                        "name": "Ofelia",
+                        "matched": false
+                    },
+                    {
+                        "name": "OpenClaw",
+                        "matched": false
+                    }
+                ]
+            },
+            {
+                "id": "skills-operations",
+                "label": "Automation and delivery",
+                "items": [
+                    {
+                        "name": "PowerShell",
+                        "matched": true
+                    },
+                    {
+                        "name": "MSSMS",
+                        "matched": true
+                    },
+                    {
+                        "name": "Bash",
+                        "matched": false
+                    },
+                    {
+                        "name": "Git",
+                        "matched": false
+                    },
+                    {
+                        "name": "Postman",
+                        "matched": false
+                    },
+                    {
+                        "name": "Terminal",
+                        "matched": false
+                    },
+                    {
+                        "name": "Project Management",
+                        "matched": false
+                    },
+                    {
+                        "name": "JIRA",
+                        "matched": false
+                    },
+                    {
+                        "name": "Trello",
+                        "matched": false
+                    },
+                    {
+                        "name": "Microsoft Project",
+                        "matched": false
+                    }
+                ]
+            },
+            {
+                "id": "skills-frameworks",
+                "label": "Languages and frameworks",
+                "items": [
+                    {
+                        "name": "HTML",
+                        "matched": false
+                    },
+                    {
+                        "name": "CSS",
+                        "matched": false
+                    },
+                    {
+                        "name": "JavaScript",
+                        "matched": false
+                    },
+                    {
+                        "name": "React",
+                        "matched": false
+                    },
+                    {
+                        "name": "Next.js",
+                        "matched": false
+                    },
+                    {
+                        "name": "React Native",
+                        "matched": false
+                    },
+                    {
+                        "name": "Vue",
+                        "matched": false
+                    },
+                    {
+                        "name": "Flutter",
+                        "matched": false
+                    },
+                    {
+                        "name": "TailwindCSS",
+                        "matched": false
+                    },
+                    {
+                        "name": "Three.js",
+                        "matched": false
+                    },
+                    {
+                        "name": "PHP",
+                        "matched": false
+                    },
+                    {
+                        "name": "Laravel",
+                        "matched": false
+                    },
+                    {
+                        "name": "Node.js",
+                        "matched": false
+                    }
+                ]
+            },
+            {
+                "id": "skills-apis",
+                "label": "AI and APIs",
+                "items": [
+                    {
+                        "name": "OpenAI",
+                        "matched": false
+                    },
+                    {
+                        "name": "Anthropic",
+                        "matched": false
+                    },
+                    {
+                        "name": "Gemini",
+                        "matched": false
+                    },
+                    {
+                        "name": "Google APIs",
+                        "matched": false
+                    },
+                    {
+                        "name": "RAG pipelines",
+                        "matched": false
+                    },
+                    {
+                        "name": "Stripe",
+                        "matched": false
+                    },
+                    {
+                        "name": "PayPal",
+                        "matched": false
+                    },
+                    {
+                        "name": "TinyMCE",
+                        "matched": false
+                    }
+                ]
+            }
+        ],
+        "education": [
+            {
+                "title": "BSc (Hons) Business Computing, 2:1",
+                "issuer": "University of East Anglia"
+            },
+            {
+                "title": "Level 3 Extended Diploma",
+                "issuer": "ICT Systems & Principles"
+            },
+            {
+                "title": "Level 3 Diploma",
+                "issuer": "Professional Competence for IT & Telecoms"
+            }
+        ],
+        "certificates": [
+            {
+                "id": "certificates-itil",
+                "issuer": "ITIL",
+                "names": [
+                    "Foundation in IT Service Management"
+                ],
+                "years": "2013"
+            },
+            {
+                "id": "certificates-microsoft",
+                "issuer": "Microsoft",
+                "names": [
+                    "MCSA: Windows 7",
+                    "MCITP: Enterprise Desktop Technician",
+                    "PRO: Windows 7 Enterprise Desktop",
+                    "MCTS: Windows 7 Configuration",
+                    "MTA: Networking Fundamentals",
+                    "MTA: Windows OS Fundamentals"
+                ],
+                "years": "2012-2013"
+            },
+            {
+                "id": "certificates-anthropic",
+                "issuer": "Anthropic",
+                "names": [
+                    "AI Fluency Framework & Foundations",
+                    "Model Context Protocol",
+                    "Claude Code in Action",
+                    "Intro to Agent Skills",
+                    "Intro to Subagents",
+                    "Intro to Claude Cowork",
+                    "Claude Code 101",
+                    "Claude 101"
+                ],
+                "years": "2026"
+            },
+            {
+                "id": "certificates-comptia",
+                "issuer": "CompTIA",
+                "names": [
+                    "Server+ ce",
+                    "Server+",
+                    "Network+",
+                    "A+"
+                ],
+                "years": "2011-2025"
+            },
+            {
+                "id": "certificates-apple",
+                "issuer": "Apple",
+                "names": [
+                    "OS X Support Essentials 10.8"
+                ],
+                "years": "2013"
+            }
+        ]
+    }
+}
