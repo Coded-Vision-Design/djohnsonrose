@@ -750,3 +750,9 @@ html[data-os-mode='phone'] .os-consent-actions button {
 .file-cut {
     opacity: 0.5;
 }
+
+/* Build switch: the windows the other build had open are already on screen, so
+   they appear at once instead of playing the opening animation. See handoff.js. */
+.os-window[data-restored] {
+    animation: none;
+}
