@@ -425,12 +425,15 @@ for (const build of BUILDS) {
       await page.goto(build.url)
       await waitForBuild(page, build.name)
       await openApp(page, build, 'calculator')
+      // The address follows Calculator now (see address.js); the click must not change it.
+      await expect(page).toHaveURL(/\/app\/calculator$/)
+      const before = page.url()
       const opened = context.waitForEvent('page')
       await page.locator('[data-tray-item="build"]').click({ modifiers: ['ControlOrMeta'] })
       const tab = await opened
       await tab.close()
       await expect(windowOf(page, 'Calculator')).toBeVisible()
-      expect(page.url()).toBe(build.url)
+      expect(page.url()).toBe(before)
     })
   })
 }

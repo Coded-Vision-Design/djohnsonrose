@@ -88,7 +88,7 @@ export function historyFor(messages) {
 export const countLabel = (text, max) => `${characters(String(text ?? '')).toLocaleString('en-GB')} / ${max.toLocaleString('en-GB')}`;
 
 /** The tab an arrow key, Home or End moves to from $tab, or null for any other key. */
-export function tabAfterKey(tab, key) {
+export function copilotTabAfterKey(tab, key) {
   const at = Math.max(0, COPILOT_TABS.indexOf(tab));
   const last = COPILOT_TABS.length - 1;
   const moves = { ArrowRight: at === last ? 0 : at + 1, ArrowLeft: at === 0 ? last : at - 1, Home: 0, End: last };

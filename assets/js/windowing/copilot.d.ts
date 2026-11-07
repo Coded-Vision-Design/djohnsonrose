@@ -122,7 +122,7 @@ export function questionProblem(text: string): string
 export function jobProblem(text: string): string
 export function historyFor(messages: ChatTurn[]): ChatTurn[]
 export function countLabel(text: string, max: number): string
-export function tabAfterKey(tab: CopilotTab, key: string): CopilotTab | null
+export function copilotTabAfterKey(tab: CopilotTab, key: string): CopilotTab | null
 export function chatBody(question: string, messages: ChatTurn[]): ChatBody
 export function matchBody(job: string): MatchBody
 export function askCopilot(body: ChatBody, options?: { fetcher?: Fetcher; basePath?: string; signal?: AbortSignal }): Promise<ChatReply>

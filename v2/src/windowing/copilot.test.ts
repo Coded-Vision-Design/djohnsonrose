@@ -5,7 +5,7 @@ import {
   MISSING_SOURCE,
   countLabel,
   matchCountsText,
-  tabAfterKey,
+  copilotTabAfterKey,
   HISTORY_TEXT_MAX,
   HISTORY_TURNS,
   JOB_MAX,
@@ -268,12 +268,12 @@ describe('what the two apps show alike', () => {
 
   it('move between the tabs with the arrow keys, Home and End', () => {
     expect(COPILOT_TABS).toEqual(['chat', 'match'])
-    expect(tabAfterKey('chat', 'ArrowRight')).toBe('match')
-    expect(tabAfterKey('match', 'ArrowRight')).toBe('chat')
-    expect(tabAfterKey('chat', 'ArrowLeft')).toBe('match')
-    expect(tabAfterKey('match', 'Home')).toBe('chat')
-    expect(tabAfterKey('chat', 'End')).toBe('match')
-    expect(tabAfterKey('chat', 'Enter')).toBeNull()
+    expect(copilotTabAfterKey('chat', 'ArrowRight')).toBe('match')
+    expect(copilotTabAfterKey('match', 'ArrowRight')).toBe('chat')
+    expect(copilotTabAfterKey('chat', 'ArrowLeft')).toBe('match')
+    expect(copilotTabAfterKey('match', 'Home')).toBe('chat')
+    expect(copilotTabAfterKey('chat', 'End')).toBe('match')
+    expect(copilotTabAfterKey('chat', 'Enter')).toBeNull()
   })
 
   it('explain a source that has gone', () => {

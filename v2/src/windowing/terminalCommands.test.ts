@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import {
   TERMINAL_COMMANDS,
   TERMINAL_HOME,
-  TOUR_STEPS,
+  TERMINAL_TOUR_STEPS,
   resolveFile,
   runTerminalCommand,
   type TerminalContext,
@@ -134,18 +134,18 @@ describe('tour', () => {
   })
 
   it('suggests the CV, commands and apps, and the last step has no next', () => {
-    const all = TOUR_STEPS.map((_, i) => run(`tour ${i + 1}`).res).join('\n')
+    const all = TERMINAL_TOUR_STEPS.map((_, i) => run(`tour ${i + 1}`).res).join('\n')
     for (const hint of ['"cv"', '"skills"', '"cat ', 'Tab', '"open vscode"', '/cv', '"help"']) expect(all).toContain(hint)
-    expect(run(`tour ${TOUR_STEPS.length}`).res).not.toMatch(/tour \d/)
+    expect(run(`tour ${TERMINAL_TOUR_STEPS.length}`).res).not.toMatch(/tour \d/)
   })
 
   it('never opens anything itself', () => {
-    for (let step = 1; step <= TOUR_STEPS.length; step++) expect(run(`tour ${step}`).open).toBeUndefined()
+    for (let step = 1; step <= TERMINAL_TOUR_STEPS.length; step++) expect(run(`tour ${step}`).open).toBeUndefined()
   })
 
   it('says how many steps there are for a step it does not have', () => {
     for (const step of ['0', '99', 'next']) {
-      expect(run(`tour ${step}`).res).toBe(`There are ${TOUR_STEPS.length} steps. Type "tour" to start again.`)
+      expect(run(`tour ${step}`).res).toBe(`There are ${TERMINAL_TOUR_STEPS.length} steps. Type "tour" to start again.`)
     }
   })
 })

@@ -73,7 +73,7 @@ export const LINKEDIN_PROFILE: string
 export const WINDOWS_VERSION: string
 
 export const TERMINAL_COMMANDS: readonly string[]
-export const TOUR_STEPS: readonly TourStep[]
+export const TERMINAL_TOUR_STEPS: readonly TourStep[]
 
 export function splitArgs(text: string): string[]
 export function resolvePath(fs: Record<string, TerminalEntry[]>, cwd: string, target: string): string | null

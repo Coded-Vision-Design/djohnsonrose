@@ -21,7 +21,7 @@ import {
   questionProblem,
   saveTailoredCv,
   strengthLabel,
-  tabAfterKey,
+  copilotTabAfterKey,
   tailoredCvHtml,
   watchCvFrame,
   type ChatTurn,
@@ -174,7 +174,7 @@ export default function Copilot() {
   }
 
   const onTabKey = (event: KeyboardEvent<HTMLDivElement>) => {
-    const next = tabAfterKey(tab, event.key)
+    const next = copilotTabAfterKey(tab, event.key)
     if (!next) return
     event.preventDefault()
     event.stopPropagation()

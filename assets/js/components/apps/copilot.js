@@ -113,7 +113,7 @@ document.addEventListener('alpine:init', () => {
         },
 
         tabKey(event) {
-            const next = OsWindowing.tabAfterKey(this.tab, event.key);
+            const next = OsWindowing.copilotTabAfterKey(this.tab, event.key);
             if (!next) return;
             event.preventDefault();
             event.stopPropagation();

@@ -225,7 +225,7 @@ function catText(fs, cwd, command, target) {
 }
 
 /** The tour, one step at a time. It only ever suggests: the visitor types each command. */
-export const TOUR_STEPS = [
+export const TERMINAL_TOUR_STEPS = [
   {
     title: 'Who this is',
     lines: [
@@ -261,12 +261,12 @@ export const TOUR_STEPS = [
 
 function tourText(arg) {
   const step = arg === undefined ? 1 : Number(arg);
-  if (!Number.isInteger(step) || step < 1 || step > TOUR_STEPS.length) {
-    return `There are ${TOUR_STEPS.length} steps. Type "tour" to start again.`;
+  if (!Number.isInteger(step) || step < 1 || step > TERMINAL_TOUR_STEPS.length) {
+    return `There are ${TERMINAL_TOUR_STEPS.length} steps. Type "tour" to start again.`;
   }
-  const { title, lines } = TOUR_STEPS[step - 1];
-  const next = step < TOUR_STEPS.length ? `Next: type "tour ${step + 1}".` : 'That is the end of the tour.';
-  return [`Step ${step} of ${TOUR_STEPS.length}: ${title}`, '', ...lines.map((line) => `  ${line}`), '', next].join('\n');
+  const { title, lines } = TERMINAL_TOUR_STEPS[step - 1];
+  const next = step < TERMINAL_TOUR_STEPS.length ? `Next: type "tour ${step + 1}".` : 'That is the end of the tour.';
+  return [`Step ${step} of ${TERMINAL_TOUR_STEPS.length}: ${title}`, '', ...lines.map((line) => `  ${line}`), '', next].join('\n');
 }
 
 /** A Unix manual page: a title line, then each section that has something in it, indented. */
