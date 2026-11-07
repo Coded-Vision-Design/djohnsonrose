@@ -396,10 +396,17 @@ for (const viewport of [DESKTOP, PHONE]) {
         await testInfo.attach(`${name}-${build.name}-${viewport.width}.png`, { body: shot, contentType: 'image/png' })
         taken.push(shot)
       }
+      // The show covers the whole screen, so the whole screen is compared.
+      await win.getByRole('button', { name: 'Present' }).click()
+      await expect(page.locator('[data-present] [data-slide-title]')).toHaveText(BOULEVARD_HEADINGS[SLIDES[SLIDES.length - 1].at])
+      await settle(page.locator('[data-present]'), page)
+      const show = await page.screenshot({ animations: 'disabled', caret: 'hide' })
+      await testInfo.attach(`show-${build.name}-${viewport.width}.png`, { body: show, contentType: 'image/png' })
+      taken.push(show)
       return taken
     })
     const page = await browser.newPage()
-    for (const [i, { name }] of SLIDES.entries()) {
+    for (const [i, { name }] of [...SLIDES, { at: -1, name: 'show' }].entries()) {
       const { size, share } = await pixelDifference(page, shots[0][i], shots[1][i])
       expect(size, `${name}: the windows are not the same size`).toBe(true)
       expect(share, `${name}: share of pixels that differ`).toBeLessThan(0.0002)
