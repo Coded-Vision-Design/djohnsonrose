@@ -227,7 +227,7 @@ export function createVitalsCollector(env = {}) {
       const interactionCount = Number(perf?.interactionCount) || 0;
       const inpValue = inpFromEvents(interactions, interactionCount);
       const interaction = interactionIds && has('event')
-        ? { id: 'INP', supported: true, value: inpValue, under: inpValue === null && interactionCount > 0 }
+        ? { id: 'INP', supported: true, value: inpValue, under: inpValue === null && (interactionCount > 0 || !!firstInput) }
         : has('first-input')
           ? {
               id: 'FID',
@@ -294,7 +294,7 @@ export function vitalCards(reading) {
   const paint = (id, metric, waiting) => {
     if (!metric?.supported) return card(id, 'unsupported', NOT_MEASURED);
     if (isMeasure(metric.value)) return card(id, 'measured', metric.value);
-    if (metric.hidden) return card(id, 'waiting', 'Not measured', 'The page loaded in a background tab, so its paints do not count.');
+    if (metric.hidden) return card(id, 'waiting', 'Not measured', 'The page loaded in a background tab.');
     return card(id, 'waiting', waiting);
   };
 
@@ -303,15 +303,15 @@ export function vitalCards(reading) {
   if (!interaction?.supported) {
     input = card('INP', 'unsupported', NOT_MEASURED);
   } else if (interaction.id === 'FID') {
-    const note = 'This browser cannot measure Interaction to Next Paint, so this is First Input Delay instead.';
+    const note = 'This browser cannot measure INP.';
     input = isMeasure(interaction.value) ? card('FID', 'measured', interaction.value, note) : card('FID', 'waiting', 'No input yet', note);
   } else if (isMeasure(interaction.value)) {
-    input = card('INP', 'measured', interaction.value, 'The slowest response to a click, tap or key press so far.');
+    input = card('INP', 'measured', interaction.value, 'Slowest response to input so far.');
   } else if (interaction.under) {
     // The browser reports interactions from 16 ms; every one so far was quicker.
-    input = { ...card('INP', 'measured', 0), value: 'Under 16 ms', note: 'Every response to a click, tap or key press so far.' };
+    input = { ...card('INP', 'measured', 0), value: 'Under 16 ms', note: 'Every response to input so far.' };
   } else {
-    input = card('INP', 'waiting', 'No interactions yet', 'Updates when you click, tap or press a key.');
+    input = card('INP', 'waiting', 'No interactions yet', 'Updates when you click, tap or type.');
   }
 
   const cls = reading?.CLS;
@@ -447,19 +447,26 @@ export function summariseDownloads(entries, { origin = globalThis.location?.orig
     total.size += size;
     if (cached) total.cached += 1;
     if (unreported) total.unreported += 1;
-    files.push({ url: entry.name, name: resourceName(entry.name, origin), group, transferred, size, cached });
+    const name = resourceName(entry.name, origin);
+    files.push({ url: entry.name, name: entry === navigation ? `This page (${name})` : name, group, transferred, size, cached });
   }
 
   const notes = [];
   if (total.cached) {
-    notes.push(`${plural(total.cached, 'request', 'requests')} came from the browser cache, so nothing was transferred for ${total.cached === 1 ? 'it' : 'them'}.`);
+    notes.push({
+      id: 'cache',
+      text: `${plural(total.cached, 'request', 'requests')} came from the browser cache, so nothing was transferred for ${total.cached === 1 ? 'it' : 'them'}.`,
+    });
   }
   if (total.unreported) {
-    notes.push(total.unreported === 1
-      ? '1 request from another site did not share its size.'
-      : `${total.unreported} requests from other sites did not share their sizes.`);
+    notes.push({
+      id: 'unreported',
+      text: total.unreported === 1
+        ? '1 request from another site did not share its size.'
+        : `${total.unreported} requests from other sites did not share their sizes.`,
+    });
   }
-  if (full) notes.push("The browser's list of downloads filled up, so later downloads are missing.");
+  if (full) notes.push({ id: 'full', text: "The browser's list of downloads filled up, so later downloads are missing." });
 
   const text = (sum) => ({ ...sum, transferredText: formatBytes(sum.transferred), sizeText: formatBytes(sum.size) });
   return {
@@ -521,6 +528,11 @@ const WINDOW_STATES = { minimized: 'Minimised', maximized: 'Maximised', snapped:
 /** A window's state from the store, in words. */
 export function windowStatusLabel(state) {
   return WINDOW_STATES[state] ?? 'Open';
+}
+
+/** "2 windows open" for Task Manager's status bar. */
+export function windowCountText(count) {
+  return count > 0 ? `${plural(count, 'window', 'windows')} open` : 'No windows open';
 }
 
 /** One row per open window, straight from the store, with the files named for its app. */

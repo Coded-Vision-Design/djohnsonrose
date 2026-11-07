@@ -18,6 +18,7 @@ import {
   appOwnsFile,
   appFiles,
   windowStatusLabel,
+  windowCountText,
   processRows,
   jsHeap,
   parseBuildInfo,
@@ -297,6 +298,13 @@ describe('createVitalsCollector', () => {
     expect(vitals.read().interaction).toEqual({ id: 'INP', supported: true, value: null, under: true })
   })
 
+  it('knows from the first input that an interaction happened, where the browser keeps no count', () => {
+    const browser = fakeBrowser(ALL)
+    const vitals = createVitalsCollector(browser.env)
+    browser.emit('first-input', [{ startTime: 900, processingStart: 902, duration: 8, interactionId: 0 }])
+    expect(vitals.read().interaction).toEqual({ id: 'INP', supported: true, value: null, under: true })
+  })
+
   it('does not count paints from a page that loaded in a background tab', () => {
     const browser = fakeBrowser(ALL, { hidden: true })
     const vitals = createVitalsCollector(browser.env)
@@ -369,7 +377,7 @@ describe('vitalCards', () => {
   it('labels First Input Delay honestly when INP is not available', () => {
     const card = vitalCards(reading({ interaction: { id: 'FID', supported: true, value: 14, under: false } }))[2]
     expect(card).toMatchObject({ id: 'FID', name: 'First Input Delay', value: '14 ms', rating: 'good' })
-    expect(card.note).toMatch(/cannot measure Interaction to Next Paint/)
+    expect(card.note).toBe('This browser cannot measure INP.')
   })
 
   it('waits for an interaction rather than inventing one', () => {
@@ -465,22 +473,27 @@ describe('summariseDownloads', () => {
 
   it('says how many came from the cache, and how many sizes are unknown', () => {
     const { notes } = summariseDownloads(entries, { origin, navigation })
-    expect(notes).toContain('2 requests came from the browser cache, so nothing was transferred for them.')
-    expect(notes).toContain('1 request from another site did not share its size.')
+    expect(notes).toEqual([
+      { id: 'cache', text: '2 requests came from the browser cache, so nothing was transferred for them.' },
+      { id: 'unreported', text: '1 request from another site did not share its size.' },
+    ])
+    expect(summariseDownloads([entries[1]], { origin }).notes).toEqual([
+      { id: 'cache', text: '1 request came from the browser cache, so nothing was transferred for it.' },
+    ])
   })
 
   it('lists the largest files, biggest first, marking cache hits', () => {
     const { largest } = summariseDownloads(entries, { origin, navigation, limit: 3 })
-    expect(largest.map((file) => file.name)).toEqual(['/', 'a.webp', 'app.js'])
+    expect(largest.map((file) => file.name)).toEqual(['This page (/)', 'a.webp', 'app.js'])
     expect(largest[0]).toMatchObject({ url: `${origin}/`, group: 'other', groupLabel: 'Other', sizeText: '136.2 kB', cached: false })
     const css = summariseDownloads(entries, { origin, limit: 10 }).largest.find((file) => file.name === 'app.css')
     expect(css).toMatchObject({ cached: true, transferredText: '0 B' })
   })
 
   it('warns when the browser stopped listing downloads', () => {
-    expect(summariseDownloads([], { origin, full: true }).notes).toContain(
-      "The browser's list of downloads filled up, so later downloads are missing.",
-    )
+    expect(summariseDownloads([], { origin, full: true }).notes).toEqual([
+      { id: 'full', text: "The browser's list of downloads filled up, so later downloads are missing." },
+    ])
   })
 
   it('treats a missing list as nothing downloaded', () => {
@@ -543,6 +556,13 @@ describe('appFiles and processRows', () => {
     expect(windowStatusLabel('snapped')).toBe('Snapped')
     expect(windowStatusLabel('floating')).toBe('Open')
     expect(windowStatusLabel(undefined)).toBe('Open')
+  })
+
+  it('counts the open windows in words', () => {
+    expect(windowCountText(1)).toBe('1 window open')
+    expect(windowCountText(3)).toBe('3 windows open')
+    expect(windowCountText(0)).toBe('No windows open')
+    expect(windowCountText(Number.NaN)).toBe('No windows open')
   })
 
   it('makes one row per open window, from the store', () => {

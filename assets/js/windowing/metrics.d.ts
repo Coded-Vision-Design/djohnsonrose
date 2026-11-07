@@ -112,7 +112,8 @@ export interface DownloadSummary {
   groups: DownloadGroup[]
   total: Sized & { requests: number; cached: number; unreported: number }
   largest: DownloadFile[]
-  notes: string[]
+  /** What the figures cannot show, each with an id to find it by. */
+  notes: { id: 'cache' | 'unreported' | 'full'; text: string }[]
 }
 export function summariseDownloads(
   entries: ResourceLike[],
@@ -122,6 +123,8 @@ export function summariseDownloads(
 export function appOwnsFile(appId: string, url: string): boolean
 export function appFiles(appId: string, entries: ResourceLike[]): { files: number; size: number; transferred: number; text: string }
 export function windowStatusLabel(state: string | undefined): string
+/** "2 windows open" for Task Manager's status bar. */
+export function windowCountText(count: number): string
 
 export interface ProcessRow {
   id: number
