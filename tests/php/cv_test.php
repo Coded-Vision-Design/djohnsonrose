@@ -87,19 +87,36 @@ $certCount = array_sum(array_map(fn($g) => count($g['names']), cv_certificate_gr
 check('certificates: every one in the data is listed', $certCount === count($portfolio['certifications']));
 
 // cv_same_as
-check('sameAs: GitHub alone', cv_same_as(['github' => 'https://github.com/x', 'linkedin' => '']) === ['https://github.com/x']);
+check('sameAs: LinkedIn alone, when there is no GitHub', cv_same_as(['github' => '', 'linkedin' => 'https://www.linkedin.com/in/x']) === ['https://www.linkedin.com/in/x']);
 check('sameAs: GitHub and LinkedIn', cv_same_as(['github' => 'https://github.com/x', 'linkedin' => 'https://www.linkedin.com/in/x']) === ['https://github.com/x', 'https://www.linkedin.com/in/x']);
 check('sameAs: ignores anything that is not a link', cv_same_as(['github' => 'not a url']) === []);
+
+// cv_tel: a UK number as written on the CV, in the international form a tel: link and schema.org want.
+check('tel: a UK mobile as the CV writes it', cv_tel('07429 490 333') === '+447429490333');
+check('tel: already international', cv_tel('+44 7429 490333') === '+447429490333');
+check('tel: keeps only digits', cv_tel('(01206) 123-456') === '+441206123456');
+check('tel: empty gives empty', cv_tel('') === '');
+check('tel: words give empty', cv_tel('call me') === '');
+check('tel: too short gives empty', cv_tel('0123') === '');
+
+// cv_link_label: a profile address as people read it.
+check('label: drops the scheme, www and the closing slash', cv_link_label('https://www.linkedin.com/in/someone/') === 'linkedin.com/in/someone');
+check('label: shows accented letters, not their codes', cv_link_label('https://www.linkedin.com/in/devant%C3%A9-johnson-rose-b5303a47/') === 'linkedin.com/in/devanté-johnson-rose-b5303a47');
+check('label: a bare domain', cv_link_label('https://example.com') === 'example.com');
+check('label: empty gives empty', cv_link_label('') === '');
+check('label: broken escapes stay as they are', cv_link_label('https://example.com/%E9') === 'example.com/%E9');
 
 // cv_person_schema
 $person = cv_person_schema($profile, 'Role', 'me@example.com');
 check('person: has the shared id', $person['@id'] === 'https://devante.johnson-rose.co.uk/#person');
 check('person: has the job title given', $person['jobTitle'] === 'Role');
 check('person: has the email', $person['email'] === 'mailto:me@example.com');
+check('person: has the phone, in international form', ($person['telephone'] ?? '') === cv_tel($profile['phone']));
+check('person: has no phone when the data has none', !array_key_exists('telephone', cv_person_schema(['phone' => ''] + $profile, 'Role', 'me@example.com')));
 check('person: works for the current employers', array_column($person['worksFor'], 'name') === $profile['worksFor']);
 check('person: is an alumnus of the university', $person['alumniOf']['name'] === $profile['alumniOf']);
 check('person: knows about things', count($person['knowsAbout']) >= 10);
-check('person: links GitHub', in_array($profile['github'], $person['sameAs'], true));
+check('person: links LinkedIn', in_array($profile['linkedin'], $person['sameAs'], true));
 
 // data/profile.json is the structured copy of the CV header. It must not drift
 // from the Word app's CV (data/cv.php) or invent skills the CV does not claim.
@@ -110,6 +127,9 @@ check('profile: the headline is the one the owner chose', ($profile['headline'] 
 preg_match('#<h1[^>]*>[^<]*</h1>\s*<p[^>]*>([^<]*)</p>#', $cvPhp, $cvHeadline);
 check('profile: the headline heads the CV', ($cvHeadline[1] ?? '') === ($profile['headline'] ?? '?'));
 check('profile: the location matches the CV', str_contains($cvPhp, $profile['location'] ?? '?'));
+check('profile: the phone is the one on the CV', ($profile['phone'] ?? '') !== '' && str_contains($cvPhp, "☎ {$profile['phone']} ·"));
+check('profile: LinkedIn is the owner\'s profile', ($profile['linkedin'] ?? '') === 'https://www.linkedin.com/in/devant%C3%A9-johnson-rose-b5303a47/');
+check('profile: the CV links LinkedIn', str_contains($cvPhp, 'href="' . ($profile['linkedin'] ?? '?') . '"') && str_contains($cvPhp, '>' . cv_link_label($profile['linkedin'] ?? '?') . '</a>'));
 foreach ($profile['knowsAbout'] ?? [] as $skill) {
     check("profile: the CV claims {$skill}", stripos($cvPhp, $skill) !== false || stripos($portfolioText, $skill) !== false);
 }
@@ -154,8 +174,8 @@ check('page: keeps each part of the headline on one line', substr_count($headlin
 check('page: shows the summary', str_contains($html, htmlspecialchars(cv_text($portfolio['summary']))));
 check('page: shows the email as text', (bool)preg_match('/<span[^>]*data-email[^>]*>devante@johnson-rose\.co\.uk<\/span>/', $html));
 check('page: offers a mailto link', str_contains($html, 'href="mailto:devante@johnson-rose.co.uk"'));
-check('page: links GitHub', str_contains($html, 'href="' . $profile['github'] . '"'));
-check('page: no LinkedIn link while there is no profile', empty($profile['linkedin']) ? !str_contains($html, 'linkedin.com') : str_contains($html, $profile['linkedin']));
+check('page: shows the phone as a tel: link', (bool)preg_match('/<a [^>]*href="tel:' . preg_quote(cv_tel($profile['phone']), '/') . '"[^>]*data-phone[^>]*>' . preg_quote($profile['phone'], '/') . '<\/a>/', $html));
+check('page: links LinkedIn by its readable address', (bool)preg_match('/<a [^>]*href="' . preg_quote($profile['linkedin'], '/') . '"[^>]*>' . preg_quote(cv_link_label($profile['linkedin']), '/') . '</', $html));
 check('page: links the PDF', str_contains($html, 'href="/data/cv.pdf"'));
 foreach ($featured as $p) {
     check("page: links {$p['title']} in a new tab", (bool)preg_match('/<a [^>]*href="' . preg_quote(htmlspecialchars($p['url']), '/') . '"[^>]*target="_blank" rel="noopener noreferrer"/', $html));
@@ -181,6 +201,7 @@ check('page: structured data is a profile page', in_array('ProfilePage', $types,
 $pagePerson = $graph[array_search('Person', $types, true)] ?? [];
 check('page: structured data uses the CV headline', ($pagePerson['jobTitle'] ?? '') === $profile['headline']);
 check('page: structured data matches the shared person', ($pagePerson['knowsAbout'] ?? null) === $person['knowsAbout'] && ($pagePerson['sameAs'] ?? null) === $person['sameAs']);
+check('page: structured data has the phone', ($pagePerson['telephone'] ?? '') === cv_tel($profile['phone']));
 
 echo "{$passes} passed, {$failures} failed\n";
 exit($failures === 0 ? 0 : 1);

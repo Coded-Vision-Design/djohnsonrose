@@ -27,6 +27,9 @@ function meta(html: string, key: string) {
 
 const canonical = (html: string) => html.match(/<link rel="canonical" href="([^"]*)"/)?.[1]
 
+/** A UK number as the CV writes it, in the form schema.org wants: 07429 490 333 is +447429490333. */
+const internationalPhone = (phone: string) => `+44${phone.replace(/\D/g, '').slice(1)}`
+
 type Node = Record<string, unknown> & { '@type': string }
 
 /** One node of the JSON-LD graph, by its type. */
@@ -80,6 +83,20 @@ describe('desktop metadata', () => {
     expect(person.alumniOf).toEqual({ '@type': 'CollegeOrUniversity', name: profile.alumniOf })
     expect(person.knowsAbout).toEqual(profile.knowsAbout)
     expect(person.sameAs).toEqual([profile.github, profile.linkedin].filter(Boolean))
+    expect(person.telephone).toBe(internationalPhone(profile.phone))
+  })
+})
+
+describe('ways to find DeVanté', () => {
+  it('include his LinkedIn profile', () => {
+    expect(profile.linkedin).toBe('https://www.linkedin.com/in/devant%C3%A9-johnson-rose-b5303a47/')
+    for (const html of Object.values(HEADS)) expect(node(html, 'Person')?.sameAs).toContain(profile.linkedin)
+    expect(llms).toContain(`- [LinkedIn](${profile.linkedin})`)
+  })
+
+  it('include the phone number on the CV', () => {
+    expect(profile.phone).toMatch(/^0\d{4} \d{3} \d{3}$/)
+    expect(cvPhp).toContain(`☎ ${profile.phone} ·`)
   })
 })
 

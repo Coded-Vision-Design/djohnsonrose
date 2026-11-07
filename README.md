@@ -293,4 +293,4 @@ MIT. Use as much or as little of this as you like - it's here to be read.
 ## Contact
 
 DeVanté Johnson-Rose · Full Stack Developer
-**<https://devante.johnson-rose.co.uk>**
+**<https://devante.johnson-rose.co.uk>** · [LinkedIn](https://www.linkedin.com/in/devant%C3%A9-johnson-rose-b5303a47/)

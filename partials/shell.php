@@ -56,6 +56,7 @@
           "image": "https://devante.johnson-rose.co.uk/assets/img/profile.webp",
           "jobTitle": "Full Stack Developer",
           "email": "mailto:devante@johnson-rose.co.uk",
+          "telephone": "+447429490333",
           "worksFor": [
             { "@type": "Organization", "name": "Killik & Co" },
             { "@type": "Organization", "name": "Coded Vision Design" }
@@ -67,7 +68,8 @@
             "Automation", "SCCM", "JAMF", "Active Directory", "Docker", "AI integration"
           ],
           "sameAs": [
-            "https://github.com/CodedVisionDesign"
+            "https://github.com/CodedVisionDesign",
+            "https://www.linkedin.com/in/devant%C3%A9-johnson-rose-b5303a47/"
           ]
         },
         {

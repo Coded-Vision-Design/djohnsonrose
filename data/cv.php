@@ -4,6 +4,7 @@
         <h1 class="text-4xl font-bold uppercase tracking-widest mb-2">DeVanté Johnson-Rose</h1>
         <p class="text-lg text-gray-700 font-semibold">Full Stack Developer</p>
         <p class="text-gray-500 text-sm mt-2">📧 devante@johnson-rose.co.uk · ☎ 07429 490 333 · 📍 Essex, UK · 🌍 devante.johnson-rose.co.uk</p>
+        <p class="text-gray-500 text-sm mt-1">🔗 <a href="https://www.linkedin.com/in/devant%C3%A9-johnson-rose-b5303a47/">linkedin.com/in/devanté-johnson-rose-b5303a47</a></p>
     </div>
 
     <!-- Headline stats -->

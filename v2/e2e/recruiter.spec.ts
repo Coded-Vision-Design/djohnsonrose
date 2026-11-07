@@ -63,8 +63,13 @@ test.describe('/cv', () => {
     expect(await email.evaluate((el) => el.closest('a'))).toBeNull()
     expect(await email.evaluate((el) => getComputedStyle(el).userSelect)).not.toBe('none')
     await expect(page.locator('a[href="mailto:devante@johnson-rose.co.uk"]')).toBeVisible()
-    await expect(page.locator(`a[href="${profile.github}"]`)).toBeVisible()
-    if (!profile.linkedin) await expect(page.locator('a[href*="linkedin.com"]')).toHaveCount(0)
+    // The phone rings from a phone, and LinkedIn opens his profile.
+    const phone = page.locator('[data-phone]')
+    await expect(phone).toHaveText(profile.phone)
+    await expect(phone).toHaveAttribute('href', `tel:+44${profile.phone.replace(/\D/g, '').slice(1)}`)
+    await expect(page.locator(`main a[href="${profile.linkedin}"]`)).toHaveText(
+      'linkedin.com/in/devanté-johnson-rose-b5303a47 (opens in a new tab)',
+    )
 
     await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', `${profile.url}cv`)
     await expect(page.locator('script:not([type="application/ld+json"])')).toHaveCount(0)
