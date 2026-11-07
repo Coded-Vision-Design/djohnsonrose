@@ -32,6 +32,13 @@ AddType video/ogg .ogv
         Header set Content-Type "text/plain; charset=utf-8"
     </FilesMatch>
 </IfModule>
+# build.json says which commit is live (Task Manager reads it), so it is checked
+# with the server every time rather than kept from an older deploy.
+<Files "build.json">
+    <IfModule mod_headers.c>
+        Header set Cache-Control "no-cache"
+    </IfModule>
+</Files>
 
 # ---- Sensitive files: deny all direct access ----
 # .env, dotfiles, config/bootstrap, and any PHP file that isn't an entry point.

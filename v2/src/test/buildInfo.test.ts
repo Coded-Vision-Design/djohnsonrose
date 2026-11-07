@@ -146,6 +146,11 @@ describe('build.json ships and can be read', () => {
     expect(denied.some((rule) => rule.test('.env'))).toBe(true)
     expect(denied.filter((rule) => rule.test('build.json'))).toEqual([])
   })
+
+  it('is checked with the server every time, so a new deploy shows at once', () => {
+    const rule = htaccess.match(/<Files "build\.json">([\s\S]*?)<\/Files>/)?.[1] ?? ''
+    expect(rule).toMatch(/Header set Cache-Control "no-cache"/)
+  })
 })
 
 // ── Running the step ─────────────────────────────────────────────────────────
