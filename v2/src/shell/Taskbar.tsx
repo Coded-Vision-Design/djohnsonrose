@@ -3,6 +3,7 @@ import { useOsStore } from '../store/osStore'
 import { getApp } from '../apps/registry'
 import { VolumeIcon } from './VolumeIcon'
 import { showClassicDesktopMenu, showMenu, type MenuPoint } from './menus'
+import { TASK_VIEW_KEYS } from '../../../assets/js/windowing/switcher.js'
 
 // 1:1 port of partials/taskbar.php - left widget area, centre pinned + running
 // apps with the v1 active indicators (active/inactive/minimized), right system
@@ -110,6 +111,7 @@ export function Taskbar() {
   const toggleQuickSettings = useOsStore((s) => s.toggleQuickSettings)
   const toggleWidgets = useOsStore((s) => s.toggleWidgets)
   const toggleTaskSwitcher = useOsStore((s) => s.toggleTaskSwitcher)
+  const taskViewOpen = useOsStore((s) => s.taskSwitcherOpen)
   const isDesktop = useOsStore((s) => s.isDesktop)
   const battery = useOsStore((s) => s.battery)
 
@@ -248,12 +250,20 @@ export function Taskbar() {
           </svg>
         </button>
 
+        {/* Task View (phones use the Open apps button below). See TaskView.tsx. */}
         <button
           type="button"
-          onClick={() => openApp('taskmanager')}
+          onClick={toggleTaskSwitcher}
           hidden={isMobile}
-          className="w-10 h-10 flex items-center justify-center rounded-sm hover:bg-white/10 transition-colors"
-          title="Task view"
+          data-task-view-toggle=""
+          aria-label="Task view"
+          aria-haspopup="dialog"
+          aria-expanded={taskViewOpen}
+          aria-keyshortcuts={TASK_VIEW_KEYS}
+          className={`w-10 h-10 flex items-center justify-center rounded-sm hover:bg-white/10 transition-colors ${
+            taskViewOpen ? 'bg-white/10' : ''
+          }`}
+          title={`Task view (${TASK_VIEW_KEYS})`}
         >
           <svg className="w-5 h-5 text-gray-500 dark:text-gray-400" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
             <path d="M3 3h18v18H3V3zm16 16V5H5v14h14zM7 7h10v2H7V7zm0 4h10v2H7v-2zm0 4h7v2H7v-2z" />
@@ -264,6 +274,9 @@ export function Taskbar() {
           type="button"
           className="os-task-button w-10 h-10 items-center justify-center rounded-sm hover:bg-white/10 relative text-black dark:text-white"
           onClick={toggleTaskSwitcher}
+          data-task-view-toggle=""
+          aria-haspopup="dialog"
+          aria-expanded={taskViewOpen}
           aria-label={`Open apps: ${windows.length}`}
           title="Open apps"
         >

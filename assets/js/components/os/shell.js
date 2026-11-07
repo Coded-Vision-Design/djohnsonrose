@@ -213,7 +213,6 @@ document.addEventListener('alpine:init', () => {
             return { left: r.x + 'px', top: r.y + 'px', width: r.width + 'px', height: r.height + 'px' };
         },
         resizeDirs(win) { return OsWindowing.resizableEdges(win, Alpine.store('os').desktop); },
-        recentWindows() { return [...this.windows].sort((a, b) => b.z - a.z); },
         appIcon(app) {
             return window.portfolioConfig.imgPath + (window.portfolioConfig.apps[app]?.icon ?? 'favicon.webp');
         },
@@ -327,7 +326,7 @@ document.addEventListener('alpine:init', () => {
 
         handleTouchStart(e, action = null) {
             // Long press and pinch belong to the desktop, not to an open app.
-            if (!action && e.target.closest('.os-window, .os-taskbar, .os-task-switcher')) return;
+            if (!action && e.target.closest('.os-window, .os-taskbar, .os-task-view, .os-switcher')) return;
             if (e.touches.length === 1) {
                 this.touchData.startX = e.touches[0].clientX;
                 this.touchData.startY = e.touches[0].clientY;
