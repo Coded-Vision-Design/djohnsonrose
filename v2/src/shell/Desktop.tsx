@@ -9,6 +9,7 @@ import { WindowSwitcher } from './WindowSwitcher'
 import { Taskbar } from './Taskbar'
 import { CalendarFlyout } from './CalendarFlyout'
 import { PropertiesDialog, Toast } from './FileDialogs'
+import { Tour } from './Tour'
 import { showDesktopMenu } from './menus'
 import { StartMenu } from './StartMenu'
 import { QuickSettings } from './QuickSettings'
@@ -176,6 +177,7 @@ export function Desktop() {
       <ContextMenu />
       <PropertiesDialog />
       <Toast />
+      <Tour />
     </div>
   )
 }

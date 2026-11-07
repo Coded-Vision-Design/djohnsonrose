@@ -116,7 +116,8 @@
         import * as address from '<?php echo BASE_PATH; ?>assets/js/windowing/address.js?v=<?php echo @filemtime(__DIR__ . '/../assets/js/windowing/address.js'); ?>';
         import * as sourceViewer from '<?php echo BASE_PATH; ?>assets/js/windowing/source-viewer.js?v=<?php echo @filemtime(__DIR__ . '/../assets/js/windowing/source-viewer.js'); ?>';
         import * as widgets from '<?php echo BASE_PATH; ?>assets/js/windowing/widgets.js?v=<?php echo @filemtime(__DIR__ . '/../assets/js/windowing/widgets.js'); ?>';
-        window.OsWindowing = { ...windowing, ...shellCore, ...fileOps, ...textOps, ...shellUi, ...calculator, ...terminal, ...browser, ...media, ...sql, ...devtools, ...references, ...weather, ...switcher, ...calendar, ...address, ...sourceViewer, ...widgets };
+        import * as tour from '<?php echo BASE_PATH; ?>assets/js/windowing/tour.js?v=<?php echo @filemtime(__DIR__ . '/../assets/js/windowing/tour.js'); ?>';
+        window.OsWindowing = { ...windowing, ...shellCore, ...fileOps, ...textOps, ...shellUi, ...calculator, ...terminal, ...browser, ...media, ...sql, ...devtools, ...references, ...weather, ...switcher, ...calendar, ...address, ...sourceViewer, ...widgets, ...tour };
         window.FlStudio = flStudio;
         window.OfficeApps = officeApps;
         window.Drawing = drawing;
@@ -369,6 +370,7 @@
             <div x-show="loggedIn && !isBooting && !loggingIn" x-cloak class="h-full w-full absolute inset-0 z-1">
                 <?php include __DIR__ . '/desktop.php'; ?>
                 <?php include __DIR__ . '/file-dialogs.php'; ?>
+                <?php include __DIR__ . '/tour.php'; ?>
             </div>
         </main>
 
@@ -416,6 +418,8 @@
         'os/shell',
         'os/switching',
         'os/calendar',
+
+        'os/tour',
         'paint',
         'photoshop',
         'calculator',

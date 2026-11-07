@@ -1741,3 +1741,170 @@ html[data-os-mode='tablet'] .os-widget-step {
 .os-activity-message {
     overflow-wrap: anywhere;
 }
+
+/* The guided tour (tour.js): a toast like a Windows notification that points at
+   part of the desktop, and a ring around that part, which stays usable. Both
+   builds place them with positionTour. On a phone the toast docks above the
+   taskbar, clear of the cookie bar, and its buttons take a finger. */
+.os-tour-toast {
+  position: fixed;
+  z-index: 14000;
+  box-sizing: border-box;
+  width: 360px;
+  max-width: calc(100% - 32px);
+  padding: 12px 16px 16px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  background: #fff;
+  color: #1b1b1b;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.28);
+  font-size: 13px;
+  line-height: 18px;
+  animation: os-tour-in 200ms var(--os-ease);
+  transition: left 250ms var(--os-ease), top 250ms var(--os-ease);
+}
+
+.dark .os-tour-toast {
+  border-color: rgba(255, 255, 255, 0.1);
+  background: #2b2b2b;
+  color: #fff;
+}
+
+.os-tour-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  font-size: 12px;
+  line-height: 16px;
+}
+
+.os-tour-logo {
+  width: 16px;
+  height: 16px;
+}
+
+.os-tour-app {
+  flex: 1;
+}
+
+.os-tour-count {
+  opacity: 0.75;
+}
+
+.os-tour-title {
+  margin: 0 0 4px;
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 600;
+}
+
+.os-tour-text {
+  margin: 0;
+}
+
+.os-tour-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.os-tour-button {
+  min-height: 32px;
+  min-width: 96px;
+  padding: 0 12px;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.03);
+  color: inherit;
+  font-size: 12px;
+}
+
+.os-tour-button:hover {
+  background: rgba(0, 0, 0, 0.08);
+}
+
+.dark .os-tour-button {
+  border-color: rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.dark .os-tour-button:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.os-tour-button.os-tour-primary {
+  border-color: #0078d4;
+  background: #0078d4;
+  color: #fff;
+  font-weight: 600;
+}
+
+.os-tour-button.os-tour-primary:hover {
+  background: #106ebe;
+}
+
+.os-tour-ring {
+  position: fixed;
+  z-index: 13900;
+  border: 2px solid #0078d4;
+  border-radius: 8px;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.85), 0 0 18px 4px rgba(0, 120, 212, 0.55);
+  pointer-events: none;
+  animation: os-tour-pulse 2s ease-in-out infinite;
+  transition: left 250ms var(--os-ease), top 250ms var(--os-ease), width 250ms var(--os-ease), height 250ms var(--os-ease);
+}
+
+.dark .os-tour-ring {
+  border-color: #60cdff;
+}
+
+@keyframes os-tour-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+@keyframes os-tour-pulse {
+  50% {
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.85), 0 0 26px 8px rgba(0, 120, 212, 0.35);
+  }
+}
+
+/* Start, Quick Settings and Widgets cover the tour, which waits behind them. */
+[data-tour-covered='true'] :is(.os-tour-toast, .os-tour-ring) {
+  visibility: hidden;
+}
+
+html[data-os-mode='phone'] .os-tour-toast {
+  left: 0;
+  right: 0;
+  bottom: calc(var(--os-taskbar-height) + var(--os-banner-inset, 0px));
+  width: auto;
+  max-width: none;
+  border-width: 1px 0 0;
+  border-radius: 0;
+}
+
+/* At the top instead when above the taskbar it would cover what it points at. */
+html[data-os-mode='phone'] .os-tour-toast[data-tour-side='dock-top'] {
+  top: 0;
+  bottom: auto;
+  padding-top: calc(12px + env(safe-area-inset-top, 0px));
+  border-width: 0 0 1px;
+}
+
+html[data-os-mode='phone'] .os-tour-button {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .os-tour-toast,
+  .os-tour-ring {
+    animation: none !important;
+    transition: none !important;
+  }
+}
