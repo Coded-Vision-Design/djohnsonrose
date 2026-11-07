@@ -166,6 +166,8 @@
         </template>
 
         <?php include __DIR__ . '/snap-ui.php'; ?>
+        <?php include __DIR__ . '/task-view.php'; ?>
+        <?php include __DIR__ . '/window-switcher.php'; ?>
     </div>
 
     <!-- Start Menu Overlay -->

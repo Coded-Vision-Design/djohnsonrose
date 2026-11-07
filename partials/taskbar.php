@@ -32,14 +32,22 @@
             <svg class="w-5 h-5 text-win-blue" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
         </button>
 
-        <!-- Desktop/Task View (Hide on mobile) -->
-        <button type="button" x-show="!isMobile" @click="openApp('taskmanager')" title="Task view" class="w-10 h-10 flex items-center justify-center rounded-sm hover:bg-white/10 transition-colors">
+        <!-- Task View (phones use the Open apps button below). See partials/task-view.php. -->
+        <button type="button" x-show="!isMobile" @click="$store.os.taskSwitcherOpen = !$store.os.taskSwitcherOpen"
+                data-task-view-toggle aria-label="Task view" aria-haspopup="dialog"
+                :aria-expanded="$store.os.taskSwitcherOpen ? 'true' : 'false'"
+                :aria-keyshortcuts="OsWindowing.TASK_VIEW_KEYS"
+                :title="`Task view (${OsWindowing.TASK_VIEW_KEYS})`"
+                class="w-10 h-10 flex items-center justify-center rounded-sm hover:bg-white/10 transition-colors"
+                :class="{ 'bg-white/10': $store.os.taskSwitcherOpen }">
             <svg class="w-5 h-5 text-gray-500 dark:text-gray-400" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3 3h18v18H3V3zm16 16V5H5v14h14zM7 7h10v2H7V7zm0 4h10v2H7v-2zm0 4h7v2H7v-2z"/></svg>
         </button>
 
         <!-- Task switcher (phones) -->
         <button type="button" class="os-task-button w-10 h-10 items-center justify-center rounded-sm hover:bg-white/10 relative text-black dark:text-white"
                 @click="$store.os.taskSwitcherOpen = !$store.os.taskSwitcherOpen"
+                data-task-view-toggle aria-haspopup="dialog"
+                :aria-expanded="$store.os.taskSwitcherOpen ? 'true' : 'false'"
                 :aria-label="`Open apps: ${windows.length}`"
                 title="Open apps">
             <svg class="w-5 h-5 fill-current opacity-80" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h11v13H4V7zm2 2v9h7V9H6zm11-5H7v2h10v11h2V4h-2z"/></svg>

@@ -813,6 +813,7 @@ for (const build of BUILDS) {
         await expect(page.locator(`#${id}`)).toHaveAttribute('data-state', 'minimized')
       })
 
+      // On a phone, the Open apps button opens Task View. See switching.spec.ts.
       test('the task switcher moves between apps and closes them', async ({ page }) => {
         const first = await open(page, 'settings', 'Settings')
         await open(page, 'calculator', 'Calculator')
@@ -820,16 +821,16 @@ for (const build of BUILDS) {
         expect((await box(button)).width).toBeGreaterThanOrEqual(44)
         await button.tap()
 
-        const switcher = page.getByRole('dialog', { name: 'Open apps' })
+        const switcher = page.getByRole('dialog', { name: 'Task view' })
         await expect(switcher).toBeVisible()
-        await expect(switcher.locator('.os-task-card')).toHaveCount(2)
+        await expect(switcher.locator('.os-task-view-card')).toHaveCount(2)
         await switcher.getByRole('button', { name: 'Settings', exact: true }).tap()
         await expect(switcher).toHaveCount(0)
         await expect(first).toHaveClass(/window-active/)
 
         await button.tap()
         await switcher.getByRole('button', { name: 'Close Calculator' }).tap()
-        await expect(switcher.locator('.os-task-card')).toHaveCount(1)
+        await expect(switcher.locator('.os-task-view-card')).toHaveCount(1)
       })
 
       test('the taskbar stays inside the screen with many apps open', async ({ page }) => {

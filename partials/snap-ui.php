@@ -55,28 +55,3 @@
         </div>
     </div>
 </template>
-
-<!-- Task switcher, for phones -->
-<template x-if="$store.os.taskSwitcherOpen">
-    <div class="os-task-switcher" role="dialog" aria-label="Open apps">
-        <div class="os-task-switcher-head">
-            <h2>Open apps</h2>
-            <button type="button" class="os-task-clear" @click="$store.os.taskSwitcherOpen = false">Done</button>
-        </div>
-        <template x-if="windows.length === 0">
-            <p class="os-task-empty">No apps are open.</p>
-        </template>
-        <div class="os-task-switcher-list">
-            <template x-for="win in recentWindows()" :key="win.id">
-                <div class="os-task-row">
-                    <button type="button" class="os-task-card" @click="openApp(win.app)">
-                        <img :src="appIcon(win.app)" alt="">
-                        <span x-text="win.title"></span>
-                    </button>
-                    <button type="button" class="os-task-close" :aria-label="`Close ${win.title}`"
-                            @click="closeWindow(win.id)">✕</button>
-                </div>
-            </template>
-        </div>
-    </div>
-</template>

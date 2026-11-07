@@ -80,6 +80,20 @@ async function pinchOpen(page: Page, browserName: string, x: number, y: number) 
   await touch(page, 'touchend', fingers(130))
 }
 
+/** Opens an app through the store, as Start would, and waits for its window. */
+async function openApp(page: Page, app: string, title: string) {
+  await page.evaluate((id) => {
+    const w = window as unknown as {
+      Alpine?: { store: (n: string) => { openApp: (a: string) => void } }
+      __osStore: { getState: () => { openApp: (a: string) => void } }
+    }
+    ;(w.Alpine ? w.Alpine.store('os') : w.__osStore.getState()).openApp(id)
+  }, app)
+  await expect(page.locator(`.os-window[aria-label="${title}"]`)).toBeVisible()
+}
+
+const taskView = (page: Page) => page.getByRole('dialog', { name: 'Task view' })
+
 const middle = async (page: Page, name: string) => {
   const box = await icon(page, name).boundingBox()
   if (!box) throw new Error(`no icon: ${name}`)
@@ -178,6 +192,57 @@ for (const build of BUILDS) {
       await longPress(page, browserName, box.x + box.width / 2, box.y + box.height / 2)
       await expect(item(page, 'Unpin from taskbar')).toBeVisible()
       await expect(page.getByRole('dialog')).toHaveCount(0)
+    })
+
+    // Phones have one Task View: the Open apps button opens it, in two columns.
+    test('the Open apps button opens Task View, with finger-sized controls', async ({ page }) => {
+      await openApp(page, 'settings', 'Settings')
+      await openApp(page, 'calculator', 'Calculator')
+      const toggles = page.locator('[data-task-view-toggle]:visible')
+      await expect(toggles).toHaveCount(1)
+      await expect(toggles).toHaveClass(/os-task-button/)
+      await toggles.tap()
+
+      await expect(taskView(page)).toBeVisible()
+      await expect(toggles).toHaveAttribute('aria-expanded', 'true')
+      await expect(taskView(page).locator('.os-task-view-open')).toHaveText(['Calculator', 'Settings'])
+      const viewport = page.viewportSize()
+      for (const control of [
+        taskView(page).getByRole('button', { name: 'Done' }),
+        taskView(page).getByRole('button', { name: 'Close Settings' }),
+        taskView(page).getByRole('button', { name: 'Close Calculator' }),
+      ]) {
+        const box = await control.boundingBox()
+        // Rounded, as the Pixel's 2.625 pixel ratio snaps 44px to a hair under.
+        expect(Math.round(box?.width ?? 0)).toBeGreaterThanOrEqual(44)
+        expect(Math.round(box?.height ?? 0)).toBeGreaterThanOrEqual(44)
+        expect((box?.x ?? 0) + (box?.width ?? 0)).toBeLessThanOrEqual(viewport?.width ?? 0)
+      }
+      const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)
+      expect(overflow).toBeLessThanOrEqual(0)
+
+      await taskView(page).getByRole('button', { name: 'Settings', exact: true }).tap()
+      await expect(taskView(page)).toHaveCount(0)
+      await expect(page.locator('.os-window[aria-label="Settings"]')).toHaveClass(/window-active/)
+    })
+
+    test('Task View closes apps from their cards, says when none are open, and Done goes back', async ({ page }) => {
+      await openApp(page, 'calculator', 'Calculator')
+      await page.locator('.os-task-button').tap()
+      await taskView(page).getByRole('button', { name: 'Close Calculator' }).tap()
+      await expect(page.locator('.os-window[aria-label="Calculator"]')).toHaveCount(0)
+      await expect(taskView(page).getByText('No apps are open.')).toBeVisible()
+      await taskView(page).getByRole('button', { name: 'Done' }).tap()
+      await expect(taskView(page)).toHaveCount(0)
+    })
+
+    test('a long press in Task View does not open the desktop menu', async ({ page, browserName }) => {
+      await openApp(page, 'settings', 'Settings')
+      await page.locator('.os-task-button').tap()
+      await expect(taskView(page)).toBeVisible()
+      const viewport = page.viewportSize()
+      await longPress(page, browserName, (viewport?.width ?? 390) / 2, (viewport?.height ?? 800) - 160)
+      await expect(item(page, 'Refresh')).toBeHidden()
     })
 
     test('a tap on a text box still focuses it after a long press', async ({ page, browserName }) => {

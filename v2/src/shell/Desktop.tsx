@@ -4,7 +4,8 @@ import { Window } from '../windowing/Window'
 import { WindowContextProvider } from '../windowing/WindowContext'
 import { WindowErrorBoundary } from '../windowing/WindowErrorBoundary'
 import { SnapUi } from './SnapUi'
-import { TaskSwitcher } from './TaskSwitcher'
+import { TaskView } from './TaskView'
+import { WindowSwitcher } from './WindowSwitcher'
 import { Taskbar } from './Taskbar'
 import { PropertiesDialog, Toast } from './FileDialogs'
 import { showDesktopMenu } from './menus'
@@ -110,7 +111,7 @@ export function Desktop() {
     }
     const target = e.target as Element
     const hasOwnMenu = !target.closest('.os-window') || target.closest('[data-explorer-pane]')
-    if (!hasOwnMenu || target.closest('.os-task-switcher, input, textarea')) return
+    if (!hasOwnMenu || target.closest('.os-task-view, .os-switcher, input, textarea')) return
     const { clientX, clientY } = e.touches[0]
     const timer = window.setTimeout(() => {
       press.current.fired = true
@@ -161,7 +162,8 @@ export function Desktop() {
           <WindowHost key={win.id} win={win} />
         ))}
         <SnapUi />
-        <TaskSwitcher />
+        <TaskView />
+        <WindowSwitcher />
       </div>
 
       <Widgets />
