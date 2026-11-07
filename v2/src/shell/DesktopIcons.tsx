@@ -197,7 +197,7 @@ export function DesktopIcons() {
             } ${isDragging ? 'opacity-90 cursor-grabbing' : 'cursor-default'} ${isCut ? 'file-cut' : ''}`}
             style={{ left: icon.x, top: icon.y, userSelect: 'none' }}
           >
-            <div className="desktop-tile-icon mb-1 drop-shadow-md w-12 h-12 flex items-center justify-center">
+            <div className="desktop-tile-icon mb-1 drop-shadow-md w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center">
               {icon.icon.includes('.') || icon.icon.startsWith('/') ? (
                 <img
                   src={icon.icon}
