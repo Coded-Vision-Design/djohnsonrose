@@ -19,6 +19,8 @@ export const SOURCE_FILES = [
   'assets/js/windowing/calculator.js',
   'assets/js/windowing/calendar.d.ts',
   'assets/js/windowing/calendar.js',
+  'assets/js/windowing/copilot.d.ts',
+  'assets/js/windowing/copilot.js',
   'assets/js/windowing/devtools.d.ts',
   'assets/js/windowing/devtools.js',
   'assets/js/windowing/drawing.d.ts',

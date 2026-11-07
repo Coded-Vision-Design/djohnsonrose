@@ -419,7 +419,6 @@
         'os/shell',
         'os/switching',
         'os/calendar',
-
         'os/tour',
         'paint',
         'photoshop',
@@ -434,11 +433,9 @@
         'apps/system',
         'apps/tools',
         'apps/admin',
+        'apps/copilot',
         'flstudio',
         'widgets'
-
-        'apps/copilot',
-        'flstudio'
     ];
     // Versioned by file time like the stylesheet, so browsers keep each script
     // until it changes instead of fetching all of them on every visit.

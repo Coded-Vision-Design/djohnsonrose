@@ -93,7 +93,7 @@ RewriteRule ^v2/assets/ - [R=404,L]
 # desktop (also at /login and /desktop) and each app in data/apps.json. A new
 # app goes in this list too; v2/src/windowing/address.test.ts checks it.
 RewriteRule ^v2(/(login|desktop)?)?/?$ v2/dist/index.html [END]
-RewriteRule ^v2/app/(edge|vscode|explorer|terminal|notepad|word|excel|powerpoint|outlook|photoshop|flstudio|docker|putty|filezilla|database|settings|taskmanager|eventviewer|calculator|paint|photos|video|pdfreader|admin|references|github)/?$ v2/dist/index.html [END]
+RewriteRule ^v2/app/(edge|vscode|explorer|terminal|notepad|word|excel|powerpoint|outlook|photoshop|flstudio|docker|putty|filezilla|database|settings|taskmanager|eventviewer|calculator|paint|photos|video|pdfreader|admin|references|github|copilot)/?$ v2/dist/index.html [END]
 
 # v1 (PHP): handle routing to index.php if file/dir doesn't exist
 RewriteCond %{REQUEST_FILENAME} !-f
