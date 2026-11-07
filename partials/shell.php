@@ -270,7 +270,7 @@
              @click.away="contextMenu.open = false"
              @keydown.escape.window="contextMenu.open = false"
              :class="contextMenu.variant === 'classic' ? 'bg-[#f0f0f0] dark:bg-[#2b2b2b] border border-[#a0a0a0] dark:border-black shadow-[2px_2px_4px_rgba(0,0,0,0.3)] py-1 min-w-[240px]' : 'bg-white/90 dark:bg-[#1c1c1c]/95 backdrop-blur-xl border border-white/20 dark:border-white/10 rounded-xl shadow-2xl py-1 min-w-[260px] context-menu'"
-             class="fixed z-15000 animate-in fade-in zoom-in duration-75"
+             class="fixed z-20000 text-black dark:text-white animate-in fade-in zoom-in duration-75"
              :style="`left: ${contextMenu.x}px; top: ${contextMenu.y}px;`"
              @contextmenu.prevent
              x-data="{ hoverItem: null, hoverTimer: null }">
