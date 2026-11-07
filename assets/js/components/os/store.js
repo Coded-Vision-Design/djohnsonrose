@@ -300,6 +300,12 @@ document.addEventListener('alpine:init', () => {
                     existing.initialUrl = extraData.initialUrl;
                     existing.urlRevision = (existing.urlRevision ?? 0) + 1;
                 }
+                // Another project's case study, opened while PowerPoint is open.
+                if (appHandle === 'powerpoint' && extraData.deck !== undefined) {
+                    existing.deck = extraData.deck;
+                    existing.deckRevision = (existing.deckRevision ?? 0) + 1;
+                    existing.title = title || existing.title;
+                }
                 
                 this.focusWindow(existing.id);
                 if (existing.state === 'minimized') this.toggleMinimize(existing.id);

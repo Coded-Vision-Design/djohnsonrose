@@ -81,8 +81,11 @@ document.addEventListener('alpine:init', () => {
         },
     }));
 
+    // A case study for each project, built from data/portfolio.json and the
+    // project's own folder in the shared file system.
     Alpine.data('powerpointApp', () => {
-        let stopFit = () => {};
+        // Kept outside Alpine's reactivity: what stops the fit and swipe watchers.
+        let stops = [];
         let keys = null;
         let host = null;
 
@@ -91,26 +94,47 @@ document.addEventListener('alpine:init', () => {
             imgPath,
             ICONS: O.OFFICE_ICONS,
             TABS: O.POWERPOINT_TABS,
-            slides: [],
+            decks: [],
+            deckAt: 0,
             active: 0,
             fit: 1,
+            showFit: 1,
+            presenting: false,
             state: 'loading',
+
+            get deck() {
+                return this.decks[this.deckAt] ?? null;
+            },
+
+            get slides() {
+                return this.deck?.slides ?? [];
+            },
+
+            get slide() {
+                return this.slides[this.active] ?? null;
+            },
 
             async init() {
                 this.$nextTick(() => {
-                    stopFit = O.watchFit(this.$refs.stage, O.SLIDE_SIZE, (scale) => (this.fit = scale));
+                    // A finger swiped across the slide, in the window or in the show.
+                    const step = (by) => this.step(by);
+                    stops = [
+                        O.watchFit(this.$refs.stage, O.SLIDE_SIZE, (scale) => (this.fit = scale)),
+                        O.watchFit(this.$refs.showStage, O.SLIDE_SIZE, (scale) => (this.showFit = scale), { max: O.SHOW_MAX_ZOOM }),
+                        O.watchSwipe(this.$refs.stage, step),
+                        O.watchSwipe(this.$refs.show, step),
+                    ];
                 });
                 // Only while PowerPoint's own window has focus: the keys go to its window.
                 host = this.$root.closest('.os-window');
-                keys = (event) => {
-                    const next = O.slideForKey(event, this.active, this.slides.length);
-                    if (next === null) return;
-                    event.preventDefault();
-                    this.active = next;
-                };
+                keys = (event) => this.onKey(event);
                 host?.addEventListener('keydown', keys);
+                // A case study file opened while PowerPoint is already open.
+                this.$watch('win.deckRevision', () => this.openDeck(this.win?.deck));
                 try {
-                    this.slides = O.portfolioDeck(await O.loadChecked(dataUrl('portfolio.json')), window.portfolioConfig.basePath);
+                    const portfolio = await O.loadChecked(dataUrl('portfolio.json'));
+                    this.decks = O.caseStudyDecks(portfolio, window.portfolioConfig.fileSystem, window.portfolioConfig.basePath);
+                    this.openDeck(this.win?.deck);
                     this.state = 'ready';
                 } catch {
                     this.state = 'error';
@@ -118,8 +142,56 @@ document.addEventListener('alpine:init', () => {
             },
 
             destroy() {
-                stopFit();
+                stops.forEach((stop) => stop());
                 host?.removeEventListener('keydown', keys);
+            },
+
+            openDeck(key) {
+                this.deckAt = O.deckIndex(this.decks, key);
+                this.active = 0;
+            },
+
+            pick(index) {
+                this.deckAt = index;
+                this.active = 0;
+            },
+
+            step(by) {
+                this.active = O.stepSlide(this.active, by, this.slides.length);
+            },
+
+            // The show sits inside the window, so it has the keys to itself while it runs.
+            onKey(event) {
+                if (this.presenting) {
+                    event.stopPropagation();
+                    const next = O.showKey(event, this.active, this.slides.length);
+                    if (next === null) return;
+                    event.preventDefault();
+                    if (next === 'end') this.endShow();
+                    else this.active = next;
+                    return;
+                }
+                const next = O.slideForKey(event, this.active, this.slides.length);
+                if (next === null) return;
+                event.preventDefault();
+                this.active = next;
+            },
+
+            // The show is a modal <dialog>, so it covers the whole screen, above
+            // the taskbar, and keeps focus inside it until it ends.
+            present() {
+                const show = this.$refs.show;
+                if (!show || !this.slide) return;
+                if (!show.open) show.showModal();
+                show.focus();
+                this.presenting = true;
+            },
+
+            endShow() {
+                const show = this.$refs.show;
+                if (show?.open) show.close();
+                this.presenting = false;
+                this.$refs.present?.focus({ preventScroll: true });
             },
         };
     });

@@ -677,9 +677,19 @@
 
 /* ---- PowerPoint --------------------------------------------------------------- */
 
+/* A case study for each project: the decks down the side, the slide with its
+   controls beside them, and the slide show, a modal <dialog> over everything. */
 .ppt-body {
     display: flex;
     flex: 1 1 auto;
+    min-height: 0;
+}
+
+.ppt-main {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    min-width: 0;
     min-height: 0;
 }
 
@@ -752,6 +762,8 @@
     padding: 32px;
     overflow: hidden;
     background: #f3f4f6;
+    /* A sideways swipe changes slide, so only upright panning is the browser's. */
+    touch-action: pan-y pinch-zoom;
 }
 
 .dark .ppt-stage {
@@ -764,7 +776,7 @@
 }
 
 /* A slide is drawn at 960 by 540 and shrunk to fit, as PowerPoint does, so
-   its title wraps the same way at every size. */
+   its text wraps the same way at every size. */
 .ppt-slide {
     position: relative;
     flex: none;
@@ -786,20 +798,34 @@
     object-fit: cover;
 }
 
-.ppt-slide::after {
+/* Dark enough under the words that they read over any screenshot. */
+.ppt-slide[data-slide-kind='title']::after {
     content: '';
     position: absolute;
     inset: 0;
-    background: linear-gradient(to bottom, rgb(0 0 0 / 0) 0%, rgb(0 0 0 / 0.3) 50%, rgb(0 0 0 / 0.8) 100%);
+    background: linear-gradient(to bottom, rgb(0 0 0 / 0.1) 0%, rgb(0 0 0 / 0.6) 40%, rgb(0 0 0 / 0.9) 70%, rgb(0 0 0 / 0.92) 100%);
 }
 
-.ppt-slide-body {
+.ppt-slide[data-slide-kind='title'] .ppt-slide-body {
     position: absolute;
     right: 0;
     bottom: 0;
     left: 0;
     z-index: 1;
     padding: 40px;
+}
+
+/* Every other slide: PowerPoint's colour down the left, the heading at the top
+   and the project's name at the foot. */
+.ppt-slide:not([data-slide-kind='title']) {
+    border-left: 12px solid var(--office-accent);
+}
+
+.ppt-slide:not([data-slide-kind='title']) .ppt-slide-body {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    padding: 36px 56px 28px 44px;
 }
 
 .ppt-slide-count {
@@ -815,6 +841,10 @@
     font-size: 44px;
     font-weight: 700;
     line-height: 1.1;
+}
+
+.ppt-slide:not([data-slide-kind='title']) .ppt-slide-title {
+    font-size: 40px;
 }
 
 .ppt-slide-text {
@@ -840,6 +870,261 @@
     font-weight: 500;
 }
 
+.ppt-slide-link {
+    display: inline-block;
+    margin-top: 14px;
+    padding: 4px 0;
+    color: #fff;
+    font-size: 17px;
+    font-weight: 600;
+    text-decoration: underline;
+    text-underline-offset: 4px;
+}
+
+.ppt-slide-link:focus-visible {
+    outline: 3px solid #fff;
+    outline-offset: 2px;
+}
+
+.ppt-points {
+    margin: 20px 0 0;
+    padding-left: 30px;
+    font-size: 22px;
+    line-height: 1.4;
+    list-style: square;
+}
+
+ol.ppt-points {
+    list-style: decimal;
+}
+
+.ppt-points li + li {
+    margin-top: 12px;
+}
+
+.ppt-points li::marker {
+    color: #f4a28c;
+}
+
+/* Metrics: each figure large, over the result it comes from. */
+.ppt-metrics {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 24px;
+    margin: 28px 0 0;
+    padding: 0;
+    list-style: none;
+}
+
+.ppt-metric {
+    display: flex;
+    flex: 1 1 240px;
+    flex-direction: column;
+    gap: 10px;
+    max-width: 400px;
+    padding: 24px;
+    border-radius: 8px;
+    background: rgb(255 255 255 / 0.08);
+}
+
+.ppt-metric-figure {
+    color: #f4a28c;
+    font-size: 64px;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.ppt-metric-text {
+    font-size: 20px;
+    line-height: 1.4;
+}
+
+/* The desktop and mobile shots side by side, each at the same height. */
+.ppt-shots {
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 40px;
+    margin-top: 16px;
+}
+
+.ppt-shot {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+    margin: 0;
+}
+
+.ppt-shot img {
+    width: auto;
+    height: 300px;
+    border-radius: 6px;
+    background: #111827;
+    box-shadow: 0 12px 30px rgb(0 0 0 / 0.35);
+}
+
+.ppt-shot figcaption {
+    font-size: 15px;
+    opacity: 0.85;
+}
+
+.ppt-slide-footer {
+    margin-top: auto;
+    padding-top: 12px;
+    font-size: 14px;
+    opacity: 0.75;
+}
+
+/* The slide's controls: previous, the counter and next in the middle, and
+   Present at the end, as in PowerPoint's own status bar. */
+.ppt-toolbar,
+.ppt-show-bar {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    gap: 8px;
+    flex: none;
+}
+
+.ppt-toolbar {
+    padding: 4px 12px;
+    background: var(--office-chrome);
+    border-top: 1px solid var(--office-line);
+}
+
+.ppt-nav {
+    display: flex;
+    grid-column: 2;
+    align-items: center;
+    gap: 4px;
+}
+
+.ppt-toolbar button,
+.ppt-show-bar button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    min-width: 32px;
+    height: 32px;
+    padding: 0 8px;
+    border-radius: 4px;
+    white-space: nowrap;
+}
+
+.ppt-toolbar button:hover:not(:disabled) {
+    background: var(--office-hover);
+}
+
+.ppt-toolbar button:disabled,
+.ppt-show-bar button:disabled {
+    opacity: 0.4;
+}
+
+.ppt-toolbar .office-icon,
+.ppt-show-bar .office-icon {
+    width: 16px;
+    height: 16px;
+}
+
+.ppt-counter {
+    min-width: 56px;
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+    text-align: center;
+}
+
+.ppt-toolbar .ppt-present,
+.ppt-show-bar .ppt-end-show {
+    grid-column: 3;
+    justify-self: end;
+    padding: 0 12px;
+    font-weight: 600;
+}
+
+.ppt-toolbar .ppt-present {
+    background: var(--office-accent);
+    color: #fff;
+}
+
+.ppt-toolbar .ppt-present:hover:not(:disabled) {
+    background: var(--office-accent-deep);
+}
+
+/* The slide show fills the screen, above the taskbar and everything else. */
+.ppt-show {
+    position: fixed;
+    inset: 0;
+    width: auto;
+    height: auto;
+    max-width: none;
+    max-height: none;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    border: 0;
+    background: #000;
+    color: #fff;
+    touch-action: pan-y pinch-zoom;
+}
+
+.ppt-show[open] {
+    display: flex;
+    flex-direction: column;
+}
+
+.ppt-show:focus {
+    outline: none;
+}
+
+.ppt-show::backdrop {
+    background: #000;
+}
+
+.ppt-show-stage {
+    display: flex;
+    flex: 1 1 auto;
+    align-items: center;
+    justify-content: center;
+    min-width: 0;
+    min-height: 0;
+    overflow: hidden;
+}
+
+.ppt-show .ppt-slide {
+    border-radius: 0;
+    box-shadow: none;
+}
+
+.ppt-show-bar {
+    padding: 6px 16px calc(6px + env(safe-area-inset-bottom, 0px));
+}
+
+/* Large enough to hit with a finger wherever it shows. */
+.ppt-show-bar button {
+    min-width: 44px;
+    height: 44px;
+}
+
+.ppt-show-bar button:hover:not(:disabled) {
+    background: rgb(255 255 255 / 0.15);
+}
+
+.ppt-show-bar .ppt-end-show {
+    border: 1px solid rgb(255 255 255 / 0.4);
+}
+
+.ppt-show-bar .ppt-counter {
+    font-size: 14px;
+}
+
+.ppt-show button:focus-visible {
+    outline: 2px solid #fff;
+    outline-offset: 2px;
+}
+
 @container office (max-width: 640px) {
     .ppt-body {
         flex-direction: column;
@@ -861,6 +1146,18 @@
 
     .ppt-stage {
         padding: 12px;
+    }
+
+    .ppt-toolbar button {
+        min-width: 44px;
+        height: 44px;
+    }
+}
+
+@media (pointer: coarse) {
+    .ppt-toolbar button {
+        min-width: 44px;
+        height: 44px;
     }
 }
 

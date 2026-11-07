@@ -31,7 +31,9 @@ export const OFFICE_ICONS: Record<
   | 'zoomOut'
   | 'zoomIn'
   | 'previous'
-  | 'next',
+  | 'next'
+  | 'present'
+  | 'endShow',
   OfficeIcon
 >
 
@@ -137,20 +139,77 @@ export function cellValue(sheet: Sheet, ref: string): string
 
 export const SLIDE_SIZE: { width: number; height: number }
 export const POWERPOINT_TABS: string[]
+export const SHOW_MAX_ZOOM: number
+export const SLIDE_HEADINGS: string[]
 
-export interface Slide {
+export interface TitleSlide {
+  kind: 'title'
+  id: 'title'
+  heading: string
+  text: string
+  tags: string[]
+  url: string
+  link: string
+  image: string
+  alt: string
+}
+export interface PointsSlide {
+  kind: 'points'
+  id: 'problem' | 'approach' | 'outcome'
+  heading: string
+  items: string[]
+  ordered: boolean
+}
+export interface SlideMetric {
+  figure: string
+  text: string
+}
+export interface MetricsSlide {
+  kind: 'metrics'
+  id: 'metrics'
+  heading: string
+  metrics: SlideMetric[]
+}
+export interface SlideShot {
+  name: string
+  url: string
+  alt: string
+}
+export interface ShotsSlide {
+  kind: 'shots'
+  id: 'shots'
+  heading: string
+  shots: SlideShot[]
+}
+export type CaseSlide = TitleSlide | PointsSlide | MetricsSlide | ShotsSlide
+export interface Deck {
   id: number | string
   title: string
-  description: string
-  tags: string[]
-  image: string
+  cover: string
+  slides: CaseSlide[]
 }
-export function portfolioDeck(data: unknown, base?: string): Slide[]
-export function slideForKey(
-  event: Pick<KeyboardEvent, 'key' | 'ctrlKey' | 'metaKey' | 'altKey'> & { target: EventTarget | null },
-  active: number,
-  count: number,
-): number | null
+
+export function linkLabel(url: string | null | undefined): string
+export function slidePoints(value: string | null | undefined): { items: string[]; ordered: boolean }
+export function slideMetrics(points: string[] | null | undefined): SlideMetric[]
+export function caseStudyDecks(data: unknown, fileSystem: unknown, base?: string): Deck[]
+export function deckIndex(decks: Pick<Deck, 'id'>[], key: unknown): number
+export function stepSlide(active: number, step: number, count: number): number
+
+type SlideKey = Pick<KeyboardEvent, 'key' | 'ctrlKey' | 'metaKey' | 'altKey'> & { target: EventTarget | null }
+export function slideForKey(event: SlideKey, active: number, count: number): number | null
+export function showKey(event: SlideKey & Pick<KeyboardEvent, 'shiftKey'>, active: number, count: number): number | 'end' | null
+
+export interface SwipePoint {
+  x: number
+  y: number
+}
+export function swipeStep(start: SwipePoint | null | undefined, end: SwipePoint | null | undefined, threshold?: number): -1 | 0 | 1
+export function watchSwipe(
+  element: Element | null | undefined,
+  onStep: (step: -1 | 1) => void,
+  options?: { threshold?: number },
+): () => void
 
 // ---- PuTTY ----
 
