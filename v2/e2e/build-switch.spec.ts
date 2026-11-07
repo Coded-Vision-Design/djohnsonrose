@@ -90,20 +90,48 @@ const windowId = (page: Page, app: string) =>
 
 const windowOf = (page: Page, title: string) => page.getByRole('dialog', { name: title, exact: true, includeHidden: true })
 
-/** Waits for every window's app to load, every picture to draw and every animation to end. */
+/** A window's place, as its build's store has it. */
+const placeOf = (page: Page, app: string) =>
+  page.evaluate((id) => {
+    interface Win {
+      app: string
+      x: number
+      y: number
+      width: number
+      height: number
+    }
+    const w = window as unknown as {
+      Alpine?: { store: (n: string) => { windows: Win[] } }
+      __osStore: { getState: () => { windows: Win[] } }
+    }
+    const store = w.Alpine ? w.Alpine.store('os') : w.__osStore.getState()
+    const { x, y, width, height } = store.windows.find((win) => win.app === id)!
+    return [x, y, width, height]
+  }, app)
+
+/**
+ * Waits for every window's app to load, every picture on screen to arrive and
+ * draw, and every animation to end. Word and Excel fill in once their
+ * documents arrive, and a busy server can send an icon late.
+ */
 const settle = async (page: Page) => {
-  await page.waitForFunction(() => {
-    const loading = [...document.querySelectorAll('.os-window .win-loader')].some((el) => (el as HTMLElement).offsetParent !== null)
-    const pictures = [...document.images].every((img) => img.complete)
-    const moving = document
-      .getAnimations()
-      .filter((a) => Number.isFinite(a.effect?.getComputedTiming().endTime as number))
-      .some((a) => a.playState === 'running')
-    return !loading && pictures && !moving
-  })
-  await page.evaluate(() => document.fonts.ready)
-  // Word and Excel fill in once their documents arrive.
   await page.waitForLoadState('networkidle')
+  await page.waitForFunction(
+    () => {
+      const loading = [...document.querySelectorAll('.os-window .win-loader')].some((el) => (el as HTMLElement).offsetParent !== null)
+      const pictures = [...document.images]
+        .filter((img) => img.getAttribute('src') && img.checkVisibility())
+        .every((img) => img.complete && img.naturalWidth > 0)
+      const moving = document
+        .getAnimations()
+        .filter((a) => Number.isFinite(a.effect?.getComputedTiming().endTime as number))
+        .some((a) => a.playState === 'running')
+      return !loading && pictures && !moving
+    },
+    undefined,
+    { timeout: 20_000 },
+  )
+  await page.evaluate(() => document.fonts.ready)
 }
 
 /** A screenshot once the screen has stopped changing, as toHaveScreenshot waits for. */
@@ -168,13 +196,14 @@ const screenOf = (page: Page) =>
   })
 
 /**
- * Drags from one point to another with the mouse, as a visitor would, by whole
+ * Drags with the mouse from a point by a distance, as a visitor would, by whole
  * pixels, so that each build draws the window on the same pixel grid.
  */
-async function drag(page: Page, from: { x: number; y: number }, to: { x: number; y: number }) {
-  await page.mouse.move(Math.round(from.x), Math.round(from.y))
+async function drag(page: Page, from: { x: number; y: number }, by: { x: number; y: number }) {
+  const start = { x: Math.round(from.x), y: Math.round(from.y) }
+  await page.mouse.move(start.x, start.y)
   await page.mouse.down()
-  await page.mouse.move(Math.round(to.x), Math.round(to.y), { steps: 12 })
+  await page.mouse.move(start.x + by.x, start.y + by.y, { steps: 12 })
   await page.mouse.up()
 }
 
@@ -229,12 +258,19 @@ async function layOut(page: Page, build: Build) {
   )
   const notepad = windowOf(page, ACHIEVEMENTS)
   await expect(notepad).toContainText('World #1')
+  await settle(page)
+  const [, , width, height] = await placeOf(page, 'notepad')
   const corner = (await notepad.locator('.os-resize[data-dir="se"]').boundingBox())!
-  await drag(page, { x: corner.x + corner.width / 2, y: corner.y + corner.height / 2 }, { x: corner.x - 90, y: corner.y - 60 })
+  await drag(page, { x: corner.x + corner.width / 2, y: corner.y + corner.height / 2 }, { x: -90, y: -60 })
+  await expect.poll(async () => (await placeOf(page, 'notepad')).slice(2)).toEqual([width - 90, height - 60])
 
   await openApp(page, build, 'putty')
+  await expect(windowOf(page, 'PuTTY')).toContainText('PuTTY Configuration')
+  await settle(page)
+  const [x, y] = await placeOf(page, 'putty')
   const title = (await windowOf(page, 'PuTTY').locator('.os-titlebar').boundingBox())!
-  await drag(page, { x: title.x + 40, y: title.y + title.height / 2 }, { x: title.x - 260, y: title.y + 70 })
+  await drag(page, { x: title.x + 40, y: title.y + title.height / 2 }, { x: -260, y: 70 })
+  await expect.poll(async () => (await placeOf(page, 'putty')).slice(0, 2)).toEqual([x - 260, y + 70])
 
   await page.locator('[data-tray-item="status"]').click()
   await page.locator('[data-quick-toggle="nightLight"]').click()
@@ -292,7 +328,8 @@ async function differingPixels(browser: Browser, before: Buffer, after: Buffer) 
 for (const build of BUILDS) {
   test.describe(`${build.name} to ${build.other}`, () => {
     test('the screen stays as it was: every window, its place, state, stacking and focus, and the display', async ({ page, browser }, testInfo) => {
-      test.setTimeout(90_000)
+      // Lays out five windows and waits for two builds to settle, on a busy runner too.
+      test.setTimeout(120_000)
       await prepare(page)
       await page.goto(build.url)
       await waitForBuild(page, build.name)
