@@ -283,3 +283,66 @@ for (const build of BUILDS) {
     })
   })
 }
+
+// The guided tour on a phone: its toast docks above the taskbar, full width,
+// with finger-sized buttons, and its build step points at the desktop icon, as
+// the tray's build chip is hidden here. See assets/js/windowing/tour.js.
+for (const build of BUILDS) {
+  test.describe(`${build.name} tour on a phone`, () => {
+    test.beforeEach(async ({ page }) => {
+      await boot(page, build.url)
+    })
+
+    test('docks above the taskbar, full width, and runs every step by touch', async ({ page }) => {
+      const toast = page.locator('[data-tour-toast]')
+      await page.locator('[data-start-button]').tap()
+      await page.locator('[data-recommended="tour"]').tap()
+      await expect(toast).toHaveAttribute('data-tour-step', 'start')
+      await expect(page.locator('[data-start-menu]')).toBeHidden()
+
+      const viewport = page.viewportSize() as { width: number; height: number }
+      // Measured once it has finished sliding in.
+      await toast.evaluate((el) => Promise.all(el.getAnimations().map((animation) => animation.finished)))
+      const docked = await toast.boundingBox()
+      const taskbar = await page.locator('.os-taskbar').boundingBox()
+      expect(Math.round(docked?.x ?? -1)).toBe(0)
+      expect(Math.round(docked?.width ?? 0)).toBe(viewport.width)
+      expect(Math.round((docked?.y ?? 0) + (docked?.height ?? 0))).toBe(Math.round(taskbar?.y ?? -1))
+
+      // What each step points at here. The build chip is hidden, so the desktop icon stands in.
+      const steps = [
+        ['start', '[data-start-button]'],
+        ['cv', '[data-desktop-item="CV - DeVanté Johnson-Rose.pdf"]'],
+        ['work', '[data-taskbar-app="explorer"]'],
+        ['terminal', '[data-desktop-item="Terminal"]'],
+        ['build', '[data-desktop-item$=" Build"]'],
+        ['done', '[data-start-button]'],
+      ]
+      await expect(page.locator('[data-tray-item="build"]')).toBeHidden()
+      for (const [index, [step, anchor]] of steps.entries()) {
+        await expect(toast).toHaveAttribute('data-tour-step', step)
+        await expect(toast.locator('[data-tour-count]')).toHaveText(`${index + 1} of 6`)
+        for (const height of await toast.locator('button:visible').evaluateAll((all) => all.map((el) => el.getBoundingClientRect().height))) {
+          expect(height).toBeGreaterThanOrEqual(44)
+        }
+        // The ring goes round the part, and the toast never covers it, docking at the top if it must.
+        await expect
+          .poll(
+            () =>
+              page.evaluate((selector) => {
+                const part = (document.querySelector(selector) as Element).getBoundingClientRect()
+                const ring = (document.querySelector('[data-tour-ring]') as Element).getBoundingClientRect()
+                const card = (document.querySelector('[data-tour-toast]') as Element).getBoundingClientRect()
+                const rings = ring.left <= part.left && ring.top <= part.top && ring.right >= part.right && ring.bottom >= part.bottom
+                const clear = part.bottom <= card.top || part.top >= card.bottom
+                return rings && clear
+              }, anchor),
+            { message: step },
+          )
+          .toBe(true)
+        await toast.locator('[data-tour-next]').tap()
+      }
+      await expect(toast).toBeHidden()
+    })
+  })
+}
