@@ -177,6 +177,8 @@ document.addEventListener('alpine:init', () => {
         renaming: null,
         properties: null,
         toastMessage: null,
+        // Every toast shown this session, newest first, for the clock's flyout.
+        notifications: [],
         startPins: readList('os.startPins'),
         favourites: readList('os.favourites'),
         desktopIconSize: localStorage.getItem('os.iconSize') || 'medium',
@@ -233,9 +235,14 @@ document.addEventListener('alpine:init', () => {
 
         showToast(message) {
             this.toastMessage = message;
+            this.notifications = OsWindowing.addNotification(this.notifications, message, Date.now());
             setTimeout(() => {
                 if (this.toastMessage === message) this.toastMessage = null;
             }, 3000);
+        },
+
+        clearNotifications() {
+            this.notifications = [];
         },
 
         saveFileSystem() {

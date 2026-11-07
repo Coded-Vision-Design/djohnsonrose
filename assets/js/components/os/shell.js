@@ -55,6 +55,8 @@ document.addEventListener('alpine:init', () => {
         startMenuOpen: false,
         startMenuView: 'pinned', // 'pinned' or 'allApps'
         quickSettingsOpen: false,
+        // The clock's notifications and calendar. See os/calendar.js.
+        calendarOpen: false,
         contextMenu: { open: false, x: 0, y: 0, items: [] },
         flyoutPreview: null,
         searchQuery: '',
@@ -322,6 +324,16 @@ document.addEventListener('alpine:init', () => {
                 } catch (e) {
                     os.newsStatus = 'error';
                 }
+            }
+        },
+
+        // Opening the clock's flyout closes the other panels, as v2's toggleCalendar does.
+        toggleCalendar() {
+            this.calendarOpen = !this.calendarOpen;
+            if (this.calendarOpen) {
+                this.startMenuOpen = false;
+                this.quickSettingsOpen = false;
+                this.widgetsOpen = false;
             }
         },
 

@@ -409,6 +409,7 @@
         'os/filesystem',
         'os/store',
         'os/shell',
+        'os/calendar',
         'paint',
         'photoshop',
         'calculator',
