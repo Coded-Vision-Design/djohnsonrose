@@ -421,7 +421,9 @@ export function saveTailoredCv(cv, doc = document) {
   doc.body.append(anchor);
   anchor.click();
   anchor.remove();
-  setTimeout(() => URL.revokeObjectURL(url), 2000);
+  // A busy browser can take a while to start saving, and revoking the address
+  // first cancels the download. The file is small, so it is kept for a minute.
+  setTimeout(() => URL.revokeObjectURL(url), 60_000);
   return name;
 }
 

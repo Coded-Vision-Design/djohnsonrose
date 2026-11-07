@@ -69,7 +69,7 @@ function copilot_settings(array $config): array {
         'base_url' => rtrim($base, '/'),
         'chat_model' => $model($c['chat_model'] ?? '', 'claude-haiku-5-5'),
         'match_model' => $model($c['match_model'] ?? '', 'claude-sonnet-5-5'),
-        'timeout' => $timeout > 0 ? min($timeout, 120.0) : 45.0,
+        'timeout' => $timeout > 0 ? min($timeout, 120.0) : 60.0,
         'daily_cap' => $positive($c['daily_cap'] ?? 0, 500),
         'match_daily_cap' => $positive($c['match_daily_cap'] ?? 0, 100),
     ];

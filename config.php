@@ -85,7 +85,7 @@ return [
         'base_url'        => getEnvVar('ANTHROPIC_BASE_URL', 'https://api.anthropic.com'),
         'chat_model'      => getEnvVar('COPILOT_CHAT_MODEL', 'claude-haiku-5-5'),
         'match_model'     => getEnvVar('COPILOT_MATCH_MODEL', 'claude-sonnet-5-5'),
-        'timeout'         => (float)getEnvVar('COPILOT_TIMEOUT', '45'),
+        'timeout'         => (float)getEnvVar('COPILOT_TIMEOUT', '60'),
         'daily_cap'       => (int)getEnvVar('COPILOT_DAILY_CAP', '500'),
         'match_daily_cap' => (int)getEnvVar('COPILOT_MATCH_DAILY_CAP', '100'),
     ],
