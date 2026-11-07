@@ -2,8 +2,9 @@
 // lib/routes.php - which request paths are real. Apache sends every path that
 // is not a file on disk to index.php (see .htaccess), so a path that matches
 // nothing here is a 404. Real files (/api/*.php, /assets/*, /data/*,
-// /portfolio/*) and /v2/ never get here: Apache serves them directly.
-// See tests/php/routes_test.php.
+// /portfolio/*) and v2's own addresses (v2_address_known below) never get
+// here: Apache serves them directly. Any other /v2/ address does, and is a 404.
+// See tests/php/routes_test.php and tests/php/v2_routes_test.php.
 
 require_once __DIR__ . '/security.php';
 
@@ -38,6 +39,19 @@ function route_match(string $path, array $appIds, array $pages = SITE_PAGES): ar
         $result = ['route' => 'page', 'app' => null, 'page' => $pages[$path]];
     }
     return $result;
+}
+
+/**
+ * Whether a path is one of the React build's own addresses: its desktop (at
+ * /v2/, /v2/login or /v2/desktop, as v1's) or /v2/app/<id> for a known app.
+ * The same rules as assets/js/windowing/address.js and the v2 rules in
+ * .htaccess. An address holds only the app; see address.js for why.
+ */
+function v2_address_known(string $path, array $appIds): bool {
+    if ($path !== '/v2' && strpos($path, '/v2/') !== 0) return false;
+    $rest = preg_replace('#^/|/$#', '', substr($path, strlen('/v2')));
+    if (in_array($rest, ['', 'login', 'desktop'], true)) return true;
+    return preg_match('#^app/([^/]+)$#', $rest, $m) === 1 && in_array($m[1], $appIds, true);
 }
 
 /** The template file for a page name, or null when there is none. */

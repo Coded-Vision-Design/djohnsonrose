@@ -1,7 +1,8 @@
 import { test, expect, type Page } from '@playwright/test'
 
 // The address bar in both builds: it follows the window in front, Back and
-// Forward bring windows back, and deep links and reloads open their app.
+// Forward bring windows back, deep links and reloads open their app, and
+// unknown addresses are a 404 in both builds.
 // The rules are unit tested in src/windowing/address.test.ts.
 
 const BUILDS = [
@@ -226,3 +227,33 @@ for (const build of BUILDS) {
     })
   })
 }
+
+test.describe('unknown addresses', () => {
+  const [v1, v2] = BUILDS
+
+  for (const url of [`${v1.url}nonexistent-page`, `${v2.url}nonexistent-page`, `${v2.url}app/nope`, `${v2.url}app/word/extra`]) {
+    test(`${new URL(url).pathname} is v1’s 404 page`, async ({ page }) => {
+      const res = await page.goto(url)
+      expect(res?.status()).toBe(404)
+      await expect(page.getByRole('heading', { name: 'Page not found' })).toBeVisible()
+      await expect(page).toHaveTitle(/Page not found/)
+    })
+  }
+
+  test('both builds give the same page', async ({ page }) => {
+    const text = async (url: string) => {
+      await page.goto(url)
+      return page.locator('main').innerText()
+    }
+    expect(await text(`${v2.url}nonexistent-page`)).toBe(await text(`${v1.url}nonexistent-page`))
+  })
+
+  for (const address of ['', 'desktop', 'login', 'app/word', 'app/github/']) {
+    test(`v2’s /${address} still loads the desktop`, async ({ page }) => {
+      await prepare(page)
+      const res = await page.goto(`${v2.url}${address}`, { waitUntil: 'domcontentloaded' })
+      expect(res?.status()).toBe(200)
+      await waitForShell(page)
+    })
+  }
+})

@@ -9,6 +9,7 @@ import {
   showAddressed,
 } from '../../../assets/js/windowing/address.js'
 import apps from '../../../data/apps.json'
+import htaccess from '../../../.htaccess?raw'
 
 // The address bar in both builds: each app's address, the desktop's, how the
 // history follows the windows, and how Back and Forward bring them back.
@@ -295,5 +296,35 @@ describe('followAddress', () => {
     expect(steps).toEqual([])
     expect(show).not.toHaveBeenCalled()
     expect(listeners.size).toBe(0)
+  })
+})
+
+describe('.htaccess', () => {
+  // Apache does not run under Vitest, so this runs the v2 rules' patterns
+  // itself: the React build is served for exactly the addresses readAddress
+  // knows, and any other address falls through to v1's 404 page. The real
+  // thing is checked by e2e/security.spec.ts, against Apache.
+  const rules = [...htaccess.matchAll(/^RewriteRule\s+(\^v2\S*)\s+v2\/dist\/index\.html\s+\[END\]/gm)].map(
+    (match) => new RegExp(match[1]),
+  )
+  const served = (path: string) => rules.some((rule) => rule.test(path.slice(1)))
+
+  it('serves the React build for the desktop and every app', () => {
+    for (const path of ['/v2', '/v2/', '/v2/login', '/v2/desktop/', ...IDS.map((id) => `/v2/app/${id}`)]) {
+      expect(served(path), path).toBe(true)
+      expect(readAddress('/v2/', path, IDS), path).not.toBeNull()
+    }
+  })
+
+  it('sends anything else on to v1, which answers 404', () => {
+    for (const path of ['/v2/anything', '/v2/app/nope', '/v2/app/', '/v2/app/word/extra', '/v2/app/word//', '/v2/APP/word', '/v2/privacy', '/v2/index.php']) {
+      expect(served(path), path).toBe(false)
+      expect(readAddress('/v2/', path, IDS), path).toBeNull()
+    }
+  })
+
+  it('lists exactly the apps in data/apps.json', () => {
+    const listed = htaccess.match(/RewriteRule \^v2\/app\/\(([a-z|]+)\)/)?.[1].split('|') ?? []
+    expect([...listed].sort()).toEqual([...IDS].sort())
   })
 })
