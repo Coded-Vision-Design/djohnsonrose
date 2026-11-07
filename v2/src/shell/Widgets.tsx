@@ -1,10 +1,13 @@
 import { useEffect, useRef } from 'react'
 import { useOsStore } from '../store/osStore'
 import { useNewsOnDemand } from '../lib/useNews'
+import { useWidgetFeeds } from './widgetFeeds'
+import { fullDate, testimonialByline, timeAgo } from '../../../assets/js/windowing/widgets.js'
 
 // 1:1 port of partials/widgets.php: 400px panel docked to the left side
-// with a large weather card + 4-day mock forecast + news feed. A failed
-// forecast or news fetch says so, as in v1, rather than spinning.
+// with a large weather card + 4-day mock forecast, testimonials, a news feed
+// and this site's recent changes. A failed forecast, news or changes fetch
+// says so, as in v1, rather than spinning.
 export function Widgets() {
   const open = useOsStore((s) => s.widgetsOpen)
   const close = useOsStore((s) => s.closeAllPopups)
@@ -13,8 +16,13 @@ export function Widgets() {
   const news = useOsStore((s) => s.news)
   const newsStatus = useOsStore((s) => s.newsStatus)
   const ref = useRef<HTMLDivElement>(null)
+  const refreshFeeds = useWidgetFeeds((s) => s.refresh)
 
   useNewsOnDemand()
+
+  useEffect(() => {
+    if (open) refreshFeeds()
+  }, [open, refreshFeeds])
 
   useEffect(() => {
     if (!open) return
@@ -98,6 +106,8 @@ export function Widgets() {
           )}
         </div>
 
+        <Testimonials />
+
         {/* News */}
         <div className="space-y-3">
           <h3 className="text-xs font-bold text-gray-600 dark:text-gray-300 uppercase tracking-wider ml-1">
@@ -139,6 +149,8 @@ export function Widgets() {
             </div>
           )}
         </div>
+
+        <RecentChanges />
       </div>
 
       {/* Footer */}
@@ -151,5 +163,114 @@ export function Widgets() {
         </button>
       </div>
     </div>
+  )
+}
+
+// Testimonials, one at a time. Hidden until data/testimonials.json has some
+// (see lib/testimonials.php). The same as v1's partials/widgets.php.
+function Testimonials() {
+  const testimonials = useWidgetFeeds((s) => s.testimonials)
+  const index = useWidgetFeeds((s) => s.testimonialIndex)
+  const step = useWidgetFeeds((s) => s.stepTestimonial)
+  const testimonial = testimonials[index]
+  if (!testimonial) return null
+  const byline = testimonialByline(testimonial)
+
+  return (
+    <section
+      data-testimonials=""
+      aria-labelledby="widgets-testimonials-title"
+      className="glass p-5 rounded-2xl flex flex-col gap-3 shadow-xs border-white/10"
+    >
+      <div className="flex items-center justify-between gap-2 min-w-0">
+        <h3
+          id="widgets-testimonials-title"
+          className="text-xs font-bold text-gray-600 dark:text-gray-300 uppercase tracking-wider"
+        >
+          Testimonials
+        </h3>
+        {testimonials.length > 1 && (
+          <div className="flex items-center gap-1 shrink-0">
+            <span data-testimonial-position="" className="text-xs text-gray-600 dark:text-gray-300 tabular-nums mr-1">
+              {`${index + 1} of ${testimonials.length}`}
+            </span>
+            <button type="button" className="os-widget-step" aria-label="Previous testimonial" onClick={() => step(-1)}>
+              <svg aria-hidden="true" viewBox="0 0 16 16" width="16" height="16">
+                <path d="M10 3 5 8l5 5" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </button>
+            <button type="button" className="os-widget-step" aria-label="Next testimonial" onClick={() => step(1)}>
+              <svg aria-hidden="true" viewBox="0 0 16 16" width="16" height="16">
+                <path d="m6 3 5 5-5 5" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </button>
+          </div>
+        )}
+      </div>
+      <figure data-testimonial="" aria-live="polite" className="flex flex-col gap-2">
+        <blockquote className="os-testimonial-quote text-sm leading-relaxed">{testimonial.quote}</blockquote>
+        <figcaption className="text-xs">
+          {testimonial.link ? (
+            <a
+              href={testimonial.link}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-bold text-win-blue dark:text-[#60cdff] hover:underline"
+            >
+              {testimonial.name}
+            </a>
+          ) : (
+            <span className="font-bold">{testimonial.name}</span>
+          )}
+          {byline && <span className="block text-gray-600 dark:text-gray-300">{byline}</span>}
+        </figcaption>
+      </figure>
+    </section>
+  )
+}
+
+// Recent changes to this site, from api/activity.php: each commit's first
+// line, short SHA and date, and nothing naming the account behind it. The
+// same as v1's partials/widgets.php.
+function RecentChanges() {
+  const activity = useWidgetFeeds((s) => s.activity)
+  const status = useWidgetFeeds((s) => s.activityStatus)
+  const now = useWidgetFeeds((s) => s.now)
+
+  return (
+    <section data-activity="" aria-labelledby="widgets-activity-title" className="flex flex-col gap-3">
+      <h3
+        id="widgets-activity-title"
+        className="text-xs font-bold text-gray-600 dark:text-gray-300 uppercase tracking-wider ml-1"
+      >
+        Recent changes to this site
+      </h3>
+      {status === 'ready' ? (
+        <ol className="glass rounded-xl shadow-xs border-white/10 divide-y divide-black/5 dark:divide-white/10">
+          {activity.map((change) => (
+            <li key={change.sha} data-activity-item="" className="px-4 py-3 flex flex-col gap-1 min-w-0">
+              <span className="os-activity-message text-xs font-bold leading-tight text-black dark:text-white">
+                {change.message}
+              </span>
+              <span className="text-xs text-gray-600 dark:text-gray-300 flex items-center gap-1.5">
+                <code className="font-mono">{change.sha}</code>
+                <span aria-hidden="true">·</span>
+                <time dateTime={change.date} title={fullDate(change.date)}>
+                  {timeAgo(change.date, now)}
+                </time>
+              </span>
+            </li>
+          ))}
+        </ol>
+      ) : status === 'error' ? (
+        <p data-activity-failed="" className="text-xs text-gray-600 dark:text-gray-300 ml-1">
+          Recent changes cannot be shown right now.
+        </p>
+      ) : (
+        <p role="status" className="text-xs text-gray-600 dark:text-gray-300 ml-1">
+          Loading recent changes...
+        </p>
+      )}
+    </section>
   )
 }

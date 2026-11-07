@@ -1,0 +1,23 @@
+{
+  "testimonials": [
+    {
+      "quote": "Fixture quote one, for the widget tests only.",
+      "name": "Fixture Person One",
+      "role": "Test Role",
+      "company": "Example Ltd",
+      "link": "https://example.com/one"
+    },
+    {
+      "quote": "Fixture quote two, a little longer so that it wraps onto a second line in the panel at every width.",
+      "name": "Fixture Person Two",
+      "role": "",
+      "company": "Example Ltd"
+    },
+    {
+      "quote": "Fixture quote three.",
+      "name": "Fixture Person Three",
+      "role": "Test Role",
+      "company": ""
+    }
+  ]
+}

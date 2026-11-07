@@ -1690,3 +1690,54 @@ html[data-os-mode='phone'] .os-calendar-day > span {
         padding-right: 12px;
     }
 }
+
+/* ---- Widgets: Testimonials and Recent changes to this site ----
+   partials/widgets.php and v2's Widgets.tsx. */
+
+/* The quote's marks are drawn, so the data holds only the words. */
+.os-testimonial-quote::before {
+    content: '\201C';
+}
+
+.os-testimonial-quote::after {
+    content: '\201D';
+}
+
+/* Previous and next testimonial. A finger-sized target on a phone or tablet. */
+.os-widget-step {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 9999px;
+    color: inherit;
+    background: transparent;
+    cursor: pointer;
+    transition: background-color 0.15s linear;
+}
+
+.os-widget-step:hover {
+    background: rgba(0, 0, 0, 0.06);
+}
+
+.dark .os-widget-step:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+html[data-os-mode='phone'] .os-widget-step,
+html[data-os-mode='tablet'] .os-widget-step {
+    width: 44px;
+    height: 44px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .os-widget-step {
+        transition: none;
+    }
+}
+
+/* A long word, such as a file path, wraps rather than widening the panel. */
+.os-activity-message {
+    overflow-wrap: anywhere;
+}

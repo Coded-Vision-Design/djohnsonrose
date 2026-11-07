@@ -1,0 +1,28 @@
+[
+    {
+        "quote": "Fixture quote one, for tests only.",
+        "name": "Fixture Person One",
+        "role": "Test Role",
+        "company": "Example Ltd",
+        "link": "https://example.com/one"
+    },
+    {
+        "quote": "  Fixture quote two, with spaces round it.  ",
+        "name": "Fixture Person Two",
+        "role": "",
+        "company": "Example Ltd",
+        "link": "javascript:alert(1)"
+    },
+    {
+        "quote": "Fixture quote three, with no role, company or link.",
+        "name": "Fixture Person Three"
+    },
+    {
+        "quote": "",
+        "name": "Fixture Person With No Quote"
+    },
+    {
+        "quote": "Fixture quote with no name."
+    },
+    "not an object"
+]
